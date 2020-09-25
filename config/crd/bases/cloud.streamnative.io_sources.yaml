@@ -1,0 +1,105 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: sources.cloud.streamnative.io
+spec:
+  group: cloud.streamnative.io
+  names:
+    kind: Source
+    listKind: SourceList
+    plural: sources
+    singular: source
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Source is the Schema for the sources API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: SourceSpec defines the desired state of Source
+          properties:
+            className:
+              type: string
+            clusterName:
+              type: string
+            destination:
+              type: string
+            name:
+              description: Foo is an example field of Source. Edit Source_types.go
+                to remove/update
+              type: string
+            namespace:
+              type: string
+            packageDownloadPath:
+              type: string
+            pulsar:
+              properties:
+                pulsarConfig:
+                  type: string
+              type: object
+            replicas:
+              format: int32
+              type: integer
+            schemaType:
+              type: string
+            sourceConfig:
+              additionalProperties:
+                type: string
+              type: object
+            sourcePackage:
+              type: string
+            tenant:
+              type: string
+          type: object
+        status:
+          description: SourceStatus defines the observed state of Source
+          properties:
+            conditions:
+              additionalProperties:
+                description: The `Status` of a given `Condition` and the `Action`
+                  needed to reach the `Status`
+                properties:
+                  action:
+                    type: string
+                  condition:
+                    type: string
+                  status:
+                    type: string
+                type: object
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "make" to regenerate code after modifying
+                this file'
+              type: object
+          required:
+          - conditions
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

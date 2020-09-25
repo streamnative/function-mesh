@@ -1,0 +1,88 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - cloud.streamnative.io
+  resources:
+  - functionmeshes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloud.streamnative.io
+  resources:
+  - functionmeshes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cloud.streamnative.io
+  resources:
+  - functions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloud.streamnative.io
+  resources:
+  - functions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cloud.streamnative.io
+  resources:
+  - sinks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloud.streamnative.io
+  resources:
+  - sinks/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cloud.streamnative.io
+  resources:
+  - sources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloud.streamnative.io
+  resources:
+  - sources/status
+  verbs:
+  - get
+  - patch
+  - update

@@ -1,0 +1,31 @@
+apiVersion: cloud.streamnative.io/v1alpha1
+kind: Sink
+metadata:
+  name: sink-sample
+spec:
+  # Add fields here
+  name: sink-test
+  tenant: public
+  namespace: default
+  className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
+  replicas: 1
+  inputs:
+  - persistent://public/default/input
+  sinkConfig:
+    elasticSearchUrl: "http://elasticsearch.default.svc.cluster.local:9200"
+    indexName: "my_index"
+    typeName: "doc"
+    username: "scooby"
+    password: "doobie"
+  sinkPackage: connectors/pulsar-io-elastic-search-2.6.1.nar
+  packageDownloadPath: "" # use pulsar provided connectors
+  pulsar:
+    pulsarConfig: "test-sink"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-sink
+data:
+  webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650

@@ -1,0 +1,24 @@
+# permissions for end users to edit sinks.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sink-editor-role
+rules:
+- apiGroups:
+  - cloud.streamnative.io
+  resources:
+  - sinks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloud.streamnative.io
+  resources:
+  - sinks/status
+  verbs:
+  - get

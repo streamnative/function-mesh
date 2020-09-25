@@ -1,0 +1,213 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: functionmeshes.cloud.streamnative.io
+spec:
+  group: cloud.streamnative.io
+  names:
+    kind: FunctionMesh
+    listKind: FunctionMeshList
+    plural: functionmeshes
+    singular: functionmesh
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: FunctionMesh is the Schema for the functionmeshes API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: FunctionMeshSpec defines the desired state of FunctionMesh
+          properties:
+            functions:
+              items:
+                description: FunctionSpec defines the desired state of Function
+                properties:
+                  className:
+                    type: string
+                  clusterName:
+                    type: string
+                  functionPackage:
+                    type: string
+                  logTopic:
+                    type: string
+                  name:
+                    description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of
+                      cluster Important: Run "make" to regenerate code after modifying
+                      this file'
+                    type: string
+                  namespace:
+                    type: string
+                  packageDownloadPath:
+                    type: string
+                  pulsar:
+                    properties:
+                      pulsarConfig:
+                        type: string
+                    type: object
+                  replicas:
+                    format: int32
+                    type: integer
+                  sink:
+                    type: string
+                  sources:
+                    items:
+                      type: string
+                    type: array
+                  tenant:
+                    type: string
+                type: object
+              type: array
+            sinks:
+              items:
+                description: SinkSpec defines the desired state of Sink
+                properties:
+                  className:
+                    type: string
+                  clusterName:
+                    type: string
+                  inputs:
+                    items:
+                      type: string
+                    type: array
+                  name:
+                    description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of
+                      cluster Important: Run "make" to regenerate code after modifying
+                      this file'
+                    type: string
+                  namespace:
+                    type: string
+                  packageDownloadPath:
+                    type: string
+                  pulsar:
+                    properties:
+                      pulsarConfig:
+                        type: string
+                    type: object
+                  replicas:
+                    format: int32
+                    type: integer
+                  sinkConfig:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  sinkPackage:
+                    type: string
+                  tenant:
+                    type: string
+                type: object
+              type: array
+            sources:
+              items:
+                description: SourceSpec defines the desired state of Source
+                properties:
+                  className:
+                    type: string
+                  clusterName:
+                    type: string
+                  destination:
+                    type: string
+                  name:
+                    description: Foo is an example field of Source. Edit Source_types.go
+                      to remove/update
+                    type: string
+                  namespace:
+                    type: string
+                  packageDownloadPath:
+                    type: string
+                  pulsar:
+                    properties:
+                      pulsarConfig:
+                        type: string
+                    type: object
+                  replicas:
+                    format: int32
+                    type: integer
+                  schemaType:
+                    type: string
+                  sourceConfig:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  sourcePackage:
+                    type: string
+                  tenant:
+                    type: string
+                type: object
+              type: array
+          type: object
+        status:
+          description: FunctionMeshStatus defines the observed state of FunctionMesh
+          properties:
+            functionConditions:
+              additionalProperties:
+                description: The `Status` of a given `Condition` and the `Action`
+                  needed to reach the `Status`
+                properties:
+                  action:
+                    type: string
+                  condition:
+                    type: string
+                  status:
+                    type: string
+                type: object
+              type: object
+            sinkConditions:
+              additionalProperties:
+                description: The `Status` of a given `Condition` and the `Action`
+                  needed to reach the `Status`
+                properties:
+                  action:
+                    type: string
+                  condition:
+                    type: string
+                  status:
+                    type: string
+                type: object
+              type: object
+            sourceConditions:
+              additionalProperties:
+                description: The `Status` of a given `Condition` and the `Action`
+                  needed to reach the `Status`
+                properties:
+                  action:
+                    type: string
+                  condition:
+                    type: string
+                  status:
+                    type: string
+                type: object
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "make" to regenerate code after modifying
+                this file'
+              type: object
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -1,0 +1,6 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- cloud_v1alpha1_functionmesh.yaml
+- cloud_v1alpha1_source.yaml
+- cloud_v1alpha1_sink.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

@@ -1,0 +1,17 @@
+domain: streamnative.io
+layout: go.kubebuilder.io/v2
+projectName: mesh-operator
+repo: github.com/streamnative/mesh-operator
+resources:
+- group: cloud
+  kind: FunctionMesh
+  version: v1alpha1
+- group: cloud
+  kind: Source
+  version: v1alpha1
+- group: cloud
+  kind: Sink
+  version: v1alpha1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}
