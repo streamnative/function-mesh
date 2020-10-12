@@ -229,6 +229,7 @@ func (in *FunctionSpec) DeepCopyInto(out *FunctionSpec) {
 			(*out)[key] = val
 		}
 	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	in.Messaging.DeepCopyInto(&out.Messaging)
 	in.Runtime.DeepCopyInto(&out.Runtime)
 }
@@ -454,6 +455,7 @@ func (in *SinkSpec) DeepCopyInto(out *SinkSpec) {
 			(*out)[key] = val
 		}
 	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	in.Messaging.DeepCopyInto(&out.Messaging)
 	in.Runtime.DeepCopyInto(&out.Runtime)
 }
@@ -559,6 +561,7 @@ func (in *SourceSpec) DeepCopyInto(out *SourceSpec) {
 			(*out)[key] = val
 		}
 	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	in.Messaging.DeepCopyInto(&out.Messaging)
 	in.Runtime.DeepCopyInto(&out.Runtime)
 }

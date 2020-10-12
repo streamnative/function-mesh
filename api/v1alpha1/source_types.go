@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,15 +28,17 @@ import (
 type SourceSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name         string            `json:"name,omitempty"`
-	ClassName    string            `json:"className,omitempty"`
-	SourceType   string            `json:"sourceType,omitempty"`
-	SinkType     string            `json:"sinkType,omitempty"`
-	Parallelism  int32             `json:"parallelism,omitempty"`
-	Destination  string            `json:"destination,omitempty"`
-	SchemaType   string            `json:"schemaType,omitempty"`
-	SourceConfig map[string]string `json:"sourceConfig,omitempty"`
-	ClusterName  string            `json:"clusterName,omitempty"`
+	Name         string                      `json:"name,omitempty"`
+	ClassName    string                      `json:"className,omitempty"`
+	ClusterName  string                      `json:"clusterName,omitempty"`
+	SourceType   string                      `json:"sourceType,omitempty"`
+	SinkType     string                      `json:"sinkType,omitempty"`
+	Replicas     int32                       `json:"replicas,omitempty"`
+	MaxReplicas  int32                       `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
+	Destination  string                      `json:"destination,omitempty"`
+	SchemaType   string                      `json:"schemaType,omitempty"`
+	SourceConfig map[string]string           `json:"sourceConfig,omitempty"`
+	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	Messaging `json:",inline"`
 	Runtime   `json:",inline"`
@@ -46,10 +49,13 @@ type SourceStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Conditions map[Component]ResourceCondition `json:"conditions"`
+	Replicas   int32                           `json:"replicas"`
+	Selector   string                          `json:"selector"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+//+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 
 // Source is the Schema for the sources API
 type Source struct {

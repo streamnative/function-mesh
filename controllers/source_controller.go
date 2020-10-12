@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 
+	autov1 "github.com/streamnative/mesh-operator/vendor/k8s.io/api/autoscaling/v1"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -68,6 +70,10 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	err = r.ObserveSourceHPA(ctx, req, source)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	err = r.Status().Update(ctx, source)
 	if err != nil {
@@ -83,6 +89,10 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	err = r.ApplySourceHPA(ctx, req, source)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -92,5 +102,6 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&cloudv1alpha1.Source{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Service{}).
+		Owns(&autov1.HorizontalPodAutoscaler{}).
 		Complete(r)
 }

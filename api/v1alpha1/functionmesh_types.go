@@ -28,6 +28,7 @@ type FunctionMeshSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// TODO: look how to enable autoscaling
 	Sources   []SourceSpec   `json:"sources,omitempty"`
 	Sinks     []SinkSpec     `json:"sinks,omitempty"`
 	Functions []FunctionSpec `json:"functions,omitempty"`

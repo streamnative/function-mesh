@@ -4,11 +4,17 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/mesh-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func MakeSinkHPA(sink *v1alpha1.Sink) *autov1.HorizontalPodAutoscaler {
+	objectMeta := MakeSinkObjectMeta(sink)
+	return MakeHPA(objectMeta, sink.Spec.Replicas, sink.Spec.MaxReplicas, sink.Kind)
+}
 
 func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 	labels := MakeSinkLabels(sink)
@@ -18,7 +24,7 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 
 func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return MakeStatefulSet(objectMeta, &sink.Spec.Parallelism, MakeSinkContainer(sink),
+	return MakeStatefulSet(objectMeta, &sink.Spec.Replicas, MakeSinkContainer(sink),
 		MakeSinkLabels(sink), sink.Spec.Pulsar.PulsarConfig)
 }
 
@@ -67,7 +73,7 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 	labels := make(map[string]string)
 	labels["component"] = "sink"
-	labels["name"] = sink.Spec.Name
+	labels["name"] = sink.Name
 	labels["namespace"] = sink.Namespace
 
 	return labels

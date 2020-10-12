@@ -35,6 +35,7 @@ type Component string
 const (
 	StatefulSet Component = "StatefulSet"
 	Service     Component = "Service"
+	HPA         Component = "HorizontalPodAutoscaler"
 )
 
 // The `Status` of a given `Condition` and the `Action` needed to reach the `Status`
@@ -53,6 +54,7 @@ const (
 
 	StatefulSetReady ResourceConditionType = "StatefulSetReady"
 	ServiceReady     ResourceConditionType = "ServiceReady"
+	HPAReady         ResourceConditionType = "HPAReady"
 )
 
 type ReconcileAction string

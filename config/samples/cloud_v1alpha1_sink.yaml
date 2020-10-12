@@ -7,7 +7,7 @@ spec:
   className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
   sourceTypeClass: "[B"
   sinkTypeClass: "[B"
-  parallelism: 1
+  replicas: 1
   inputs:
   - persistent://public/default/input
   sinkConfig:

@@ -16,6 +16,10 @@ spec:
     singular: source
   scope: Namespaced
   subresources:
+    scale:
+      labelSelectorPath: .status.selector
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
     status: {}
   validation:
     openAPIV3Schema:
@@ -42,13 +46,19 @@ spec:
               type: string
             destination:
               type: string
+            java:
+              properties:
+                jar:
+                  type: string
+                jarLocation:
+                  type: string
+              type: object
+            maxReplicas:
+              format: int32
+              type: integer
             name:
-              description: Foo is an example field of Source. Edit Source_types.go
-                to remove/update
-              type: string
-            namespace:
-              type: string
-            packageDownloadPath:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "make" to regenerate code after modifying this file'
               type: string
             pulsar:
               properties:
@@ -58,19 +68,41 @@ spec:
             replicas:
               format: int32
               type: integer
+            resources:
+              description: ResourceRequirements describes the compute resource requirements.
+              properties:
+                limits:
+                  additionalProperties:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  description: 'Limits describes the maximum amount of compute resources
+                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  additionalProperties:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  description: 'Requests describes the minimum amount of compute resources
+                    required. If Requests is omitted for a container, it defaults
+                    to Limits if that is explicitly specified, otherwise to an implementation-defined
+                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+              type: object
             schemaType:
               type: string
-            sinkTypeClass:
+            sinkType:
               type: string
             sourceConfig:
               additionalProperties:
                 type: string
               type: object
-            sourcePackage:
-              type: string
-            sourceTypeClass:
-              type: string
-            tenant:
+            sourceType:
               type: string
           type: object
         status:
@@ -92,8 +124,15 @@ spec:
                 of cluster Important: Run "make" to regenerate code after modifying
                 this file'
               type: object
+            replicas:
+              format: int32
+              type: integer
+            selector:
+              type: string
           required:
           - conditions
+          - replicas
+          - selector
           type: object
       type: object
   version: v1alpha1

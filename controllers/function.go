@@ -6,6 +6,7 @@ import (
 	"github.com/streamnative/mesh-operator/api/v1alpha1"
 	"github.com/streamnative/mesh-operator/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
+	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,19 +38,27 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 		return err
 	}
 
-	if *statefulSet.Spec.Replicas != function.Spec.Parallelism {
+	selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
+	if err != nil {
+		r.Log.Error(err, "error retrieving statefulSet selector")
+		return err
+	}
+	function.Status.Selector = selector.String()
+
+	if *statefulSet.Spec.Replicas != function.Spec.Replicas {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		function.Status.Conditions[v1alpha1.StatefulSet] = condition
 		return nil
 	}
 
-	if statefulSet.Status.ReadyReplicas == function.Spec.Parallelism {
+	if statefulSet.Status.ReadyReplicas == function.Spec.Replicas {
 		condition.Action = v1alpha1.NoAction
 		condition.Status = metav1.ConditionTrue
 	} else {
 		condition.Action = v1alpha1.Wait
 	}
+	function.Status.Replicas = *statefulSet.Spec.Replicas
 	function.Status.Conditions[v1alpha1.StatefulSet] = condition
 
 	return nil
@@ -125,6 +134,68 @@ func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, req ctrl.
 		svc := spec.MakeFunctionService(function)
 		if err := r.Create(ctx, svc); err != nil {
 			r.Log.Error(err, "failed to expose service for function", "name", function.Name)
+			return err
+		}
+	case v1alpha1.Wait:
+		// do nothing
+	}
+
+	return nil
+}
+
+func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, req ctrl.Request, function *v1alpha1.Function) error {
+	if function.Spec.MaxReplicas == 0 {
+		// HPA not enabled, skip further action
+		return nil
+	}
+
+	condition, ok := function.Status.Conditions[v1alpha1.HPA]
+	if !ok {
+		function.Status.Conditions[v1alpha1.HPA] = v1alpha1.ResourceCondition{
+			Condition: v1alpha1.HPAReady,
+			Status:    metav1.ConditionFalse,
+			Action:    v1alpha1.Create,
+		}
+		return nil
+	}
+
+	if condition.Status == metav1.ConditionTrue {
+		return nil
+	}
+
+	hpa := &autov1.HorizontalPodAutoscaler{}
+	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace, Name: function.Name}, hpa)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			r.Log.Info("hpa is not created for function...", "Name", function.Name)
+			return nil
+		}
+		return err
+	}
+
+	condition.Action = v1alpha1.NoAction
+	condition.Status = metav1.ConditionTrue
+	function.Status.Conditions[v1alpha1.HPA] = condition
+	return nil
+}
+
+func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, req ctrl.Request, function *v1alpha1.Function) error {
+	if function.Spec.MaxReplicas == 0 {
+		// HPA not enabled, skip further action
+		return nil
+	}
+
+	condition := function.Status.Conditions[v1alpha1.HPA]
+
+	if condition.Status == metav1.ConditionTrue {
+		return nil
+	}
+
+	switch condition.Action {
+	case v1alpha1.Create:
+		hpa := spec.MakeFunctionHPA(function)
+		if err := r.Create(ctx, hpa); err != nil {
+			r.Log.Error(err, "failed to create pod autoscaler for function", "name", function.Name)
 			return err
 		}
 	case v1alpha1.Wait:

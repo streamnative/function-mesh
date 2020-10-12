@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	autov1 "k8s.io/api/autoscaling/v1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,6 +45,28 @@ func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev
 			}},
 			Selector:  labels,
 			ClusterIP: "None",
+		},
+	}
+}
+
+func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, kind string) *autov1.HorizontalPodAutoscaler {
+	// TODO: configurable cpu percentage
+	cpuPercentage := int32(80)
+	return &autov1.HorizontalPodAutoscaler{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "autoscaling/v1",
+			APIVersion: "HorizontalPodAutoscaler",
+		},
+		ObjectMeta: *objectMeta,
+		Spec: autov1.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autov1.CrossVersionObjectReference{
+				Kind:       kind,
+				Name:       objectMeta.Name,
+				APIVersion: "cloud.streamnative.io/v1alpha1",
+			},
+			MinReplicas:                    &minReplicas,
+			MaxReplicas:                    maxReplicas,
+			TargetCPUUtilizationPercentage: &cpuPercentage,
 		},
 	}
 }

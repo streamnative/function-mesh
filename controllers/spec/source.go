@@ -4,11 +4,17 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/mesh-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func MakeSourceHPA(source *v1alpha1.Source) *autov1.HorizontalPodAutoscaler {
+	objectMeta := MakeSourceObjectMeta(source)
+	return MakeHPA(objectMeta, source.Spec.Replicas, source.Spec.MaxReplicas, source.Kind)
+}
 
 func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
 	labels := makeSourceLabels(source)
@@ -18,7 +24,7 @@ func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
 
 func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
 	objectMeta := MakeSourceObjectMeta(source)
-	return MakeStatefulSet(objectMeta, &source.Spec.Parallelism, MakeSourceContainer(source),
+	return MakeStatefulSet(objectMeta, &source.Spec.Replicas, MakeSourceContainer(source),
 		makeSourceLabels(source), source.Spec.Pulsar.PulsarConfig)
 }
 
@@ -67,7 +73,7 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 	labels := make(map[string]string)
 	labels["component"] = "source"
-	labels["name"] = source.Spec.Name
+	labels["name"] = source.Name
 	labels["namespace"] = source.Namespace
 
 	return labels

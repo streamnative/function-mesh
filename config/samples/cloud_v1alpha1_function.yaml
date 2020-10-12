@@ -6,7 +6,8 @@ spec:
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   sourceTypeClass: java.lang.String
   sinkTypeClass: java.lang.String
-  parallelism: 3
+  replicas: 1
+  maxReplicas: 5
   logTopic: persistent://public/default/logging-function-logs
   sources:
     - persistent://public/default/source-topic1

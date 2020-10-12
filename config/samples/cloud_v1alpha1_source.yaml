@@ -6,7 +6,7 @@ spec:
   className: org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource
   sourceTypeClass: org.apache.pulsar.common.schema.KeyValue
   sinkTypeClass: org.apache.pulsar.common.schema.KeyValue
-  parallelism: 1
+  replicas: 1
   destination: persistent://public/default/destination
   sourceConfig:
     mongodb.hosts: rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017

@@ -16,6 +16,10 @@ spec:
     singular: function
   scope: Namespaced
   subresources:
+    scale:
+      labelSelectorPath: .status.selector
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
     status: {}
   validation:
     openAPIV3Schema:
@@ -40,15 +44,21 @@ spec:
               type: string
             clusterName:
               type: string
-            functionPackage:
-              type: string
+            java:
+              properties:
+                jar:
+                  type: string
+                jarLocation:
+                  type: string
+              type: object
             logTopic:
               type: string
+            maxReplicas:
+              format: int32
+              type: integer
             name:
-              type: string
-            namespace:
-              type: string
-            packageDownloadPath:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "make" to regenerate code after modifying this file'
               type: string
             pulsar:
               properties:
@@ -58,18 +68,46 @@ spec:
             replicas:
               format: int32
               type: integer
+            resources:
+              description: ResourceRequirements describes the compute resource requirements.
+              properties:
+                limits:
+                  additionalProperties:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  description: 'Limits describes the maximum amount of compute resources
+                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  additionalProperties:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  description: 'Requests describes the minimum amount of compute resources
+                    required. If Requests is omitted for a container, it defaults
+                    to Limits if that is explicitly specified, otherwise to an implementation-defined
+                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+              type: object
             sink:
               type: string
-            sinkTypeClass:
+            sinkType:
               type: string
-            sourceTypeClass:
+            sourceType:
               type: string
             sources:
               items:
                 type: string
               type: array
-            tenant:
-              type: string
+            userConfig:
+              additionalProperties:
+                type: string
+              type: object
           type: object
         status:
           description: FunctionStatus defines the observed state of Function
@@ -90,8 +128,15 @@ spec:
                 of cluster Important: Run "make" to regenerate code after modifying
                 this file'
               type: object
+            replicas:
+              format: int32
+              type: integer
+            selector:
+              type: string
           required:
           - conditions
+          - replicas
+          - selector
           type: object
       type: object
   version: v1alpha1

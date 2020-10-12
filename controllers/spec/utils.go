@@ -20,7 +20,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		SecretsMap:           "",
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              false,
-		Parallelism:          function.Spec.Parallelism,
+		Parallelism:          function.Spec.Replicas,
 		Source:               generateFunctionInputSpec(function.Spec.Sources, function.Spec.SourceType),
 		Sink:                 generateFunctionOutputSpec(function.Spec.Sink, function.Spec.SinkType),
 		Resources: &proto.Resources{
@@ -76,7 +76,7 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 		SecretsMap:           "",
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              true,
-		Parallelism:          source.Spec.Parallelism,
+		Parallelism:          source.Spec.Replicas,
 		Source:               generateSourceInputSpec(source),
 		Sink:                 generateSourceOutputSpec(source.Spec.Destination, source.Spec.SinkType),
 		Resources: &proto.Resources{
@@ -131,7 +131,7 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		SecretsMap:           "",
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              true,
-		Parallelism:          sink.Spec.Parallelism,
+		Parallelism:          sink.Spec.Replicas,
 		Source:               generateSinkInputSpec(sink.Spec.Inputs, sink.Spec.SourceType),
 		Sink:                 generateSinkOutputSpec(sink),
 		Resources: &proto.Resources{
