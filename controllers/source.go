@@ -37,14 +37,14 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 		return err
 	}
 
-	if *statefulSet.Spec.Replicas != source.Spec.Replicas {
+	if *statefulSet.Spec.Replicas != source.Spec.Parallelism {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		source.Status.Conditions[v1alpha1.StatefulSet] = condition
 		return nil
 	}
 
-	if statefulSet.Status.ReadyReplicas == source.Spec.Replicas {
+	if statefulSet.Status.ReadyReplicas == source.Spec.Parallelism {
 		condition.Action = v1alpha1.NoAction
 		condition.Status = metav1.ConditionTrue
 	} else {

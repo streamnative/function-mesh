@@ -45,8 +45,6 @@ spec:
             logTopic:
               type: string
             name:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "make" to regenerate code after modifying this file'
               type: string
             namespace:
               type: string
@@ -61,6 +59,10 @@ spec:
               format: int32
               type: integer
             sink:
+              type: string
+            sinkTypeClass:
+              type: string
+            sourceTypeClass:
               type: string
             sources:
               items:

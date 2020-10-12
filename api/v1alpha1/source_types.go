@@ -27,20 +27,18 @@ import (
 type SourceSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Name         string            `json:"name,omitempty"`
+	ClassName    string            `json:"className,omitempty"`
+	SourceType   string            `json:"sourceType,omitempty"`
+	SinkType     string            `json:"sinkType,omitempty"`
+	Parallelism  int32             `json:"parallelism,omitempty"`
+	Destination  string            `json:"destination,omitempty"`
+	SchemaType   string            `json:"schemaType,omitempty"`
+	SourceConfig map[string]string `json:"sourceConfig,omitempty"`
+	ClusterName  string            `json:"clusterName,omitempty"`
 
-	// Foo is an example field of Source. Edit Source_types.go to remove/update
-	Name                string            `json:"name,omitempty"`
-	ClusterName         string            `json:"clusterName,omitempty"`
-	Tenant              string            `json:"tenant,omitempty"`
-	Namespace           string            `json:"namespace,omitempty"`
-	ClassName           string            `json:"className,omitempty"`
-	Replicas            int32             `json:"replicas,omitempty"`
-	Destination         string            `json:"destination,omitempty"`
-	SchemaType          string            `json:"schemaType,omitempty"`
-	SourceConfig        map[string]string `json:"sourceConfig,omitempty"`
-	SourcePackage       string            `json:"sourcePackage,omitempty"`
-	PackageDownloadPath string            `json:"packageDownloadPath,omitempty"`
-	Runtime             `json:",inline"`
+	Messaging `json:",inline"`
+	Runtime   `json:",inline"`
 }
 
 // SourceStatus defines the observed state of Source

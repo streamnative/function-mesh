@@ -18,7 +18,7 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 
 func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
-	return MakeStatefulSet(objectMeta, &function.Spec.Replicas, MakeFunctionContainer(function),
+	return MakeStatefulSet(objectMeta, &function.Spec.Parallelism, MakeFunctionContainer(function),
 		makeFunctionLabels(function), function.Spec.Pulsar.PulsarConfig)
 }
 
@@ -68,14 +68,13 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 	labels := make(map[string]string)
 	labels["component"] = "function"
 	labels["name"] = function.Spec.Name
-	labels["namespace"] = function.Spec.Namespace
-	labels["tenant"] = function.Spec.Tenant
+	labels["namespace"] = function.Namespace
 
 	return labels
 }
 
 func makeFunctionCommand(function *v1alpha1.Function) []string {
-	return MakeCommand(function.Spec.PackageDownloadPath, function.Spec.FunctionPackage,
+	return MakeCommand(function.Spec.Java.JarLocation, function.Spec.Java.Jar,
 		function.Spec.Name, function.Spec.Pulsar.PulsarConfig, generateFunctionDetailsInJson(function))
 }
 

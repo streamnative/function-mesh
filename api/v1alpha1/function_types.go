@@ -27,18 +27,19 @@ import (
 type FunctionSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name                string   `json:"name,omitempty"`
-	ClusterName         string   `json:"clusterName,omitempty"`
-	Tenant              string   `json:"tenant,omitempty"`
-	Namespace           string   `json:"namespace,omitempty"`
-	ClassName           string   `json:"className,omitempty"`
-	Replicas            int32    `json:"replicas,omitempty"`
-	Sources             []string `json:"sources,omitempty"`
-	Sink                string   `json:"sink,omitempty"`
-	LogTopic            string   `json:"logTopic,omitempty"`
-	FunctionPackage     string   `json:"functionPackage,omitempty"`
-	PackageDownloadPath string   `json:"packageDownloadPath,omitempty"`
-	Runtime             `json:",inline"`
+	Name        string            `json:"name,omitempty"`
+	ClassName   string            `json:"className,omitempty"`
+	SourceType  string            `json:"sourceType,omitempty"`
+	SinkType    string            `json:"sinkType,omitempty"`
+	Parallelism int32             `json:"parallelism,omitempty"`
+	Sources     []string          `json:"sources,omitempty"`
+	Sink        string            `json:"sink,omitempty"`
+	LogTopic    string            `json:"logTopic,omitempty"`
+	UserConfig  map[string]string `json:"userConfig,omitempty"`
+	ClusterName string            `json:"clusterName,omitempty"`
+
+	Messaging `json:",inline"`
+	Runtime   `json:",inline"`
 }
 
 // FunctionStatus defines the observed state of Function

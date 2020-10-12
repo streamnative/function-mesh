@@ -3,24 +3,24 @@ kind: Source
 metadata:
   name: source-sample
 spec:
-  name: source-test
-  tenant: public
-  namespace: default
   className: org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource
-  replicas: 1
-  descination: persistent://public/default/destination
+  sourceTypeClass: org.apache.pulsar.common.schema.KeyValue
+  sinkTypeClass: org.apache.pulsar.common.schema.KeyValue
+  parallelism: 1
+  destination: persistent://public/default/destination
   sourceConfig:
-    mongodb.hosts: rs0/mongo.default.svc.cluster.local:27017
+    mongodb.hosts: rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017
     mongodb.name: dbserver1
     mongodb.user: debezium
     mongodb.password: dbz
     mongodb.task.id: "1"
     database.whitelist: inventory
     pulsar.service.url: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
-  sourcePackage: connectors/pulsar-io-debezium-mongodb-2.6.1.nar
-  packageDownloadPath: "" # use pulsar provided connectors
   pulsar:
     pulsarConfig: "test-source"
+  java:
+    jar: connectors/pulsar-io-debezium-mongodb-2.6.1.nar
+    jarLocation: "" # use pulsar provided connectors
 ---
 apiVersion: v1
 kind: ConfigMap

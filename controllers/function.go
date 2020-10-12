@@ -37,14 +37,14 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 		return err
 	}
 
-	if *statefulSet.Spec.Replicas != function.Spec.Replicas {
+	if *statefulSet.Spec.Replicas != function.Spec.Parallelism {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		function.Status.Conditions[v1alpha1.StatefulSet] = condition
 		return nil
 	}
 
-	if statefulSet.Status.ReadyReplicas == function.Spec.Replicas {
+	if statefulSet.Status.ReadyReplicas == function.Spec.Parallelism {
 		condition.Action = v1alpha1.NoAction
 		condition.Status = metav1.ConditionTrue
 	} else {

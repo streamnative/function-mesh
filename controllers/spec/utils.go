@@ -9,8 +9,9 @@ import (
 
 func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails {
 	return &proto.FunctionDetails{
-		Tenant:               function.Spec.Tenant,
-		Namespace:            function.Spec.Namespace,
+		// TODO: default tenant value
+		Tenant:               "public",
+		Namespace:            function.Namespace,
 		Name:                 function.Spec.Name,
 		ClassName:            function.Spec.ClassName,
 		LogTopic:             "",
@@ -19,9 +20,9 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		SecretsMap:           "",
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              false,
-		Parallelism:          function.Spec.Replicas,
-		Source:               generateFunctionInputSpec(function.Spec.Sources),
-		Sink:                 generateFunctionOutputSpec(function.Spec.Sink),
+		Parallelism:          function.Spec.Parallelism,
+		Source:               generateFunctionInputSpec(function.Spec.Sources, function.Spec.SourceType),
+		Sink:                 generateFunctionOutputSpec(function.Spec.Sink, function.Spec.SinkType),
 		Resources: &proto.Resources{
 			Cpu:  1,
 			Ram:  102400,
@@ -38,7 +39,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 	}
 }
 
-func generateFunctionInputSpec(sources []string) *proto.SourceSpec {
+func generateFunctionInputSpec(sources []string, sourceTypeClass string) *proto.SourceSpec {
 	inputSpecs := make(map[string]*proto.ConsumerSpec)
 
 	for _, source := range sources {
@@ -51,23 +52,23 @@ func generateFunctionInputSpec(sources []string) *proto.SourceSpec {
 		InputSpecs:           inputSpecs,
 		SubscriptionType:     proto.SubscriptionType_SHARED,
 		SubscriptionPosition: proto.SubscriptionPosition_EARLIEST,
-		TypeClassName:        "java.lang.String", // TODO resolve from user function args
+		TypeClassName:        sourceTypeClass,
 		CleanupSubscription:  true,
 	}
 }
 
-func generateFunctionOutputSpec(topic string) *proto.SinkSpec {
+func generateFunctionOutputSpec(topic, sinkTypeClass string) *proto.SinkSpec {
 	return &proto.SinkSpec{
 		Topic:         topic,
-		TypeClassName: "java.lang.String", // TODO resolve it
+		TypeClassName: sinkTypeClass,
 	}
 }
 
 func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 	return &proto.FunctionDetails{
-		Tenant:               source.Spec.Tenant,
-		Namespace:            source.Spec.Namespace,
-		Name:                 source.Spec.Name,
+		Tenant:               "public",
+		Namespace:            source.Namespace,
+		Name:                 source.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction", // TODO
 		LogTopic:             "",
 		ProcessingGuarantees: 0,
@@ -75,9 +76,9 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 		SecretsMap:           "",
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              true,
-		Parallelism:          source.Spec.Replicas,
+		Parallelism:          source.Spec.Parallelism,
 		Source:               generateSourceInputSpec(source),
-		Sink:                 generateSourceOutputSpec(source.Spec.Destination),
+		Sink:                 generateSourceOutputSpec(source.Spec.Destination, source.Spec.SinkType),
 		Resources: &proto.Resources{
 			Cpu:  1,
 			Ram:  102400,
@@ -99,7 +100,7 @@ func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
 	return &proto.SourceSpec{
 		ClassName:                    source.Spec.ClassName,
 		Configs:                      string(configs), // TODO handle batch source
-		TypeClassName:                "java.lang.String",
+		TypeClassName:                source.Spec.SourceType,
 		SubscriptionType:             0,
 		InputSpecs:                   nil,
 		TimeoutMs:                    0,
@@ -111,18 +112,18 @@ func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
 	}
 }
 
-func generateSourceOutputSpec(topic string) *proto.SinkSpec {
+func generateSourceOutputSpec(topic, sinkTypeClass string) *proto.SinkSpec {
 	return &proto.SinkSpec{
 		Topic:         topic,
-		TypeClassName: "java.lang.String", // TODO resolve it
+		TypeClassName: sinkTypeClass, //"java.lang.String", // TODO resolve it
 	}
 }
 
 func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 	return &proto.FunctionDetails{
-		Tenant:               sink.Spec.Tenant,
-		Namespace:            sink.Spec.Namespace,
-		Name:                 sink.Spec.Name,
+		Tenant:               "public",
+		Namespace:            sink.Namespace,
+		Name:                 sink.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction", // TODO
 		LogTopic:             "",
 		ProcessingGuarantees: 0,
@@ -130,8 +131,8 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		SecretsMap:           "",
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              true,
-		Parallelism:          sink.Spec.Replicas,
-		Source:               generateSinkInputSpec(sink.Spec.Inputs),
+		Parallelism:          sink.Spec.Parallelism,
+		Source:               generateSinkInputSpec(sink.Spec.Inputs, sink.Spec.SourceType),
 		Sink:                 generateSinkOutputSpec(sink),
 		Resources: &proto.Resources{
 			Cpu:  1,
@@ -149,7 +150,7 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 	}
 }
 
-func generateSinkInputSpec(sources []string) *proto.SourceSpec {
+func generateSinkInputSpec(sources []string, sourceTypeClass string) *proto.SourceSpec {
 	inputSpecs := make(map[string]*proto.ConsumerSpec)
 
 	for _, source := range sources {
@@ -162,7 +163,7 @@ func generateSinkInputSpec(sources []string) *proto.SourceSpec {
 		InputSpecs:           inputSpecs,
 		SubscriptionType:     proto.SubscriptionType_SHARED,
 		SubscriptionPosition: proto.SubscriptionPosition_EARLIEST,
-		TypeClassName:        "java.lang.String", // TODO resolve from user function args
+		TypeClassName:        sourceTypeClass,
 		CleanupSubscription:  true,
 	}
 }
@@ -172,7 +173,7 @@ func generateSinkOutputSpec(sink *v1alpha1.Sink) *proto.SinkSpec {
 	return &proto.SinkSpec{
 		ClassName:                    sink.Spec.ClassName,
 		Configs:                      string(configs),
-		TypeClassName:                "java.lang.String",
+		TypeClassName:                sink.Spec.SinkType,
 		Topic:                        "",
 		ProducerSpec:                 nil,
 		SerDeClassName:               "",

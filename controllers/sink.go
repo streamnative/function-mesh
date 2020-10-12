@@ -37,14 +37,14 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 		return err
 	}
 
-	if *statefulSet.Spec.Replicas != sink.Spec.Replicas {
+	if *statefulSet.Spec.Replicas != sink.Spec.Parallelism {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		sink.Status.Conditions[v1alpha1.StatefulSet] = condition
 		return nil
 	}
 
-	if statefulSet.Status.ReadyReplicas == sink.Spec.Replicas {
+	if statefulSet.Status.ReadyReplicas == sink.Spec.Parallelism {
 		condition.Action = v1alpha1.NoAction
 		condition.Status = metav1.ConditionTrue
 	} else {

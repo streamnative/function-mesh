@@ -1783,7 +1783,7 @@ var file_Function_proto_goTypes = []interface{}{
 	(SubscriptionType)(0),                  // 1: proto.SubscriptionType
 	(SubscriptionPosition)(0),              // 2: proto.SubscriptionPosition
 	(FunctionState)(0),                     // 3: proto.FunctionState
-	(FunctionDetails_Runtime)(0),           // 4: proto.FunctionDetails.Runtime
+	(FunctionDetails_Runtime)(0),           // 4: proto.FunctionDetails.Messaging
 	(FunctionDetails_ComponentType)(0),     // 5: proto.FunctionDetails.ComponentType
 	(*Resources)(nil),                      // 6: proto.Resources
 	(*RetryDetails)(nil),                   // 7: proto.RetryDetails
@@ -1808,7 +1808,7 @@ var file_Function_proto_goTypes = []interface{}{
 }
 var file_Function_proto_depIdxs = []int32{
 	0,  // 0: proto.FunctionDetails.processingGuarantees:type_name -> proto.ProcessingGuarantees
-	4,  // 1: proto.FunctionDetails.runtime:type_name -> proto.FunctionDetails.Runtime
+	4,  // 1: proto.FunctionDetails.runtime:type_name -> proto.FunctionDetails.Messaging
 	11, // 2: proto.FunctionDetails.source:type_name -> proto.SourceSpec
 	12, // 3: proto.FunctionDetails.sink:type_name -> proto.SinkSpec
 	6,  // 4: proto.FunctionDetails.resources:type_name -> proto.Resources

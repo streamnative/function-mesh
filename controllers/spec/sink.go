@@ -18,7 +18,7 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 
 func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return MakeStatefulSet(objectMeta, &sink.Spec.Replicas, MakeSinkContainer(sink),
+	return MakeStatefulSet(objectMeta, &sink.Spec.Parallelism, MakeSinkContainer(sink),
 		MakeSinkLabels(sink), sink.Spec.Pulsar.PulsarConfig)
 }
 
@@ -68,14 +68,13 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 	labels := make(map[string]string)
 	labels["component"] = "sink"
 	labels["name"] = sink.Spec.Name
-	labels["namespace"] = sink.Spec.Namespace
-	labels["tenant"] = sink.Spec.Tenant
+	labels["namespace"] = sink.Namespace
 
 	return labels
 }
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
-	return MakeCommand(sink.Spec.PackageDownloadPath, sink.Spec.SinkPackage,
+	return MakeCommand(sink.Spec.Java.JarLocation, sink.Spec.Java.Jar,
 		sink.Spec.Name, sink.Spec.Pulsar.PulsarConfig, generateSinkDetailsInJson(sink))
 }
 

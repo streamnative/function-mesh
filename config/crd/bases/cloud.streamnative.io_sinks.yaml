@@ -66,6 +66,10 @@ spec:
               type: object
             sinkPackage:
               type: string
+            sinkTypeClass:
+              type: string
+            sourceTypeClass:
+              type: string
             tenant:
               type: string
           type: object

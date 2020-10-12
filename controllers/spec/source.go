@@ -18,7 +18,7 @@ func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
 
 func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
 	objectMeta := MakeSourceObjectMeta(source)
-	return MakeStatefulSet(objectMeta, &source.Spec.Replicas, MakeSourceContainer(source),
+	return MakeStatefulSet(objectMeta, &source.Spec.Parallelism, MakeSourceContainer(source),
 		makeSourceLabels(source), source.Spec.Pulsar.PulsarConfig)
 }
 
@@ -68,14 +68,13 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 	labels := make(map[string]string)
 	labels["component"] = "source"
 	labels["name"] = source.Spec.Name
-	labels["namespace"] = source.Spec.Namespace
-	labels["tenant"] = source.Spec.Tenant
+	labels["namespace"] = source.Namespace
 
 	return labels
 }
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
-	return MakeCommand(source.Spec.PackageDownloadPath, source.Spec.SourcePackage,
+	return MakeCommand(source.Spec.Java.JarLocation, source.Spec.Java.Jar,
 		source.Spec.Name, source.Spec.Pulsar.PulsarConfig, generateSourceDetailsInJson(source))
 }
 

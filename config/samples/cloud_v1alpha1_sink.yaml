@@ -4,23 +4,23 @@ metadata:
   name: sink-sample
 spec:
   # Add fields here
-  name: sink-test
-  tenant: public
-  namespace: default
   className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
-  replicas: 1
+  sourceTypeClass: "[B"
+  sinkTypeClass: "[B"
+  parallelism: 1
   inputs:
   - persistent://public/default/input
   sinkConfig:
-    elasticSearchUrl: "http://elasticsearch.default.svc.cluster.local:9200"
+    elasticSearchUrl: "http://quickstart-es-http.default.svc.cluster.local:9200"
     indexName: "my_index"
     typeName: "doc"
-    username: "scooby"
-    password: "doobie"
-  sinkPackage: connectors/pulsar-io-elastic-search-2.6.1.nar
-  packageDownloadPath: "" # use pulsar provided connectors
+    username: "elastic"
+    password: "X2Mq33FMWMnqlhvw598Z8562"
   pulsar:
     pulsarConfig: "test-sink"
+  java:
+    jar: connectors/pulsar-io-elastic-search-2.6.1.nar
+    jarLocation: "" # use pulsar provided connectors
 ---
 apiVersion: v1
 kind: ConfigMap

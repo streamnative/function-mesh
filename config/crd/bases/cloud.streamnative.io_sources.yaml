@@ -60,11 +60,15 @@ spec:
               type: integer
             schemaType:
               type: string
+            sinkTypeClass:
+              type: string
             sourceConfig:
               additionalProperties:
                 type: string
               type: object
             sourcePackage:
+              type: string
+            sourceTypeClass:
               type: string
             tenant:
               type: string

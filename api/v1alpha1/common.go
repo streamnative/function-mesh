@@ -2,15 +2,32 @@ package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-type Runtime struct {
-	Pulsar *PulsarRuntime `json:"pulsar,omitempty"`
+type Messaging struct {
+	Pulsar *PulsarMessaging `json:"pulsar,omitempty"`
 }
 
-type PulsarRuntime struct {
+type PulsarMessaging struct {
 	PulsarConfig string `json:"pulsarConfig,omitempty"`
 	// The config map need to contain the following fields
 	// webServiceURL
 	// brokerServiceURL
+}
+
+type Runtime struct {
+	Java *JavaRuntime `json:"java,omitempty"`
+}
+
+type JavaRuntime struct {
+	Jar         string `json:"jar,omitempty"`
+	JarLocation string `json:"jarLocation,omitempty"`
+}
+
+type PythonRuntime struct {
+	Py string `json:"py,omitempty"`
+}
+
+type GoRuntime struct {
+	Go string `json:"go,omitempty"`
 }
 
 type Component string

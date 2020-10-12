@@ -27,17 +27,17 @@ import (
 type SinkSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name                string            `json:"name,omitempty"`
-	ClusterName         string            `json:"clusterName,omitempty"`
-	Tenant              string            `json:"tenant,omitempty"`
-	Namespace           string            `json:"namespace,omitempty"`
-	ClassName           string            `json:"className,omitempty"`
-	Replicas            int32             `json:"replicas,omitempty"`
-	Inputs              []string          `json:"inputs,omitempty"`
-	SinkConfig          map[string]string `json:"sinkConfig,omitempty"`
-	SinkPackage         string            `json:"sinkPackage,omitempty"`
-	PackageDownloadPath string            `json:"packageDownloadPath,omitempty"`
-	Runtime             `json:",inline"`
+	Name        string            `json:"name,omitempty"`
+	ClassName   string            `json:"className,omitempty"`
+	SourceType  string            `json:"sourceType,omitempty"`
+	SinkType    string            `json:"sinkType,omitempty"`
+	Parallelism int32             `json:"parallelism,omitempty"`
+	Inputs      []string          `json:"inputs,omitempty"`
+	SinkConfig  map[string]string `json:"sinkConfig,omitempty"`
+	ClusterName string            `json:"clusterName,omitempty"`
+
+	Messaging `json:",inline"`
+	Runtime   `json:",inline"`
 }
 
 // SinkStatus defines the observed state of Sink
