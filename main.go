@@ -27,8 +27,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	cloudv1alpha1 "github.com/streamnative/mesh-operator/api/v1alpha1"
-	"github.com/streamnative/mesh-operator/controllers"
+	cloudstreamnativeiov1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
+	cloudv1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -41,6 +42,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(cloudv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(cloudstreamnativeiov1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -97,6 +99,18 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Sink")
+		os.Exit(1)
+	}
+	if err = (&cloudstreamnativeiov1alpha1.Function{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Function")
+		os.Exit(1)
+	}
+	if err = (&cloudstreamnativeiov1alpha1.Source{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Source")
+		os.Exit(1)
+	}
+	if err = (&cloudstreamnativeiov1alpha1.Sink{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Sink")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

@@ -2,18 +2,17 @@ package spec
 
 import (
 	"github.com/gogo/protobuf/jsonpb"
-	"github.com/streamnative/mesh-operator/api/v1alpha1"
+	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func MakeSinkHPA(sink *v1alpha1.Sink) *autov1.HorizontalPodAutoscaler {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return MakeHPA(objectMeta, sink.Spec.Replicas, sink.Spec.MaxReplicas, sink.Kind)
+	return MakeHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, sink.Kind)
 }
 
 func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
@@ -24,7 +23,7 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 
 func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return MakeStatefulSet(objectMeta, &sink.Spec.Replicas, MakeSinkContainer(sink),
+	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, MakeSinkContainer(sink),
 		MakeSinkLabels(sink), sink.Spec.Pulsar.PulsarConfig)
 }
 
@@ -49,13 +48,7 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 			Name:      "POD_NAME",
 			ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
 		}},
-		// TODO calculate resource precisely
-		Resources: corev1.ResourceRequirements{
-			Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("0.2"),
-				corev1.ResourceMemory: resource.MustParse("2G")},
-			Limits: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("0.2"),
-				corev1.ResourceMemory: resource.MustParse("2G")},
-		},
+		Resources:       *generateContainerResourceRequest(sink.Spec.Resources),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      PULSAR_CONFIG,
@@ -81,7 +74,7 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	return MakeCommand(sink.Spec.Java.JarLocation, sink.Spec.Java.Jar,
-		sink.Spec.Name, sink.Spec.Pulsar.PulsarConfig, generateSinkDetailsInJson(sink))
+		sink.Spec.Name, sink.Spec.ClusterName, generateSinkDetailsInJson(sink))
 }
 
 func generateSinkDetailsInJson(sink *v1alpha1.Sink) string {

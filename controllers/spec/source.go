@@ -2,18 +2,17 @@ package spec
 
 import (
 	"github.com/gogo/protobuf/jsonpb"
-	"github.com/streamnative/mesh-operator/api/v1alpha1"
+	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func MakeSourceHPA(source *v1alpha1.Source) *autov1.HorizontalPodAutoscaler {
 	objectMeta := MakeSourceObjectMeta(source)
-	return MakeHPA(objectMeta, source.Spec.Replicas, source.Spec.MaxReplicas, source.Kind)
+	return MakeHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, source.Kind)
 }
 
 func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
@@ -24,7 +23,7 @@ func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
 
 func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
 	objectMeta := MakeSourceObjectMeta(source)
-	return MakeStatefulSet(objectMeta, &source.Spec.Replicas, MakeSourceContainer(source),
+	return MakeStatefulSet(objectMeta, source.Spec.Replicas, MakeSourceContainer(source),
 		makeSourceLabels(source), source.Spec.Pulsar.PulsarConfig)
 }
 
@@ -49,13 +48,7 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 			Name:      "POD_NAME",
 			ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
 		}},
-		// TODO calculate resource precisely
-		Resources: corev1.ResourceRequirements{
-			Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("0.2"),
-				corev1.ResourceMemory: resource.MustParse("2G")},
-			Limits: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("0.2"),
-				corev1.ResourceMemory: resource.MustParse("2G")},
-		},
+		Resources:       *generateContainerResourceRequest(source.Spec.Resources),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      PULSAR_CONFIG,
@@ -81,7 +74,7 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
 	return MakeCommand(source.Spec.Java.JarLocation, source.Spec.Java.Jar,
-		source.Spec.Name, source.Spec.Pulsar.PulsarConfig, generateSourceDetailsInJson(source))
+		source.Spec.Name, source.Spec.ClusterName, generateSourceDetailsInJson(source))
 }
 
 func generateSourceDetailsInJson(source *v1alpha1.Source) string {

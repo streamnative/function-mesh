@@ -1,10 +1,14 @@
 package spec
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/proto"
 
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
@@ -184,4 +188,49 @@ func getProcessArgs(name string, packageName string, clusterName string, details
 		"--cluster_name",
 		clusterName,
 	}
+}
+
+func getProcessingGuarantee(input string) proto.ProcessingGuarantees {
+	switch input {
+	case v1alpha1.ATMOST_ONCE:
+		return proto.ProcessingGuarantees_ATMOST_ONCE
+	case v1alpha1.ATLEAST_ONCE:
+		return proto.ProcessingGuarantees_ATLEAST_ONCE
+	case v1alpha1.EFFECTIVELY_ONCE:
+		return proto.ProcessingGuarantees_EFFECTIVELY_ONCE
+	default:
+		// should never reach here
+		return proto.ProcessingGuarantees_ATLEAST_ONCE
+	}
+}
+
+func generateRetryDetails(maxMessageRetry int32, deadLetterTopic string) *proto.RetryDetails {
+	return &proto.RetryDetails{
+		MaxMessageRetries: maxMessageRetry,
+		DeadLetterTopic:   deadLetterTopic,
+	}
+}
+
+func generateResource(resources corev1.ResourceList) *proto.Resources {
+	return &proto.Resources{
+		Cpu:  float64(resources.Cpu().Value()),
+		Ram:  resources.Memory().Value(),
+		Disk: resources.Storage().Value(),
+	}
+}
+
+func generateContainerResourceRequest(resources corev1.ResourceList) *corev1.ResourceRequirements {
+	// TODO: add memory padding & cpu overcommit
+	return &corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{corev1.ResourceCPU: *resources.Cpu(),
+			corev1.ResourceMemory: *resources.Memory()},
+		Limits: corev1.ResourceList{corev1.ResourceCPU: *resources.Cpu(),
+			corev1.ResourceMemory: *resources.Memory()},
+	}
+}
+
+func getUserConfig(configs map[string]string) string {
+	// validated in admission webhook
+	bytes, _ := json.Marshal(configs)
+	return string(bytes)
 }

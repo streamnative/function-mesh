@@ -3,39 +3,34 @@ package spec
 import (
 	"encoding/json"
 
-	"github.com/streamnative/mesh-operator/api/v1alpha1"
-	"github.com/streamnative/mesh-operator/controllers/proto"
+	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/proto"
 )
 
 func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails {
 	return &proto.FunctionDetails{
-		// TODO: default tenant value
-		Tenant:               "public",
+		Tenant:               function.Spec.Tenant,
 		Namespace:            function.Namespace,
 		Name:                 function.Spec.Name,
 		ClassName:            function.Spec.ClassName,
-		LogTopic:             "",
-		ProcessingGuarantees: 0,
-		UserConfig:           "",
+		LogTopic:             function.Spec.LogTopic,
+		ProcessingGuarantees: getProcessingGuarantee(function.Spec.ProcessingGuarantee),
+		UserConfig:           getUserConfig(function.Spec.FuncConfig),
 		SecretsMap:           "",
 		Runtime:              proto.FunctionDetails_JAVA,
-		AutoAck:              false,
-		Parallelism:          function.Spec.Replicas,
+		AutoAck:              *function.Spec.AutoAck,
+		Parallelism:          *function.Spec.Replicas,
 		Source:               generateFunctionInputSpec(function.Spec.Sources, function.Spec.SourceType),
 		Sink:                 generateFunctionOutputSpec(function.Spec.Sink, function.Spec.SinkType),
-		Resources: &proto.Resources{
-			Cpu:  1,
-			Ram:  102400,
-			Disk: 102400,
-		},
+		Resources:            generateResource(function.Spec.Resources),
 		PackageUrl:           "",
-		RetryDetails:         nil,
+		RetryDetails:         generateRetryDetails(function.Spec.MaxMessageRetry, function.Spec.DeadLetterTopic),
 		RuntimeFlags:         "",
 		ComponentType:        proto.FunctionDetails_FUNCTION,
 		CustomRuntimeOptions: "",
 		Builtin:              "",
-		RetainOrdering:       false,
-		RetainKeyOrdering:    false,
+		RetainOrdering:       function.Spec.RetainOrdering,
+		RetainKeyOrdering:    function.Spec.RetainKeyOrdering,
 	}
 }
 
@@ -66,32 +61,28 @@ func generateFunctionOutputSpec(topic, sinkTypeClass string) *proto.SinkSpec {
 
 func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 	return &proto.FunctionDetails{
-		Tenant:               "public",
+		Tenant:               source.Spec.Tenant,
 		Namespace:            source.Namespace,
 		Name:                 source.Name,
-		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction", // TODO
-		LogTopic:             "",
-		ProcessingGuarantees: 0,
-		UserConfig:           "",
+		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
+		LogTopic:             source.Spec.LogTopic,
+		ProcessingGuarantees: getProcessingGuarantee(source.Spec.ProcessingGuarantee),
+		UserConfig:           getUserConfig(source.Spec.SourceConfig),
 		SecretsMap:           "",
 		Runtime:              proto.FunctionDetails_JAVA,
-		AutoAck:              true,
-		Parallelism:          source.Spec.Replicas,
+		AutoAck:              *source.Spec.AutoAck,
+		Parallelism:          *source.Spec.Replicas,
 		Source:               generateSourceInputSpec(source),
-		Sink:                 generateSourceOutputSpec(source.Spec.Destination, source.Spec.SinkType),
-		Resources: &proto.Resources{
-			Cpu:  1,
-			Ram:  102400,
-			Disk: 102400,
-		},
+		Sink:                 generateSourceOutputSpec(source.Spec.Sink, source.Spec.SinkType),
+		Resources:            generateResource(source.Spec.Resources),
 		PackageUrl:           "",
-		RetryDetails:         nil,
+		RetryDetails:         generateRetryDetails(source.Spec.MaxMessageRetry, source.Spec.DeadLetterTopic),
 		RuntimeFlags:         "",
 		ComponentType:        proto.FunctionDetails_SOURCE,
 		CustomRuntimeOptions: "",
 		Builtin:              "",
-		RetainOrdering:       false,
-		RetainKeyOrdering:    false,
+		RetainOrdering:       source.Spec.RetainOrdering,
+		RetainKeyOrdering:    source.Spec.RetainKeyOrdering,
 	}
 }
 
@@ -103,7 +94,7 @@ func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
 		TypeClassName:                source.Spec.SourceType,
 		SubscriptionType:             0,
 		InputSpecs:                   nil,
-		TimeoutMs:                    0,
+		TimeoutMs:                    uint64(source.Spec.Timeout),
 		Builtin:                      "",
 		SubscriptionName:             "",
 		CleanupSubscription:          false,
@@ -115,7 +106,7 @@ func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
 func generateSourceOutputSpec(topic, sinkTypeClass string) *proto.SinkSpec {
 	return &proto.SinkSpec{
 		Topic:         topic,
-		TypeClassName: sinkTypeClass, //"java.lang.String", // TODO resolve it
+		TypeClassName: sinkTypeClass,
 	}
 }
 
@@ -124,29 +115,25 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		Tenant:               "public",
 		Namespace:            sink.Namespace,
 		Name:                 sink.Name,
-		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction", // TODO
-		LogTopic:             "",
-		ProcessingGuarantees: 0,
-		UserConfig:           "",
+		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
+		LogTopic:             sink.Spec.LogTopic,
+		ProcessingGuarantees: getProcessingGuarantee(sink.Spec.ProcessingGuarantee),
+		UserConfig:           getUserConfig(sink.Spec.SinkConfig),
 		SecretsMap:           "",
 		Runtime:              proto.FunctionDetails_JAVA,
-		AutoAck:              true,
-		Parallelism:          sink.Spec.Replicas,
-		Source:               generateSinkInputSpec(sink.Spec.Inputs, sink.Spec.SourceType),
+		AutoAck:              *sink.Spec.AutoAck,
+		Parallelism:          *sink.Spec.Replicas,
+		Source:               generateSinkInputSpec(sink.Spec.Sources, sink.Spec.SourceType),
 		Sink:                 generateSinkOutputSpec(sink),
-		Resources: &proto.Resources{
-			Cpu:  1,
-			Ram:  102400,
-			Disk: 102400,
-		},
+		Resources:            generateResource(sink.Spec.Resources),
 		PackageUrl:           "",
-		RetryDetails:         nil,
+		RetryDetails:         generateRetryDetails(sink.Spec.MaxMessageRetry, sink.Spec.DeadLetterTopic),
 		RuntimeFlags:         "",
 		ComponentType:        proto.FunctionDetails_SINK,
 		CustomRuntimeOptions: "",
 		Builtin:              "",
-		RetainOrdering:       false,
-		RetainKeyOrdering:    false,
+		RetainOrdering:       sink.Spec.RetainOrdering,
+		RetainKeyOrdering:    sink.Spec.RetainKeyOrdering,
 	}
 }
 

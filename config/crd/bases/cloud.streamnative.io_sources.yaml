@@ -40,12 +40,21 @@ spec:
         spec:
           description: SourceSpec defines the desired state of Source
           properties:
+            autoAck:
+              type: boolean
             className:
               type: string
             clusterName:
               type: string
-            destination:
+            deadLetterTopic:
               type: string
+            forwardSourceMessageProperty:
+              type: boolean
+            golang:
+              properties:
+                go:
+                  type: string
+              type: object
             java:
               properties:
                 jar:
@@ -53,6 +62,14 @@ spec:
                 jarLocation:
                   type: string
               type: object
+            logTopic:
+              type: string
+            maxMessageRetry:
+              format: int32
+              type: integer
+            maxPendingAsyncRequests:
+              format: int32
+              type: integer
             maxReplicas:
               format: int32
               type: integer
@@ -60,41 +77,37 @@ spec:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "make" to regenerate code after modifying this file'
               type: string
+            processingGuarantee:
+              type: string
             pulsar:
               properties:
                 pulsarConfig:
+                  type: string
+              type: object
+            python:
+              properties:
+                py:
                   type: string
               type: object
             replicas:
               format: int32
               type: integer
             resources:
-              description: ResourceRequirements describes the compute resource requirements.
-              properties:
-                limits:
-                  additionalProperties:
-                    anyOf:
-                    - type: integer
-                    - type: string
-                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                    x-kubernetes-int-or-string: true
-                  description: 'Limits describes the maximum amount of compute resources
-                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                  type: object
-                requests:
-                  additionalProperties:
-                    anyOf:
-                    - type: integer
-                    - type: string
-                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                    x-kubernetes-int-or-string: true
-                  description: 'Requests describes the minimum amount of compute resources
-                    required. If Requests is omitted for a container, it defaults
-                    to Limits if that is explicitly specified, otherwise to an implementation-defined
-                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                  type: object
+              additionalProperties:
+                anyOf:
+                - type: integer
+                - type: string
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              description: ResourceList is a set of (resource name, quantity) pairs.
               type: object
+            retainKeyOrdering:
+              type: boolean
+            retainOrdering:
+              type: boolean
             schemaType:
+              type: string
+            sink:
               type: string
             sinkType:
               type: string
@@ -104,6 +117,11 @@ spec:
               type: object
             sourceType:
               type: string
+            tentant:
+              type: string
+            timeout:
+              format: int32
+              type: integer
           type: object
         status:
           description: SourceStatus defines the observed state of Source

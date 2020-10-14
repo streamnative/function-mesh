@@ -3,8 +3,8 @@ package controllers
 import (
 	"context"
 
-	"github.com/streamnative/mesh-operator/api/v1alpha1"
-	"github.com/streamnative/mesh-operator/controllers/spec"
+	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,14 +45,14 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 	}
 	sink.Status.Selector = selector.String()
 
-	if *statefulSet.Spec.Replicas != sink.Spec.Replicas {
+	if *statefulSet.Spec.Replicas != *sink.Spec.Replicas {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		sink.Status.Conditions[v1alpha1.StatefulSet] = condition
 		return nil
 	}
 
-	if statefulSet.Status.ReadyReplicas == sink.Spec.Replicas {
+	if statefulSet.Status.ReadyReplicas == *sink.Spec.Replicas {
 		condition.Action = v1alpha1.NoAction
 		condition.Status = metav1.ConditionTrue
 	} else {
@@ -144,7 +144,7 @@ func (r *SinkReconciler) ApplySinkService(ctx context.Context, req ctrl.Request,
 }
 
 func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, sink *v1alpha1.Sink) error {
-	if sink.Spec.MaxReplicas == 0 {
+	if *sink.Spec.MaxReplicas == 0 {
 		// HPA not enabled, skip further action
 		return nil
 	}
@@ -180,7 +180,7 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, s
 }
 
 func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, req ctrl.Request, sink *v1alpha1.Sink) error {
-	if sink.Spec.MaxReplicas == 0 {
+	if *sink.Spec.MaxReplicas == 0 {
 		// HPA not enabled, skip further action
 		return nil
 	}

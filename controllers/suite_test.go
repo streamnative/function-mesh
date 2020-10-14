@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	cloudv1alpha1 "github.com/streamnative/mesh-operator/api/v1alpha1"
+	cloudv1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 

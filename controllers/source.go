@@ -3,8 +3,8 @@ package controllers
 import (
 	"context"
 
-	"github.com/streamnative/mesh-operator/api/v1alpha1"
-	"github.com/streamnative/mesh-operator/controllers/spec"
+	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,14 +45,14 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 	}
 	source.Status.Selector = selector.String()
 
-	if *statefulSet.Spec.Replicas != source.Spec.Replicas {
+	if *statefulSet.Spec.Replicas != *source.Spec.Replicas {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		source.Status.Conditions[v1alpha1.StatefulSet] = condition
 		return nil
 	}
 
-	if statefulSet.Status.ReadyReplicas == source.Spec.Replicas {
+	if statefulSet.Status.ReadyReplicas == *source.Spec.Replicas {
 		condition.Action = v1alpha1.NoAction
 		condition.Status = metav1.ConditionTrue
 	} else {
@@ -144,7 +144,7 @@ func (r *SourceReconciler) ApplySourceService(ctx context.Context, req ctrl.Requ
 }
 
 func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Request, source *v1alpha1.Source) error {
-	if source.Spec.MaxReplicas == 0 {
+	if *source.Spec.MaxReplicas == 0 {
 		// HPA not enabled, skip further action
 		return nil
 	}
@@ -180,7 +180,7 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Reques
 }
 
 func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, req ctrl.Request, source *v1alpha1.Source) error {
-	if source.Spec.MaxReplicas == 0 {
+	if *source.Spec.MaxReplicas == 0 {
 		// HPA not enabled, skip further action
 		return nil
 	}

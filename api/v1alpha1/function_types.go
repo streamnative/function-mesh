@@ -28,18 +28,29 @@ import (
 type FunctionSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name        string                      `json:"name,omitempty"`
-	ClassName   string                      `json:"className,omitempty"`
-	ClusterName string                      `json:"clusterName,omitempty"`
-	SourceType  string                      `json:"sourceType,omitempty"`
-	SinkType    string                      `json:"sinkType,omitempty"`
-	Replicas    int32                       `json:"replicas,omitempty"`
-	MaxReplicas int32                       `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Sources     []string                    `json:"sources,omitempty"`
-	Sink        string                      `json:"sink,omitempty"`
-	LogTopic    string                      `json:"logTopic,omitempty"`
-	UserConfig  map[string]string           `json:"userConfig,omitempty"`
-	Resources   corev1.ResourceRequirements `json:"resources,omitempty"`
+	Name        string              `json:"name,omitempty"`
+	ClassName   string              `json:"className,omitempty"`
+	Tenant      string              `json:"tentant,omitempty"`
+	ClusterName string              `json:"clusterName,omitempty"`
+	SourceType  string              `json:"sourceType,omitempty"`
+	SinkType    string              `json:"sinkType,omitempty"`
+	Replicas    *int32              `json:"replicas,omitempty"`
+	MaxReplicas *int32              `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
+	Sources     []string            `json:"sources,omitempty"`
+	Sink        string              `json:"sink,omitempty"`
+	LogTopic    string              `json:"logTopic,omitempty"`
+	FuncConfig  map[string]string   `json:"funcConfig,omitempty"`
+	Resources   corev1.ResourceList `json:"resources,omitempty"`
+
+	Timeout                      int32  `json:"timeout,omitempty"`
+	AutoAck                      *bool  `json:"autoAck,omitempty"`
+	MaxMessageRetry              int32  `json:"maxMessageRetry,omitempty"`
+	ProcessingGuarantee          string `json:"processingGuarantee,omitempty"`
+	RetainOrdering               bool   `json:"retainOrdering,omitempty"`
+	RetainKeyOrdering            bool   `json:"retainKeyOrdering,omitempty"`
+	DeadLetterTopic              string `json:"deadLetterTopic,omitempty"`
+	ForwardSourceMessageProperty *bool  `json:"forwardSourceMessageProperty,omitempty"`
+	MaxPendingAsyncRequests      *int32 `json:"maxPendingAsyncRequests,omitempty"`
 
 	Messaging `json:",inline"`
 	Runtime   `json:",inline"`

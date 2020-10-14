@@ -1,7 +1,7 @@
 domain: streamnative.io
 layout: go.kubebuilder.io/v2
-projectName: mesh-operator
-repo: github.com/streamnative/mesh-operator
+projectName: function-mesh
+repo: github.com/streamnative/function-mesh
 resources:
 - group: cloud
   kind: FunctionMesh
