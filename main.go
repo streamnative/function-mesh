@@ -27,8 +27,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	cloudv1alpha1 "github.com/streamnative/mesh-operator/api/v1alpha1"
-	"github.com/streamnative/mesh-operator/controllers"
+	cloudv1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers"
 	// +kubebuilder:scaffold:imports
 )
 

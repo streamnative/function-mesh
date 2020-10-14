@@ -1,4 +1,4 @@
-module github.com/streamnative/mesh-operator
+module github.com/streamnative/function-mesh
 
 go 1.13
 

@@ -3,8 +3,8 @@ package spec
 import (
 	"encoding/json"
 
-	"github.com/streamnative/mesh-operator/api/v1alpha1"
-	"github.com/streamnative/mesh-operator/controllers/proto"
+	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/proto"
 )
 
 func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails {
