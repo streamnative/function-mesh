@@ -6,7 +6,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,11 +45,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		Env:             generateContainerEnv(function.Spec.SecretsMap),
 		Resources:       *generateContainerResourceRequest(function.Spec.Resources),
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		EnvFrom: []corev1.EnvFromSource{{
-			ConfigMapRef: &corev1.ConfigMapEnvSource{
-				LocalObjectReference: v1.LocalObjectReference{Name: function.Spec.Pulsar.PulsarConfig},
-			},
-		}},
+		EnvFrom:         generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthConfig),
 	}
 }
 
@@ -65,7 +60,7 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	return MakeCommand(function.Spec.Java.JarLocation, function.Spec.Java.Jar,
-		function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJson(function))
+		function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJson(function), function.Spec.Pulsar.AuthConfig != "")
 }
 
 func generateFunctionDetailsInJson(function *v1alpha1.Function) string {

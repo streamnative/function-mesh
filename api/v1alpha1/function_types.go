@@ -41,7 +41,7 @@ type FunctionSpec struct {
 	LogTopic    string               `json:"logTopic,omitempty"`
 	FuncConfig  map[string]string    `json:"funcConfig,omitempty"`
 	Resources   corev1.ResourceList  `json:"resources,omitempty"`
-	SecretsMap  map[string]SecretRef `json:"secretsMap,omitempty"` // secretRefName -> secretName -> secretValue
+	SecretsMap  map[string]SecretRef `json:"secretsMap,omitempty"`
 
 	Timeout                      int32  `json:"timeout,omitempty"`
 	AutoAck                      *bool  `json:"autoAck,omitempty"`

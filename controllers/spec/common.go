@@ -3,6 +3,7 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -116,9 +117,9 @@ func MakePodTemplate(container *corev1.Container, labels map[string]string) *cor
 	}
 }
 
-func MakeCommand(downloadPath, packageFile, name, clusterName, details string) []string {
+func MakeCommand(downloadPath, packageFile, name, clusterName, details string, authProvided bool) []string {
 	processCommand := setShardIdEnvironmentVariableCommand() + " && " +
-		strings.Join(getProcessArgs(name, packageFile, clusterName, details), " ")
+		strings.Join(getProcessArgs(name, packageFile, clusterName, details, authProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
@@ -145,9 +146,9 @@ func setShardIdEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardId, EnvShardId)
 }
 
-func getProcessArgs(name string, packageName string, clusterName string, details string) []string {
+func getProcessArgs(name string, packageName string, clusterName string, details string, authProvided bool) []string {
 	// TODO support multiple runtime
-	return []string{
+	args := []string{
 		"exec",
 		"java",
 		"-cp",
@@ -181,6 +182,32 @@ func getProcessArgs(name string, packageName string, clusterName string, details
 		"--cluster_name",
 		clusterName,
 	}
+
+	if authProvided {
+		args = append(args, []string{
+			"--use_tls",
+			"$useTls",
+			"--tls_allow_insecure",
+			"$tlsAllowInsecureConnection",
+			"--hostname_verification_enabled",
+			"$tlsHostnameVerificationEnable",
+		}...)
+
+		if os.Getenv("clientAuthenticationPlugin") != "" && os.Getenv("clientAuthenticationParameters") != "" {
+			args = append(args, []string{
+				"--client_auth_plugin",
+				"$clientAuthenticationPlugin",
+				"--client_auth_params",
+				"$clientAuthenticationParameters",
+			}...)
+		}
+
+		if os.Getenv("tlsTrustCertsFilePath") != "" {
+			args = append(args, "--tls_trust_cert_path", "$tlsTrustCertsFilePath")
+		}
+	}
+
+	return args
 }
 
 func getProcessingGuarantee(input string) proto.ProcessingGuarantees {
@@ -247,4 +274,22 @@ func generateContainerEnv(secrets map[string]v1alpha1.SecretRef) []corev1.EnvVar
 	}
 
 	return vars
+}
+
+func generateContainerEnvFrom(messagingConfig string, authConfig string) []corev1.EnvFromSource {
+	envs := []corev1.EnvFromSource{{
+		ConfigMapRef: &corev1.ConfigMapEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{Name: messagingConfig},
+		},
+	}}
+
+	if authConfig != "" {
+		envs = append(envs, corev1.EnvFromSource{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{Name: authConfig},
+			},
+		})
+	}
+
+	return envs
 }

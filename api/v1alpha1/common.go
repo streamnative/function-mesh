@@ -14,7 +14,18 @@ type PulsarMessaging struct {
 	// webServiceURL
 	// brokerServiceURL
 	PulsarConfig string `json:"pulsarConfig,omitempty"`
+	AuthConfig   string `json:"authConfig,omitempty"`
 }
+
+// TODO: put them into the pulsar cofig or separate it?
+//type AuthenticationConfig struct {
+//	clientAuthenticationPlugin     string
+//	clientAuthenticationParameters string
+//	tlsTrustCertsFilePath          string
+//	useTls                         bool
+//	tlsAllowInsecureConnection     bool
+//	tlsHostnameVerificationEnable  bool
+//}
 
 type Runtime struct {
 	Java   *JavaRuntime   `json:"java,omitempty"`

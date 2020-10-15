@@ -81,7 +81,11 @@ spec:
               type: string
             pulsar:
               properties:
+                authConfig:
+                  type: string
                 pulsarConfig:
+                  description: The config map need to contain the following fields
+                    webServiceURL brokerServiceURL
                   type: string
               type: object
             python:
@@ -105,6 +109,15 @@ spec:
               type: boolean
             retainOrdering:
               type: boolean
+            secretsMap:
+              additionalProperties:
+                properties:
+                  key:
+                    type: string
+                  path:
+                    type: string
+                type: object
+              type: object
             sinkConfig:
               additionalProperties:
                 type: string

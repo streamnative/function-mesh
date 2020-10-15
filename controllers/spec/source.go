@@ -6,7 +6,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,11 +45,7 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		Env:             generateContainerEnv(source.Spec.SecretsMap),
 		Resources:       *generateContainerResourceRequest(source.Spec.Resources),
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		EnvFrom: []corev1.EnvFromSource{{
-			ConfigMapRef: &corev1.ConfigMapEnvSource{
-				LocalObjectReference: v1.LocalObjectReference{Name: source.Spec.Pulsar.PulsarConfig},
-			},
-		}},
+		EnvFrom:         generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthConfig),
 	}
 }
 
@@ -65,7 +60,7 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
 	return MakeCommand(source.Spec.Java.JarLocation, source.Spec.Java.Jar,
-		source.Spec.Name, source.Spec.ClusterName, generateSourceDetailsInJson(source))
+		source.Spec.Name, source.Spec.ClusterName, generateSourceDetailsInJson(source), source.Spec.Pulsar.AuthConfig != "")
 }
 
 func generateSourceDetailsInJson(source *v1alpha1.Source) string {

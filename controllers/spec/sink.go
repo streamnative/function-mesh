@@ -6,7 +6,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,11 +45,7 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		Env:             generateContainerEnv(sink.Spec.SecretsMap),
 		Resources:       *generateContainerResourceRequest(sink.Spec.Resources),
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		EnvFrom: []corev1.EnvFromSource{{
-			ConfigMapRef: &corev1.ConfigMapEnvSource{
-				LocalObjectReference: v1.LocalObjectReference{Name: sink.Spec.Pulsar.PulsarConfig},
-			},
-		}},
+		EnvFrom:         generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthConfig),
 	}
 }
 
@@ -65,7 +60,7 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	return MakeCommand(sink.Spec.Java.JarLocation, sink.Spec.Java.Jar,
-		sink.Spec.Name, sink.Spec.ClusterName, generateSinkDetailsInJson(sink))
+		sink.Spec.Name, sink.Spec.ClusterName, generateSinkDetailsInJson(sink), sink.Spec.Pulsar.AuthConfig != "")
 }
 
 func generateSinkDetailsInJson(sink *v1alpha1.Sink) string {
