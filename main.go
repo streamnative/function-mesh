@@ -100,17 +100,19 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Sink")
 		os.Exit(1)
 	}
-	if err = (&cloudstreamnativeiov1alpha1.Function{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Function")
-		os.Exit(1)
-	}
-	if err = (&cloudstreamnativeiov1alpha1.Source{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Source")
-		os.Exit(1)
-	}
-	if err = (&cloudstreamnativeiov1alpha1.Sink{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Sink")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") == "true" {
+		if err = (&cloudstreamnativeiov1alpha1.Function{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Function")
+			os.Exit(1)
+		}
+		if err = (&cloudstreamnativeiov1alpha1.Source{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Source")
+			os.Exit(1)
+		}
+		if err = (&cloudstreamnativeiov1alpha1.Sink{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Sink")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 

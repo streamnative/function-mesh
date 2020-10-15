@@ -6,6 +6,9 @@ spec:
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   sourceType: java.lang.String
   sinkType: java.lang.String
+
+  forwardSourceMessageProperty: true
+  MaxPendingAsyncRequests: 1000
   replicas: 1
   maxReplicas: 5
   logTopic: persistent://public/default/logging-function-logs
@@ -17,6 +20,9 @@ spec:
   java:
     jar: pulsar-functions-api-examples.jar
     jarLocation: public/default/nlu-test
+  # to be delete & use admission hook
+  clusterName: test
+  autoAck: true
 ---
 apiVersion: v1
 kind: ConfigMap
