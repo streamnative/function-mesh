@@ -28,18 +28,19 @@ import (
 type SinkSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name        string              `json:"name,omitempty"`
-	ClassName   string              `json:"className,omitempty"`
-	ClusterName string              `json:"clusterName,omitempty"`
-	Tenant      string              `json:"tenant,omitempty"`
-	SourceType  string              `json:"sourceType,omitempty"`
-	SinkType    string              `json:"sinkType,omitempty"`
-	Replicas    *int32              `json:"replicas,omitempty"`
-	MaxReplicas *int32              `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Sources     []string            `json:"sources,omitempty"`
-	LogTopic    string              `json:"logTopic,omitempty"`
-	SinkConfig  map[string]string   `json:"sinkConfig,omitempty"`
-	Resources   corev1.ResourceList `json:"resources,omitempty"`
+	Name        string               `json:"name,omitempty"`
+	ClassName   string               `json:"className,omitempty"`
+	ClusterName string               `json:"clusterName,omitempty"`
+	Tenant      string               `json:"tenant,omitempty"`
+	SourceType  string               `json:"sourceType,omitempty"`
+	SinkType    string               `json:"sinkType,omitempty"`
+	Replicas    *int32               `json:"replicas,omitempty"`
+	MaxReplicas *int32               `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
+	Sources     []string             `json:"sources,omitempty"`
+	LogTopic    string               `json:"logTopic,omitempty"`
+	SinkConfig  map[string]string    `json:"sinkConfig,omitempty"`
+	Resources   corev1.ResourceList  `json:"resources,omitempty"`
+	SecretsMap  map[string]SecretRef `json:"secretsMap,omitempty"`
 
 	Timeout                      int32  `json:"timeout,omitempty"`
 	AutoAck                      *bool  `json:"autoAck,omitempty"`

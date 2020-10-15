@@ -166,7 +166,7 @@ func generateSinkOutputSpec(sink *v1alpha1.Sink) *proto.SinkSpec {
 		SerDeClassName:               "",
 		Builtin:                      "",
 		SchemaType:                   "",
-		ForwardSourceMessageProperty: false,
+		ForwardSourceMessageProperty: *sink.Spec.ForwardSourceMessageProperty,
 		SchemaProperties:             nil,
 		ConsumerProperties:           nil,
 	}

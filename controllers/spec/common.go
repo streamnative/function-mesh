@@ -16,10 +16,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const ENV_SHARD_ID = "SHARD_ID"
-const FUNCTIONS_INSTANCE_CLASSPATH = "pulsar.functions.instance.classpath"
-const PULSAR_CONFIG = "pulsar-config"
-const PathPulsarClusterConfigs = "/pulsar/cluster/configs"
+const EnvShardId = "SHARD_ID"
+const FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
+const DefaultRunnerImage = "apachepulsar/pulsar-all"
+
+const ComponentSource = "source"
+const ComponentSink = "sink"
+const ComponentFunction = "function"
 
 var GRPCPort = corev1.ContainerPort{
 	Name:          "grpc",
@@ -74,24 +77,24 @@ func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, kind
 	}
 }
 
-func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *corev1.Container, labels map[string]string, config string) *appsv1.StatefulSet {
+func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *corev1.Container, labels map[string]string) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: *objectMeta,
-		Spec:       *MakeStatefulSetSpec(replicas, container, labels, config),
+		Spec:       *MakeStatefulSetSpec(replicas, container, labels),
 	}
 }
 
-func MakeStatefulSetSpec(replicas *int32, container *corev1.Container, labels map[string]string, config string) *appsv1.StatefulSetSpec {
+func MakeStatefulSetSpec(replicas *int32, container *corev1.Container, labels map[string]string) *appsv1.StatefulSetSpec {
 	return &appsv1.StatefulSetSpec{
 		Replicas: replicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: labels,
 		},
-		Template:            *MakePodTemplate(container, labels, config),
+		Template:            *MakePodTemplate(container, labels),
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
@@ -99,7 +102,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container, labels ma
 	}
 }
 
-func MakePodTemplate(container *corev1.Container, labels map[string]string, configName string) *corev1.PodTemplateSpec {
+func MakePodTemplate(container *corev1.Container, labels map[string]string) *corev1.PodTemplateSpec {
 	ZeroGracePeriod := int64(0)
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
@@ -109,16 +112,6 @@ func MakePodTemplate(container *corev1.Container, labels map[string]string, conf
 			// Tolerations: nil TODO
 			Containers:                    []corev1.Container{*container},
 			TerminationGracePeriodSeconds: &ZeroGracePeriod,
-			Volumes: []corev1.Volume{{
-				Name: PULSAR_CONFIG,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: configName,
-						},
-					},
-				},
-			}},
 		},
 	}
 }
@@ -149,7 +142,7 @@ func getDownloadCommand(downloadPath, componentPackage string) []string {
 }
 
 func setShardIdEnvironmentVariableCommand() string {
-	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", ENV_SHARD_ID, ENV_SHARD_ID)
+	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardId, EnvShardId)
 }
 
 func getProcessArgs(name string, packageName string, clusterName string, details string) []string {
@@ -159,18 +152,18 @@ func getProcessArgs(name string, packageName string, clusterName string, details
 		"java",
 		"-cp",
 		"/pulsar/instances/java-instance.jar",
-		fmt.Sprintf("-D%s=%s", FUNCTIONS_INSTANCE_CLASSPATH, "/pulsar/lib/*"),
+		fmt.Sprintf("-D%s=%s", FunctionsInstanceClasspath, "/pulsar/lib/*"),
 		"-Dlog4j.configurationFile=kubernetes_instance_log4j2.xml", // todo
 		"-Dpulsar.function.log.dir=logs/functions",
-		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, ENV_SHARD_ID),
+		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardId),
 		"-Xmx1G", // TODO
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
 		packageName,
 		"--instance_id",
-		"${" + ENV_SHARD_ID + "}",
+		"${" + EnvShardId + "}",
 		"--function_id",
-		fmt.Sprintf("${%s}-%d", ENV_SHARD_ID, time.Now().Unix()),
+		fmt.Sprintf("${%s}-%d", EnvShardId, time.Now().Unix()),
 		"--function_version",
 		"0",
 		"--function_details",
@@ -230,7 +223,28 @@ func generateContainerResourceRequest(resources corev1.ResourceList) *corev1.Res
 }
 
 func getUserConfig(configs map[string]string) string {
-	// validated in admission webhook
+	// validated in admission web hook
 	bytes, _ := json.Marshal(configs)
 	return string(bytes)
+}
+
+func generateContainerEnv(secrets map[string]v1alpha1.SecretRef) []corev1.EnvVar {
+	vars := []corev1.EnvVar{{
+		Name:      "POD_NAME",
+		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
+	}}
+
+	for secretName, secretRef := range secrets {
+		vars = append(vars, corev1.EnvVar{
+			Name: secretName,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: secretRef.Path},
+					Key:                  secretRef.Key,
+				},
+			},
+		})
+	}
+
+	return vars
 }

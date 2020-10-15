@@ -10,10 +10,10 @@ type Messaging struct {
 }
 
 type PulsarMessaging struct {
-	PulsarConfig string `json:"pulsarConfig,omitempty"`
 	// The config map need to contain the following fields
 	// webServiceURL
 	// brokerServiceURL
+	PulsarConfig string `json:"pulsarConfig,omitempty"`
 }
 
 type Runtime struct {
@@ -33,6 +33,11 @@ type PythonRuntime struct {
 
 type GoRuntime struct {
 	Go string `json:"go,omitempty"`
+}
+
+type SecretRef struct {
+	Path string `json:"path,omitempty"`
+	Key  string `json:"key,omitempty"`
 }
 
 type Component string

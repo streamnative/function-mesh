@@ -23,8 +23,7 @@ func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
 
 func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
 	objectMeta := MakeSourceObjectMeta(source)
-	return MakeStatefulSet(objectMeta, source.Spec.Replicas, MakeSourceContainer(source),
-		makeSourceLabels(source), source.Spec.Pulsar.PulsarConfig)
+	return MakeStatefulSet(objectMeta, source.Spec.Replicas, MakeSourceContainer(source), makeSourceLabels(source))
 }
 
 func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {
@@ -40,21 +39,13 @@ func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {
 func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
-		Name:    "source-instance",
-		Image:   "apachepulsar/pulsar-all",
-		Command: makeSourceCommand(source),
-		Ports:   []corev1.ContainerPort{GRPCPort, MetricsPort},
-		Env: []corev1.EnvVar{{
-			Name:      "POD_NAME",
-			ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
-		}},
+		Name:            "pulsar-source",
+		Image:           DefaultRunnerImage,
+		Command:         makeSourceCommand(source),
+		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
+		Env:             generateContainerEnv(source.Spec.SecretsMap),
 		Resources:       *generateContainerResourceRequest(source.Spec.Resources),
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		VolumeMounts: []corev1.VolumeMount{{
-			Name:      PULSAR_CONFIG,
-			ReadOnly:  true,
-			MountPath: PathPulsarClusterConfigs,
-		}},
 		EnvFrom: []corev1.EnvFromSource{{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: v1.LocalObjectReference{Name: source.Spec.Pulsar.PulsarConfig},
@@ -65,7 +56,7 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 
 func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 	labels := make(map[string]string)
-	labels["component"] = "source"
+	labels["component"] = ComponentSource
 	labels["name"] = source.Name
 	labels["namespace"] = source.Namespace
 

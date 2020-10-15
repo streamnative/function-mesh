@@ -28,19 +28,20 @@ import (
 type SourceSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name         string              `json:"name,omitempty"`
-	ClassName    string              `json:"className,omitempty"`
-	Tenant       string              `json:"tentant,omitempty"`
-	ClusterName  string              `json:"clusterName,omitempty"`
-	SourceType   string              `json:"sourceType,omitempty"`
-	SinkType     string              `json:"sinkType,omitempty"`
-	Replicas     *int32              `json:"replicas,omitempty"`
-	MaxReplicas  *int32              `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Sink         string              `json:"sink,omitempty"`
-	SchemaType   string              `json:"schemaType,omitempty"`
-	LogTopic     string              `json:"logTopic,omitempty"`
-	SourceConfig map[string]string   `json:"sourceConfig,omitempty"`
-	Resources    corev1.ResourceList `json:"resources,omitempty"`
+	Name         string               `json:"name,omitempty"`
+	ClassName    string               `json:"className,omitempty"`
+	Tenant       string               `json:"tentant,omitempty"`
+	ClusterName  string               `json:"clusterName,omitempty"`
+	SourceType   string               `json:"sourceType,omitempty"`
+	SinkType     string               `json:"sinkType,omitempty"`
+	Replicas     *int32               `json:"replicas,omitempty"`
+	MaxReplicas  *int32               `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
+	Sink         string               `json:"sink,omitempty"`
+	SchemaType   string               `json:"schemaType,omitempty"`
+	LogTopic     string               `json:"logTopic,omitempty"`
+	SourceConfig map[string]string    `json:"sourceConfig,omitempty"`
+	Resources    corev1.ResourceList  `json:"resources,omitempty"`
+	SecretsMap   map[string]SecretRef `json:"secretsMap,omitempty"`
 
 	Timeout                      int32  `json:"timeout,omitempty"`
 	AutoAck                      *bool  `json:"autoAck,omitempty"`

@@ -23,8 +23,7 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 
 func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
-	return MakeStatefulSet(objectMeta, function.Spec.Replicas, MakeFunctionContainer(function),
-		makeFunctionLabels(function), function.Spec.Pulsar.PulsarConfig)
+	return MakeStatefulSet(objectMeta, function.Spec.Replicas, MakeFunctionContainer(function), makeFunctionLabels(function))
 }
 
 func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
@@ -40,21 +39,13 @@ func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
 func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
-		Name:    "function-instance",
-		Image:   "apachepulsar/pulsar-all",
-		Command: makeFunctionCommand(function),
-		Ports:   []corev1.ContainerPort{GRPCPort, MetricsPort},
-		Env: []corev1.EnvVar{{
-			Name:      "POD_NAME",
-			ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
-		}},
+		Name:            "pulsar-function",
+		Image:           DefaultRunnerImage,
+		Command:         makeFunctionCommand(function),
+		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
+		Env:             generateContainerEnv(function.Spec.SecretsMap),
 		Resources:       *generateContainerResourceRequest(function.Spec.Resources),
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		VolumeMounts: []corev1.VolumeMount{{
-			Name:      PULSAR_CONFIG,
-			ReadOnly:  true,
-			MountPath: PathPulsarClusterConfigs,
-		}},
 		EnvFrom: []corev1.EnvFromSource{{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: v1.LocalObjectReference{Name: function.Spec.Pulsar.PulsarConfig},
@@ -65,7 +56,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 
 func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 	labels := make(map[string]string)
-	labels["component"] = "function"
+	labels["component"] = ComponentFunction
 	labels["name"] = function.Name
 	labels["namespace"] = function.Namespace
 

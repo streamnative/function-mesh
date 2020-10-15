@@ -23,8 +23,7 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 
 func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, MakeSinkContainer(sink),
-		MakeSinkLabels(sink), sink.Spec.Pulsar.PulsarConfig)
+	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, MakeSinkContainer(sink), MakeSinkLabels(sink))
 }
 
 func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
@@ -40,21 +39,13 @@ func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
 func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
-		Name:    "sink-instance",
-		Image:   "apachepulsar/pulsar-all",
-		Command: MakeSinkCommand(sink),
-		Ports:   []corev1.ContainerPort{GRPCPort, MetricsPort},
-		Env: []corev1.EnvVar{{
-			Name:      "POD_NAME",
-			ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
-		}},
+		Name:            "pulsar-sink",
+		Image:           DefaultRunnerImage,
+		Command:         MakeSinkCommand(sink),
+		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
+		Env:             generateContainerEnv(sink.Spec.SecretsMap),
 		Resources:       *generateContainerResourceRequest(sink.Spec.Resources),
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		VolumeMounts: []corev1.VolumeMount{{
-			Name:      PULSAR_CONFIG,
-			ReadOnly:  true,
-			MountPath: PathPulsarClusterConfigs,
-		}},
 		EnvFrom: []corev1.EnvFromSource{{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: v1.LocalObjectReference{Name: sink.Spec.Pulsar.PulsarConfig},
@@ -65,7 +56,7 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 
 func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 	labels := make(map[string]string)
-	labels["component"] = "sink"
+	labels["component"] = ComponentSink
 	labels["name"] = sink.Name
 	labels["namespace"] = sink.Namespace
 
