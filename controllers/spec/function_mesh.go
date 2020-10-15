@@ -5,7 +5,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func MakeFunctionComponent(functionName string, mesh *v1alpha1.FunctionMesh, spec *v1alpha1.FunctionSpec) *v1alpha1.Function {
+func MakeFunctionComponent(functionName string, mesh *v1alpha1.FunctionMesh,
+	spec *v1alpha1.FunctionSpec) *v1alpha1.Function {
 	return &v1alpha1.Function{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "cloud.streamnative.io/v1alpha1",

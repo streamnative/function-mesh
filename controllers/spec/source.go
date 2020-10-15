@@ -60,10 +60,10 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
 	return MakeCommand(source.Spec.Java.JarLocation, source.Spec.Java.Jar,
-		source.Spec.Name, source.Spec.ClusterName, generateSourceDetailsInJson(source), source.Spec.Pulsar.AuthConfig != "")
+		source.Spec.Name, source.Spec.ClusterName, generateSourceDetailsInJSON(source), source.Spec.Pulsar.AuthConfig != "")
 }
 
-func generateSourceDetailsInJson(source *v1alpha1.Source) string {
+func generateSourceDetailsInJSON(source *v1alpha1.Source) string {
 	sourceDetails := convertSourceDetails(source)
 	marshaler := &jsonpb.Marshaler{}
 	json, error := marshaler.MarshalToString(sourceDetails)

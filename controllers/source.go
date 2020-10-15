@@ -14,7 +14,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctrl.Request, source *v1alpha1.Source) error {
+func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctrl.Request,
+	source *v1alpha1.Source) error {
 	condition, ok := source.Status.Conditions[v1alpha1.StatefulSet]
 	if !ok {
 		source.Status.Conditions[v1alpha1.StatefulSet] = v1alpha1.ResourceCondition{
@@ -64,7 +65,8 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, req ctrl.Request, source *v1alpha1.Source) error {
+func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, req ctrl.Request,
+	source *v1alpha1.Source) error {
 	condition := source.Status.Conditions[v1alpha1.StatefulSet]
 
 	if condition.Status == metav1.ConditionTrue {

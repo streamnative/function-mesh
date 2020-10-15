@@ -22,7 +22,8 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 
 func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
-	return MakeStatefulSet(objectMeta, function.Spec.Replicas, MakeFunctionContainer(function), makeFunctionLabels(function))
+	return MakeStatefulSet(objectMeta, function.Spec.Replicas,
+		MakeFunctionContainer(function), makeFunctionLabels(function))
 }
 
 func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
@@ -60,10 +61,11 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	return MakeCommand(function.Spec.Java.JarLocation, function.Spec.Java.Jar,
-		function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJson(function), function.Spec.Pulsar.AuthConfig != "")
+		function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
+		function.Spec.Pulsar.AuthConfig != "")
 }
 
-func generateFunctionDetailsInJson(function *v1alpha1.Function) string {
+func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
 	functionDetails := convertFunctionDetails(function)
 	marshaler := &jsonpb.Marshaler{}
 	json, error := marshaler.MarshalToString(functionDetails)

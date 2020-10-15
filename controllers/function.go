@@ -14,7 +14,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req ctrl.Request, function *v1alpha1.Function) error {
+func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req ctrl.Request,
+	function *v1alpha1.Function) error {
 	condition, ok := function.Status.Conditions[v1alpha1.StatefulSet]
 	if !ok {
 		function.Status.Conditions[v1alpha1.StatefulSet] = v1alpha1.ResourceCondition{
@@ -64,7 +65,8 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, req ctrl.Request, function *v1alpha1.Function) error {
+func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, req ctrl.Request,
+	function *v1alpha1.Function) error {
 	condition := function.Status.Conditions[v1alpha1.StatefulSet]
 
 	if condition.Status == metav1.ConditionTrue {
@@ -91,7 +93,8 @@ func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, req c
 	return nil
 }
 
-func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, req ctrl.Request, function *v1alpha1.Function) error {
+func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, req ctrl.Request,
+	function *v1alpha1.Function) error {
 	condition, ok := function.Status.Conditions[v1alpha1.Service]
 	if !ok {
 		function.Status.Conditions[v1alpha1.Service] = v1alpha1.ResourceCondition{
@@ -122,7 +125,8 @@ func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, req ctr
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, req ctrl.Request, function *v1alpha1.Function) error {
+func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, req ctrl.Request,
+	function *v1alpha1.Function) error {
 	condition := function.Status.Conditions[v1alpha1.Service]
 
 	if condition.Status == metav1.ConditionTrue {
@@ -143,7 +147,8 @@ func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, req ctrl.
 	return nil
 }
 
-func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, req ctrl.Request, function *v1alpha1.Function) error {
+func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, req ctrl.Request,
+	function *v1alpha1.Function) error {
 	if *function.Spec.MaxReplicas == 0 {
 		// HPA not enabled, skip further action
 		return nil
@@ -179,7 +184,8 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, req ctrl.Re
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, req ctrl.Request, function *v1alpha1.Function) error {
+func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, req ctrl.Request,
+	function *v1alpha1.Function) error {
 	if *function.Spec.MaxReplicas == 0 {
 		// HPA not enabled, skip further action
 		return nil
