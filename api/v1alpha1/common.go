@@ -89,12 +89,12 @@ const (
 )
 
 const (
-	ATLEAST_ONCE     string = "atleast_once"
-	ATMOST_ONCE      string = "atmost_once"
-	EFFECTIVELY_ONCE string = "effectively_once"
+	AtleastOnce     string = "atleast_once"
+	AtmostOnce      string = "atmost_once"
+	EffectivelyOnce string = "effectively_once"
 
-	DEFAULT_TENANT  string = "public"
-	DEFAULT_CLUSTER string = "kubernetes"
+	DefaultTenant  string = "public"
+	DefaultCluster string = "kubernetes"
 )
 
 func validResource(resources corev1.ResourceList) bool {

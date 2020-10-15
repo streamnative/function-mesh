@@ -37,7 +37,12 @@ func (r *Function) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-cloud-streamnative-io-streamnative-io-v1alpha1-function,mutating=true,failurePolicy=fail,groups=cloud.streamnative.io.streamnative.io,resources=functions,verbs=create;update,versions=v1alpha1,name=mfunction.kb.io
+// +kubebuilder:webhook:path=/mutate-cloud-streamnative-io-streamnative-io-v1alpha1-function,
+// mutating=true,
+// failurePolicy=fail,
+// groups=cloud.streamnative.io.streamnative.io,
+// resources=functions,
+// verbs=create;update,versions=v1alpha1,name=mfunction.kb.io
 
 var _ webhook.Defaulter = &Function{}
 
@@ -56,7 +61,7 @@ func (r *Function) Default() {
 	}
 
 	if r.Spec.ProcessingGuarantee == "" {
-		r.Spec.ProcessingGuarantee = ATLEAST_ONCE
+		r.Spec.ProcessingGuarantee = AtleastOnce
 	}
 
 	if r.Spec.Name == "" {
@@ -64,11 +69,11 @@ func (r *Function) Default() {
 	}
 
 	if r.Spec.ClusterName == "" {
-		r.Spec.ClusterName = DEFAULT_CLUSTER
+		r.Spec.ClusterName = DefaultCluster
 	}
 
 	if r.Spec.Tenant == "" {
-		r.Spec.Tenant = DEFAULT_TENANT
+		r.Spec.Tenant = DefaultTenant
 	}
 
 	if r.Spec.MaxPendingAsyncRequests == nil {
@@ -92,7 +97,11 @@ func (r *Function) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-cloud-streamnative-io-streamnative-io-v1alpha1-function,mutating=false,failurePolicy=fail,groups=cloud.streamnative.io.streamnative.io,resources=functions,versions=v1alpha1,name=vfunction.kb.io
+// +kubebuilder:webhook:verbs=create;
+// update,path=/validate-cloud-streamnative-io-streamnative-io-v1alpha1-function,
+// mutating=false,failurePolicy=fail,
+// groups=cloud.streamnative.io.streamnative.io,
+// resources=functions,versions=v1alpha1,name=vfunction.kb.io
 
 var _ webhook.Validator = &Function{}
 
@@ -124,11 +133,11 @@ func (r *Function) ValidateCreate() error {
 		return errors.New("resource request is invalid. each resource value must be positive")
 	}
 
-	if r.Spec.Timeout != 0 && r.Spec.ProcessingGuarantee != ATLEAST_ONCE {
-		return errors.New("message timeout can only be set for ATLEAST_ONCE processing guarantee")
+	if r.Spec.Timeout != 0 && r.Spec.ProcessingGuarantee != AtleastOnce {
+		return errors.New("message timeout can only be set for AtleastOnce processing guarantee")
 	}
 
-	if r.Spec.MaxMessageRetry > 0 && r.Spec.ProcessingGuarantee == EFFECTIVELY_ONCE {
+	if r.Spec.MaxMessageRetry > 0 && r.Spec.ProcessingGuarantee == EffectivelyOnce {
 		return errors.New("MaxMessageRetries and Effectively once are not compatible")
 	}
 
@@ -136,7 +145,7 @@ func (r *Function) ValidateCreate() error {
 		return errors.New("dead letter topic is set but max message retry is set to infinity")
 	}
 
-	if r.Spec.RetainKeyOrdering && r.Spec.ProcessingGuarantee == EFFECTIVELY_ONCE {
+	if r.Spec.RetainKeyOrdering && r.Spec.ProcessingGuarantee == EffectivelyOnce {
 		return errors.New("when effectively once processing guarantee is specified, retain Key ordering cannot be set")
 	}
 

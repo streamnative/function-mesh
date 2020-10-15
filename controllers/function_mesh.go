@@ -13,7 +13,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *FunctionMeshReconciler) ObserveFunctionMesh(ctx context.Context, req ctrl.Request, mesh *v1alpha1.FunctionMesh) error {
+func (r *FunctionMeshReconciler) ObserveFunctionMesh(ctx context.Context, req ctrl.Request,
+	mesh *v1alpha1.FunctionMesh) error {
 	// TODO update deleted function status
 	if err := r.observeFunctions(ctx, mesh); err != nil {
 		return err
@@ -153,7 +154,8 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 	return nil
 }
 
-func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctrl.Request, mesh *v1alpha1.FunctionMesh) error {
+func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctrl.Request,
+	mesh *v1alpha1.FunctionMesh) error {
 	for _, functionSpec := range mesh.Spec.Functions {
 		condition := mesh.Status.FunctionConditions[functionSpec.Name]
 		if condition.Status == metav1.ConditionTrue {
@@ -194,7 +196,8 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 	return nil
 }
 
-func (r *FunctionMeshReconciler) HandleAction(ctx context.Context, obj runtime.Object, action v1alpha1.ReconcileAction) error {
+func (r *FunctionMeshReconciler) HandleAction(ctx context.Context, obj runtime.Object,
+	action v1alpha1.ReconcileAction) error {
 	switch action {
 	case v1alpha1.Create:
 		if err := r.Create(ctx, obj); err != nil {

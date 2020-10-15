@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const EnvShardId = "SHARD_ID"
+const EnvShardID = "SHARD_ID"
 const FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
 const DefaultRunnerImage = "apachepulsar/pulsar-all"
 
@@ -56,7 +56,8 @@ func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev
 	}
 }
 
-func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, kind string) *autov1.HorizontalPodAutoscaler {
+func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
+	kind string) *autov1.HorizontalPodAutoscaler {
 	// TODO: configurable cpu percentage
 	cpuPercentage := int32(80)
 	return &autov1.HorizontalPodAutoscaler{
@@ -78,7 +79,8 @@ func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, kind
 	}
 }
 
-func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *corev1.Container, labels map[string]string) *appsv1.StatefulSet {
+func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *corev1.Container,
+	labels map[string]string) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
@@ -89,7 +91,8 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *
 	}
 }
 
-func MakeStatefulSetSpec(replicas *int32, container *corev1.Container, labels map[string]string) *appsv1.StatefulSetSpec {
+func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
+	labels map[string]string) *appsv1.StatefulSetSpec {
 	return &appsv1.StatefulSetSpec{
 		Replicas: replicas,
 		Selector: &metav1.LabelSelector{
@@ -118,7 +121,7 @@ func MakePodTemplate(container *corev1.Container, labels map[string]string) *cor
 }
 
 func MakeCommand(downloadPath, packageFile, name, clusterName, details string, authProvided bool) []string {
-	processCommand := setShardIdEnvironmentVariableCommand() + " && " +
+	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessArgs(name, packageFile, clusterName, details, authProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
@@ -142,8 +145,8 @@ func getDownloadCommand(downloadPath, componentPackage string) []string {
 	}
 }
 
-func setShardIdEnvironmentVariableCommand() string {
-	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardId, EnvShardId)
+func setShardIDEnvironmentVariableCommand() string {
+	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
 func getProcessArgs(name string, packageName string, clusterName string, details string, authProvided bool) []string {
@@ -156,15 +159,15 @@ func getProcessArgs(name string, packageName string, clusterName string, details
 		fmt.Sprintf("-D%s=%s", FunctionsInstanceClasspath, "/pulsar/lib/*"),
 		"-Dlog4j.configurationFile=kubernetes_instance_log4j2.xml", // todo
 		"-Dpulsar.function.log.dir=logs/functions",
-		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardId),
+		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		"-Xmx1G", // TODO
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
 		packageName,
 		"--instance_id",
-		"${" + EnvShardId + "}",
+		"${" + EnvShardID + "}",
 		"--function_id",
-		fmt.Sprintf("${%s}-%d", EnvShardId, time.Now().Unix()),
+		fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
 		"--function_version",
 		"0",
 		"--function_details",
@@ -212,11 +215,11 @@ func getProcessArgs(name string, packageName string, clusterName string, details
 
 func getProcessingGuarantee(input string) proto.ProcessingGuarantees {
 	switch input {
-	case v1alpha1.ATMOST_ONCE:
+	case v1alpha1.AtmostOnce:
 		return proto.ProcessingGuarantees_ATMOST_ONCE
-	case v1alpha1.ATLEAST_ONCE:
+	case v1alpha1.AtleastOnce:
 		return proto.ProcessingGuarantees_ATLEAST_ONCE
-	case v1alpha1.EFFECTIVELY_ONCE:
+	case v1alpha1.EffectivelyOnce:
 		return proto.ProcessingGuarantees_EFFECTIVELY_ONCE
 	default:
 		// should never reach here
