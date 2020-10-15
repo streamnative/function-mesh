@@ -62,7 +62,7 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	return MakeCommand(function.Spec.Java.JarLocation, function.Spec.Java.Jar,
 		function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
-		function.Spec.Pulsar.AuthConfig != "")
+		function.Spec.Resources.Memory().String(), function.Spec.Pulsar.AuthConfig != "")
 }
 
 func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {

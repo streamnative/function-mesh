@@ -153,6 +153,12 @@ func (r *Source) ValidateCreate() error {
 		}
 	}
 
+	if r.Spec.SecretsMap != nil {
+		_, err := json.Marshal(r.Spec.SecretsMap)
+		if err != nil {
+			return errors.New("provided secrets map is wrong: " + err.Error())
+		}
+	}
 	// TODO python/golang specific check
 
 	return nil

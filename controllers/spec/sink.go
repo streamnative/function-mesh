@@ -60,7 +60,9 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	return MakeCommand(sink.Spec.Java.JarLocation, sink.Spec.Java.Jar,
-		sink.Spec.Name, sink.Spec.ClusterName, generateSinkDetailsInJSON(sink), sink.Spec.Pulsar.AuthConfig != "")
+		sink.Spec.Name, sink.Spec.ClusterName, generateSinkDetailsInJSON(sink),
+		sink.Spec.Resources.Memory().ToDec().String(),
+		sink.Spec.Pulsar.AuthConfig != "")
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {

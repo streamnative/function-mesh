@@ -119,9 +119,9 @@ func MakePodTemplate(container *corev1.Container, labels map[string]string) *cor
 	}
 }
 
-func MakeCommand(downloadPath, packageFile, name, clusterName, details string, authProvided bool) []string {
+func MakeCommand(downloadPath, packageFile, name, clusterName, details, memory string, authProvided bool) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
-		strings.Join(getProcessArgs(name, packageFile, clusterName, details, authProvided), " ")
+		strings.Join(getProcessArgs(name, packageFile, clusterName, details, memory, authProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
@@ -148,7 +148,7 @@ func setShardIDEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
-func getProcessArgs(name string, packageName string, clusterName string, details string, authProvided bool) []string {
+func getProcessArgs(name string, packageName string, clusterName string, details string, memory string, authProvided bool) []string {
 	// TODO support multiple runtime
 	args := []string{
 		"exec",
@@ -159,7 +159,7 @@ func getProcessArgs(name string, packageName string, clusterName string, details
 		"-Dlog4j.configurationFile=kubernetes_instance_log4j2.xml", // todo
 		"-Dpulsar.function.log.dir=logs/functions",
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
-		"-Xmx1G", // TODO
+		"-Xmx" + memory,
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
 		packageName,

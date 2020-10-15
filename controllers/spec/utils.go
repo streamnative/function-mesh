@@ -16,12 +16,12 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		LogTopic:             function.Spec.LogTopic,
 		ProcessingGuarantees: getProcessingGuarantee(function.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(function.Spec.FuncConfig),
-		SecretsMap:           "",
+		SecretsMap:           marshalSecretsMap(function.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              *function.Spec.AutoAck,
 		Parallelism:          *function.Spec.Replicas,
 		Source:               generateFunctionInputSpec(function.Spec.Sources, function.Spec.SourceType),
-		Sink:                 generateFunctionOutputSpec(function.Spec.Sink, function.Spec.SinkType),
+		Sink:                 generateFunctionOutputSpec(function.Spec.Sink, function.Spec.SinkType, *function.Spec.ForwardSourceMessageProperty),
 		Resources:            generateResource(function.Spec.Resources),
 		PackageUrl:           "",
 		RetryDetails:         generateRetryDetails(function.Spec.MaxMessageRetry, function.Spec.DeadLetterTopic),
@@ -52,10 +52,11 @@ func generateFunctionInputSpec(sources []string, sourceTypeClass string) *proto.
 	}
 }
 
-func generateFunctionOutputSpec(topic, sinkTypeClass string) *proto.SinkSpec {
+func generateFunctionOutputSpec(topic, sinkTypeClass string, forwardMessageProperty bool) *proto.SinkSpec {
 	return &proto.SinkSpec{
-		Topic:         topic,
-		TypeClassName: sinkTypeClass,
+		Topic:                        topic,
+		TypeClassName:                sinkTypeClass,
+		ForwardSourceMessageProperty: forwardMessageProperty,
 	}
 }
 
@@ -68,12 +69,12 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 		LogTopic:             source.Spec.LogTopic,
 		ProcessingGuarantees: getProcessingGuarantee(source.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(source.Spec.SourceConfig),
-		SecretsMap:           "",
+		SecretsMap:           marshalSecretsMap(source.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              *source.Spec.AutoAck,
 		Parallelism:          *source.Spec.Replicas,
 		Source:               generateSourceInputSpec(source),
-		Sink:                 generateSourceOutputSpec(source.Spec.Sink, source.Spec.SinkType),
+		Sink:                 generateSourceOutputSpec(source.Spec.Sink, source.Spec.SinkType, *source.Spec.ForwardSourceMessageProperty),
 		Resources:            generateResource(source.Spec.Resources),
 		PackageUrl:           "",
 		RetryDetails:         generateRetryDetails(source.Spec.MaxMessageRetry, source.Spec.DeadLetterTopic),
@@ -103,10 +104,11 @@ func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
 	}
 }
 
-func generateSourceOutputSpec(topic, sinkTypeClass string) *proto.SinkSpec {
+func generateSourceOutputSpec(topic, sinkTypeClass string, forwardMessageProperty bool) *proto.SinkSpec {
 	return &proto.SinkSpec{
-		Topic:         topic,
-		TypeClassName: sinkTypeClass,
+		Topic:                        topic,
+		TypeClassName:                sinkTypeClass,
+		ForwardSourceMessageProperty: forwardMessageProperty,
 	}
 }
 
@@ -119,7 +121,7 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		LogTopic:             sink.Spec.LogTopic,
 		ProcessingGuarantees: getProcessingGuarantee(sink.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(sink.Spec.SinkConfig),
-		SecretsMap:           "",
+		SecretsMap:           marshalSecretsMap(sink.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              *sink.Spec.AutoAck,
 		Parallelism:          *sink.Spec.Replicas,
@@ -170,4 +172,10 @@ func generateSinkOutputSpec(sink *v1alpha1.Sink) *proto.SinkSpec {
 		SchemaProperties:             nil,
 		ConsumerProperties:           nil,
 	}
+}
+
+func marshalSecretsMap(secrets map[string]v1alpha1.SecretRef) string {
+	// validated in admission webhook
+	bytes, _ := json.Marshal(secrets)
+	return string(bytes)
 }
