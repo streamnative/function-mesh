@@ -35,10 +35,8 @@ type FunctionMeshReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=cloud.streamnative.io,
-// resources=functionmeshes,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=cloud.streamnative.io,
-// resources=functionmeshes/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cloud.streamnative.io,resources=functionmeshes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=cloud.streamnative.io,resources=functionmeshes/status,verbs=get;update;patch
 
 func (r *FunctionMeshReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()

@@ -11,24 +11,6 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-cloud-streamnative-io-streamnative-io-v1alpha1-function
-  failurePolicy: Fail
-  name: mfunction.kb.io
-  rules:
-  - apiGroups:
-    - cloud.streamnative.io.streamnative.io
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - functions
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: webhook-service
-      namespace: system
       path: /mutate-cloud-streamnative-io-streamnative-io-v1alpha1-sink
   failurePolicy: Fail
   name: msink.kb.io
@@ -91,6 +73,24 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-cloud-streamnative-io-streamnative-io-v1alpha1-function
+  failurePolicy: Fail
+  name: vfunction.kb.io
+  rules:
+  - apiGroups:
+    - cloud.streamnative.io.streamnative.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - functions
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-cloud-streamnative-io-streamnative-io-v1alpha1-sink
   failurePolicy: Fail
   name: vsink.kb.io
@@ -104,21 +104,3 @@ webhooks:
     - UPDATE
     resources:
     - sinks
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-cloud-streamnative-io-streamnative-io-v1alpha1-source
-  failurePolicy: Fail
-  name: vsource.kb.io
-  rules:
-  - apiGroups:
-    - cloud.streamnative.io.streamnative.io
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - sources

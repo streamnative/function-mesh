@@ -3,7 +3,6 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -188,26 +187,18 @@ func getProcessArgs(name string, packageName string, clusterName string, details
 
 	if authProvided {
 		args = append(args, []string{
+			"--client_auth_plugin",
+			"$clientAuthenticationPlugin",
+			"--client_auth_params",
+			"$clientAuthenticationParameters",
 			"--use_tls",
 			"$useTls",
 			"--tls_allow_insecure",
 			"$tlsAllowInsecureConnection",
 			"--hostname_verification_enabled",
 			"$tlsHostnameVerificationEnable",
-		}...)
-
-		if os.Getenv("clientAuthenticationPlugin") != "" && os.Getenv("clientAuthenticationParameters") != "" {
-			args = append(args, []string{
-				"--client_auth_plugin",
-				"$clientAuthenticationPlugin",
-				"--client_auth_params",
-				"$clientAuthenticationParameters",
-			}...)
-		}
-
-		if os.Getenv("tlsTrustCertsFilePath") != "" {
-			args = append(args, "--tls_trust_cert_path", "$tlsTrustCertsFilePath")
-		}
+			"--tls_trust_cert_path",
+			"$tlsTrustCertsFilePath"}...)
 	}
 
 	return args

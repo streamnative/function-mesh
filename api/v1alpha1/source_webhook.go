@@ -37,13 +37,7 @@ func (r *Source) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-cloud-streamnative-io-streamnative-io-v1alpha1-source,
-// mutating=true,
-// failurePolicy=fail,
-// groups=cloud.streamnative.io.streamnative.io,
-// resources=sources,
-// verbs=create;
-// update,versions=v1alpha1,name=msource.kb.io
+// +kubebuilder:webhook:path=/mutate-cloud-streamnative-io-streamnative-io-v1alpha1-source,mutating=true,failurePolicy=fail,groups=cloud.streamnative.io.streamnative.io,resources=sources,verbs=create;update,versions=v1alpha1,name=msource.kb.io
 
 var _ webhook.Defaulter = &Source{}
 
@@ -97,14 +91,7 @@ func (r *Source) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-cloud-streamnative-io-streamnative-io-v1alpha1-source,
-// mutating=false,
-// failurePolicy=fail,
-// groups=cloud.streamnative.io.streamnative.io,
-// resources=sources,
-// versions=v1alpha1,
-// name=vsource.kb.io
-
+// +kubebuilder:webhook:verbs=create;update,path=/validate-cloud-streamnative-io-streamnative-io-v1alpha1-source,mutating=false,failurePolicy=fail,groups=cloud.streamnative.io.streamnative.io,resources=sources,versions=v1alpha1,name=vsource.kb.io
 var _ webhook.Validator = &Source{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
