@@ -22,6 +22,10 @@ jobs:
           wget -O - -q https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.18.0
           ./bin/golangci-lint --version
 
+      - name: BuildProject
+        run: |
+          go build main.go
+
       - name: CheckStyle
         run: |
           ./bin/golangci-lint run -c ./.golangci.yml ./...
