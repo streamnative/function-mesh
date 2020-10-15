@@ -1,20 +1,36 @@
 package v1alpha1
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 type Messaging struct {
 	Pulsar *PulsarMessaging `json:"pulsar,omitempty"`
 }
 
 type PulsarMessaging struct {
-	PulsarConfig string `json:"pulsarConfig,omitempty"`
 	// The config map need to contain the following fields
 	// webServiceURL
 	// brokerServiceURL
+	PulsarConfig string `json:"pulsarConfig,omitempty"`
+	AuthConfig   string `json:"authConfig,omitempty"`
 }
 
+// TODO: put them into the pulsar cofig or separate it?
+//type AuthenticationConfig struct {
+//	clientAuthenticationPlugin     string
+//	clientAuthenticationParameters string
+//	tlsTrustCertsFilePath          string
+//	useTls                         bool
+//	tlsAllowInsecureConnection     bool
+//	tlsHostnameVerificationEnable  bool
+//}
+
 type Runtime struct {
-	Java *JavaRuntime `json:"java,omitempty"`
+	Java   *JavaRuntime   `json:"java,omitempty"`
+	Python *PythonRuntime `json:"python,omitempty"`
+	Golang *GoRuntime     `json:"golang,omitempty"`
 }
 
 type JavaRuntime struct {
@@ -28,6 +44,11 @@ type PythonRuntime struct {
 
 type GoRuntime struct {
 	Go string `json:"go,omitempty"`
+}
+
+type SecretRef struct {
+	Path string `json:"path,omitempty"`
+	Key  string `json:"key,omitempty"`
 }
 
 type Component string
@@ -66,3 +87,19 @@ const (
 	Wait     ReconcileAction = "Wait"
 	NoAction ReconcileAction = "NoAction"
 )
+
+const (
+	ATLEAST_ONCE     string = "atleast_once"
+	ATMOST_ONCE      string = "atmost_once"
+	EFFECTIVELY_ONCE string = "effectively_once"
+
+	DEFAULT_TENANT  string = "public"
+	DEFAULT_CLUSTER string = "kubernetes"
+)
+
+func validResource(resources corev1.ResourceList) bool {
+	// cpu & memory > 0 and storage >= 0
+	return resources.Cpu().Sign() == 1 &&
+		resources.Memory().Sign() == 1 &&
+		resources.Storage().Sign() >= 0
+}

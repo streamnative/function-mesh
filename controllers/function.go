@@ -45,14 +45,14 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 	}
 	function.Status.Selector = selector.String()
 
-	if *statefulSet.Spec.Replicas != function.Spec.Replicas {
+	if *statefulSet.Spec.Replicas != *function.Spec.Replicas {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		function.Status.Conditions[v1alpha1.StatefulSet] = condition
 		return nil
 	}
 
-	if statefulSet.Status.ReadyReplicas == function.Spec.Replicas {
+	if statefulSet.Status.ReadyReplicas == *function.Spec.Replicas {
 		condition.Action = v1alpha1.NoAction
 		condition.Status = metav1.ConditionTrue
 	} else {
@@ -144,7 +144,7 @@ func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, req ctrl.
 }
 
 func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, req ctrl.Request, function *v1alpha1.Function) error {
-	if function.Spec.MaxReplicas == 0 {
+	if *function.Spec.MaxReplicas == 0 {
 		// HPA not enabled, skip further action
 		return nil
 	}
@@ -180,7 +180,7 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, req ctrl.Re
 }
 
 func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, req ctrl.Request, function *v1alpha1.Function) error {
-	if function.Spec.MaxReplicas == 0 {
+	if *function.Spec.MaxReplicas == 0 {
 		// HPA not enabled, skip further action
 		return nil
 	}

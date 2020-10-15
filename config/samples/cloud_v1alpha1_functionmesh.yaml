@@ -6,8 +6,8 @@ spec:
   functions:
     - name: ex1
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
-      sourceTypeClass: java.lang.String
-      sinkTypeClass: java.lang.String
+      sourceType: java.lang.String
+      sinkType: java.lang.String
       replicas: 3
       logTopic: persistent://public/default/logging-function-logs
       sources:
