@@ -23,5 +23,4 @@ linters:
     - unconvert
     - unparam
     - varcheck
-    - lll
     - prealloc
