@@ -6,18 +6,17 @@ spec:
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   sourceType: java.lang.String
   sinkType: java.lang.String
-
   forwardSourceMessageProperty: true
   MaxPendingAsyncRequests: 1000
-  replicas: 1
+  replicas: 0
   maxReplicas: 5
   logTopic: persistent://public/default/logging-function-logs
   sources:
     - persistent://public/default/source-topic1
   sink: persistent://public/default/sink-topic
   resources:
-    cpu: "1.5"
-    memory: 1.5G
+    cpu: "0.2"
+    memory: 1G
   # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
   secretsMap:
     "name":

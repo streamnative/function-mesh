@@ -40,16 +40,10 @@ spec:
         spec:
           description: SourceSpec defines the desired state of Source
           properties:
-            autoAck:
-              type: boolean
             className:
               type: string
             clusterName:
               type: string
-            deadLetterTopic:
-              type: string
-            forwardSourceMessageProperty:
-              type: boolean
             golang:
               properties:
                 go:
@@ -62,14 +56,6 @@ spec:
                 jarLocation:
                   type: string
               type: object
-            logTopic:
-              type: string
-            maxMessageRetry:
-              format: int32
-              type: integer
-            maxPendingAsyncRequests:
-              format: int32
-              type: integer
             maxReplicas:
               format: int32
               type: integer
@@ -105,11 +91,7 @@ spec:
                 x-kubernetes-int-or-string: true
               description: ResourceList is a set of (resource name, quantity) pairs.
               type: object
-            retainKeyOrdering:
-              type: boolean
-            retainOrdering:
-              type: boolean
-            schemaType:
+            runtimeFlags:
               type: string
             secretsMap:
               additionalProperties:
@@ -121,7 +103,30 @@ spec:
                 type: object
               type: object
             sink:
-              type: string
+              properties:
+                customSchemaSinks:
+                  additionalProperties:
+                    type: string
+                  type: object
+                producerConf:
+                  description: TODO use json tag
+                  properties:
+                    maxPendingMessages:
+                      format: int32
+                      type: integer
+                    maxPendingMessagesAcrossPartitions:
+                      format: int32
+                      type: integer
+                    useThreadLocalProducers:
+                      type: boolean
+                  type: object
+                sinkSchemaType:
+                  type: string
+                sinkSerdeClassName:
+                  type: string
+                topic:
+                  type: string
+              type: object
             sinkType:
               type: string
             sourceConfig:
@@ -130,11 +135,8 @@ spec:
               type: object
             sourceType:
               type: string
-            tentant:
+            tenant:
               type: string
-            timeout:
-              format: int32
-              type: integer
           type: object
         status:
           description: SourceStatus defines the observed state of Source

@@ -24,7 +24,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// SinkSpec defines the desired state of Sink
+// SinkSpec defines the desired state of Topic
 type SinkSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -36,27 +36,29 @@ type SinkSpec struct {
 	SinkType    string               `json:"sinkType,omitempty"`
 	Replicas    *int32               `json:"replicas,omitempty"`
 	MaxReplicas *int32               `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Sources     []string             `json:"sources,omitempty"`
-	LogTopic    string               `json:"logTopic,omitempty"`
+	Sources     SourceConf           `json:"sources,omitempty"`
 	SinkConfig  map[string]string    `json:"sinkConfig,omitempty"`
 	Resources   corev1.ResourceList  `json:"resources,omitempty"`
 	SecretsMap  map[string]SecretRef `json:"secretsMap,omitempty"`
 
-	Timeout                      int32  `json:"timeout,omitempty"`
-	AutoAck                      *bool  `json:"autoAck,omitempty"`
-	MaxMessageRetry              int32  `json:"maxMessageRetry,omitempty"`
-	ProcessingGuarantee          string `json:"processingGuarantee,omitempty"`
-	RetainOrdering               bool   `json:"retainOrdering,omitempty"`
-	RetainKeyOrdering            bool   `json:"retainKeyOrdering,omitempty"`
-	DeadLetterTopic              string `json:"deadLetterTopic,omitempty"`
-	ForwardSourceMessageProperty *bool  `json:"forwardSourceMessageProperty,omitempty"`
-	MaxPendingAsyncRequests      *int32 `json:"maxPendingAsyncRequests,omitempty"`
+	Timeout                      int32            `json:"timeout,omitempty"`
+	NegativeAckRedeliveryDelayMs int32            `json:"negativeAckRedeliveryDelayMs,omitempty"`
+	AutoAck                      *bool            `json:"autoAck,omitempty"`
+	MaxMessageRetry              int32            `json:"maxMessageRetry,omitempty"`
+	ProcessingGuarantee          ProcessGuarantee `json:"processingGuarantee,omitempty"`
+	RetainOrdering               bool             `json:"retainOrdering,omitempty"`
+	DeadLetterTopic              string           `json:"deadLetterTopic,omitempty"`
+
+	RuntimeFlags         string            `json:"runtimeFlags,omitempty"`
+	SubscriptionName     string            `json:"subscriptionName,omitempty"`
+	CleanupSubscription  bool              `json:"cleanupSubscription,omitempty"`
+	SubscriptionPosition SubscribePosition `json:"subscriptionPosition,omitempty"`
 
 	Messaging `json:",inline"`
 	Runtime   `json:",inline"`
 }
 
-// SinkStatus defines the observed state of Sink
+// SinkStatus defines the observed state of Topic
 type SinkStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -69,7 +71,7 @@ type SinkStatus struct {
 // +kubebuilder:subresource:status
 //+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 
-// Sink is the Schema for the sinks API
+// Topic is the Schema for the sinks API
 type Sink struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -80,7 +82,7 @@ type Sink struct {
 
 // +kubebuilder:object:root=true
 
-// SinkList contains a list of Sink
+// SinkList contains a list of Topic
 type SinkList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

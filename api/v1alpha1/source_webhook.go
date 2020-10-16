@@ -50,10 +50,10 @@ func (r *Source) Default() {
 		r.Spec.Replicas = &zeroVal
 	}
 
-	if r.Spec.AutoAck == nil {
-		trueVal := true
-		r.Spec.AutoAck = &trueVal
-	}
+	//if r.Spec.AutoAck == nil {
+	//	trueVal := true
+	//	r.Spec.AutoAck = &trueVal
+	//}
 
 	if r.Spec.ProcessingGuarantee == "" {
 		r.Spec.ProcessingGuarantee = AtleastOnce
@@ -69,16 +69,6 @@ func (r *Source) Default() {
 
 	if r.Spec.Tenant == "" {
 		r.Spec.Tenant = DefaultTenant
-	}
-
-	if r.Spec.MaxPendingAsyncRequests == nil {
-		maxPending := int32(1000)
-		r.Spec.MaxPendingAsyncRequests = &maxPending
-	}
-
-	if r.Spec.ForwardSourceMessageProperty == nil {
-		trueVal := true
-		r.Spec.ForwardSourceMessageProperty = &trueVal
 	}
 
 	if r.Spec.Resources.Cpu() == nil {
@@ -104,10 +94,7 @@ func (r *Source) ValidateCreate() error {
 		}
 	}
 
-	// TODO: verify topic names are valid
-	if r.Spec.Sink == "" {
-		return errors.New("no sink topics specified")
-	}
+	// TODO: verify inputConf
 
 	// TODO: allow 0 replicas, currently hpa's min value has to be 1
 	if *r.Spec.Replicas == 0 {
@@ -120,26 +107,6 @@ func (r *Source) ValidateCreate() error {
 
 	if !validResource(r.Spec.Resources) {
 		return errors.New("resource request is invalid. each resource value must be positive")
-	}
-
-	if r.Spec.Timeout != 0 && r.Spec.ProcessingGuarantee != AtleastOnce {
-		return errors.New("message timeout can only be set for AtleastOnce processing guarantee")
-	}
-
-	if r.Spec.MaxMessageRetry > 0 && r.Spec.ProcessingGuarantee == EffectivelyOnce {
-		return errors.New("MaxMessageRetries and Effectively once are not compatible")
-	}
-
-	if r.Spec.MaxMessageRetry <= 0 && r.Spec.DeadLetterTopic != "" {
-		return errors.New("dead letter topic is set but max message retry is set to infinity")
-	}
-
-	if r.Spec.RetainKeyOrdering && r.Spec.ProcessingGuarantee == EffectivelyOnce {
-		return errors.New("when effectively once processing guarantee is specified, retain Key ordering cannot be set")
-	}
-
-	if r.Spec.RetainKeyOrdering && r.Spec.RetainOrdering {
-		return errors.New("only one of retain ordering or retain key ordering can be set")
 	}
 
 	if r.Spec.Java == nil && r.Spec.Python == nil && r.Spec.Golang == nil {

@@ -71,16 +71,6 @@ func (r *Sink) Default() {
 		r.Spec.Tenant = DefaultTenant
 	}
 
-	if r.Spec.MaxPendingAsyncRequests == nil {
-		maxPending := int32(1000)
-		r.Spec.MaxPendingAsyncRequests = &maxPending
-	}
-
-	if r.Spec.ForwardSourceMessageProperty == nil {
-		trueVal := true
-		r.Spec.ForwardSourceMessageProperty = &trueVal
-	}
-
 	if r.Spec.Resources.Cpu() == nil {
 		r.Spec.Resources.Cpu().Set(int64(1))
 	}
@@ -105,10 +95,7 @@ func (r *Sink) ValidateCreate() error {
 		}
 	}
 
-	// TODO: verify topic names are valid
-	if r.Spec.Sources == nil {
-		return errors.New("no source topics specified")
-	}
+	// TODO: verify inputConf
 
 	// TODO: allow 0 replicas, currently hpa's min value has to be 1
 	if *r.Spec.Replicas == 0 {
@@ -133,14 +120,6 @@ func (r *Sink) ValidateCreate() error {
 
 	if r.Spec.MaxMessageRetry <= 0 && r.Spec.DeadLetterTopic != "" {
 		return errors.New("dead letter topic is set but max message retry is set to infinity")
-	}
-
-	if r.Spec.RetainKeyOrdering && r.Spec.ProcessingGuarantee == EffectivelyOnce {
-		return errors.New("when effectively once processing guarantee is specified, retain Key ordering cannot be set")
-	}
-
-	if r.Spec.RetainKeyOrdering && r.Spec.RetainOrdering {
-		return errors.New("only one of retain ordering or retain key ordering can be set")
 	}
 
 	if r.Spec.Java == nil && r.Spec.Python == nil && r.Spec.Golang == nil {

@@ -14,18 +14,18 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		Name:                 function.Spec.Name,
 		ClassName:            function.Spec.ClassName,
 		LogTopic:             function.Spec.LogTopic,
-		ProcessingGuarantees: getProcessingGuarantee(function.Spec.ProcessingGuarantee),
+		ProcessingGuarantees: convertProcessingGuarantee(function.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(function.Spec.FuncConfig),
 		SecretsMap:           marshalSecretsMap(function.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              *function.Spec.AutoAck,
 		Parallelism:          *function.Spec.Replicas,
-		Source:               generateFunctionInputSpec(function.Spec.Sources, function.Spec.SourceType),
-		Sink:                 generateFunctionOutputSpec(function.Spec.Sink, function.Spec.SinkType, *function.Spec.ForwardSourceMessageProperty),
+		Source:               generateFunctionInputSpec(function),
+		Sink:                 generateFunctionOutputSpec(function),
 		Resources:            generateResource(function.Spec.Resources),
 		PackageUrl:           "",
 		RetryDetails:         generateRetryDetails(function.Spec.MaxMessageRetry, function.Spec.DeadLetterTopic),
-		RuntimeFlags:         "",
+		RuntimeFlags:         function.Spec.RuntimeFlags,
 		ComponentType:        proto.FunctionDetails_FUNCTION,
 		CustomRuntimeOptions: "",
 		Builtin:              "",
@@ -34,30 +34,103 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 	}
 }
 
-func generateFunctionInputSpec(sources []string, sourceTypeClass string) *proto.SourceSpec {
+func generateInputSpec(sourceConf v1alpha1.SourceConf) map[string]*proto.ConsumerSpec {
 	inputSpecs := make(map[string]*proto.ConsumerSpec)
 
-	for _, source := range sources {
+	for _, source := range sourceConf.Topics {
 		inputSpecs[source] = &proto.ConsumerSpec{
 			IsRegexPattern: false,
 		}
 	}
 
+	if sourceConf.TopicPattern != "" {
+		inputSpecs[sourceConf.TopicPattern] = &proto.ConsumerSpec{
+			IsRegexPattern: true,
+		}
+	}
+
+	for topicName, serdeClassName := range sourceConf.CustomSerdeSources {
+		inputSpecs[topicName] = &proto.ConsumerSpec{
+			SerdeClassName: serdeClassName,
+			IsRegexPattern: false,
+		}
+	}
+
+	for topicName, conf := range sourceConf.CustomSchemaSources {
+		consumerConf := unmarshalConsumerConfig(conf)
+		inputSpecs[topicName] = &proto.ConsumerSpec{
+			SchemaType:         consumerConf.SchemaType,
+			IsRegexPattern:     false,
+			SchemaProperties:   consumerConf.SchemaProperties,
+			ConsumerProperties: consumerConf.ConsumerProperties,
+		}
+	}
+
+	for topicName, conf := range sourceConf.SourceSpecs {
+		inputSpecs[topicName] = &proto.ConsumerSpec{
+			SchemaType:         conf.SchemaType,
+			SerdeClassName:     conf.SerdeClassName,
+			IsRegexPattern:     conf.IsRegexPattern,
+			ReceiverQueueSize:  &proto.ConsumerSpec_ReceiverQueueSize{Value: conf.ReceiverQueueSize},
+			SchemaProperties:   conf.SchemaProperties,
+			ConsumerProperties: conf.ConsumerProperties,
+		}
+	}
+
+	return inputSpecs
+}
+
+func generateFunctionInputSpec(function *v1alpha1.Function) *proto.SourceSpec {
+	inputSpecs := generateInputSpec(function.Spec.Sources)
+
 	return &proto.SourceSpec{
-		InputSpecs:           inputSpecs,
-		SubscriptionType:     proto.SubscriptionType_SHARED,
-		SubscriptionPosition: proto.SubscriptionPosition_EARLIEST,
-		TypeClassName:        sourceTypeClass,
-		CleanupSubscription:  true,
+		ClassName:                    "",
+		Configs:                      "",
+		TypeClassName:                function.Spec.SourceType,
+		SubscriptionType:             proto.SubscriptionType_SHARED,
+		InputSpecs:                   inputSpecs,
+		TimeoutMs:                    uint64(function.Spec.Timeout),
+		Builtin:                      "",
+		SubscriptionName:             function.Spec.SubscriptionName,
+		CleanupSubscription:          function.Spec.CleanupSubscription,
+		SubscriptionPosition:         convertSubPosition(function.Spec.SubscriptionPosition),
+		NegativeAckRedeliveryDelayMs: uint64(function.Spec.Timeout),
 	}
 }
 
-func generateFunctionOutputSpec(topic, sinkTypeClass string, forwardMessageProperty bool) *proto.SinkSpec {
-	return &proto.SinkSpec{
-		Topic:                        topic,
-		TypeClassName:                sinkTypeClass,
-		ForwardSourceMessageProperty: forwardMessageProperty,
+func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
+	sinkSpec := &proto.SinkSpec{
+		ClassName:                    "",
+		Configs:                      "",
+		TypeClassName:                function.Spec.SinkType,
+		Topic:                        function.Spec.Sink.Topic,
+		ProducerSpec:                 nil,
+		SerDeClassName:               function.Spec.Sink.SinkSerdeClassName,
+		Builtin:                      "",
+		SchemaType:                   function.Spec.Sink.SinkSchemaType,
+		ForwardSourceMessageProperty: *function.Spec.ForwardSourceMessageProperty,
+		SchemaProperties:             nil,
+		ConsumerProperties:           nil,
 	}
+
+	if function.Spec.Sink.CustomSchemaSinks != nil && function.Spec.Sink.Topic != "" {
+		conf := function.Spec.Sink.CustomSchemaSinks[function.Spec.Sink.Topic]
+		config := unmarshalConsumerConfig(conf)
+		sinkSpec.SchemaProperties = config.SchemaProperties
+		sinkSpec.ConsumerProperties = config.ConsumerProperties
+	}
+
+	if function.Spec.Sink.ProducerConf != nil {
+		producerConfig := &proto.ProducerSpec{
+			MaxPendingMessages:                 function.Spec.Sink.ProducerConf.MaxPendingMessages,
+			MaxPendingMessagesAcrossPartitions: function.Spec.Sink.ProducerConf.MaxPendingMessagesAcrossPartitions,
+			UseThreadLocalProducers:            function.Spec.Sink.ProducerConf.UseThreadLocalProducers,
+		}
+
+		sinkSpec.ProducerSpec = producerConfig
+	}
+
+	return sinkSpec
 }
 
 func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
@@ -66,111 +139,92 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 		Namespace:            source.Namespace,
 		Name:                 source.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
-		LogTopic:             source.Spec.LogTopic,
-		ProcessingGuarantees: getProcessingGuarantee(source.Spec.ProcessingGuarantee),
+		ProcessingGuarantees: convertProcessingGuarantee(source.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(source.Spec.SourceConfig),
 		SecretsMap:           marshalSecretsMap(source.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
-		AutoAck:              *source.Spec.AutoAck,
+		AutoAck:              true,
 		Parallelism:          *source.Spec.Replicas,
 		Source:               generateSourceInputSpec(source),
-		Sink:                 generateSourceOutputSpec(source.Spec.Sink, source.Spec.SinkType, *source.Spec.ForwardSourceMessageProperty),
+		Sink:                 generateSourceOutputSpec(source),
 		Resources:            generateResource(source.Spec.Resources),
-		PackageUrl:           "",
-		RetryDetails:         generateRetryDetails(source.Spec.MaxMessageRetry, source.Spec.DeadLetterTopic),
-		RuntimeFlags:         "",
+		RuntimeFlags:         source.Spec.RuntimeFlags,
 		ComponentType:        proto.FunctionDetails_SOURCE,
-		CustomRuntimeOptions: "",
-		Builtin:              "",
-		RetainOrdering:       source.Spec.RetainOrdering,
-		RetainKeyOrdering:    source.Spec.RetainKeyOrdering,
 	}
 }
 
 func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
 	configs, _ := json.Marshal(source.Spec.SourceConfig)
 	return &proto.SourceSpec{
-		ClassName:                    source.Spec.ClassName,
-		Configs:                      string(configs), // TODO handle batch source
-		TypeClassName:                source.Spec.SourceType,
-		SubscriptionType:             0,
-		InputSpecs:                   nil,
-		TimeoutMs:                    uint64(source.Spec.Timeout),
-		Builtin:                      "",
-		SubscriptionName:             "",
-		CleanupSubscription:          false,
-		SubscriptionPosition:         0,
-		NegativeAckRedeliveryDelayMs: 0,
+		ClassName:     source.Spec.ClassName,
+		Configs:       string(configs), // TODO handle batch source
+		TypeClassName: source.Spec.SourceType,
 	}
 }
 
-func generateSourceOutputSpec(topic, sinkTypeClass string, forwardMessageProperty bool) *proto.SinkSpec {
+func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 	return &proto.SinkSpec{
-		Topic:                        topic,
-		TypeClassName:                sinkTypeClass,
-		ForwardSourceMessageProperty: forwardMessageProperty,
+		TypeClassName: source.Spec.SinkType,
+		Topic:         source.Spec.Sink.Topic,
+		ProducerSpec: &proto.ProducerSpec{
+			MaxPendingMessages:                 source.Spec.Sink.ProducerConf.MaxPendingMessages,
+			MaxPendingMessagesAcrossPartitions: source.Spec.Sink.ProducerConf.MaxPendingMessagesAcrossPartitions,
+			UseThreadLocalProducers:            source.Spec.Sink.ProducerConf.UseThreadLocalProducers,
+		},
+		SerDeClassName: source.Spec.Sink.SinkSerdeClassName,
+		SchemaType:     source.Spec.Sink.SinkSchemaType,
 	}
 }
 
 func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 	return &proto.FunctionDetails{
-		Tenant:               "public",
+		Tenant:               sink.Spec.Tenant,
 		Namespace:            sink.Namespace,
 		Name:                 sink.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
-		LogTopic:             sink.Spec.LogTopic,
-		ProcessingGuarantees: getProcessingGuarantee(sink.Spec.ProcessingGuarantee),
-		UserConfig:           getUserConfig(sink.Spec.SinkConfig),
+		ProcessingGuarantees: convertProcessingGuarantee(sink.Spec.ProcessingGuarantee),
 		SecretsMap:           marshalSecretsMap(sink.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              *sink.Spec.AutoAck,
 		Parallelism:          *sink.Spec.Replicas,
-		Source:               generateSinkInputSpec(sink.Spec.Sources, sink.Spec.SourceType),
+		Source:               generateSinkInputSpec(sink),
 		Sink:                 generateSinkOutputSpec(sink),
 		Resources:            generateResource(sink.Spec.Resources),
-		PackageUrl:           "",
 		RetryDetails:         generateRetryDetails(sink.Spec.MaxMessageRetry, sink.Spec.DeadLetterTopic),
-		RuntimeFlags:         "",
+		RuntimeFlags:         sink.Spec.RuntimeFlags,
 		ComponentType:        proto.FunctionDetails_SINK,
-		CustomRuntimeOptions: "",
-		Builtin:              "",
-		RetainOrdering:       sink.Spec.RetainOrdering,
-		RetainKeyOrdering:    sink.Spec.RetainKeyOrdering,
 	}
 }
 
-func generateSinkInputSpec(sources []string, sourceTypeClass string) *proto.SourceSpec {
-	inputSpecs := make(map[string]*proto.ConsumerSpec)
-
-	for _, source := range sources {
-		inputSpecs[source] = &proto.ConsumerSpec{
-			IsRegexPattern: false,
-		}
-	}
+func generateSinkInputSpec(sink *v1alpha1.Sink) *proto.SourceSpec {
+	inputSpecs := generateInputSpec(sink.Spec.Sources)
 
 	return &proto.SourceSpec{
-		InputSpecs:           inputSpecs,
-		SubscriptionType:     proto.SubscriptionType_SHARED,
-		SubscriptionPosition: proto.SubscriptionPosition_EARLIEST,
-		TypeClassName:        sourceTypeClass,
-		CleanupSubscription:  true,
+		TypeClassName:                sink.Spec.SourceType,
+		SubscriptionType:             getSubscriptionType(sink.Spec.RetainOrdering, sink.Spec.ProcessingGuarantee),
+		InputSpecs:                   inputSpecs,
+		TimeoutMs:                    uint64(sink.Spec.Timeout),
+		SubscriptionName:             sink.Spec.SubscriptionName,
+		CleanupSubscription:          sink.Spec.CleanupSubscription,
+		SubscriptionPosition:         convertSubPosition(sink.Spec.SubscriptionPosition),
+		NegativeAckRedeliveryDelayMs: uint64(sink.Spec.NegativeAckRedeliveryDelayMs),
+	}
+}
+
+func getSubscriptionType(retainOrdering bool, processingGuarantee v1alpha1.ProcessGuarantee) proto.SubscriptionType {
+	if retainOrdering || processingGuarantee == v1alpha1.EffectivelyOnce {
+		return proto.SubscriptionType_FAILOVER
+	} else {
+		return proto.SubscriptionType_SHARED
 	}
 }
 
 func generateSinkOutputSpec(sink *v1alpha1.Sink) *proto.SinkSpec {
 	configs, _ := json.Marshal(sink.Spec.SinkConfig)
 	return &proto.SinkSpec{
-		ClassName:                    sink.Spec.ClassName,
-		Configs:                      string(configs),
-		TypeClassName:                sink.Spec.SinkType,
-		Topic:                        "",
-		ProducerSpec:                 nil,
-		SerDeClassName:               "",
-		Builtin:                      "",
-		SchemaType:                   "",
-		ForwardSourceMessageProperty: *sink.Spec.ForwardSourceMessageProperty,
-		SchemaProperties:             nil,
-		ConsumerProperties:           nil,
+		ClassName:     sink.Spec.ClassName,
+		Configs:       string(configs),
+		TypeClassName: sink.Spec.SinkType,
 	}
 }
 
@@ -178,4 +232,11 @@ func marshalSecretsMap(secrets map[string]v1alpha1.SecretRef) string {
 	// validated in admission webhook
 	bytes, _ := json.Marshal(secrets)
 	return string(bytes)
+}
+
+func unmarshalConsumerConfig(conf string) v1alpha1.ConsumerConfig {
+	var config v1alpha1.ConsumerConfig
+	// TODO: check unmarshel error in admission hook
+	json.Unmarshal([]byte(conf), &config)
+	return config
 }

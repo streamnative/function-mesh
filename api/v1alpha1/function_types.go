@@ -30,28 +30,35 @@ type FunctionSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	Name        string               `json:"name,omitempty"`
 	ClassName   string               `json:"className,omitempty"`
-	Tenant      string               `json:"tentant,omitempty"`
+	Tenant      string               `json:"tenant,omitempty"`
 	ClusterName string               `json:"clusterName,omitempty"`
 	SourceType  string               `json:"sourceType,omitempty"`
 	SinkType    string               `json:"sinkType,omitempty"`
 	Replicas    *int32               `json:"replicas,omitempty"`
 	MaxReplicas *int32               `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Sources     []string             `json:"sources,omitempty"`
-	Sink        string               `json:"sink,omitempty"`
+	Sources     SourceConf           `json:"sources,omitempty"`
+	Sink        SinkConf             `json:"sink,omitempty"`
 	LogTopic    string               `json:"logTopic,omitempty"`
 	FuncConfig  map[string]string    `json:"funcConfig,omitempty"`
 	Resources   corev1.ResourceList  `json:"resources,omitempty"`
 	SecretsMap  map[string]SecretRef `json:"secretsMap,omitempty"`
 
-	Timeout                      int32  `json:"timeout,omitempty"`
-	AutoAck                      *bool  `json:"autoAck,omitempty"`
-	MaxMessageRetry              int32  `json:"maxMessageRetry,omitempty"`
-	ProcessingGuarantee          string `json:"processingGuarantee,omitempty"`
-	RetainOrdering               bool   `json:"retainOrdering,omitempty"`
-	RetainKeyOrdering            bool   `json:"retainKeyOrdering,omitempty"`
-	DeadLetterTopic              string `json:"deadLetterTopic,omitempty"`
-	ForwardSourceMessageProperty *bool  `json:"forwardSourceMessageProperty,omitempty"`
-	MaxPendingAsyncRequests      *int32 `json:"maxPendingAsyncRequests,omitempty"`
+	Timeout                      int32            `json:"timeout,omitempty"`
+	AutoAck                      *bool            `json:"autoAck,omitempty"`
+	MaxMessageRetry              int32            `json:"maxMessageRetry,omitempty"`
+	ProcessingGuarantee          ProcessGuarantee `json:"processingGuarantee,omitempty"`
+	RetainOrdering               bool             `json:"retainOrdering,omitempty"`
+	RetainKeyOrdering            bool             `json:"retainKeyOrdering,omitempty"`
+	DeadLetterTopic              string           `json:"deadLetterTopic,omitempty"`
+	ForwardSourceMessageProperty *bool            `json:"forwardSourceMessageProperty,omitempty"`
+	MaxPendingAsyncRequests      *int32           `json:"maxPendingAsyncRequests,omitempty"`
+
+	RuntimeFlags         string            `json:"runtimeFlags,omitempty"`
+	SubscriptionName     string            `json:"subscriptionName,omitempty"`
+	CleanupSubscription  bool              `json:"cleanupSubscription,omitempty"`
+	SubscriptionPosition SubscribePosition `json:"subscriptionPosition,omitempty"`
+
+	// TODO: windowconfig, customRuntimeOptions?
 
 	Messaging `json:",inline"`
 	Runtime   `json:",inline"`

@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// SinkReconciler reconciles a Sink object
+// SinkReconciler reconciles a Topic object
 type SinkReconciler struct {
 	client.Client
 	Log    logr.Logger

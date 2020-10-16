@@ -51,6 +51,44 @@ type SecretRef struct {
 	Key  string `json:"key,omitempty"`
 }
 
+type SourceConf struct {
+	Topics              []string                  `json:"topics,omitempty"`
+	TopicPattern        string                    `json:"topicPattern,omitempty"`
+	CustomSerdeSources  map[string]string         `json:"customSerdeSources,omitempty"`
+	CustomSchemaSources map[string]string         `json:"customSchemaSources,omitempty"`
+	SourceSpecs         map[string]ConsumerConfig `json:"sourceSpecs,omitempty"`
+}
+
+type ConsumerConfig struct {
+	SchemaType         string            `json:"schemaType,omitempty"`
+	SerdeClassName     string            `json:"serdeClassname,omitempty"`
+	IsRegexPattern     bool              `json:"isRegexPattern,omitempty"`
+	SchemaProperties   map[string]string `json:"schemaProperties,omitempty"`
+	ConsumerProperties map[string]string `json:"consumerProperties,omitempty"`
+	ReceiverQueueSize  int32             `json:"receiverQueueSize,omitempty"`
+}
+
+type SinkConf struct {
+	Topic              string            `json:"topic,omitempty"`
+	SinkSerdeClassName string            `json:"sinkSerdeClassName,omitempty"`
+	SinkSchemaType     string            `json:"sinkSchemaType,omitempty"`
+	ProducerConf       *ProducerConfig   `json:"producerConf,omitempty"`
+	CustomSchemaSinks  map[string]string `json:"customSchemaSinks,omitempty"`
+}
+
+type ProducerConfig struct {
+	MaxPendingMessages                 int32 `json:"maxPendingMessages,omitempty"`
+	MaxPendingMessagesAcrossPartitions int32 `json:"maxPendingMessagesAcrossPartitions,omitempty"`
+	UseThreadLocalProducers            bool  `json:"useThreadLocalProducers,omitempty"`
+}
+
+type SubscribePosition string
+
+const (
+	Latest   SubscribePosition = "latest"
+	Earliest SubscribePosition = "earliest"
+)
+
 type Component string
 
 const (
@@ -88,10 +126,12 @@ const (
 	NoAction ReconcileAction = "NoAction"
 )
 
+type ProcessGuarantee string
+
 const (
-	AtleastOnce     string = "atleast_once"
-	AtmostOnce      string = "atmost_once"
-	EffectivelyOnce string = "effectively_once"
+	AtleastOnce     ProcessGuarantee = "atleast_once"
+	AtmostOnce      ProcessGuarantee = "atmost_once"
+	EffectivelyOnce ProcessGuarantee = "effectively_once"
 
 	DefaultTenant  string = "public"
 	DefaultCluster string = "kubernetes"

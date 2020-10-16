@@ -204,7 +204,7 @@ func getProcessArgs(name string, packageName string, clusterName string, details
 	return args
 }
 
-func getProcessingGuarantee(input string) proto.ProcessingGuarantees {
+func convertProcessingGuarantee(input v1alpha1.ProcessGuarantee) proto.ProcessingGuarantees {
 	switch input {
 	case v1alpha1.AtmostOnce:
 		return proto.ProcessingGuarantees_ATMOST_ONCE
@@ -215,6 +215,17 @@ func getProcessingGuarantee(input string) proto.ProcessingGuarantees {
 	default:
 		// should never reach here
 		return proto.ProcessingGuarantees_ATLEAST_ONCE
+	}
+}
+
+func convertSubPosition(pos v1alpha1.SubscribePosition) proto.SubscriptionPosition {
+	switch pos {
+	case v1alpha1.Earliest:
+		return proto.SubscriptionPosition_EARLIEST
+	case v1alpha1.Latest:
+		return proto.SubscriptionPosition_LATEST
+	default:
+		return proto.SubscriptionPosition_EARLIEST
 	}
 }
 

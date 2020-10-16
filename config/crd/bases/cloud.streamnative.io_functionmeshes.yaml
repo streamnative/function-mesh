@@ -44,6 +44,8 @@ spec:
                     type: boolean
                   className:
                     type: string
+                  cleanupSubscription:
+                    type: boolean
                   clusterName:
                     type: string
                   deadLetterTopic:
@@ -115,6 +117,8 @@ spec:
                     type: boolean
                   retainOrdering:
                     type: boolean
+                  runtimeFlags:
+                    type: string
                   secretsMap:
                     additionalProperties:
                       properties:
@@ -125,16 +129,79 @@ spec:
                       type: object
                     type: object
                   sink:
-                    type: string
+                    properties:
+                      customSchemaSinks:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      producerConf:
+                        description: TODO use json tag
+                        properties:
+                          maxPendingMessages:
+                            format: int32
+                            type: integer
+                          maxPendingMessagesAcrossPartitions:
+                            format: int32
+                            type: integer
+                          useThreadLocalProducers:
+                            type: boolean
+                        type: object
+                      sinkSchemaType:
+                        type: string
+                      sinkSerdeClassName:
+                        type: string
+                      topic:
+                        type: string
+                    type: object
                   sinkType:
                     type: string
                   sourceType:
                     type: string
                   sources:
-                    items:
-                      type: string
-                    type: array
-                  tentant:
+                    properties:
+                      customSchemaSources:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      customSerdeSources:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      sourceSpecs:
+                        additionalProperties:
+                          description: TODO json tag
+                          properties:
+                            consumerProperties:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            isRegexPattern:
+                              type: boolean
+                            receiverQueueSize:
+                              format: int32
+                              type: integer
+                            schemaProperties:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            schemaType:
+                              type: string
+                            serdeClassname:
+                              type: string
+                          type: object
+                        type: object
+                      topicPattern:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  subscriptionName:
+                    type: string
+                  subscriptionPosition:
+                    type: string
+                  tenant:
                     type: string
                   timeout:
                     format: int32
@@ -143,18 +210,18 @@ spec:
               type: array
             sinks:
               items:
-                description: SinkSpec defines the desired state of Sink
+                description: SinkSpec defines the desired state of Topic
                 properties:
                   autoAck:
                     type: boolean
                   className:
                     type: string
+                  cleanupSubscription:
+                    type: boolean
                   clusterName:
                     type: string
                   deadLetterTopic:
                     type: string
-                  forwardSourceMessageProperty:
-                    type: boolean
                   golang:
                     properties:
                       go:
@@ -167,12 +234,7 @@ spec:
                       jarLocation:
                         type: string
                     type: object
-                  logTopic:
-                    type: string
                   maxMessageRetry:
-                    format: int32
-                    type: integer
-                  maxPendingAsyncRequests:
                     format: int32
                     type: integer
                   maxReplicas:
@@ -183,6 +245,9 @@ spec:
                       cluster Important: Run "make" to regenerate code after modifying
                       this file'
                     type: string
+                  negativeAckRedeliveryDelayMs:
+                    format: int32
+                    type: integer
                   processingGuarantee:
                     type: string
                   pulsar:
@@ -212,10 +277,10 @@ spec:
                     description: ResourceList is a set of (resource name, quantity)
                       pairs.
                     type: object
-                  retainKeyOrdering:
-                    type: boolean
                   retainOrdering:
                     type: boolean
+                  runtimeFlags:
+                    type: string
                   secretsMap:
                     additionalProperties:
                       properties:
@@ -234,9 +299,49 @@ spec:
                   sourceType:
                     type: string
                   sources:
-                    items:
-                      type: string
-                    type: array
+                    properties:
+                      customSchemaSources:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      customSerdeSources:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      sourceSpecs:
+                        additionalProperties:
+                          description: TODO json tag
+                          properties:
+                            consumerProperties:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            isRegexPattern:
+                              type: boolean
+                            receiverQueueSize:
+                              format: int32
+                              type: integer
+                            schemaProperties:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            schemaType:
+                              type: string
+                            serdeClassname:
+                              type: string
+                          type: object
+                        type: object
+                      topicPattern:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  subscriptionName:
+                    type: string
+                  subscriptionPosition:
+                    type: string
                   tenant:
                     type: string
                   timeout:
@@ -248,16 +353,10 @@ spec:
               items:
                 description: SourceSpec defines the desired state of Source
                 properties:
-                  autoAck:
-                    type: boolean
                   className:
                     type: string
                   clusterName:
                     type: string
-                  deadLetterTopic:
-                    type: string
-                  forwardSourceMessageProperty:
-                    type: boolean
                   golang:
                     properties:
                       go:
@@ -270,14 +369,6 @@ spec:
                       jarLocation:
                         type: string
                     type: object
-                  logTopic:
-                    type: string
-                  maxMessageRetry:
-                    format: int32
-                    type: integer
-                  maxPendingAsyncRequests:
-                    format: int32
-                    type: integer
                   maxReplicas:
                     format: int32
                     type: integer
@@ -315,11 +406,7 @@ spec:
                     description: ResourceList is a set of (resource name, quantity)
                       pairs.
                     type: object
-                  retainKeyOrdering:
-                    type: boolean
-                  retainOrdering:
-                    type: boolean
-                  schemaType:
+                  runtimeFlags:
                     type: string
                   secretsMap:
                     additionalProperties:
@@ -331,7 +418,30 @@ spec:
                       type: object
                     type: object
                   sink:
-                    type: string
+                    properties:
+                      customSchemaSinks:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      producerConf:
+                        description: TODO use json tag
+                        properties:
+                          maxPendingMessages:
+                            format: int32
+                            type: integer
+                          maxPendingMessagesAcrossPartitions:
+                            format: int32
+                            type: integer
+                          useThreadLocalProducers:
+                            type: boolean
+                        type: object
+                      sinkSchemaType:
+                        type: string
+                      sinkSerdeClassName:
+                        type: string
+                      topic:
+                        type: string
+                    type: object
                   sinkType:
                     type: string
                   sourceConfig:
@@ -340,11 +450,8 @@ spec:
                     type: object
                   sourceType:
                     type: string
-                  tentant:
+                  tenant:
                     type: string
-                  timeout:
-                    format: int32
-                    type: integer
                 type: object
               type: array
           type: object

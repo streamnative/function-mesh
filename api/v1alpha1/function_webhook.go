@@ -106,10 +106,7 @@ func (r *Function) ValidateCreate() error {
 		}
 	}
 
-	// TODO: verify topic names are valid
-	if r.Spec.Sources == nil {
-		return errors.New("no source topics specified")
-	}
+	// TODO: verify source conf
 
 	// TODO: allow 0 replicas, currently hpa's min value has to be 1
 	if *r.Spec.Replicas == 0 {

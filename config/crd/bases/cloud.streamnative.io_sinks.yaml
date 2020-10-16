@@ -23,7 +23,7 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Sink is the Schema for the sinks API
+      description: Topic is the Schema for the sinks API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -38,18 +38,18 @@ spec:
         metadata:
           type: object
         spec:
-          description: SinkSpec defines the desired state of Sink
+          description: SinkSpec defines the desired state of Topic
           properties:
             autoAck:
               type: boolean
             className:
               type: string
+            cleanupSubscription:
+              type: boolean
             clusterName:
               type: string
             deadLetterTopic:
               type: string
-            forwardSourceMessageProperty:
-              type: boolean
             golang:
               properties:
                 go:
@@ -62,12 +62,7 @@ spec:
                 jarLocation:
                   type: string
               type: object
-            logTopic:
-              type: string
             maxMessageRetry:
-              format: int32
-              type: integer
-            maxPendingAsyncRequests:
               format: int32
               type: integer
             maxReplicas:
@@ -77,6 +72,9 @@ spec:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "make" to regenerate code after modifying this file'
               type: string
+            negativeAckRedeliveryDelayMs:
+              format: int32
+              type: integer
             processingGuarantee:
               type: string
             pulsar:
@@ -105,10 +103,10 @@ spec:
                 x-kubernetes-int-or-string: true
               description: ResourceList is a set of (resource name, quantity) pairs.
               type: object
-            retainKeyOrdering:
-              type: boolean
             retainOrdering:
               type: boolean
+            runtimeFlags:
+              type: string
             secretsMap:
               additionalProperties:
                 properties:
@@ -127,9 +125,49 @@ spec:
             sourceType:
               type: string
             sources:
-              items:
-                type: string
-              type: array
+              properties:
+                customSchemaSources:
+                  additionalProperties:
+                    type: string
+                  type: object
+                customSerdeSources:
+                  additionalProperties:
+                    type: string
+                  type: object
+                sourceSpecs:
+                  additionalProperties:
+                    description: TODO json tag
+                    properties:
+                      consumerProperties:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      isRegexPattern:
+                        type: boolean
+                      receiverQueueSize:
+                        format: int32
+                        type: integer
+                      schemaProperties:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      schemaType:
+                        type: string
+                      serdeClassname:
+                        type: string
+                    type: object
+                  type: object
+                topicPattern:
+                  type: string
+                topics:
+                  items:
+                    type: string
+                  type: array
+              type: object
+            subscriptionName:
+              type: string
+            subscriptionPosition:
+              type: string
             tenant:
               type: string
             timeout:
@@ -137,7 +175,7 @@ spec:
               type: integer
           type: object
         status:
-          description: SinkStatus defines the observed state of Sink
+          description: SinkStatus defines the observed state of Topic
           properties:
             conditions:
               additionalProperties:
