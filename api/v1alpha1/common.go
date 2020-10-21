@@ -68,7 +68,7 @@ type SecretRef struct {
 	Key  string `json:"key,omitempty"`
 }
 
-type SourceConf struct {
+type InputConf struct {
 	Topics              []string                  `json:"topics,omitempty"`
 	TopicPattern        string                    `json:"topicPattern,omitempty"`
 	CustomSerdeSources  map[string]string         `json:"customSerdeSources,omitempty"`
@@ -85,7 +85,7 @@ type ConsumerConfig struct {
 	ReceiverQueueSize  int32             `json:"receiverQueueSize,omitempty"`
 }
 
-type SinkConf struct {
+type OutputConf struct {
 	Topic              string            `json:"topic,omitempty"`
 	SinkSerdeClassName string            `json:"sinkSerdeClassName,omitempty"`
 	SinkSchemaType     string            `json:"sinkSchemaType,omitempty"`

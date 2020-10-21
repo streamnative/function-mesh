@@ -136,7 +136,6 @@ spec:
                   type: object
                 sourceSpecs:
                   additionalProperties:
-                    description: TODO json tag
                     properties:
                       consumerProperties:
                         additionalProperties:

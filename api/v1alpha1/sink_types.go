@@ -37,7 +37,7 @@ type SinkSpec struct {
 	SinkType    string               `json:"sinkType,omitempty"`
 	Replicas    *int32               `json:"replicas,omitempty"`
 	MaxReplicas *int32               `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Sources     SourceConf           `json:"sources,omitempty"`
+	Input       InputConf            `json:"input,omitempty"`
 	SinkConfig  map[string]string    `json:"sinkConfig,omitempty"`
 	Resources   corev1.ResourceList  `json:"resources,omitempty"`
 	SecretsMap  map[string]SecretRef `json:"secretsMap,omitempty"`

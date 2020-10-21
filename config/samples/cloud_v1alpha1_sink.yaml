@@ -8,8 +8,9 @@ spec:
   sourceType: "[B"
   sinkType: "[B"
   replicas: 1
-  sources:
-  - persistent://public/default/input
+  input:
+    topics:
+    - persistent://public/default/input
   sinkConfig:
     elasticSearchUrl: "http://quickstart-es-http.default.svc.cluster.local:9200"
     indexName: "my_index"

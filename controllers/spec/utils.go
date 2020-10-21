@@ -51,7 +51,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 	}
 }
 
-func generateInputSpec(sourceConf v1alpha1.SourceConf) map[string]*proto.ConsumerSpec {
+func generateInputSpec(sourceConf v1alpha1.InputConf) map[string]*proto.ConsumerSpec {
 	inputSpecs := make(map[string]*proto.ConsumerSpec)
 
 	for _, source := range sourceConf.Topics {
@@ -98,7 +98,7 @@ func generateInputSpec(sourceConf v1alpha1.SourceConf) map[string]*proto.Consume
 }
 
 func generateFunctionInputSpec(function *v1alpha1.Function) *proto.SourceSpec {
-	inputSpecs := generateInputSpec(function.Spec.Sources)
+	inputSpecs := generateInputSpec(function.Spec.Input)
 
 	return &proto.SourceSpec{
 		ClassName:                    "",
@@ -120,28 +120,28 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 		ClassName:                    "",
 		Configs:                      "",
 		TypeClassName:                function.Spec.SinkType,
-		Topic:                        function.Spec.Sink.Topic,
+		Topic:                        function.Spec.Output.Topic,
 		ProducerSpec:                 nil,
-		SerDeClassName:               function.Spec.Sink.SinkSerdeClassName,
+		SerDeClassName:               function.Spec.Output.SinkSerdeClassName,
 		Builtin:                      "",
-		SchemaType:                   function.Spec.Sink.SinkSchemaType,
+		SchemaType:                   function.Spec.Output.SinkSchemaType,
 		ForwardSourceMessageProperty: *function.Spec.ForwardSourceMessageProperty,
 		SchemaProperties:             nil,
 		ConsumerProperties:           nil,
 	}
 
-	if function.Spec.Sink.CustomSchemaSinks != nil && function.Spec.Sink.Topic != "" {
-		conf := function.Spec.Sink.CustomSchemaSinks[function.Spec.Sink.Topic]
+	if function.Spec.Output.CustomSchemaSinks != nil && function.Spec.Output.Topic != "" {
+		conf := function.Spec.Output.CustomSchemaSinks[function.Spec.Output.Topic]
 		config := unmarshalConsumerConfig(conf)
 		sinkSpec.SchemaProperties = config.SchemaProperties
 		sinkSpec.ConsumerProperties = config.ConsumerProperties
 	}
 
-	if function.Spec.Sink.ProducerConf != nil {
+	if function.Spec.Output.ProducerConf != nil {
 		producerConfig := &proto.ProducerSpec{
-			MaxPendingMessages:                 function.Spec.Sink.ProducerConf.MaxPendingMessages,
-			MaxPendingMessagesAcrossPartitions: function.Spec.Sink.ProducerConf.MaxPendingMessagesAcrossPartitions,
-			UseThreadLocalProducers:            function.Spec.Sink.ProducerConf.UseThreadLocalProducers,
+			MaxPendingMessages:                 function.Spec.Output.ProducerConf.MaxPendingMessages,
+			MaxPendingMessagesAcrossPartitions: function.Spec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions,
+			UseThreadLocalProducers:            function.Spec.Output.ProducerConf.UseThreadLocalProducers,
 		}
 
 		sinkSpec.ProducerSpec = producerConfig
@@ -182,14 +182,14 @@ func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
 func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 	return &proto.SinkSpec{
 		TypeClassName: source.Spec.SinkType,
-		Topic:         source.Spec.Sink.Topic,
+		Topic:         source.Spec.Output.Topic,
 		ProducerSpec: &proto.ProducerSpec{
-			MaxPendingMessages:                 source.Spec.Sink.ProducerConf.MaxPendingMessages,
-			MaxPendingMessagesAcrossPartitions: source.Spec.Sink.ProducerConf.MaxPendingMessagesAcrossPartitions,
-			UseThreadLocalProducers:            source.Spec.Sink.ProducerConf.UseThreadLocalProducers,
+			MaxPendingMessages:                 source.Spec.Output.ProducerConf.MaxPendingMessages,
+			MaxPendingMessagesAcrossPartitions: source.Spec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions,
+			UseThreadLocalProducers:            source.Spec.Output.ProducerConf.UseThreadLocalProducers,
 		},
-		SerDeClassName: source.Spec.Sink.SinkSerdeClassName,
-		SchemaType:     source.Spec.Sink.SinkSchemaType,
+		SerDeClassName: source.Spec.Output.SinkSerdeClassName,
+		SchemaType:     source.Spec.Output.SinkSchemaType,
 	}
 }
 
@@ -214,7 +214,7 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 }
 
 func generateSinkInputSpec(sink *v1alpha1.Sink) *proto.SourceSpec {
-	inputSpecs := generateInputSpec(sink.Spec.Sources)
+	inputSpecs := generateInputSpec(sink.Spec.Input)
 
 	return &proto.SourceSpec{
 		TypeClassName:                sink.Spec.SourceType,

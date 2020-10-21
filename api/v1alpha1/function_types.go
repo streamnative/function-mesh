@@ -37,8 +37,8 @@ type FunctionSpec struct {
 	SinkType    string               `json:"sinkType,omitempty"`
 	Replicas    *int32               `json:"replicas,omitempty"`
 	MaxReplicas *int32               `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Sources     SourceConf           `json:"sources,omitempty"`
-	Sink        SinkConf             `json:"sink,omitempty"`
+	Input       InputConf            `json:"input,omitempty"`
+	Output      OutputConf           `json:"output,omitempty"`
 	LogTopic    string               `json:"logTopic,omitempty"`
 	FuncConfig  map[string]string    `json:"funcConfig,omitempty"`
 	Resources   corev1.ResourceList  `json:"resources,omitempty"`

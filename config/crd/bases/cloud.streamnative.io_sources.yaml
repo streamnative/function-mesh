@@ -109,7 +109,6 @@ spec:
                     type: string
                   type: object
                 producerConf:
-                  description: TODO use json tag
                   properties:
                     maxPendingMessages:
                       format: int32

@@ -7,7 +7,8 @@ spec:
   sourceType: org.apache.pulsar.common.schema.KeyValue
   sinkType: org.apache.pulsar.common.schema.KeyValue
   replicas: 1
-  sink: persistent://public/default/destination
+  output:
+    topic: persistent://public/default/destination
   sourceConfig:
     mongodb.hosts: rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017
     mongodb.name: dbserver1
