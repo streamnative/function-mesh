@@ -63,6 +63,30 @@ spec:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "make" to regenerate code after modifying this file'
               type: string
+            output:
+              properties:
+                customSchemaSinks:
+                  additionalProperties:
+                    type: string
+                  type: object
+                producerConf:
+                  properties:
+                    maxPendingMessages:
+                      format: int32
+                      type: integer
+                    maxPendingMessagesAcrossPartitions:
+                      format: int32
+                      type: integer
+                    useThreadLocalProducers:
+                      type: boolean
+                  type: object
+                sinkSchemaType:
+                  type: string
+                sinkSerdeClassName:
+                  type: string
+                topic:
+                  type: string
+              type: object
             processingGuarantee:
               type: string
             pulsar:
@@ -101,30 +125,6 @@ spec:
                   path:
                     type: string
                 type: object
-              type: object
-            sink:
-              properties:
-                customSchemaSinks:
-                  additionalProperties:
-                    type: string
-                  type: object
-                producerConf:
-                  properties:
-                    maxPendingMessages:
-                      format: int32
-                      type: integer
-                    maxPendingMessagesAcrossPartitions:
-                      format: int32
-                      type: integer
-                    useThreadLocalProducers:
-                      type: boolean
-                  type: object
-                sinkSchemaType:
-                  type: string
-                sinkSerdeClassName:
-                  type: string
-                topic:
-                  type: string
               type: object
             sinkType:
               type: string

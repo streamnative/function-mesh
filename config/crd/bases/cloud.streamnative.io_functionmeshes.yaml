@@ -61,6 +61,45 @@ spec:
                       go:
                         type: string
                     type: object
+                  input:
+                    properties:
+                      customSchemaSources:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      customSerdeSources:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      sourceSpecs:
+                        additionalProperties:
+                          properties:
+                            consumerProperties:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            isRegexPattern:
+                              type: boolean
+                            receiverQueueSize:
+                              format: int32
+                              type: integer
+                            schemaProperties:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            schemaType:
+                              type: string
+                            serdeClassname:
+                              type: string
+                          type: object
+                        type: object
+                      topicPattern:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                    type: object
                   java:
                     properties:
                       jar:
@@ -84,6 +123,30 @@ spec:
                       cluster Important: Run "make" to regenerate code after modifying
                       this file'
                     type: string
+                  output:
+                    properties:
+                      customSchemaSinks:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      producerConf:
+                        properties:
+                          maxPendingMessages:
+                            format: int32
+                            type: integer
+                          maxPendingMessagesAcrossPartitions:
+                            format: int32
+                            type: integer
+                          useThreadLocalProducers:
+                            type: boolean
+                        type: object
+                      sinkSchemaType:
+                        type: string
+                      sinkSerdeClassName:
+                        type: string
+                      topic:
+                        type: string
+                    type: object
                   processingGuarantee:
                     type: string
                   pulsar:
@@ -128,35 +191,41 @@ spec:
                           type: string
                       type: object
                     type: object
-                  sink:
-                    properties:
-                      customSchemaSinks:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      producerConf:
-                        properties:
-                          maxPendingMessages:
-                            format: int32
-                            type: integer
-                          maxPendingMessagesAcrossPartitions:
-                            format: int32
-                            type: integer
-                          useThreadLocalProducers:
-                            type: boolean
-                        type: object
-                      sinkSchemaType:
-                        type: string
-                      sinkSerdeClassName:
-                        type: string
-                      topic:
-                        type: string
-                    type: object
                   sinkType:
                     type: string
                   sourceType:
                     type: string
-                  sources:
+                  subscriptionName:
+                    type: string
+                  subscriptionPosition:
+                    type: string
+                  tenant:
+                    type: string
+                  timeout:
+                    format: int32
+                    type: integer
+                type: object
+              type: array
+            sinks:
+              items:
+                description: SinkSpec defines the desired state of Topic
+                properties:
+                  autoAck:
+                    type: boolean
+                  className:
+                    type: string
+                  cleanupSubscription:
+                    type: boolean
+                  clusterName:
+                    type: string
+                  deadLetterTopic:
+                    type: string
+                  golang:
+                    properties:
+                      go:
+                        type: string
+                    type: object
+                  input:
                     properties:
                       customSchemaSources:
                         additionalProperties:
@@ -194,36 +263,6 @@ spec:
                         items:
                           type: string
                         type: array
-                    type: object
-                  subscriptionName:
-                    type: string
-                  subscriptionPosition:
-                    type: string
-                  tenant:
-                    type: string
-                  timeout:
-                    format: int32
-                    type: integer
-                type: object
-              type: array
-            sinks:
-              items:
-                description: SinkSpec defines the desired state of Topic
-                properties:
-                  autoAck:
-                    type: boolean
-                  className:
-                    type: string
-                  cleanupSubscription:
-                    type: boolean
-                  clusterName:
-                    type: string
-                  deadLetterTopic:
-                    type: string
-                  golang:
-                    properties:
-                      go:
-                        type: string
                     type: object
                   java:
                     properties:
@@ -296,45 +335,6 @@ spec:
                     type: string
                   sourceType:
                     type: string
-                  sources:
-                    properties:
-                      customSchemaSources:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      customSerdeSources:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      sourceSpecs:
-                        additionalProperties:
-                          properties:
-                            consumerProperties:
-                              additionalProperties:
-                                type: string
-                              type: object
-                            isRegexPattern:
-                              type: boolean
-                            receiverQueueSize:
-                              format: int32
-                              type: integer
-                            schemaProperties:
-                              additionalProperties:
-                                type: string
-                              type: object
-                            schemaType:
-                              type: string
-                            serdeClassname:
-                              type: string
-                          type: object
-                        type: object
-                      topicPattern:
-                        type: string
-                      topics:
-                        items:
-                          type: string
-                        type: array
-                    type: object
                   subscriptionName:
                     type: string
                   subscriptionPosition:
@@ -374,6 +374,30 @@ spec:
                       cluster Important: Run "make" to regenerate code after modifying
                       this file'
                     type: string
+                  output:
+                    properties:
+                      customSchemaSinks:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      producerConf:
+                        properties:
+                          maxPendingMessages:
+                            format: int32
+                            type: integer
+                          maxPendingMessagesAcrossPartitions:
+                            format: int32
+                            type: integer
+                          useThreadLocalProducers:
+                            type: boolean
+                        type: object
+                      sinkSchemaType:
+                        type: string
+                      sinkSerdeClassName:
+                        type: string
+                      topic:
+                        type: string
+                    type: object
                   processingGuarantee:
                     type: string
                   pulsar:
@@ -413,30 +437,6 @@ spec:
                         path:
                           type: string
                       type: object
-                    type: object
-                  sink:
-                    properties:
-                      customSchemaSinks:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      producerConf:
-                        properties:
-                          maxPendingMessages:
-                            format: int32
-                            type: integer
-                          maxPendingMessagesAcrossPartitions:
-                            format: int32
-                            type: integer
-                          useThreadLocalProducers:
-                            type: boolean
-                        type: object
-                      sinkSchemaType:
-                        type: string
-                      sinkSerdeClassName:
-                        type: string
-                      topic:
-                        type: string
                     type: object
                   sinkType:
                     type: string

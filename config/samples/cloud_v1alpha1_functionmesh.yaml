@@ -8,30 +8,50 @@ spec:
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
       sourceType: java.lang.String
       sinkType: java.lang.String
-      replicas: 3
+      replicas: 1
+      maxReplicas: 5
       logTopic: persistent://public/default/logging-function-logs
-      sources:
-        - persistent://public/default/source-topic1
-      sink: persistent://public/default/sink-topic
+      input:
+        topics:
+          - persistent://public/default/source-topic1
+        output:
+          topic: persistent://public/default/mid-topic
       pulsar:
         pulsarConfig: "mesh-test-pulsar"
       java:
         jar: pulsar-functions-api-examples.jar
         jarLocation: public/default/nlu-test
+      # following value must be provided if no auto-filling is enabled
+      forwardSourceMessageProperty: true
+      autoAck: true
+      resources:
+        cpu: "0.2"
+        memory: 1G
+      clusterName: test
     - name: ex2
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
       sourceTypeClass: java.lang.String
       sinkTypeClass: java.lang.String
-      replicas: 2
+      replicas: 1
+      maxReplicas: 3
       logTopic: persistent://public/default/logging-function-logs
-      sources:
-        - persistent://public/default/source-topic1
-      sink: persistent://public/default/sink-topic
+      input:
+        topics:
+          - persistent://public/default/mid-topic
+      output:
+          topic: persistent://public/default/sink-topic
       pulsar:
         pulsarConfig: "mesh-test-pulsar"
       java:
         jar: pulsar-functions-api-examples.jar
         jarLocation: public/default/nlu-test
+      # following value must be provided if no auto-filling is enabled
+      forwardSourceMessageProperty: true
+      autoAck: true
+      resources:
+        cpu: "0.2"
+        memory: 1G
+      clusterName: test
 ---
 apiVersion: v1
 kind: ConfigMap
