@@ -261,16 +261,6 @@ func generateResource(resources corev1.ResourceList) *proto.Resources {
 	}
 }
 
-func generateContainerResourceRequest(resources corev1.ResourceList) *corev1.ResourceRequirements {
-	// TODO: add memory padding & cpu overcommit
-	return &corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{corev1.ResourceCPU: *resources.Cpu(),
-			corev1.ResourceMemory: *resources.Memory()},
-		Limits: corev1.ResourceList{corev1.ResourceCPU: *resources.Cpu(),
-			corev1.ResourceMemory: *resources.Memory()},
-	}
-}
-
 func getUserConfig(configs map[string]string) string {
 	// validated in admission web hook
 	bytes, _ := json.Marshal(configs)

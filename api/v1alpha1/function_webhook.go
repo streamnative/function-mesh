@@ -82,14 +82,17 @@ func (r *Function) Default() {
 		r.Spec.ForwardSourceMessageProperty = &trueVal
 	}
 
-	if r.Spec.Resources.Cpu() == nil {
-		r.Spec.Resources.Cpu().Set(int64(1))
+	if r.Spec.Resources.Requests.Cpu() == nil {
+		r.Spec.Resources.Requests.Cpu().Set(int64(1))
 	}
 
-	if r.Spec.Resources.Memory() == nil {
-		r.Spec.Resources.Memory().Set(int64(1073741824))
+	if r.Spec.Resources.Requests.Memory() == nil {
+		r.Spec.Resources.Requests.Memory().Set(int64(1073741824))
 	}
 
+	if r.Spec.Resources.Limits == nil {
+		paddingResourceLimit(&r.Spec.Resources)
+	}
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -118,8 +121,8 @@ func (r *Function) ValidateCreate() error {
 		return errors.New("maxReplicas must be greater than or equal to replicas")
 	}
 
-	if !validResource(r.Spec.Resources) {
-		return errors.New("resource request is invalid. each resource value must be positive")
+	if !validResourceRequirement(r.Spec.Resources) {
+		return errors.New("resource requirement is invalid")
 	}
 
 	if r.Spec.Timeout != 0 && r.Spec.ProcessingGuarantee != AtleastOnce {

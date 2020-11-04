@@ -21,7 +21,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -266,13 +265,7 @@ func (in *FunctionSpec) DeepCopyInto(out *FunctionSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.Resources != nil {
-		in, out := &in.Resources, &out.Resources
-		*out = make(v1.ResourceList, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val.DeepCopy()
-		}
-	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	if in.SecretsMap != nil {
 		in, out := &in.SecretsMap, &out.SecretsMap
 		*out = make(map[string]SecretRef, len(*in))
@@ -634,13 +627,7 @@ func (in *SinkSpec) DeepCopyInto(out *SinkSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.Resources != nil {
-		in, out := &in.Resources, &out.Resources
-		*out = make(v1.ResourceList, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val.DeepCopy()
-		}
-	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	if in.SecretsMap != nil {
 		in, out := &in.SecretsMap, &out.SecretsMap
 		*out = make(map[string]SecretRef, len(*in))
@@ -769,13 +756,7 @@ func (in *SourceSpec) DeepCopyInto(out *SourceSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.Resources != nil {
-		in, out := &in.Resources, &out.Resources
-		*out = make(v1.ResourceList, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val.DeepCopy()
-		}
-	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	if in.SecretsMap != nil {
 		in, out := &in.SecretsMap, &out.SecretsMap
 		*out = make(map[string]SecretRef, len(*in))

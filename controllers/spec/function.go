@@ -61,7 +61,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		Command:         makeFunctionCommand(function),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
 		Env:             generateContainerEnv(function.Spec.SecretsMap),
-		Resources:       *generateContainerResourceRequest(function.Spec.Resources),
+		Resources:       function.Spec.Resources,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		EnvFrom:         generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthConfig),
 	}
@@ -79,7 +79,7 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	return MakeCommand(function.Spec.Java.JarLocation, function.Spec.Java.Jar,
 		function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
-		function.Spec.Resources.Memory().String(), function.Spec.Pulsar.AuthConfig != "")
+		function.Spec.Resources.Requests.Memory().String(), function.Spec.Pulsar.AuthConfig != "")
 }
 
 func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {

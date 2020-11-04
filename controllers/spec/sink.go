@@ -60,7 +60,7 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		Command:         MakeSinkCommand(sink),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
 		Env:             generateContainerEnv(sink.Spec.SecretsMap),
-		Resources:       *generateContainerResourceRequest(sink.Spec.Resources),
+		Resources:       sink.Spec.Resources,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		EnvFrom:         generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthConfig),
 	}
@@ -78,7 +78,7 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	return MakeCommand(sink.Spec.Java.JarLocation, sink.Spec.Java.Jar,
 		sink.Spec.Name, sink.Spec.ClusterName, generateSinkDetailsInJSON(sink),
-		sink.Spec.Resources.Memory().ToDec().String(),
+		sink.Spec.Resources.Requests.Memory().ToDec().String(),
 		sink.Spec.Pulsar.AuthConfig != "")
 }
 

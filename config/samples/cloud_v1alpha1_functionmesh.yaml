@@ -25,8 +25,12 @@ spec:
       forwardSourceMessageProperty: true
       autoAck: true
       resources:
-        cpu: "0.2"
-        memory: 1G
+        requests:
+          cpu: "0.1"
+          memory: 1G
+        limits:
+          cpu: "0.2"
+          memory: 1.1G
       clusterName: test
     - name: ex2
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction

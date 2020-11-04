@@ -60,7 +60,7 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		Command:         makeSourceCommand(source),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
 		Env:             generateContainerEnv(source.Spec.SecretsMap),
-		Resources:       *generateContainerResourceRequest(source.Spec.Resources),
+		Resources:       source.Spec.Resources,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		EnvFrom:         generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthConfig),
 	}
@@ -78,7 +78,7 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 func makeSourceCommand(source *v1alpha1.Source) []string {
 	return MakeCommand(source.Spec.Java.JarLocation, source.Spec.Java.Jar,
 		source.Spec.Name, source.Spec.ClusterName, generateSourceDetailsInJSON(source),
-		source.Spec.Resources.Memory().ToDec().String(),
+		source.Spec.Resources.Requests.Memory().ToDec().String(),
 		source.Spec.Pulsar.AuthConfig != "")
 }
 
