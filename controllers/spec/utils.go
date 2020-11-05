@@ -231,9 +231,9 @@ func generateSinkInputSpec(sink *v1alpha1.Sink) *proto.SourceSpec {
 func getSubscriptionType(retainOrdering bool, processingGuarantee v1alpha1.ProcessGuarantee) proto.SubscriptionType {
 	if retainOrdering || processingGuarantee == v1alpha1.EffectivelyOnce {
 		return proto.SubscriptionType_FAILOVER
-	} else {
-		return proto.SubscriptionType_SHARED
 	}
+
+	return proto.SubscriptionType_SHARED
 }
 
 func generateSinkOutputSpec(sink *v1alpha1.Sink) *proto.SinkSpec {

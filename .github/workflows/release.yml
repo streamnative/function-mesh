@@ -1,0 +1,29 @@
+name: Function-Mesh Release
+
+on:
+  release:
+
+jobs:
+  upload:
+    name: Upload Release files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up GO 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+
+      - name: setup kubebuilder 2.3.1
+        uses: RyanSiu1995/kubebuilder-action@v1
+        with:
+          version: 2.3.1
+
+      - name: Publish
+        uses: docker/build-push-action@v1
+        with:
+          repository: streamnative/function-mesh
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          tags: ${{ github.event.release.tag_name }}

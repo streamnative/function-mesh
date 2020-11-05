@@ -66,8 +66,11 @@ var scriptLicenseCheck = regexp.MustCompile(`#
 `)
 
 var skip = map[string]bool{
-	"controllers/proto/Function.pb.go": true,
-	".github/workflows/project.yml":    true,
+	"controllers/proto/Function.pb.go":   true,
+	".github/workflows/project.yml":      true,
+	".github/workflows/release.yml":      true,
+	".github/workflows/release-node.yml": true,
+	".github/release-drafter.yml":        true,
 }
 
 func TestLicense(t *testing.T) {
