@@ -2,6 +2,7 @@ name: Function-Mesh Release
 
 on:
   release:
+    types: [created]
 
 jobs:
   upload:
