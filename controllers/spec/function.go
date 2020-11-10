@@ -82,9 +82,9 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 			function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
 			function.Spec.Resources.Requests.Memory().String(), function.Spec.Pulsar.AuthConfig != "")
 	} else if function.Spec.Golang.Go != "" {
-		 return MakeGoFunctionCommand(function.Spec.Golang.GoLocation, function.Spec.Golang.Go,
-		 	function.Spec.ClassName, generateFunctionDetailsInJSON(function),
-		 	function.Spec.Pulsar.AuthConfig != "")
+		return MakeGoFunctionCommand(function.Spec.Golang.GoLocation, function.Spec.Golang.Go,
+			function.Spec.ClassName, generateFunctionDetailsInJSON(function),
+			function.Spec.Pulsar.AuthConfig != "")
 	}
 	// TODO: Add Python Function process logic
 	return nil
