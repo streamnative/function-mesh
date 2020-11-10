@@ -60,7 +60,8 @@ type PythonRuntime struct {
 }
 
 type GoRuntime struct {
-	Go string `json:"go,omitempty"`
+	Go         string `json:"go,omitempty"`
+	GoLocation string `json:"goLocation,omitempty"`
 }
 
 type SecretRef struct {

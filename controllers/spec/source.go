@@ -76,7 +76,7 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 }
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
-	return MakeCommand(source.Spec.Java.JarLocation, source.Spec.Java.Jar,
+	return MakeJavaFunctionCommand(source.Spec.Java.JarLocation, source.Spec.Java.Jar,
 		source.Spec.Name, source.Spec.ClusterName, generateSourceDetailsInJSON(source),
 		source.Spec.Resources.Requests.Memory().ToDec().String(),
 		source.Spec.Pulsar.AuthConfig != "")

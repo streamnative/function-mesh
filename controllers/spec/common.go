@@ -136,12 +136,23 @@ func MakePodTemplate(container *corev1.Container, labels map[string]string) *cor
 	}
 }
 
-func MakeCommand(downloadPath, packageFile, name, clusterName, details, memory string, authProvided bool) []string {
+func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory string, authProvided bool) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
-		strings.Join(getProcessArgs(name, packageFile, clusterName, details, memory, authProvided), " ")
+		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, details, memory, authProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
+		processCommand = downloadCommand + " && " + processCommand
+	}
+	return []string{"sh", "-c", processCommand}
+}
+
+func MakeGoFunctionCommand(downloadPath, goExecFilePath, clusterName, details string, authProvided bool) []string {
+	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
+		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, clusterName, details, authProvided), " ")
+	if downloadPath != "" {
+		// prepend download command if the downPath is provided
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -165,8 +176,7 @@ func setShardIDEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
-func getProcessArgs(name string, packageName string, clusterName string, details string, memory string, authProvided bool) []string {
-	// TODO support multiple runtime
+func getProcessJavaRuntimeArgs(name string, packageName string, clusterName string, details string, memory string, authProvided bool) []string {
 	args := []string{
 		"exec",
 		"java",
@@ -180,6 +190,51 @@ func getProcessArgs(name string, packageName string, clusterName string, details
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
 		packageName,
+		"--instance_id",
+		"${" + EnvShardID + "}",
+		"--function_id",
+		fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
+		"--function_version",
+		"0",
+		"--function_details",
+		"'" + details + "'", //in json format
+		"--pulsar_serviceurl",
+		"$brokerServiceURL",
+		"--max_buffered_tuples",
+		"100", // TODO
+		"--port",
+		strconv.Itoa(int(GRPCPort.ContainerPort)),
+		"--metrics_port",
+		strconv.Itoa(int(MetricsPort.ContainerPort)),
+		"--expected_healthcheck_interval",
+		"-1", // TurnOff BuiltIn HealthCheck to avoid instance exit
+		"--cluster_name",
+		clusterName,
+	}
+
+	if authProvided {
+		args = append(args, []string{
+			"--client_auth_plugin",
+			"$clientAuthenticationPlugin",
+			"--client_auth_params",
+			"$clientAuthenticationParameters",
+			"--use_tls",
+			"$useTls",
+			"--tls_allow_insecure",
+			"$tlsAllowInsecureConnection",
+			"--hostname_verification_enabled",
+			"$tlsHostnameVerificationEnable",
+			"--tls_trust_cert_path",
+			"$tlsTrustCertsFilePath"}...)
+	}
+
+	return args
+}
+
+func getProcessGoRuntimeArgs(goExecFilePath string, clusterName, details string, authProvided bool) []string {
+	args := []string{
+		"--go", // Path to the main Go executable binary for the function
+		goExecFilePath,
 		"--instance_id",
 		"${" + EnvShardID + "}",
 		"--function_id",

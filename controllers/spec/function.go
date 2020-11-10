@@ -77,9 +77,17 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 }
 
 func makeFunctionCommand(function *v1alpha1.Function) []string {
-	return MakeCommand(function.Spec.Java.JarLocation, function.Spec.Java.Jar,
-		function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
-		function.Spec.Resources.Requests.Memory().String(), function.Spec.Pulsar.AuthConfig != "")
+	if function.Spec.Java.Jar != "" {
+		return MakeJavaFunctionCommand(function.Spec.Java.JarLocation, function.Spec.Java.Jar,
+			function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
+			function.Spec.Resources.Requests.Memory().String(), function.Spec.Pulsar.AuthConfig != "")
+	} else if function.Spec.Golang.Go != "" {
+		 return MakeGoFunctionCommand(function.Spec.Golang.GoLocation, function.Spec.Golang.Go,
+		 	function.Spec.ClassName, generateFunctionDetailsInJSON(function),
+		 	function.Spec.Pulsar.AuthConfig != "")
+	}
+	// TODO: Add Python Function process logic
+	return nil
 }
 
 func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
