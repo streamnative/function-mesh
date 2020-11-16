@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -54,62 +56,6 @@ function ci::install_storage_provisioner() {
       WC=$(${KUBECTL} get pods --field-selector=status.phase=Running | grep local-storage-provisioner | wc -l)
     done
     echo "Successfully installed the local storage provisioner."
-}
-
-function ci::install_cert_manager() {
-    echo "Installing the cert-manager ..."
-    ${KUBECTL} create namespace cert-manager
-    ${FUNCTION_MESH_HOME}/scripts/cert-manager/install-cert-manager.sh
-    WC=$(${KUBECTL} get pods -n cert-manager --field-selector=status.phase=Running | wc -l)
-    while [[ ${WC} -lt 3 ]]; do
-      echo ${WC};
-      sleep 15
-      ${KUBECTL} get pods -n cert-manager
-      WC=$(${KUBECTL} get pods -n cert-manager --field-selector=status.phase=Running | wc -l)
-    done
-    echo "Successfully installed the cert manager."
-}
-
-function ci::install_pulsar_chart() {
-    local value_file=$1
-    local extra_opts=$2
-
-    echo "Installing the pulsar chart"
-    ${KUBECTL} create namespace ${NAMESPACE}
-    echo ${FUNCTION_MESH_HOME}/scripts/pulsar/prepare_helm_release.sh -k ${CLUSTER} -n ${NAMESPACE} ${extra_opts}
-    ${FUNCTION_MESH_HOME}/scripts/pulsar/prepare_helm_release.sh -k ${CLUSTER} -n ${NAMESPACE} ${extra_opts}
-    ${FUNCTION_MESH_HOME}/scripts/pulsar/upload_tls.sh -k ${CLUSTER} -d ${PULSAR_HOME}/.ci/tls
-    sleep 10
-
-    echo ${HELM} install --set initialize=true --values ${value_file} ${CLUSTER} ${FUNCTION_MESH_HOME}/charts/pulsar
-    ${HELM} template --values ${value_file} ${CLUSTER} ${FUNCTION_MESH_HOME}/charts/pulsar
-    ${HELM} install --set initialize=true --values ${value_file} ${CLUSTER} ${FUNCTION_MESH_HOME}/charts/pulsar
-
-    echo "wait until broker is alive"
-    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-broker | wc -l)
-    while [[ ${WC} -lt 1 ]]; do
-      echo ${WC};
-      sleep 15
-      ${KUBECTL} get pods -n ${NAMESPACE}
-      WC=$(${KUBECTL} get pods -n ${NAMESPACE} | grep ${CLUSTER}-broker | wc -l)
-      if [[ ${WC} -gt 1 ]]; then
-        ${KUBECTL} describe pod -n ${NAMESPACE} pulsar-ci-broker-0
-        ${KUBECTL} logs -n ${NAMESPACE} pulsar-ci-broker-0
-      fi
-      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-broker | wc -l)
-    done
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-toolset-0 -- bash -c 'until nslookup pulsar-ci-broker; do sleep 3; done'
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-toolset-0 -- bash -c 'until [ "$(curl -L http://pulsar-ci-broker:8080/status.html)" == "OK" ]; do sleep 3; done'
-
-    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-proxy | wc -l)
-    while [[ ${WC} -lt 1 ]]; do
-      echo ${WC};
-      sleep 15
-      ${KUBECTL} get pods -n ${NAMESPACE}
-      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-proxy | wc -l)
-    done
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-toolset-0 -- bash -c 'until nslookup pulsar-ci-proxy; do sleep 3; done'
-    # ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-toolset-0 -- bash -c 'until [ "$(curl -L http://pulsar-ci-proxy:8080/status.html)" == "OK" ]; do sleep 3; done'
 }
 
 function ci::test_pulsar_producer() {
