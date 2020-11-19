@@ -50,11 +50,11 @@ kubectl get pods -A
 ci::install_pulsar_charts
 
 echo "get pods again..........."
-kubectl get pods -A
+kubectl get pods -n pulsar
 
 #
-## test producer
-#ci::test_pulsar_producer
+# test producer
+ci::test_pulsar_producer
 #
 #if [[ "x${FUNCTION}" == "xtrue" ]]; then
 #    # install cert manager

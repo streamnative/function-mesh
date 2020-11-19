@@ -64,7 +64,7 @@ function ci::install_pulsar_charts() {
     ${HELM} repo update
     ${KUBECTL} create namespace pulsar
     ${HELM} install --set initialize=true function-mesh streamnative/pulsar
-    ${KUBECTL} get service
+    ${KUBECTL} get service -n pulsar
 }
 
 function ci::test_pulsar_producer() {
