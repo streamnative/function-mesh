@@ -62,9 +62,24 @@ function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
     ${HELM} repo add streamnative https://charts.streamnative.io
     ${HELM} repo update
-    ${KUBECTL} create namespace pulsar
+    ${KUBECTL} create namespace ${NAMESPACE}
     ${HELM} install --set initialize=true function-mesh streamnative/pulsar
-    ${KUBECTL} get service -n pulsar
+
+    echo "wait until broker is alive"
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-broker | wc -l)
+    while [[ ${WC} -lt 1 ]]; do
+      echo ${WC};
+      sleep 15
+      ${KUBECTL} get pods -n ${NAMESPACE}
+      WC=$(${KUBECTL} get pods -n ${NAMESPACE} | grep ${CLUSTER}-broker | wc -l)
+      if [[ ${WC} -gt 1 ]]; then
+        ${KUBECTL} describe pod -n ${NAMESPACE} pulsar-ci-broker-0
+        ${KUBECTL} logs -n ${NAMESPACE} pulsar-ci-broker-0
+      fi
+      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-broker | wc -l)
+    done
+
+    ${KUBECTL} get service -n ${NAMESPACE}
 }
 
 function ci::test_pulsar_producer() {
