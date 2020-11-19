@@ -67,6 +67,7 @@ function ci::install_pulsar_charts() {
     cd charts
     helm repo add loki https://grafana.github.io/loki/charts
     helm dependency update pulsar
+    kubectl create namespace ${NAMESPACE}
     ${HELM} install sn-platform --values ./pulsar/mini_values.yaml ./pulsar
 
     echo "wait until broker is alive"
