@@ -62,7 +62,7 @@ function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
     git clone https://github.com/streamnative/charts.git
     cd charts
-    ${HELM} install sn-platform --values .ci/clusters/values.yaml ./charts/pulsar
+    ${HELM} install sn-platform --values ./clusters/values.yaml ./charts/pulsar
 
     echo "wait until broker is alive"
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-broker | wc -l)
