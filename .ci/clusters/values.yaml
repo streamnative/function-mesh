@@ -28,8 +28,8 @@ initialize: true
 # NOTE: Make the default namespace as empty. So it will fallback to use the namespace used for installing the helm
 #       chart. Helm does not position it self as a namespace manager, as namespaces in kubernetes are considered as
 #       a higher control structure that is not part of the application.
-namespace: "pulsar"
-namespaceCreate: true
+namespace: ""
+namespaceCreate: false
 
 ###
 ### Global Settings

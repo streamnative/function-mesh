@@ -62,6 +62,7 @@ function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
     git clone https://github.com/streamnative/charts.git
     cd charts
+    ./scripts/pulsar/prepare_helm_release.sh -n ${NAMESPACE} -k function-mesh -c
     cp ../.ci/clusters/values.yaml charts/pulsar/mini_values.yaml
     cd charts
     helm repo add loki https://grafana.github.io/loki/charts
