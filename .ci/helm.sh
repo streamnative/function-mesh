@@ -62,7 +62,7 @@ function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
     git clone https://github.com/streamnative/charts.git
     cd charts
-    cp ../clusters/values.yaml charts/pulsar/mini_values.yaml
+    cp ../.ci/clusters/values.yaml charts/pulsar/mini_values.yaml
     cd charts
     ${HELM} install sn-platform --values ./pulsar/mini_values.yaml ./pulsar
 
