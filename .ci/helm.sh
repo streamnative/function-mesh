@@ -28,7 +28,7 @@ KIND_BIN=$OUTPUT_BIN/kind
 HELM=${OUTPUT_BIN}/helm
 KUBECTL=${OUTPUT_BIN}/kubectl
 NAMESPACE=pulsar
-CLUSTER=pulsar-ci
+CLUSTER=sn-platform
 CLUSTER_ID=$(uuidgen)
 
 function ci::create_cluster() {
@@ -67,7 +67,7 @@ function ci::install_pulsar_charts() {
     kubectl create namespace ${NAMESPACE}
     helm repo add loki https://grafana.github.io/loki/charts
     helm dependency update pulsar
-    ${HELM} install sn-platform --values ./pulsar/mini_values.yaml ./pulsar
+    ${HELM} install ${CLUSTER} --values ./pulsar/mini_values.yaml ./pulsar
 
     echo "check all pods..."
     kubectl get pods -A
