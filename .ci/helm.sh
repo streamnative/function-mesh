@@ -18,7 +18,7 @@
 # under the License.
 #
 
-#!/usr/bin/env bash
+set -ex
 
 BINDIR=`dirname "$0"`
 PULSAR_HOME=`cd ${BINDIR}/..;pwd`
