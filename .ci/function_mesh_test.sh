@@ -47,7 +47,7 @@ echo "get pods..........."
 kubectl get pods -A
 
 # install pulsar chart
-ci::install_pulsar_chart
+ci::install_pulsar_charts
 
 echo "get pods again..........."
 kubectl get pods -A

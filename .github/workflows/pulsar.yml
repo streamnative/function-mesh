@@ -17,7 +17,7 @@
 # under the License.
 #
 
-name: Precommit - Pulsar Helm Chart (Basic Installation)
+name: Precommit - Test Function Mesh (Basic Installation)
 on:
   pull_request:
     branches:
