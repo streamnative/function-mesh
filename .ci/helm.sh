@@ -62,8 +62,10 @@ function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
     ${HELM} repo add streamnative https://charts.streamnative.io
     ${HELM} repo update
-    ${KUBECTL} create namespace ${NAMESPACE}
-    ${HELM} install --set initialize=true function-mesh streamnative/pulsar
+    git clone https://github.com/streamnative/charts.git
+    cd charts
+    ./scripts/pulsar/prepare_helm_release.sh -n pulsar -k sn-platform-pulsar -c
+    ${HELM} install sn-platform streamnative/pulsar
 
     echo "wait until broker is alive"
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-broker | wc -l)
