@@ -28,18 +28,18 @@ KIND_BIN=$OUTPUT_BIN/kind
 HELM=${OUTPUT_BIN}/helm
 KUBECTL=${OUTPUT_BIN}/kubectl
 NAMESPACE=pulsar
-CLUSTER=function-mesh
+CLUSTER=sn-platform
 CLUSTER_ID=$(uuidgen)
 
 function ci::create_cluster() {
     echo "Creating a kind cluster ..."
-    ${FUNCTION_MESH_HOME}/hack/kind-cluster-build.sh --name function-mesh-${CLUSTER_ID} -c 1 -v 10
+    ${FUNCTION_MESH_HOME}/hack/kind-cluster-build.sh --name sn-platform-${CLUSTER_ID} -c 1 -v 10
     echo "Successfully created a kind cluster."
 }
 
 function ci::delete_cluster() {
     echo "Deleting a kind cluster ..."
-    kind delete cluster --name=function-mesh-${CLUSTER_ID}
+    kind delete cluster --name=sn-platform-${CLUSTER_ID}
     echo "Successfully delete a kind cluster."
 }
 
@@ -90,51 +90,51 @@ function ci::install_pulsar_charts() {
 
 function ci::test_pulsar_producer() {
     sleep 120
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup function-mesh-broker; do sleep 3; done'
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup function-mesh-proxy; do sleep 3; done'
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup sn-platform-broker; do sleep 3; done'
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup sn-platform-proxy; do sleep 3; done'
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- df -h
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- cat conf/bookkeeper.conf
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/bookkeeper shell listbookies -rw
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/bookkeeper shell listbookies -ro
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-admin tenants create function-mesh
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-admin namespaces create function-mesh/test
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-client produce -m "test-message" function-mesh/test/test-topic
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-admin tenants create sn-platform
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-admin namespaces create sn-platform/test
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-client produce -m "test-message" sn-platform/test/test-topic
 }
 
 function ci::wait_function_running() {
-    num_running=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'bin/pulsar-admin functions status --tenant function-mesh --namespace test --name test-function | bin/jq .numRunning')
+    num_running=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'bin/pulsar-admin functions status --tenant sn-platform --namespace test --name test-function | bin/jq .numRunning')
     while [[ ${num_running} -lt 1 ]]; do
       echo ${num_running}
       sleep 15
       ${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running
-      num_running=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'bin/pulsar-admin functions status --tenant function-mesh --namespace test --name test-function | bin/jq .numRunning')
+      num_running=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'bin/pulsar-admin functions status --tenant sn-platform --namespace test --name test-function | bin/jq .numRunning')
     done
 }
 
 function ci::wait_message_processed() {
-    num_processed=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'bin/pulsar-admin functions stats --tenant function-mesh --namespace test --name test-function | bin/jq .processedSuccessfullyTotal')
+    num_processed=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'bin/pulsar-admin functions stats --tenant sn-platform --namespace test --name test-function | bin/jq .processedSuccessfullyTotal')
     while [[ ${num_processed} -lt 1 ]]; do
       echo ${num_processed}
       sleep 15
-      ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-admin functions stats --tenant function-mesh --namespace test --name test-function
-      num_processed=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'bin/pulsar-admin functions stats --tenant function-mesh --namespace test --name test-function | bin/jq .processedSuccessfullyTotal')
+      ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-admin functions stats --tenant sn-platform --namespace test --name test-function
+      num_processed=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'bin/pulsar-admin functions stats --tenant sn-platform --namespace test --name test-function | bin/jq .processedSuccessfullyTotal')
     done
 }
 
 function ci::test_pulsar_function() {
     sleep 120
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup function-mesh-broker; do sleep 3; done'
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup function-mesh-proxy; do sleep 3; done'
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup sn-platform-broker; do sleep 3; done'
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup sn-platform-proxy; do sleep 3; done'
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- df -h
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/bookkeeper shell listbookies -rw
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/bookkeeper shell listbookies -ro
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- curl --retry 10 -L -o bin/jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- chmod +x bin/jq
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-admin functions create --tenant function-mesh --namespace test --name test-function --inputs "function-mesh/test/test_input" --output "function-mesh/test/test_output" --parallelism 1 --classname org.apache.pulsar.functions.api.examples.ExclamationFunction --jar /pulsar/examples/api-examples.jar
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-admin functions create --tenant sn-platform --namespace test --name test-function --inputs "sn-platform/test/test_input" --output "sn-platform/test/test_output" --parallelism 1 --classname org.apache.pulsar.functions.api.examples.ExclamationFunction --jar /pulsar/examples/api-examples.jar
 
     # wait until the function is running
     # TODO: re-enable function test
     # ci::wait_function_running
-    # ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-client produce -m "hello pulsar function!" function-mesh/test/test_input
+    # ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bin/pulsar-client produce -m "hello pulsar function!" sn-platform/test/test_input
     # ci::wait_message_processed
 }
