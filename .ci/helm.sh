@@ -62,6 +62,7 @@ function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
     ${HELM} repo add streamnative https://charts.streamnative.io
     ${HELM} repo update
+    ${KUBECTL} create namespace pulsar
     ${HELM} install --set initialize=true function-mesh streamnative/pulsar
     ${KUBECTL} get service
 }
