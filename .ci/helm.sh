@@ -69,6 +69,9 @@ function ci::install_pulsar_charts() {
     helm dependency update pulsar
     ${HELM} install sn-platform --values ./pulsar/mini_values.yaml ./pulsar
 
+    echo "check all pods..."
+    kubectl get pods -A
+
     echo "wait until broker is alive"
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-broker | wc -l)
     while [[ ${WC} -lt 1 ]]; do
