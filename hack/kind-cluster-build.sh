@@ -153,6 +153,8 @@ echo "start to create k8s cluster"
 kind create cluster --config ${configFile} --image kindest/node:${k8sVersion} --name=${clusterName}
 export KUBECONFIG=${workDir}/kubeconfig.yaml
 kind get kubeconfig --name=${clusterName} > ${KUBECONFIG}
+echo "kube config content"
+echo ${KUBECONFIG}
 
 echo "deploy docker registry in kind"
 registryNode=${clusterName}-control-plane
