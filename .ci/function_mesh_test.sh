@@ -46,8 +46,12 @@ kubectl get nodes -A
 echo "get pods..........."
 kubectl get pods -A
 
-## install pulsar chart
-#ci::install_pulsar_chart ${PULSAR_HOME}/${VALUES_FILE} ${extra_opts}
+# install pulsar chart
+ci::install_pulsar_chart
+
+echo "get pods again..........."
+kubectl get pods -A
+
 #
 ## test producer
 #ci::test_pulsar_producer

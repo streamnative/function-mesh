@@ -58,6 +58,14 @@ function ci::install_storage_provisioner() {
     echo "Successfully installed the local storage provisioner."
 }
 
+function ci::install_pulsar_charts() {
+    echo "Installing the pulsar charts ..."
+    ${HELM} repo add streamnative https://charts.streamnative.io
+    ${HELM} repo update
+    ${HELM} install --set initialize=true function-mesh streamnative/pulsar
+    ${KUBECTL} get service
+}
+
 function ci::test_pulsar_producer() {
     sleep 120
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-toolset-0 -- bash -c 'until nslookup pulsar-ci-broker; do sleep 3; done'
