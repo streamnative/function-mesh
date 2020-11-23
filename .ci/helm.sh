@@ -48,13 +48,6 @@ function ci::install_storage_provisioner() {
     ${HELM} repo add streamnative https://charts.streamnative.io
     ${HELM} repo update
     ${HELM} install local-storage-provisioner streamnative/local-storage-provisioner --debug --wait --set namespace=pulsar
-    WC=$(${KUBECTL} get pods --field-selector=status.phase=Running | grep local-storage-provisioner | wc -l)
-    while [[ ${WC} -lt 1 ]]; do
-      echo ${WC};
-      sleep 15
-      ${KUBECTL} get pods --field-selector=status.phase=Running
-      WC=$(${KUBECTL} get pods --field-selector=status.phase=Running | grep local-storage-provisioner | wc -l)
-    done
     echo "Successfully installed the local storage provisioner."
 }
 
