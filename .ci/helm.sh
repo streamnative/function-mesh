@@ -47,8 +47,7 @@ function ci::install_storage_provisioner() {
     echo "Installing the local storage provisioner ..."
     ${HELM} repo add streamnative https://charts.streamnative.io
     ${HELM} repo update
-    kubectl config view --raw >~/.kube/config
-    ${HELM} install local-storage-provisioner streamnative/local-storage-provisioner
+    ${HELM} install local-storage-provisioner streamnative/local-storage-provisioner --debug --wait
     WC=$(${KUBECTL} get pods --field-selector=status.phase=Running | grep local-storage-provisioner | wc -l)
     while [[ ${WC} -lt 1 ]]; do
       echo ${WC};

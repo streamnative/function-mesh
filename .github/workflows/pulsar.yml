@@ -38,6 +38,6 @@ jobs:
         with:
           args: site2 .asf.yaml ct.yaml
 
-      - name: Test k8s clluster env
+      - name: Test k8s cluster env
         run: |
           .ci/function_mesh_test.sh

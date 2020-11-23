@@ -46,6 +46,9 @@ fi
 echo "create namespace"
 kubectl create namespace pulsar
 
+# install storage provisioner
+ci::install_storage_provisioner
+
 # install pulsar chart
 ci::install_pulsar_charts
 
