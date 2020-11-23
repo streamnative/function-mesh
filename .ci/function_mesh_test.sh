@@ -43,6 +43,9 @@ if [[ "x${SYMMETRIC}" == "xtrue" ]]; then
     extra_opts="-s"
 fi
 
+echo "create namespace"
+kubectl create namespace pulsar
+
 # install pulsar chart
 ci::install_pulsar_charts
 
