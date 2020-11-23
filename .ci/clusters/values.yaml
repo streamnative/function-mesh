@@ -83,7 +83,7 @@ components:
   # functions
   functions: true
   # proxy
-  proxy: true
+  proxy: false
   # toolset
   toolset: true
   # pulsar manager
