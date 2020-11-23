@@ -64,5 +64,3 @@ ci::test_pulsar_producer
 #    ci::test_pulsar_function
 #fi
 
-# delete the cluster
-ci::delete_cluster
