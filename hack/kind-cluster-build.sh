@@ -231,7 +231,7 @@ spec:
 EOF
 $KUBECTL_BIN apply -f ${registryFile}
 
-echo "init pulsar  env"
+echo "init pulsar env"
 $KUBECTL_BIN apply -f ${PULSAR_CHART_HOME}/manifests/local-dind/local-volume-provisioner.yaml
 
 docker pull gcr.io/google-containers/kube-scheduler:${k8sVersion}
