@@ -83,7 +83,7 @@ components:
   # functions
   functions: true
   # proxy
-  proxy: false
+  proxy: true
   # toolset
   toolset: true
   # pulsar manager
@@ -970,7 +970,7 @@ proxy:
   # use a component name that matches your grafana configuration
   # so the metrics are correctly rendered in grafana dashboard
   component: proxy
-  replicaCount: 3
+  replicaCount: 2
   # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
   probe:
@@ -1001,7 +1001,7 @@ proxy:
   gracePeriod: 30
   resources:
     requests:
-      memory: 128Mi
+      memory: 64Mi
       cpu: 0.2
   extraInitContainers: {}
   # Definition of the serviceAccount used to run proxies.
