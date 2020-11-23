@@ -47,7 +47,7 @@ function ci::install_storage_provisioner() {
     echo "Installing the local storage provisioner ..."
     ${HELM} repo add streamnative https://charts.streamnative.io
     ${HELM} repo update
-    ${HELM} install local-storage-provisioner streamnative/local-storage-provisioner --debug --wait
+    ${HELM} install local-storage-provisioner streamnative/local-storage-provisioner --debug --wait --set namespace=pulsar
     WC=$(${KUBECTL} get pods --field-selector=status.phase=Running | grep local-storage-provisioner | wc -l)
     while [[ ${WC} -lt 1 ]]; do
       echo ${WC};
@@ -66,7 +66,7 @@ function ci::install_pulsar_charts() {
     cd charts
     helm repo add loki https://grafana.github.io/loki/charts
     helm dependency update pulsar
-    ${HELM} install ${CLUSTER} --values ./pulsar/mini_values.yaml ./pulsar --debug --wait
+    ${HELM} install sn-platform --values ./pulsar/mini_values.yaml ./pulsar --debug --wait
 
     echo "wait until broker is alive"
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-pulsar-broker | wc -l)
