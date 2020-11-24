@@ -44,3 +44,8 @@ jobs:
         run: |
           kubectl apply -f .ci/clusters/cloud_v1alpha1_function.yaml
           kubectl get all
+
+      - name: Verfy Function Mesh
+        run: |
+          source .ci/helm.sh
+          .ci/ci::verify_function_mesh

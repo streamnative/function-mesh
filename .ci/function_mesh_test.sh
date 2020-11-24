@@ -32,12 +32,6 @@ source ${PULSAR_HOME}/.ci/helm.sh
 # create cluster
 ci::create_cluster
 
-echo "get nodes..........."
-kubectl get nodes -A
-
-echo "get pods..........."
-kubectl get pods -A
-
 extra_opts=""
 if [[ "x${SYMMETRIC}" == "xtrue" ]]; then
     extra_opts="-s"
@@ -52,15 +46,6 @@ ci::install_storage_provisioner
 # install pulsar chart
 ci::install_pulsar_charts
 
-echo "get pods again..........."
-kubectl get pods -n pulsar
-
-#
 # test producer
 ci::test_pulsar_producer
-#
-#if [[ "x${FUNCTION}" == "xtrue" ]]; then
-#    # install cert manager
-#    ci::test_pulsar_function
-#fi
 

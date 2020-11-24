@@ -87,3 +87,17 @@ function ci::test_pulsar_producer() {
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin namespaces create sn-platform/test
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" sn-platform/test/test-topic
 }
+
+function ci::verify_function_mesh() {
+    WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep function-sample | wc -l)
+    while [[ ${WC} -lt 1 ]]; do
+      echo ${WC};
+      sleep 15
+      ${KUBECTL} get pods -A
+      WC=$(${KUBECTL} get pods -A | grep function-sample | wc -l)
+      if [[ ${WC} -gt 1 ]]; then
+        ${KUBECTL} describe pod function-sample
+      fi
+      WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep function-sample | wc -l)
+    done
+}
