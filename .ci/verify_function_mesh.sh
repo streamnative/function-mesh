@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,27 +18,17 @@
 # under the License.
 #
 
-name: Precommit - Test Function Mesh (Basic Installation)
-on:
-  pull_request:
-    branches:
-      - '*'
-jobs:
-  lint-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+set -e
 
-      - name: Check if this pull request only changes documentation
-        id:   docs
-        uses: apache/pulsar-test-infra/diff-only@master
-        with:
-          args: site2 .asf.yaml ct.yaml
+BINDIR=`dirname "$0"`
+PULSAR_HOME=`cd ${BINDIR}/..;pwd`
+VALUES_FILE=$1
+TLS=${TLS:-"false"}
+SYMMETRIC=${SYMMETRIC:-"false"}
+FUNCTION=${FUNCTION:-"false"}
 
-      - name: Test k8s cluster env
-        run: |
-          .ci/deploy_pulsar_cluster.sh
+source ${PULSAR_HOME}/.ci/helm.sh
+
+# create cluster
+ci::verify_function_mesh
+

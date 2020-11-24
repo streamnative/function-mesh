@@ -21,7 +21,7 @@ jobs:
 
       - name: Deploy k8s cluster env
         run: |
-          .ci/function_mesh_test.sh
+          .ci/deploy_pulsar_cluster.sh
 
       - name: Install operator-sdk
         run: |
@@ -47,5 +47,4 @@ jobs:
 
       - name: Verfy Function Mesh
         run: |
-          source .ci/helm.sh
-          ci::verify_function_mesh
+          ./ci/verify_function_mesh.sh
