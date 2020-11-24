@@ -48,4 +48,4 @@ jobs:
       - name: Verfy Function Mesh
         run: |
           source .ci/helm.sh
-          .ci/ci::verify_function_mesh
+          ci::verify_function_mesh
