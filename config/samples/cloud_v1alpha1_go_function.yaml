@@ -26,13 +26,13 @@ spec:
   # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
   secretsMap:
     "name":
-        path: "test-secret"
+        path: "test-go-secret"
         key: "username"
     "pwd":
-        path: "test-secret"
+        path: "test-go-secret"
         key: "password"
   pulsar:
-    pulsarConfig: "test-pulsar"
+    pulsarConfig: "test-go-pulsar"
     #authConfig: "test-auth"
   go:
     go: test_go_function
@@ -44,7 +44,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-pulsar
+  name: test-go-pulsar
 data:
     webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
     brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
@@ -67,5 +67,5 @@ data:
   password: MWYyZDFlMmU2N2Rm
 kind: Secret
 metadata:
-  name: test-secret
+  name: test-go-secret
 type: Opaque

@@ -20,12 +20,11 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/proto"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/streamnative/function-mesh/api/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/proto"
 
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
@@ -147,9 +146,9 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, detai
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakeGoFunctionCommand(downloadPath, goExecFilePath, clusterName, details string, authProvided bool) []string {
+func MakeGoFunctionCommand(downloadPath, goExecFilePath, configContent string) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
-		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, clusterName, details, authProvided), " ")
+		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, configContent), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath), " ")
@@ -190,6 +189,15 @@ func getProcessJavaRuntimeArgs(name string, packageName string, clusterName stri
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
 		packageName,
+	}
+	sharedArgs := getSharedArgs(details, clusterName, authProvided)
+	args = append(args, sharedArgs...)
+	return args
+}
+
+// This method is suitable for Java and Python runtime, not include Go runtime.
+func getSharedArgs(details, clusterName string, authProvided bool) []string {
+	args:= []string {
 		"--instance_id",
 		"${" + EnvShardID + "}",
 		"--function_id",
@@ -231,46 +239,12 @@ func getProcessJavaRuntimeArgs(name string, packageName string, clusterName stri
 	return args
 }
 
-func getProcessGoRuntimeArgs(goExecFilePath string, clusterName, details string, authProvided bool) []string {
+func getProcessGoRuntimeArgs(goExecFilePath string, configContent string) []string {
 	args := []string{
-		"--go", // Path to the main Go executable binary for the function
+		"exec",
 		goExecFilePath,
-		"--instance_id",
-		"${" + EnvShardID + "}",
-		"--function_id",
-		fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
-		"--function_version",
-		"0",
-		"--function_details",
-		"'" + details + "'", //in json format
-		"--pulsar_serviceurl",
-		"$brokerServiceURL",
-		"--max_buffered_tuples",
-		"100", // TODO
-		"--port",
-		strconv.Itoa(int(GRPCPort.ContainerPort)),
-		"--metrics_port",
-		strconv.Itoa(int(MetricsPort.ContainerPort)),
-		"--expected_healthcheck_interval",
-		"-1", // TurnOff BuiltIn HealthCheck to avoid instance exit
-		"--cluster_name",
-		clusterName,
-	}
-
-	if authProvided {
-		args = append(args, []string{
-			"--client_auth_plugin",
-			"$clientAuthenticationPlugin",
-			"--client_auth_params",
-			"$clientAuthenticationParameters",
-			"--use_tls",
-			"$useTls",
-			"--tls_allow_insecure",
-			"$tlsAllowInsecureConnection",
-			"--hostname_verification_enabled",
-			"$tlsHostnameVerificationEnable",
-			"--tls_trust_cert_path",
-			"$tlsTrustCertsFilePath"}...)
+		"-instance-conf",
+		configContent,
 	}
 
 	return args

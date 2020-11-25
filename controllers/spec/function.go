@@ -87,8 +87,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 	} else if function.Spec.Golang != nil {
 		if function.Spec.Golang.Go != "" {
 			return MakeGoFunctionCommand(function.Spec.Golang.GoLocation, function.Spec.Golang.Go,
-				function.Spec.ClassName, generateFunctionDetailsInJSON(function),
-				function.Spec.Pulsar.AuthConfig != "")
+				generateFunctionDetailsInJSON(function))
 		}
 	}
 	// TODO: Add Python Function process logic
@@ -98,10 +97,10 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
 	functionDetails := convertFunctionDetails(function)
 	marshaler := &jsonpb.Marshaler{}
-	json, error := marshaler.MarshalToString(functionDetails)
-	if error != nil {
+	json, err := marshaler.MarshalToString(functionDetails)
+	if err != nil {
 		// TODO
-		panic(error)
+		panic(err)
 	}
 	return json
 }
