@@ -37,11 +37,11 @@ spec:
     #authConfig: "test-auth"
   java:
     jar: pulsar-functions-api-examples.jar
-    jarLocation: public/default/nlu-test
+    jarLocation: ""
     # use package download the used jar
-    #package:
-    #  name: function://public/default/api-example@v1
-    #  destineLocation: public/default/nlu-test/pulsar-functions-api-examples.jar
+    package:
+      name: function://public/default/api-example@v1
+      destineLocation: lib/pulsar-functions-api-examples.jar
   # to be delete & use admission hook
   clusterName: test
   autoAck: true
@@ -51,8 +51,8 @@ kind: ConfigMap
 metadata:
   name: test-pulsar
 data:
-    webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
-    brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
+    webServiceURL: http://fm-test-pulsar-broker.default.svc.cluster.local:8080
+    brokerServiceURL: pulsar://fm-test-pulsar-broker.default.svc.cluster.locall:6650
 #---
 #apiVersion: v1
 #kind: ConfigMap

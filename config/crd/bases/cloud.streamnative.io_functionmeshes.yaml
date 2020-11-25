@@ -60,6 +60,13 @@ spec:
                     properties:
                       go:
                         type: string
+                      package:
+                        properties:
+                          destineLocation:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                     type: object
                   input:
                     properties:
@@ -106,6 +113,13 @@ spec:
                         type: string
                       jarLocation:
                         type: string
+                      package:
+                        properties:
+                          destineLocation:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                     type: object
                   logTopic:
                     type: string
@@ -160,6 +174,13 @@ spec:
                     type: object
                   python:
                     properties:
+                      package:
+                        properties:
+                          destineLocation:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       py:
                         type: string
                     type: object
@@ -241,6 +262,13 @@ spec:
                     properties:
                       go:
                         type: string
+                      package:
+                        properties:
+                          destineLocation:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                     type: object
                   input:
                     properties:
@@ -287,6 +315,13 @@ spec:
                         type: string
                       jarLocation:
                         type: string
+                      package:
+                        properties:
+                          destineLocation:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                     type: object
                   maxMessageRetry:
                     format: int32
@@ -315,6 +350,13 @@ spec:
                     type: object
                   python:
                     properties:
+                      package:
+                        properties:
+                          destineLocation:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       py:
                         type: string
                     type: object
@@ -392,6 +434,13 @@ spec:
                     properties:
                       go:
                         type: string
+                      package:
+                        properties:
+                          destineLocation:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                     type: object
                   java:
                     properties:
@@ -399,6 +448,13 @@ spec:
                         type: string
                       jarLocation:
                         type: string
+                      package:
+                        properties:
+                          destineLocation:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                     type: object
                   maxReplicas:
                     format: int32
@@ -445,6 +501,13 @@ spec:
                     type: object
                   python:
                     properties:
+                      package:
+                        properties:
+                          destineLocation:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       py:
                         type: string
                     type: object

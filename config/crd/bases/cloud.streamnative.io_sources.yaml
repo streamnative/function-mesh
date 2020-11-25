@@ -50,9 +50,9 @@ spec:
                   type: string
                 package:
                   properties:
-                    name:
-                      type: string
                     destineLocation:
+                      type: string
+                    name:
                       type: string
                   type: object
               type: object
@@ -64,9 +64,9 @@ spec:
                   type: string
                 package:
                   properties:
-                    name:
-                      type: string
                     destineLocation:
+                      type: string
+                    name:
                       type: string
                   type: object
               type: object
@@ -114,15 +114,15 @@ spec:
               type: object
             python:
               properties:
-                py:
-                  type: string
                 package:
                   properties:
-                    name:
-                      type: string
                     destineLocation:
                       type: string
+                    name:
+                      type: string
                   type: object
+                py:
+                  type: string
               type: object
             replicas:
               format: int32

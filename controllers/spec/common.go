@@ -35,7 +35,7 @@ import (
 
 const EnvShardID = "SHARD_ID"
 const FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
-const DefaultRunnerImage = "apachepulsar/pulsar-all"
+const DefaultRunnerImage = "streamnative/pulsar-all:2.7.0-rc-pm-2"
 
 const ComponentSource = "source"
 const ComponentSink = "sink"
@@ -136,7 +136,7 @@ func MakePodTemplate(container *corev1.Container, labels map[string]string) *cor
 	}
 }
 
-func MakeCommand(downloadPath, packageFile,packageName, packageDestineLocation,
+func MakeCommand(downloadPath, packageFile, packageName, packageDestineLocation,
 	name, clusterName, details, memory string, authProvided bool) []string {
 
 	var downloadCommand string
@@ -149,7 +149,7 @@ func MakeCommand(downloadPath, packageFile,packageName, packageDestineLocation,
 		// prepend download command if the downPath is provided
 		downloadCommand = strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
 	}
-	if downloadCommand != ""{
+	if downloadCommand != "" {
 		processCommand = downloadCommand + "&&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
