@@ -48,6 +48,13 @@ spec:
               properties:
                 go:
                   type: string
+                package:
+                  properties:
+                    name:
+                      type: string
+                    destineLocation:
+                      type: string
+                  type: object
               type: object
             java:
               properties:
@@ -55,6 +62,13 @@ spec:
                   type: string
                 jarLocation:
                   type: string
+                package:
+                  properties:
+                    name:
+                      type: string
+                    destineLocation:
+                      type: string
+                  type: object
               type: object
             maxReplicas:
               format: int32
@@ -102,6 +116,13 @@ spec:
               properties:
                 py:
                   type: string
+                package:
+                  properties:
+                    name:
+                      type: string
+                    destineLocation:
+                      type: string
+                  type: object
               type: object
             replicas:
               format: int32

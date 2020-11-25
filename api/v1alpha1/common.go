@@ -51,16 +51,24 @@ type Runtime struct {
 }
 
 type JavaRuntime struct {
-	Jar         string `json:"jar,omitempty"`
-	JarLocation string `json:"jarLocation,omitempty"`
+	Jar         string  `json:"jar,omitempty"`
+	JarLocation string  `json:"jarLocation,omitempty"`
+	Package     Package `json:"package,omitempty"`
 }
 
 type PythonRuntime struct {
-	Py string `json:"py,omitempty"`
+	Py      string  `json:"py,omitempty"`
+	Package Package `json:"package,omitempty"`
 }
 
 type GoRuntime struct {
-	Go string `json:"go,omitempty"`
+	Go      string  `json:"go,omitempty"`
+	Package Package `json:"package,omitempty"`
+}
+
+type Package struct {
+	Name            string `json:"name,omitempty"`
+	DestineLocation string `json:"destineLocation,omitempty"`
 }
 
 type SecretRef struct {

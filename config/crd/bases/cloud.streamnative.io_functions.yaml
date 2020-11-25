@@ -60,6 +60,13 @@ spec:
               properties:
                 go:
                   type: string
+                package:
+                  properties:
+                    name:
+                      type: string
+                    destineLocation:
+                      type: string
+                  type: object
               type: object
             input:
               properties:
@@ -106,6 +113,13 @@ spec:
                   type: string
                 jarLocation:
                   type: string
+                package:
+                  properties:
+                    name:
+                      type: string
+                    destineLocation:
+                      type: string
+                  type: object
               type: object
             logTopic:
               type: string
@@ -161,6 +175,13 @@ spec:
               properties:
                 py:
                   type: string
+                package:
+                  properties:
+                    name:
+                      type: string
+                    destineLocation:
+                      type: string
+                  type: object
               type: object
             replicas:
               format: int32

@@ -136,15 +136,32 @@ func MakePodTemplate(container *corev1.Container, labels map[string]string) *cor
 	}
 }
 
-func MakeCommand(downloadPath, packageFile, name, clusterName, details, memory string, authProvided bool) []string {
+func MakeCommand(downloadPath, packageFile,packageName, packageDestineLocation,
+	name, clusterName, details, memory string, authProvided bool) []string {
+
+	var downloadCommand string
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessArgs(name, packageFile, clusterName, details, memory, authProvided), " ")
+	if packageName != "" && packageDestineLocation != "" {
+		downloadCommand = strings.Join(getPackageDownloadCommand(packageName, packageDestineLocation), " ")
+	}
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
-		processCommand = downloadCommand + " && " + processCommand
+		downloadCommand = strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
+	}
+	if downloadCommand != ""{
+		processCommand = downloadCommand + "&&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
+}
+
+func getPackageDownloadCommand(packageName, packageDestineLocation string) []string {
+	return []string{
+		"/pulsar/bin/pulsar-admin",
+		"--admin-url", "$webServiceURL",
+		"package", "download",
+		"--path", "/pulsar/" + packageDestineLocation, packageName,
+	}
 }
 
 func getDownloadCommand(downloadPath, componentPackage string) []string {
