@@ -22,7 +22,6 @@ set -e
 
 BINDIR=`dirname "$0"`
 PULSAR_HOME=`cd ${BINDIR}/..;pwd`
-VALUES_FILE=$1
 TLS=${TLS:-"false"}
 SYMMETRIC=${SYMMETRIC:-"false"}
 FUNCTION=${FUNCTION:-"false"}
@@ -30,5 +29,5 @@ FUNCTION=${FUNCTION:-"false"}
 source ${PULSAR_HOME}/.ci/helm.sh
 
 # create cluster
-ci::verify_function_mesh
+ci::verify_function_mesh $1
 

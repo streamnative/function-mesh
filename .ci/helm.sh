@@ -31,6 +31,8 @@ NAMESPACE=pulsar
 CLUSTER=sn-platform
 CLUSTER_ID=$(uuidgen)
 
+FUNCTION_NAME=$1
+
 function ci::create_cluster() {
     echo "Creating a kind cluster ..."
     ${FUNCTION_MESH_HOME}/hack/kind-cluster-build.sh --name sn-platform-${CLUSTER_ID} -c 1 -v 10
@@ -89,15 +91,15 @@ function ci::test_pulsar_producer() {
 }
 
 function ci::verify_function_mesh() {
-    WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep function-sample | wc -l)
+    WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep ${FUNCTION_NAME} | wc -l)
     while [[ ${WC} -lt 1 ]]; do
       echo ${WC};
       sleep 15
       ${KUBECTL} get pods -A
-      WC=$(${KUBECTL} get pods -A | grep function-sample | wc -l)
+      WC=$(${KUBECTL} get pods -A | grep ${FUNCTION_NAME} | wc -l)
       if [[ ${WC} -gt 1 ]]; then
-        ${KUBECTL} describe pod function-sample
+        ${KUBECTL} describe pod ${FUNCTION_NAME}
       fi
-      WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep function-sample | wc -l)
+      WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep ${FUNCTION_NAME} | wc -l)
     done
 }

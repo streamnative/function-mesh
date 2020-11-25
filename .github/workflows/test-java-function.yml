@@ -47,4 +47,4 @@ jobs:
 
       - name: Verfy Function Mesh
         run: |
-          .ci/verify_function_mesh.sh
+          .ci/verify_function_mesh.sh function-sample
