@@ -1,7 +1,7 @@
 apiVersion: cloud.streamnative.io/v1alpha1
 kind: Function
 metadata:
-  name: go-function-sample
+  name: go-function-sample-11
   namespace: default
 spec:
   sourceType: java.lang.String
@@ -34,7 +34,7 @@ spec:
   pulsar:
     pulsarConfig: "test-go-pulsar"
     #authConfig: "test-auth"
-  go:
+  golang:
     go: test_go_function
     goLocation: public/default/nlu-test
   # to be delete & use admission hook

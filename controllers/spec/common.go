@@ -20,11 +20,12 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/streamnative/function-mesh/api/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/proto"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/proto"
 
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
@@ -197,7 +198,7 @@ func getProcessJavaRuntimeArgs(name string, packageName string, clusterName stri
 
 // This method is suitable for Java and Python runtime, not include Go runtime.
 func getSharedArgs(details, clusterName string, authProvided bool) []string {
-	args:= []string {
+	args := []string{
 		"--instance_id",
 		"${" + EnvShardID + "}",
 		"--function_id",
