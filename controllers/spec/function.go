@@ -77,19 +77,29 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 }
 
 func makeFunctionCommand(function *v1alpha1.Function) []string {
-	return MakeCommand(function.Spec.Java.JarLocation, function.Spec.Java.Jar,
-		function.Spec.Java.Package.Name, function.Spec.Java.Package.DestineLocation,
-		function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
-		function.Spec.Resources.Requests.Memory().String(), function.Spec.Pulsar.AuthConfig != "")
+	if function.Spec.Java != nil {
+		return MakeCommand(function.Spec.Java.JarLocation, function.Spec.Java.Jar,
+			function.Spec.Java.Package.Name, function.Spec.Java.Package.DestineLocation,
+			function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
+			function.Spec.Resources.Requests.Memory().String(), function.Spec.Pulsar.AuthConfig != "")
+
+	} else if function.Spec.Golang != nil {
+		if function.Spec.Golang.Go != "" {
+			return MakeGoFunctionCommand(function.Spec.Golang.GoLocation, function.Spec.Golang.Go,
+				generateFunctionDetailsInJSON(function))
+		}
+	}
+	// TODO: Add Python Function process logic
+	return nil
 }
 
 func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
 	functionDetails := convertFunctionDetails(function)
 	marshaler := &jsonpb.Marshaler{}
-	json, error := marshaler.MarshalToString(functionDetails)
-	if error != nil {
+	json, err := marshaler.MarshalToString(functionDetails)
+	if err != nil {
 		// TODO
-		panic(error)
+		panic(err)
 	}
 	return json
 }

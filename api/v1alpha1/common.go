@@ -63,6 +63,7 @@ type PythonRuntime struct {
 
 type GoRuntime struct {
 	Go      string  `json:"go,omitempty"`
+	GoLocation string `json:"goLocation,omitempty"`
 	Package Package `json:"package,omitempty"`
 }
 

@@ -35,7 +35,7 @@ import (
 
 const EnvShardID = "SHARD_ID"
 const FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
-const DefaultRunnerImage = "streamnative/pulsar-all:2.7.0-rc-pm-2"
+const DefaultRunnerImage = "apachepulsar/pulsar-all"
 
 const ComponentSource = "source"
 const ComponentSink = "sink"
