@@ -39,7 +39,7 @@ spec:
     jar: pulsar-functions-api-examples.jar
     jarLocation: public/default/nlu-test
   # to be delete & use admission hook
-  clusterName: test
+  clusterName: test-pulsar
   autoAck: true
 ---
 apiVersion: v1

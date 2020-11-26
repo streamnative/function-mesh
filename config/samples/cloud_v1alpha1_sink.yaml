@@ -8,6 +8,7 @@ spec:
   sourceType: "[B"
   sinkType: "[B"
   replicas: 1
+  maxReplicas: 1
   input:
     topics:
     - persistent://public/default/input
@@ -16,12 +17,21 @@ spec:
     indexName: "my_index"
     typeName: "doc"
     username: "elastic"
-    password: "X2Mq33FMWMnqlhvw598Z8562"
+    password: "wJ757TmoXEd941kXm07Z2GW3"
   pulsar:
     pulsarConfig: "test-sink"
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+    requests:
+      cpu: "0.1"
+      memory: 1G
   java:
-    jar: connectors/pulsar-io-elastic-search-2.6.1.nar
+    jar: connectors/pulsar-io-elastic-search-2.7.0-rc-pm-3.nar
     jarLocation: "" # use pulsar provided connectors
+  clusterName: test-pulsar
+  autoAck: true
 ---
 apiVersion: v1
 kind: ConfigMap

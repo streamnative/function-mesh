@@ -7,8 +7,20 @@ spec:
   sourceType: org.apache.pulsar.common.schema.KeyValue
   sinkType: org.apache.pulsar.common.schema.KeyValue
   replicas: 1
+  maxReplicas: 1
   output:
+    producerConf:
+      maxPendingMessages: 1000
+      maxPendingMessagesAcrossPartitions: 50000
+      useThreadLocalProducers: true
     topic: persistent://public/default/destination
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+    requests:
+      cpu: "0.1"
+      memory: 1G
   sourceConfig:
     mongodb.hosts: rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017
     mongodb.name: dbserver1
@@ -20,8 +32,9 @@ spec:
   pulsar:
     pulsarConfig: "test-source"
   java:
-    jar: connectors/pulsar-io-debezium-mongodb-2.6.1.nar
+    jar: connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar
     jarLocation: "" # use pulsar provided connectors
+  clusterName: test-pulsar
 ---
 apiVersion: v1
 kind: ConfigMap
