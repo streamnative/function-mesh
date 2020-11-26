@@ -9,8 +9,8 @@ spec:
       sourceType: java.lang.String
       sinkType: java.lang.String
       replicas: 1
-      maxReplicas: 5
-      logTopic: persistent://public/default/logging-function-logs
+      maxReplicas: 1
+      logTopic: persistent://public/default/logging-function-log
       input:
         topics:
           - persistent://public/default/source-topic1
@@ -31,13 +31,13 @@ spec:
         limits:
           cpu: "0.2"
           memory: 1.1G
-      clusterName: test
+      clusterName: test-pulsar
     - name: ex2
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
       sourceTypeClass: java.lang.String
       sinkTypeClass: java.lang.String
       replicas: 1
-      maxReplicas: 3
+      maxReplicas: 1
       logTopic: persistent://public/default/logging-function-logs
       input:
         topics:
@@ -53,9 +53,13 @@ spec:
       forwardSourceMessageProperty: true
       autoAck: true
       resources:
-        cpu: "0.2"
-        memory: 1G
-      clusterName: test
+        requests:
+          cpu: "0.1"
+          memory: 1G
+        limits:
+          cpu: "0.2"
+          memory: 1.1G
+      clusterName: test-pulsar
 ---
 apiVersion: v1
 kind: ConfigMap
