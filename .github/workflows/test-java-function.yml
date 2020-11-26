@@ -1,4 +1,4 @@
-name: Precommit - Test Function Kind
+name: Precommit - Test Java Function Kind
 on:
   pull_request:
     branches:
@@ -47,4 +47,4 @@ jobs:
 
       - name: Verfy Function Mesh
         run: |
-          .ci/verify_function_mesh.sh
+          .ci/verify_function_mesh.sh function-sample
