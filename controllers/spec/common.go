@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
 
@@ -35,7 +36,7 @@ import (
 
 const EnvShardID = "SHARD_ID"
 const FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
-const DefaultRunnerImage = "apachepulsar/pulsar-all"
+const DefaultRunnerImage = "streamnative/pulsar-all:2.7.0-rc-pm-3"
 
 const ComponentSource = "source"
 const ComponentSink = "sink"
@@ -147,13 +148,13 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, detai
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakeGoFunctionCommand(downloadPath, goExecFilePath, configContent string) []string {
+func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alpha1.Function) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
-		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, configContent), " ")
+		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath), " ")
-		processCommand = downloadCommand + " && " + processCommand
+		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
 }
@@ -240,12 +241,38 @@ func getSharedArgs(details, clusterName string, authProvided bool) []string {
 	return args
 }
 
-func getProcessGoRuntimeArgs(goExecFilePath string, configContent string) []string {
+func generateGoFunctionDetailsInJSON(function *v1alpha1.Function) string {
+	functionDetails := convertFunctionDetails(function)
+	marshaler := &jsonpb.Marshaler{}
+	json, err := marshaler.MarshalToString(functionDetails)
+	if err != nil {
+		// TODO
+		panic(err)
+	}
+	return json
+}
+
+func getProcessGoRuntimeArgs(goExecFilePath string, function *v1alpha1.Function) []string {
+	str := generateGoFunctionDetailsInJSON(function)
+	tmpStr := strings.TrimSuffix(str, "}")
+
+	inputTopic := function.Spec.Input.Topics[0]
+	outputTopic := function.Spec.Output.Topic
+
+	configContent := fmt.Sprintf("%s, \"pulsarServiceURL\": \"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\", "+
+		"\"sourceSpecsTopic\": \"%s\", \"sinkSpecsTopic\": \"%s\"}", tmpStr, inputTopic, outputTopic)
+
+	goPath := fmt.Sprintf("/pulsar/%s", goExecFilePath)
+	conf := fmt.Sprintf("'%s'", configContent)
+
 	args := []string{
+		"chmod +x",
+		goPath,
+		"&&",
 		"exec",
-		goExecFilePath,
+		goPath,
 		"-instance-conf",
-		configContent,
+		conf,
 	}
 
 	return args

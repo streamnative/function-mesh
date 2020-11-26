@@ -1,7 +1,7 @@
 apiVersion: cloud.streamnative.io/v1alpha1
 kind: Function
 metadata:
-  name: go-function-sample-11
+  name: go-function-sample
   namespace: default
 spec:
   sourceType: java.lang.String
@@ -9,7 +9,7 @@ spec:
   forwardSourceMessageProperty: true
   MaxPendingAsyncRequests: 1000
   replicas: 1
-  maxReplicas: 3
+  maxReplicas: 1
   logTopic: persistent://public/default/go-function-logs
   input:
     topics:
@@ -35,8 +35,8 @@ spec:
     pulsarConfig: "test-go-pulsar"
     #authConfig: "test-auth"
   golang:
-    go: test_go_function
-    goLocation: public/default/nlu-test
+    go: go_func_all
+    goLocation: public/default/xiaolong-test
   # to be delete & use admission hook
   clusterName: test
   autoAck: true

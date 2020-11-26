@@ -24,7 +24,11 @@ import (
 	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+// log is for logging in this package.
+var log = logf.Log.WithName("sink-resource")
 
 func MakeFunctionHPA(function *v1alpha1.Function) *autov1.HorizontalPodAutoscaler {
 	objectMeta := MakeFunctionObjectMeta(function)
@@ -87,7 +91,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 	} else if function.Spec.Golang != nil {
 		if function.Spec.Golang.Go != "" {
 			return MakeGoFunctionCommand(function.Spec.Golang.GoLocation, function.Spec.Golang.Go,
-				generateFunctionDetailsInJSON(function))
+				function)
 		}
 	}
 	// TODO: Add Python Function process logic
@@ -102,5 +106,6 @@ func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
 		// TODO
 		panic(err)
 	}
+	log.Info(json)
 	return json
 }
