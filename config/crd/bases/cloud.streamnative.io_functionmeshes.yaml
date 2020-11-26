@@ -60,6 +60,8 @@ spec:
                     properties:
                       go:
                         type: string
+                      goLocation:
+                        type: string
                       package:
                         properties:
                           destineLocation:
@@ -262,6 +264,8 @@ spec:
                     properties:
                       go:
                         type: string
+                      goLocation:
+                        type: string
                       package:
                         properties:
                           destineLocation:
@@ -433,6 +437,8 @@ spec:
                   golang:
                     properties:
                       go:
+                        type: string
+                      goLocation:
                         type: string
                       package:
                         properties:
