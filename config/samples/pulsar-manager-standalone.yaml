@@ -128,22 +128,22 @@ spec:
       protocol: TCP
   type: LoadBalancer
   selector:
-    app: standalone
+    app: pulsar-manager-standalone
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: standalone
+  name: pulsar-manager-standalone
 spec:
   selector:
     matchLabels:
-      app: standalone # has to match .spec.template.metadata.labels
+      app: pulsar-manager-standalone # has to match .spec.template.metadata.labels
   serviceName: pulsar-manager-standalone
   replicas: 1 # by default is 1
   template:
     metadata:
       labels:
-        app: standalone # has to match .spec.selector.matchLabels
+        app: pulsar-manager-standalone # has to match .spec.selector.matchLabels
     spec:
       terminationGracePeriodSeconds: 10
       containers:
