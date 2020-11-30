@@ -13,14 +13,14 @@ spec:
       logTopic: persistent://public/default/logging-function-log
       input:
         topics:
-          - persistent://public/default/source-topic1
+          - persistent://public/default/functionmesh-input-topic
       output:
-        topic: persistent://public/default/mid-topic2
+        topic: persistent://public/default/mid-topic
       pulsar:
         pulsarConfig: "mesh-test-pulsar"
       java:
         jar: pulsar-functions-api-examples.jar
-        jarLocation: public/default/nlu-test-java
+        jarLocation: public/default/nlu-test-functionmesh-ex1
       # following value must be provided if no auto-filling is enabled
       forwardSourceMessageProperty: true
       autoAck: true
@@ -41,14 +41,14 @@ spec:
       logTopic: persistent://public/default/logging-function-logs
       input:
         topics:
-          - persistent://public/default/mid-topic2
+          - persistent://public/default/mid-topic
       output:
-        topic: persistent://public/default/sink-topic
+        topic: persistent://public/default/functionmesh-output-topic
       pulsar:
         pulsarConfig: "mesh-test-pulsar"
       java:
         jar: pulsar-functions-api-examples.jar
-        jarLocation: public/default/nlu-test-java
+        jarLocation: public/default/nlu-test-functionmesh-ex2
       # following value must be provided if no auto-filling is enabled
       forwardSourceMessageProperty: true
       autoAck: true
