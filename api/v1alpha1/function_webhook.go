@@ -51,6 +51,11 @@ func (r *Function) Default() {
 		r.Spec.Replicas = &zeroVal
 	}
 
+	if r.Spec.MaxReplicas == nil {
+		zeroVal := int32(0)
+		r.Spec.MaxReplicas = &zeroVal
+	}
+
 	if r.Spec.AutoAck == nil {
 		trueVal := true
 		r.Spec.AutoAck = &trueVal
@@ -82,12 +87,14 @@ func (r *Function) Default() {
 		r.Spec.ForwardSourceMessageProperty = &trueVal
 	}
 
-	if r.Spec.Resources.Requests.Cpu() == nil {
-		r.Spec.Resources.Requests.Cpu().Set(int64(1))
-	}
+	if r.Spec.Resources.Requests != nil {
+		if r.Spec.Resources.Requests.Cpu() == nil {
+			r.Spec.Resources.Requests.Cpu().Set(int64(1))
+		}
 
-	if r.Spec.Resources.Requests.Memory() == nil {
-		r.Spec.Resources.Requests.Memory().Set(int64(1073741824))
+		if r.Spec.Resources.Requests.Memory() == nil {
+			r.Spec.Resources.Requests.Memory().Set(int64(1073741824))
+		}
 	}
 
 	if r.Spec.Resources.Limits == nil {
@@ -117,7 +124,7 @@ func (r *Function) ValidateCreate() error {
 		return errors.New("replicas cannot be zero")
 	}
 
-	if *r.Spec.MaxReplicas != 0 && *r.Spec.Replicas > *r.Spec.MaxReplicas {
+	if r.Spec.MaxReplicas != nil && *r.Spec.Replicas > *r.Spec.MaxReplicas {
 		return errors.New("maxReplicas must be greater than or equal to replicas")
 	}
 
