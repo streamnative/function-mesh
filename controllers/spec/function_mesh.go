@@ -61,7 +61,7 @@ func MakeSinkComponent(sinkName string, mesh *v1alpha1.FunctionMesh, spec *v1alp
 	return &v1alpha1.Sink{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "cloud.streamnative.io/v1alpha1",
-			Kind:       "Topic",
+			Kind:       "Sink",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      sinkName,
