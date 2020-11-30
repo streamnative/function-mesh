@@ -13,7 +13,7 @@ spec:
   logTopic: persistent://public/default/go-function-logs
   input:
     topics:
-    - persistent://public/default/goo-function-input-topic
+    - persistent://public/default/go-function-input-topic
   output:
     topic: persistent://public/default/go-function-output-topic
   resources:
