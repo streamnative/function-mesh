@@ -13,9 +13,9 @@ spec:
   logTopic: persistent://public/default/go-function-logs
   input:
     topics:
-    - persistent://public/default/input-topic
+    - persistent://public/default/go-function-input-topic
   output:
-    topic: persistent://public/default/output-topic
+    topic: persistent://public/default/go-function-output-topic
   resources:
     requests:
       cpu: "0.1"
@@ -36,7 +36,7 @@ spec:
     #authConfig: "test-auth"
   golang:
     go: go_func_all
-    goLocation: public/default/xiaolong-test
+    goLocation: public/default/nlu-test-go-function
   # to be delete & use admission hook
   clusterName: test
   autoAck: true
