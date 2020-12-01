@@ -148,11 +148,9 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, detai
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details string, authProvided bool,
-	installUserCodeDependencies bool, pythonDependencyRepository string, pythonExtraDependencyRepository string) []string {
+func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details string, authProvided bool) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
-		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName, details, authProvided,
-			installUserCodeDependencies, pythonDependencyRepository, pythonExtraDependencyRepository), " ")
+		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName, details, authProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
@@ -210,8 +208,7 @@ func getProcessJavaRuntimeArgs(name string, packageName string, clusterName stri
 	return args
 }
 
-func getProcessPythonRuntimeArgs(name string, packageName string, clusterName string, details string, authProvided bool,
-	installUserCodeDependencies bool, pythonDependencyRepository string, pythonExtraDependencyRepository string) []string {
+func getProcessPythonRuntimeArgs(name string, packageName string, clusterName string, details string, authProvided bool) []string {
 	args := []string{
 		"exec",
 		"python",

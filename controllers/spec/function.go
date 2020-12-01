@@ -97,7 +97,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		if function.Spec.Python.Py != "" {
 			return MakePythonFunctionCommand(function.Spec.Python.PyLocation, function.Spec.Python.Py,
 				function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
-				function.Spec.Pulsar.AuthConfig != "", false, "", "")
+				function.Spec.Pulsar.AuthConfig != "")
 		}
 	}
 
