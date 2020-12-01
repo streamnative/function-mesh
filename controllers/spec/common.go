@@ -148,6 +148,19 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, detai
 	return []string{"sh", "-c", processCommand}
 }
 
+func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details string, authProvided bool,
+	installUserCodeDependencies bool, pythonDependencyRepository string, pythonExtraDependencyRepository string) []string {
+	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
+		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName, details, authProvided,
+			installUserCodeDependencies, pythonDependencyRepository, pythonExtraDependencyRepository), " ")
+	if downloadPath != "" {
+		// prepend download command if the downPath is provided
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
+		processCommand = downloadCommand + " && " + processCommand
+	}
+	return []string{"sh", "-c", processCommand}
+}
+
 func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alpha1.Function) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
@@ -191,6 +204,27 @@ func getProcessJavaRuntimeArgs(name string, packageName string, clusterName stri
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
 		packageName,
+	}
+	sharedArgs := getSharedArgs(details, clusterName, authProvided)
+	args = append(args, sharedArgs...)
+	return args
+}
+
+func getProcessPythonRuntimeArgs(name string, packageName string, clusterName string, details string, authProvided bool,
+	installUserCodeDependencies bool, pythonDependencyRepository string, pythonExtraDependencyRepository string) []string {
+	args := []string{
+		"exec",
+		"python",
+		"/pulsar/instances/python-instance/python_instance_main.py",
+		"--py",
+		fmt.Sprintf("/pulsar/%s", packageName),
+		"--logging_directory",
+		"logs/functions",
+		"--logging_file",
+		fmt.Sprintf("%s-${%s}", name, EnvShardID),
+		"--logging_config_file",
+		"/pulsar/conf/functions-logging/console_logging_config.ini",
+		// TODO: Maybe we don't need installUserCodeDependencies, dependency_repository, and pythonExtraDependencyRepository
 	}
 	sharedArgs := getSharedArgs(details, clusterName, authProvided)
 	args = append(args, sharedArgs...)
