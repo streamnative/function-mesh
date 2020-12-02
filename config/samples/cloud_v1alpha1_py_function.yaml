@@ -1,21 +1,22 @@
 apiVersion: cloud.streamnative.io/v1alpha1
 kind: Function
 metadata:
-  name: go-function-sample
+  name: py-function-sample
   namespace: default
 spec:
+  className: exclamation_function.ExclamationFunction
   sourceType: java.lang.String
   sinkType: java.lang.String
   forwardSourceMessageProperty: true
   MaxPendingAsyncRequests: 1000
   replicas: 1
   maxReplicas: 1
-  logTopic: persistent://public/default/go-function-logs
+  logTopic: persistent://public/default/py-function-logs
   input:
     topics:
-    - persistent://public/default/go-function-input-topic
+    - persistent://public/default/py-function-input-topic
   output:
-    topic: persistent://public/default/go-function-output-topic
+    topic: persistent://public/default/py-function-output-topic
   resources:
     requests:
       cpu: "0.1"
@@ -26,17 +27,17 @@ spec:
   # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
   secretsMap:
     "name":
-        path: "test-go-secret"
+        path: "test-py-secret"
         key: "username"
     "pwd":
-        path: "test-go-secret"
+        path: "test-py-secret"
         key: "password"
   pulsar:
-    pulsarConfig: "test-go-pulsar"
+    pulsarConfig: "test-py-pulsar"
     #authConfig: "test-auth"
-  golang:
-    go: go_func_all
-    goLocation: public/default/nlu-test-go-function
+  python:
+    py: exclamation_function.py
+    pyLocation: public/default/nlu-test-py-function
   # to be delete & use admission hook
   clusterName: test-pulsar
   autoAck: true
@@ -44,7 +45,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-go-pulsar
+  name: test-py-pulsar
 data:
     webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
     brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
@@ -67,5 +68,5 @@ data:
   password: MWYyZDFlMmU2N2Rm
 kind: Secret
 metadata:
-  name: test-go-secret
+  name: test-py-secret
 type: Opaque

@@ -56,7 +56,8 @@ type JavaRuntime struct {
 }
 
 type PythonRuntime struct {
-	Py string `json:"py,omitempty"`
+	Py         string `json:"py,omitempty"`
+	PyLocation string `json:"pyLocation,omitempty"`
 }
 
 type GoRuntime struct {

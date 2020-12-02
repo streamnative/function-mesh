@@ -93,8 +93,14 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 			return MakeGoFunctionCommand(function.Spec.Golang.GoLocation, function.Spec.Golang.Go,
 				function)
 		}
+	} else if function.Spec.Python != nil {
+		if function.Spec.Python.Py != "" {
+			return MakePythonFunctionCommand(function.Spec.Python.PyLocation, function.Spec.Python.Py,
+				function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
+				function.Spec.Pulsar.AuthConfig != "")
+		}
 	}
-	// TODO: Add Python Function process logic
+
 	return nil
 }
 
