@@ -1,0 +1,52 @@
+name: Precommit - Test Source Kind
+on:
+  pull_request:
+    branches:
+      - '*'
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Check if this pull request only changes documentation
+        id:   docs
+        uses: apache/pulsar-test-infra/diff-only@master
+        with:
+          args: site2 .asf.yaml ct.yaml
+
+      - name: Deploy k8s cluster env
+        run: |
+          .ci/deploy_pulsar_cluster.sh
+
+      - name: Install operator-sdk
+        run: |
+          RELEASE_VERSION=v1.2.0
+          curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
+          chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu && sudo mkdir -p /usr/local/bin/ && sudo cp operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu /usr/local/bin/operator-sdk && rm operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
+
+      - name: Deploy function mesh server
+        run: |
+          make generate
+          make install
+          nohup make run &
+
+      - name: Install Mongo DB Server
+        run: |
+          kubectl apply -f config/samples/mongodb-dbz.yaml
+          kubectl exec -it mongo-dbz-0 /bin/bash
+          /usr/local/bin/init-inventory.sh
+          kubectl apply -f config/samples/cloud_v1alpha1_source.yaml
+
+      - name: Start Source Kind
+        run: |
+          kubectl apply -f config/samples/cloud_v1alpha1_source.yaml
+          kubectl get sources
+
+      - name: Verfy Source
+        run: |
+          .ci/verify_function_mesh.sh source-sample
