@@ -38,9 +38,6 @@ jobs:
       - name: Install Mongo DB Server
         run: |
           kubectl apply -f config/samples/mongodb-dbz.yaml
-          kubectl exec -i mongo-dbz-0 /bin/bash
-          /usr/local/bin/init-inventory.sh
-          kubectl apply -f config/samples/cloud_v1alpha1_source.yaml
 
       - name: Start Source Kind
         run: |
