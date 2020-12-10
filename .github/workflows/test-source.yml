@@ -39,7 +39,6 @@ jobs:
         run: |
           kubectl apply -f config/samples/mongodb-dbz.yaml
           kubectl exec -i mongo-dbz-0 -- /bin/bash
-          /usr/local/bin/init-inventory.sh
 
       - name: Start Source Kind
         run: |
