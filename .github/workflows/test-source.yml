@@ -38,7 +38,6 @@ jobs:
       - name: Install Mongo DB Server
         run: |
           kubectl apply -f config/samples/mongodb-dbz.yaml
-          kubectl exec -i mongo-dbz-0 -- /bin/bash
 
       - name: Start Source Kind
         run: |
