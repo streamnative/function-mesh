@@ -42,6 +42,10 @@ const ComponentSource = "source"
 const ComponentSink = "sink"
 const ComponentFunction = "function"
 
+const PackageNameFunctionPrefix = "function"
+const PackageNameSinkPrefix = "sink"
+const PackageNameSourcePrefix = "source"
+
 var GRPCPort = corev1.ContainerPort{
 	Name:          "grpc",
 	ContainerPort: 9093,
@@ -171,6 +175,21 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 }
 
 func getDownloadCommand(downloadPath, componentPackage string) []string {
+	// The download path is the path that the package saved in the pulsar.
+	// By default, it's the path that the package saved in the pulsar, we can use package name
+	// to replace it for downloading packages from packages management service.
+	if hasPackageNamePrefix(downloadPath) {
+		return []string{
+			"/pulsar/bin/pulsar-admin",
+			"--admin-url",
+			"$webServiceURL",
+			"packages",
+			"download",
+			downloadPath,
+			"--path",
+			"/pulsar/" + componentPackage,
+		}
+	}
 	return []string{
 		"/pulsar/bin/pulsar-admin", // TODO configurable pulsar ROOTDIR and adminCLI
 		"--admin-url",
@@ -182,6 +201,13 @@ func getDownloadCommand(downloadPath, componentPackage string) []string {
 		"--destination-file",
 		"/pulsar/" + componentPackage,
 	}
+}
+
+// TODO: do a more strict check for the package name
+func hasPackageNamePrefix(packagesName string) bool {
+	return strings.HasPrefix(packagesName, PackageNameFunctionPrefix) ||
+		strings.HasPrefix(packagesName, PackageNameSinkPrefix) ||
+		strings.HasPrefix(packagesName, PackageNameSourcePrefix)
 }
 
 func setShardIDEnvironmentVariableCommand() string {

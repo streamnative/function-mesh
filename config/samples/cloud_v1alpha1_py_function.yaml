@@ -38,6 +38,8 @@ spec:
   python:
     py: exclamation_function.py
     pyLocation: public/default/nlu-test-py-function
+    # use package name:
+    # pyLocation: function://public/default/nul-py-java-function@v1
   # to be delete & use admission hook
   clusterName: test-pulsar
   autoAck: true

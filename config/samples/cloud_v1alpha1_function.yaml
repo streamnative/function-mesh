@@ -38,6 +38,8 @@ spec:
   java:
     jar: pulsar-functions-api-examples.jar
     jarLocation: public/default/nlu-test-java-function
+    # use package name:
+    # jarLocation: function://public/default/nul-test-java-function@v1
   # to be delete & use admission hook
   clusterName: test-pulsar
   autoAck: true
