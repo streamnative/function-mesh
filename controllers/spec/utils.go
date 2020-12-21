@@ -80,6 +80,7 @@ func generateInputSpec(sourceConf v1alpha1.InputConf) map[string]*proto.Consumer
 			IsRegexPattern:     false,
 			SchemaProperties:   consumerConf.SchemaProperties,
 			ConsumerProperties: consumerConf.ConsumerProperties,
+			CryptoSpec:         generateCryptoSpec(consumerConf.CryptoConfig),
 		}
 	}
 
@@ -142,6 +143,7 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 			MaxPendingMessages:                 function.Spec.Output.ProducerConf.MaxPendingMessages,
 			MaxPendingMessagesAcrossPartitions: function.Spec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions,
 			UseThreadLocalProducers:            function.Spec.Output.ProducerConf.UseThreadLocalProducers,
+			CryptoSpec:                         generateCryptoSpec(function.Spec.Output.ProducerConf.CryptoConfig),
 		}
 
 		sinkSpec.ProducerSpec = producerConfig
@@ -187,6 +189,7 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 			MaxPendingMessages:                 source.Spec.Output.ProducerConf.MaxPendingMessages,
 			MaxPendingMessagesAcrossPartitions: source.Spec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions,
 			UseThreadLocalProducers:            source.Spec.Output.ProducerConf.UseThreadLocalProducers,
+			CryptoSpec:                         generateCryptoSpec(source.Spec.Output.ProducerConf.CryptoConfig),
 		},
 		SerDeClassName: source.Spec.Output.SinkSerdeClassName,
 		SchemaType:     source.Spec.Output.SinkSchemaType,
@@ -256,4 +259,39 @@ func unmarshalConsumerConfig(conf string) v1alpha1.ConsumerConfig {
 	// TODO: check unmarshel error in admission hook
 	json.Unmarshal([]byte(conf), &config)
 	return config
+}
+
+func generateCryptoSpec(conf *v1alpha1.CryptoConfig) *proto.CryptoSpec {
+	configs, _ := json.Marshal(conf.CryptoKeyReaderConfig)
+	return &proto.CryptoSpec{
+		CryptoKeyReaderClassName:    conf.CryptoKeyReaderClassName,
+		CryptoKeyReaderConfig:       string(configs),
+		ProducerEncryptionKeyName:   conf.EncryptionKeys,
+		ProducerCryptoFailureAction: getProducerProtoFailureAction(conf.ProducerCryptoFailureAction),
+		ConsumerCryptoFailureAction: getConsumerProtoFailureAction(conf.ConsumerCryptoFailureAction),
+	}
+}
+
+func getConsumerProtoFailureAction(action v1alpha1.ConsumerCryptoFailureAction) proto.CryptoSpec_FailureAction {
+	switch action {
+	case v1alpha1.ConsumerCryptoFailureActionFail:
+		return proto.CryptoSpec_FAIL
+	case v1alpha1.ConsumerCryptoFailureActionDiscard:
+		return proto.CryptoSpec_DISCARD
+	case v1alpha1.ConsumerCryptoFailureActionConsume:
+		return proto.CryptoSpec_CONSUME
+	default:
+		return proto.CryptoSpec_FAIL // not very sure if the default value is FAIL
+	}
+}
+
+func getProducerProtoFailureAction(action v1alpha1.ProducerCryptoFailureAction) proto.CryptoSpec_FailureAction {
+	switch action {
+	case v1alpha1.ProducerCryptoFailureActionFail:
+		return proto.CryptoSpec_FAIL
+	case v1alpha1.ProducerCryptoFailureActionSend:
+		return proto.CryptoSpec_SEND
+	default:
+		return proto.CryptoSpec_FAIL // not very sure if the default value is FAIL
+	}
 }

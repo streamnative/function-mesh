@@ -60,6 +60,8 @@ spec:
                     properties:
                       go:
                         type: string
+                      goLocation:
+                        type: string
                     type: object
                   input:
                     properties:
@@ -77,6 +79,23 @@ spec:
                             consumerProperties:
                               additionalProperties:
                                 type: string
+                              type: object
+                            cryptoConfig:
+                              properties:
+                                consumerCryptoFailureAction:
+                                  type: integer
+                                cryptoKeyReaderClassName:
+                                  type: string
+                                cryptoKeyReaderConfig:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                                encryptionKeys:
+                                  items:
+                                    type: string
+                                  type: array
+                                producerCryptoFailureAction:
+                                  type: integer
                               type: object
                             isRegexPattern:
                               type: boolean
@@ -131,6 +150,23 @@ spec:
                         type: object
                       producerConf:
                         properties:
+                          cryptoConfig:
+                            properties:
+                              consumerCryptoFailureAction:
+                                type: integer
+                              cryptoKeyReaderClassName:
+                                type: string
+                              cryptoKeyReaderConfig:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              encryptionKeys:
+                                items:
+                                  type: string
+                                type: array
+                              producerCryptoFailureAction:
+                                type: integer
+                            type: object
                           maxPendingMessages:
                             format: int32
                             type: integer
@@ -161,6 +197,8 @@ spec:
                   python:
                     properties:
                       py:
+                        type: string
+                      pyLocation:
                         type: string
                     type: object
                   replicas:
@@ -241,6 +279,8 @@ spec:
                     properties:
                       go:
                         type: string
+                      goLocation:
+                        type: string
                     type: object
                   input:
                     properties:
@@ -258,6 +298,23 @@ spec:
                             consumerProperties:
                               additionalProperties:
                                 type: string
+                              type: object
+                            cryptoConfig:
+                              properties:
+                                consumerCryptoFailureAction:
+                                  type: integer
+                                cryptoKeyReaderClassName:
+                                  type: string
+                                cryptoKeyReaderConfig:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                                encryptionKeys:
+                                  items:
+                                    type: string
+                                  type: array
+                                producerCryptoFailureAction:
+                                  type: integer
                               type: object
                             isRegexPattern:
                               type: boolean
@@ -316,6 +373,8 @@ spec:
                   python:
                     properties:
                       py:
+                        type: string
+                      pyLocation:
                         type: string
                     type: object
                   replicas:
@@ -392,6 +451,8 @@ spec:
                     properties:
                       go:
                         type: string
+                      goLocation:
+                        type: string
                     type: object
                   java:
                     properties:
@@ -416,6 +477,23 @@ spec:
                         type: object
                       producerConf:
                         properties:
+                          cryptoConfig:
+                            properties:
+                              consumerCryptoFailureAction:
+                                type: integer
+                              cryptoKeyReaderClassName:
+                                type: string
+                              cryptoKeyReaderConfig:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              encryptionKeys:
+                                items:
+                                  type: string
+                                type: array
+                              producerCryptoFailureAction:
+                                type: integer
+                            type: object
                           maxPendingMessages:
                             format: int32
                             type: integer
@@ -446,6 +524,8 @@ spec:
                   python:
                     properties:
                       py:
+                        type: string
+                      pyLocation:
                         type: string
                     type: object
                   replicas:
