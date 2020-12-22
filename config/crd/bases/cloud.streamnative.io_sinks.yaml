@@ -77,7 +77,7 @@ spec:
                       cryptoConfig:
                         properties:
                           consumerCryptoFailureAction:
-                            type: integer
+                            type: string
                           cryptoKeyReaderClassName:
                             type: string
                           cryptoKeyReaderConfig:
@@ -89,7 +89,7 @@ spec:
                               type: string
                             type: array
                           producerCryptoFailureAction:
-                            type: integer
+                            type: string
                         type: object
                       isRegexPattern:
                         type: boolean

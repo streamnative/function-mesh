@@ -118,11 +118,11 @@ const (
 )
 
 type CryptoConfig struct {
-	CryptoKeyReaderClassName    string                      `json:"cryptoKeyReaderClassName,omitempty"`
-	CryptoKeyReaderConfig       map[string]string           `json:"cryptoKeyReaderConfig,omitempty"`
-	EncryptionKeys              []string                    `json:"encryptionKeys,omitempty"`
-	ProducerCryptoFailureAction ProducerCryptoFailureAction `json:"producerCryptoFailureAction,omitempty"`
-	ConsumerCryptoFailureAction ConsumerCryptoFailureAction `json:"consumerCryptoFailureAction,omitempty"`
+	CryptoKeyReaderClassName    string            `json:"cryptoKeyReaderClassName,omitempty"`
+	CryptoKeyReaderConfig       map[string]string `json:"cryptoKeyReaderConfig,omitempty"`
+	EncryptionKeys              []string          `json:"encryptionKeys,omitempty"`
+	ProducerCryptoFailureAction string            `json:"producerCryptoFailureAction,omitempty"`
+	ConsumerCryptoFailureAction string            `json:"consumerCryptoFailureAction,omitempty"`
 }
 
 type SubscribePosition string

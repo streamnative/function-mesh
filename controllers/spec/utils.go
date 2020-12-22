@@ -92,6 +92,7 @@ func generateInputSpec(sourceConf v1alpha1.InputConf) map[string]*proto.Consumer
 			ReceiverQueueSize:  &proto.ConsumerSpec_ReceiverQueueSize{Value: conf.ReceiverQueueSize},
 			SchemaProperties:   conf.SchemaProperties,
 			ConsumerProperties: conf.ConsumerProperties,
+			CryptoSpec:         generateCryptoSpec(conf.CryptoConfig),
 		}
 	}
 
@@ -272,26 +273,18 @@ func generateCryptoSpec(conf *v1alpha1.CryptoConfig) *proto.CryptoSpec {
 	}
 }
 
-func getConsumerProtoFailureAction(action v1alpha1.ConsumerCryptoFailureAction) proto.CryptoSpec_FailureAction {
-	switch action {
-	case v1alpha1.ConsumerCryptoFailureActionFail:
+func getConsumerProtoFailureAction(action string) proto.CryptoSpec_FailureAction {
+	if r, has := proto.CryptoSpec_FailureAction_value[action]; has {
+		return proto.CryptoSpec_FailureAction(r)
+	} else {
 		return proto.CryptoSpec_FAIL
-	case v1alpha1.ConsumerCryptoFailureActionDiscard:
-		return proto.CryptoSpec_DISCARD
-	case v1alpha1.ConsumerCryptoFailureActionConsume:
-		return proto.CryptoSpec_CONSUME
-	default:
-		return proto.CryptoSpec_FAIL // not very sure if the default value is FAIL
 	}
 }
 
-func getProducerProtoFailureAction(action v1alpha1.ProducerCryptoFailureAction) proto.CryptoSpec_FailureAction {
-	switch action {
-	case v1alpha1.ProducerCryptoFailureActionFail:
+func getProducerProtoFailureAction(action string) proto.CryptoSpec_FailureAction {
+	if r, has := proto.CryptoSpec_FailureAction_value[action]; has {
+		return proto.CryptoSpec_FailureAction(r)
+	} else {
 		return proto.CryptoSpec_FAIL
-	case v1alpha1.ProducerCryptoFailureActionSend:
-		return proto.CryptoSpec_SEND
-	default:
-		return proto.CryptoSpec_FAIL // not very sure if the default value is FAIL
 	}
 }
