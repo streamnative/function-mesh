@@ -276,15 +276,13 @@ func generateCryptoSpec(conf *v1alpha1.CryptoConfig) *proto.CryptoSpec {
 func getConsumerProtoFailureAction(action string) proto.CryptoSpec_FailureAction {
 	if r, has := proto.CryptoSpec_FailureAction_value[action]; has {
 		return proto.CryptoSpec_FailureAction(r)
-	} else {
-		return proto.CryptoSpec_FAIL
 	}
+	return proto.CryptoSpec_FAIL
 }
 
 func getProducerProtoFailureAction(action string) proto.CryptoSpec_FailureAction {
 	if r, has := proto.CryptoSpec_FailureAction_value[action]; has {
 		return proto.CryptoSpec_FailureAction(r)
-	} else {
-		return proto.CryptoSpec_FAIL
 	}
+	return proto.CryptoSpec_FAIL
 }
