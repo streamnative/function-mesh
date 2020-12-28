@@ -103,26 +103,21 @@ type ProducerConfig struct {
 	CryptoConfig                       *CryptoConfig `json:"cryptoConfig,omitempty"`
 }
 
-type ProducerCryptoFailureAction int
-type ConsumerCryptoFailureAction int
-
-const (
-	ProducerCryptoFailureActionFail ProducerCryptoFailureAction = iota
-	ProducerCryptoFailureActionSend
-)
-
-const (
-	ConsumerCryptoFailureActionFail ConsumerCryptoFailureAction = iota
-	ConsumerCryptoFailureActionDiscard
-	ConsumerCryptoFailureActionConsume
-)
-
 type CryptoConfig struct {
-	CryptoKeyReaderClassName    string            `json:"cryptoKeyReaderClassName,omitempty"`
-	CryptoKeyReaderConfig       map[string]string `json:"cryptoKeyReaderConfig,omitempty"`
-	EncryptionKeys              []string          `json:"encryptionKeys,omitempty"`
-	ProducerCryptoFailureAction string            `json:"producerCryptoFailureAction,omitempty"`
-	ConsumerCryptoFailureAction string            `json:"consumerCryptoFailureAction,omitempty"`
+	CryptoKeyReaderClassName    string                  `json:"cryptoKeyReaderClassName,omitempty"`
+	CryptoKeyReaderConfig       map[string]string       `json:"cryptoKeyReaderConfig,omitempty"`
+	EncryptionKeys              []string                `json:"encryptionKeys,omitempty"`
+	ProducerCryptoFailureAction string                  `json:"producerCryptoFailureAction,omitempty"`
+	ConsumerCryptoFailureAction string                  `json:"consumerCryptoFailureAction,omitempty"`
+	CryptoKeyReaderConfigs      []CryptoKeyReaderConfig `json:"secrets,omitempty"`
+}
+
+type CryptoKeyReaderConfig struct {
+	Name       string `json:"name"`
+	SecretName string `json:"secretName"`
+	SecretKey  string `json:"secretKey"`
+	AsVolume   string `json:"asVolume,omitempty"`
+	AsEnv      string `json:"asEnv,omitempty"`
 }
 
 type SubscribePosition string

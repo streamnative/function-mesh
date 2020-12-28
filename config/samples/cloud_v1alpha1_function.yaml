@@ -15,16 +15,6 @@ spec:
   input:
     topics:
     - persistent://public/default/java-function-input-topic
-    sourceSpecs:
-      "persistent://public/default/java-function-input-topic":
-        cryptoConfig:
-          cryptoKeyReaderClassName: "org.apache.pulsar.functions.api.examples.RawFileKeyReader"
-          cryptoKeyReaderConfig:
-            PUBLIC: "/Users/nlu/workspace/stream-native/pulsar/keys/test_ecdsa_pubkey.pem"
-            PRIVATE: "/Users/nlu/workspace/stream-native/pulsar/keys/test_ecdsa_privkey.pem"
-          producerCryptoFailureAction: "FAIL"
-          encryptionKeys:
-            - "myapp1"
   output:
     topic: persistent://public/default/java-function-output-topic
   resources:

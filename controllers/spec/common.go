@@ -103,25 +103,25 @@ func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
 }
 
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *corev1.Container,
-	labels map[string]string) *appsv1.StatefulSet {
+	volumes []corev1.Volume, labels map[string]string) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: *objectMeta,
-		Spec:       *MakeStatefulSetSpec(replicas, container, labels),
+		Spec:       *MakeStatefulSetSpec(replicas, container, volumes, labels),
 	}
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
-	labels map[string]string) *appsv1.StatefulSetSpec {
+	volumes []corev1.Volume, labels map[string]string) *appsv1.StatefulSetSpec {
 	return &appsv1.StatefulSetSpec{
 		Replicas: replicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: labels,
 		},
-		Template:            *MakePodTemplate(container, labels),
+		Template:            *MakePodTemplate(container, volumes, labels),
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
@@ -129,7 +129,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	}
 }
 
-func MakePodTemplate(container *corev1.Container, labels map[string]string) *corev1.PodTemplateSpec {
+func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume, labels map[string]string) *corev1.PodTemplateSpec {
 	ZeroGracePeriod := int64(0)
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
@@ -139,6 +139,7 @@ func MakePodTemplate(container *corev1.Container, labels map[string]string) *cor
 			// Tolerations: nil TODO
 			Containers:                    []corev1.Container{*container},
 			TerminationGracePeriodSeconds: &ZeroGracePeriod,
+			Volumes:                       volumes,
 		},
 	}
 }
@@ -420,4 +421,162 @@ func generateContainerEnvFrom(messagingConfig string, authConfig string) []corev
 	}
 
 	return envs
+}
+
+func generateVolumesFromSink(sink *v1alpha1.Sink) []corev1.Volume {
+	volumes := []corev1.Volume{}
+	for _, conf := range sink.Spec.Input.SourceSpecs {
+		if len(conf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
+			for _, c := range conf.CryptoConfig.CryptoKeyReaderConfigs {
+				if c.AsVolume != "" {
+					volumes = append(volumes, corev1.Volume{
+						Name: generateVolumeNameFromCryptoKeyReaderConfig(c),
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: c.SecretName,
+								Items: []corev1.KeyToPath{
+									{
+										Key:  c.SecretKey,
+										Path: c.SecretKey,
+									},
+								},
+							},
+						},
+					})
+				}
+			}
+		}
+	}
+	return volumes
+}
+
+func generateVolumesFromFunction(function *v1alpha1.Function) []corev1.Volume {
+	volumes := []corev1.Volume{}
+	for _, conf := range function.Spec.Input.SourceSpecs {
+		if len(conf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
+			for _, c := range conf.CryptoConfig.CryptoKeyReaderConfigs {
+				if c.AsVolume != "" {
+					volumes = append(volumes, corev1.Volume{
+						Name: generateVolumeNameFromCryptoKeyReaderConfig(c),
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: c.SecretName,
+								Items: []corev1.KeyToPath{
+									{
+										Key:  c.SecretKey,
+										Path: c.SecretKey,
+									},
+								},
+							},
+						},
+					})
+				}
+			}
+		}
+	}
+	if function.Spec.Output.ProducerConf != nil && len(function.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
+		for _, c := range function.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs {
+			if c.AsVolume != "" {
+				volumes = append(volumes, corev1.Volume{
+					Name: generateVolumeNameFromCryptoKeyReaderConfig(c),
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: c.SecretName,
+							Items: []corev1.KeyToPath{
+								{
+									Key:  c.SecretKey,
+									Path: c.SecretKey,
+								},
+							},
+						},
+					},
+				})
+			}
+		}
+	}
+	return volumes
+}
+
+func generateVolumesFromSource(source *v1alpha1.Source) []corev1.Volume {
+	volumes := []corev1.Volume{}
+	if source.Spec.Output.ProducerConf != nil && len(source.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
+		for _, c := range source.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs {
+			if c.AsVolume != "" {
+				volumes = append(volumes, corev1.Volume{
+					Name: generateVolumeNameFromCryptoKeyReaderConfig(c),
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: c.SecretName,
+							Items: []corev1.KeyToPath{
+								{
+									Key:  c.SecretKey,
+									Path: c.SecretKey,
+								},
+							},
+						},
+					},
+				})
+			}
+		}
+	}
+	return volumes
+}
+
+func generateContainerVolumeMountsFromSink(sink *v1alpha1.Sink) []corev1.VolumeMount {
+	mounts := []corev1.VolumeMount{}
+	for _, conf := range sink.Spec.Input.SourceSpecs {
+		if len(conf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
+			for _, c := range conf.CryptoConfig.CryptoKeyReaderConfigs {
+				if c.AsVolume != "" {
+					mounts = append(mounts, corev1.VolumeMount{
+						Name:      generateVolumeNameFromCryptoKeyReaderConfig(c),
+						MountPath: c.AsVolume,
+					})
+				}
+			}
+		}
+	}
+	return mounts
+}
+
+func generateContainerVolumeMountsFromSource(source *v1alpha1.Source) []corev1.VolumeMount {
+	mounts := []corev1.VolumeMount{}
+	if source.Spec.Output.ProducerConf != nil && len(source.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
+		for _, c := range source.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs {
+			if c.AsVolume != "" {
+				mounts = append(mounts, corev1.VolumeMount{
+					Name:      generateVolumeNameFromCryptoKeyReaderConfig(c),
+					MountPath: c.AsVolume,
+				})
+			}
+		}
+	}
+	return mounts
+}
+
+func generateContainerVolumeMountsFromFunction(function *v1alpha1.Function) []corev1.VolumeMount {
+	mounts := []corev1.VolumeMount{}
+	for _, conf := range function.Spec.Input.SourceSpecs {
+		if len(conf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
+			for _, c := range conf.CryptoConfig.CryptoKeyReaderConfigs {
+				if c.AsVolume != "" {
+					mounts = append(mounts, corev1.VolumeMount{
+						Name:      generateVolumeNameFromCryptoKeyReaderConfig(c),
+						MountPath: c.AsVolume,
+					})
+				}
+			}
+		}
+	}
+	if function.Spec.Output.ProducerConf != nil && len(function.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
+		for _, c := range function.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs {
+			if c.AsVolume != "" {
+				mounts = append(mounts, corev1.VolumeMount{
+					Name:      generateVolumeNameFromCryptoKeyReaderConfig(c),
+					MountPath: c.AsVolume,
+				})
+			}
+		}
+	}
+	return mounts
 }

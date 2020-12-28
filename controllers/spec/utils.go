@@ -19,6 +19,9 @@ package spec
 
 import (
 	"encoding/json"
+	"k8s.io/apimachinery/pkg/util/validation"
+	"regexp"
+	"strings"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
@@ -285,4 +288,21 @@ func getProducerProtoFailureAction(action string) proto.CryptoSpec_FailureAction
 		return proto.CryptoSpec_FailureAction(r)
 	}
 	return proto.CryptoSpec_FAIL
+}
+
+func generateVolumeNameFromCryptoKeyReaderConfig(c v1alpha1.CryptoKeyReaderConfig) string {
+	return sanitizeVolumeName(c.SecretName + "-" + c.SecretKey)
+}
+
+var invalidDNS1123Characters = regexp.MustCompile("[^-a-z0-9]+")
+
+// sanitizeVolumeName ensures that the given volume name is a valid DNS-1123 label
+// accepted by Kubernetes.
+func sanitizeVolumeName(name string) string {
+	name = strings.ToLower(name)
+	name = invalidDNS1123Characters.ReplaceAllString(name, "-")
+	if len(name) > validation.DNS1123LabelMaxLength {
+		name = name[0:validation.DNS1123LabelMaxLength]
+	}
+	return strings.Trim(name, "-")
 }

@@ -96,6 +96,25 @@ spec:
                             type: array
                           producerCryptoFailureAction:
                             type: string
+                          secrets:
+                            items:
+                              properties:
+                                asEnv:
+                                  type: string
+                                asVolume:
+                                  type: string
+                                name:
+                                  type: string
+                                secretKey:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - name
+                              - secretKey
+                              - secretName
+                              type: object
+                            type: array
                         type: object
                       isRegexPattern:
                         type: boolean
@@ -165,6 +184,25 @@ spec:
                           type: array
                         producerCryptoFailureAction:
                           type: string
+                        secrets:
+                          items:
+                            properties:
+                              asEnv:
+                                type: string
+                              asVolume:
+                                type: string
+                              name:
+                                type: string
+                              secretKey:
+                                type: string
+                              secretName:
+                                type: string
+                            required:
+                            - name
+                            - secretKey
+                            - secretName
+                            type: object
+                          type: array
                       type: object
                     maxPendingMessages:
                       format: int32
