@@ -99,18 +99,13 @@ spec:
                                 secrets:
                                   items:
                                     properties:
-                                      asEnv:
-                                        type: string
                                       asVolume:
-                                        type: string
-                                      name:
                                         type: string
                                       secretKey:
                                         type: string
                                       secretName:
                                         type: string
                                     required:
-                                    - name
                                     - secretKey
                                     - secretName
                                     type: object
@@ -188,18 +183,13 @@ spec:
                               secrets:
                                 items:
                                   properties:
-                                    asEnv:
-                                      type: string
                                     asVolume:
-                                      type: string
-                                    name:
                                       type: string
                                     secretKey:
                                       type: string
                                     secretName:
                                       type: string
                                   required:
-                                  - name
                                   - secretKey
                                   - secretName
                                   type: object
@@ -356,18 +346,13 @@ spec:
                                 secrets:
                                   items:
                                     properties:
-                                      asEnv:
-                                        type: string
                                       asVolume:
-                                        type: string
-                                      name:
                                         type: string
                                       secretKey:
                                         type: string
                                       secretName:
                                         type: string
                                     required:
-                                    - name
                                     - secretKey
                                     - secretName
                                     type: object
@@ -553,18 +538,13 @@ spec:
                               secrets:
                                 items:
                                   properties:
-                                    asEnv:
-                                      type: string
                                     asVolume:
-                                      type: string
-                                    name:
                                       type: string
                                     secretKey:
                                       type: string
                                     secretName:
                                       type: string
                                   required:
-                                  - name
                                   - secretKey
                                   - secretName
                                   type: object
