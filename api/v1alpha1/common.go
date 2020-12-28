@@ -113,11 +113,10 @@ type CryptoConfig struct {
 }
 
 type CryptoKeyReaderConfig struct {
-	Name       string `json:"name"`
 	SecretName string `json:"secretName"`
 	SecretKey  string `json:"secretKey"`
 	AsVolume   string `json:"asVolume,omitempty"`
-	AsEnv      string `json:"asEnv,omitempty"`
+	//AsEnv      string `json:"asEnv,omitempty"`
 }
 
 type SubscribePosition string

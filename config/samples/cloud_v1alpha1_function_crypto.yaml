@@ -26,12 +26,10 @@ spec:
           encryptionKeys:
             - "myapp1"
           secrets:
-            - name: "PRIVATE"
-              secretName: "java-function-crypto-sample-crypto-secret"
+            - secretName: "java-function-crypto-sample-crypto-secret"
               secretKey: "test_ecdsa_privkey.pem"
               asVolume: "/keys/test_ecdsa_privkey.pem"
-            - name: "PUBLIC"
-              secretName: "java-function-crypto-sample-crypto-secret"
+            - secretName: "java-function-crypto-sample-crypto-secret"
               secretKey: "test_ecdsa_pubkey.pem"
               asVolume: "/keys/test_ecdsa_pubkey.pem"
   output:
