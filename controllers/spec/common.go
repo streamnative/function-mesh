@@ -426,8 +426,8 @@ func generateContainerEnvFrom(messagingConfig string, authConfig string) []corev
 func generateVolumesFromSink(sink *v1alpha1.Sink) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	for _, conf := range sink.Spec.Input.SourceSpecs {
-		if len(conf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
-			for _, c := range conf.CryptoConfig.CryptoKeyReaderConfigs {
+		if len(conf.CryptoConfig.CryptoSecrets) > 0 {
+			for _, c := range conf.CryptoConfig.CryptoSecrets {
 				if c.AsVolume != "" {
 					volumes = append(volumes, corev1.Volume{
 						Name: generateVolumeNameFromCryptoKeyReaderConfig(c),
@@ -453,8 +453,8 @@ func generateVolumesFromSink(sink *v1alpha1.Sink) []corev1.Volume {
 func generateVolumesFromFunction(function *v1alpha1.Function) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	for _, conf := range function.Spec.Input.SourceSpecs {
-		if len(conf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
-			for _, c := range conf.CryptoConfig.CryptoKeyReaderConfigs {
+		if len(conf.CryptoConfig.CryptoSecrets) > 0 {
+			for _, c := range conf.CryptoConfig.CryptoSecrets {
 				if c.AsVolume != "" {
 					volumes = append(volumes, corev1.Volume{
 						Name: generateVolumeNameFromCryptoKeyReaderConfig(c),
@@ -474,8 +474,8 @@ func generateVolumesFromFunction(function *v1alpha1.Function) []corev1.Volume {
 			}
 		}
 	}
-	if function.Spec.Output.ProducerConf != nil && len(function.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
-		for _, c := range function.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs {
+	if function.Spec.Output.ProducerConf != nil && len(function.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets) > 0 {
+		for _, c := range function.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets {
 			if c.AsVolume != "" {
 				volumes = append(volumes, corev1.Volume{
 					Name: generateVolumeNameFromCryptoKeyReaderConfig(c),
@@ -499,8 +499,8 @@ func generateVolumesFromFunction(function *v1alpha1.Function) []corev1.Volume {
 
 func generateVolumesFromSource(source *v1alpha1.Source) []corev1.Volume {
 	volumes := []corev1.Volume{}
-	if source.Spec.Output.ProducerConf != nil && len(source.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
-		for _, c := range source.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs {
+	if source.Spec.Output.ProducerConf != nil && len(source.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets) > 0 {
+		for _, c := range source.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets {
 			if c.AsVolume != "" {
 				volumes = append(volumes, corev1.Volume{
 					Name: generateVolumeNameFromCryptoKeyReaderConfig(c),
@@ -525,8 +525,8 @@ func generateVolumesFromSource(source *v1alpha1.Source) []corev1.Volume {
 func generateContainerVolumeMountsFromSink(sink *v1alpha1.Sink) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	for _, conf := range sink.Spec.Input.SourceSpecs {
-		if len(conf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
-			for _, c := range conf.CryptoConfig.CryptoKeyReaderConfigs {
+		if len(conf.CryptoConfig.CryptoSecrets) > 0 {
+			for _, c := range conf.CryptoConfig.CryptoSecrets {
 				if c.AsVolume != "" {
 					mounts = append(mounts, corev1.VolumeMount{
 						Name:      generateVolumeNameFromCryptoKeyReaderConfig(c),
@@ -541,8 +541,8 @@ func generateContainerVolumeMountsFromSink(sink *v1alpha1.Sink) []corev1.VolumeM
 
 func generateContainerVolumeMountsFromSource(source *v1alpha1.Source) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
-	if source.Spec.Output.ProducerConf != nil && len(source.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
-		for _, c := range source.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs {
+	if source.Spec.Output.ProducerConf != nil && len(source.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets) > 0 {
+		for _, c := range source.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets {
 			if c.AsVolume != "" {
 				mounts = append(mounts, corev1.VolumeMount{
 					Name:      generateVolumeNameFromCryptoKeyReaderConfig(c),
@@ -557,8 +557,8 @@ func generateContainerVolumeMountsFromSource(source *v1alpha1.Source) []corev1.V
 func generateContainerVolumeMountsFromFunction(function *v1alpha1.Function) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	for _, conf := range function.Spec.Input.SourceSpecs {
-		if len(conf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
-			for _, c := range conf.CryptoConfig.CryptoKeyReaderConfigs {
+		if len(conf.CryptoConfig.CryptoSecrets) > 0 {
+			for _, c := range conf.CryptoConfig.CryptoSecrets {
 				if c.AsVolume != "" {
 					mounts = append(mounts, corev1.VolumeMount{
 						Name:      generateVolumeNameFromCryptoKeyReaderConfig(c),
@@ -568,8 +568,8 @@ func generateContainerVolumeMountsFromFunction(function *v1alpha1.Function) []co
 			}
 		}
 	}
-	if function.Spec.Output.ProducerConf != nil && len(function.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs) > 0 {
-		for _, c := range function.Spec.Output.ProducerConf.CryptoConfig.CryptoKeyReaderConfigs {
+	if function.Spec.Output.ProducerConf != nil && len(function.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets) > 0 {
+		for _, c := range function.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets {
 			if c.AsVolume != "" {
 				mounts = append(mounts, corev1.VolumeMount{
 					Name:      generateVolumeNameFromCryptoKeyReaderConfig(c),

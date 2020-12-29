@@ -104,15 +104,15 @@ type ProducerConfig struct {
 }
 
 type CryptoConfig struct {
-	CryptoKeyReaderClassName    string                  `json:"cryptoKeyReaderClassName,omitempty"`
-	CryptoKeyReaderConfig       map[string]string       `json:"cryptoKeyReaderConfig,omitempty"`
-	EncryptionKeys              []string                `json:"encryptionKeys,omitempty"`
-	ProducerCryptoFailureAction string                  `json:"producerCryptoFailureAction,omitempty"`
-	ConsumerCryptoFailureAction string                  `json:"consumerCryptoFailureAction,omitempty"`
-	CryptoKeyReaderConfigs      []CryptoKeyReaderConfig `json:"secrets,omitempty"`
+	CryptoKeyReaderClassName    string            `json:"cryptoKeyReaderClassName,omitempty"`
+	CryptoKeyReaderConfig       map[string]string `json:"cryptoKeyReaderConfig,omitempty"`
+	EncryptionKeys              []string          `json:"encryptionKeys,omitempty"`
+	ProducerCryptoFailureAction string            `json:"producerCryptoFailureAction,omitempty"`
+	ConsumerCryptoFailureAction string            `json:"consumerCryptoFailureAction,omitempty"`
+	CryptoSecrets               []CryptoSecrets   `json:"secrets,omitempty"`
 }
 
-type CryptoKeyReaderConfig struct {
+type CryptoSecrets struct {
 	SecretName string `json:"secretName"`
 	SecretKey  string `json:"secretKey"`
 	AsVolume   string `json:"asVolume,omitempty"`
