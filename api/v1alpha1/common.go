@@ -109,7 +109,7 @@ type CryptoConfig struct {
 	EncryptionKeys              []string          `json:"encryptionKeys,omitempty"`
 	ProducerCryptoFailureAction string            `json:"producerCryptoFailureAction,omitempty"`
 	ConsumerCryptoFailureAction string            `json:"consumerCryptoFailureAction,omitempty"`
-	CryptoSecrets               []CryptoSecrets   `json:"secrets,omitempty"`
+	CryptoSecrets               []CryptoSecrets   `json:"cryptoSecrets,omitempty"`
 }
 
 type CryptoSecrets struct {

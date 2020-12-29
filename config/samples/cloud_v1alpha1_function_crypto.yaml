@@ -25,7 +25,7 @@ spec:
           producerCryptoFailureAction: "FAIL"
           encryptionKeys:
             - "myapp1"
-          secrets:
+          cryptoSecrets:
             - secretName: "java-function-crypto-sample-crypto-secret"
               secretKey: "test_ecdsa_privkey.pem"
               asVolume: "/keys/test_ecdsa_privkey.pem"
