@@ -293,7 +293,7 @@ func getProducerProtoFailureAction(action string) proto.CryptoSpec_FailureAction
 	return proto.CryptoSpec_FAIL
 }
 
-func generateVolumeNameFromCryptoSecrets(c v1alpha1.CryptoSecrets) string {
+func generateVolumeNameFromCryptoSecrets(c *v1alpha1.CryptoSecret) string {
 	return sanitizeVolumeName(c.SecretName + "-" + c.SecretKey)
 }
 

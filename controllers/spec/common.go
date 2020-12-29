@@ -423,28 +423,13 @@ func generateContainerEnvFrom(messagingConfig string, authConfig string) []corev
 	return envs
 }
 
-func generateVolumesFromSink(sink *v1alpha1.Sink) []corev1.Volume {
+func generateContainerVolumesFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
-	if sink.Spec.Input.SourceSpecs != nil && len(sink.Spec.Input.SourceSpecs) > 0 {
-		for _, conf := range sink.Spec.Input.SourceSpecs {
-			if len(conf.CryptoConfig.CryptoSecrets) > 0 {
+	if len(confs) > 0 {
+		for _, conf := range confs {
+			if conf.CryptoConfig != nil && len(conf.CryptoConfig.CryptoSecrets) > 0 {
 				for _, c := range conf.CryptoConfig.CryptoSecrets {
-					if c.AsVolume != "" {
-						volumes = append(volumes, corev1.Volume{
-							Name: generateVolumeNameFromCryptoSecrets(c),
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: c.SecretName,
-									Items: []corev1.KeyToPath{
-										{
-											Key:  c.SecretKey,
-											Path: c.SecretKey,
-										},
-									},
-								},
-							},
-						})
-					}
+					volumes = append(volumes, generateVolumeFromCryptoSecret(&c))
 				}
 			}
 		}
@@ -452,91 +437,48 @@ func generateVolumesFromSink(sink *v1alpha1.Sink) []corev1.Volume {
 	return volumes
 }
 
-func generateVolumesFromFunction(function *v1alpha1.Function) []corev1.Volume {
+func generateContainerVolumesFromProducerConf(conf *v1alpha1.ProducerConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
-	if function.Spec.Input.SourceSpecs != nil && len(function.Spec.Input.SourceSpecs) > 0 {
-		for _, conf := range function.Spec.Input.SourceSpecs {
-			if len(conf.CryptoConfig.CryptoSecrets) > 0 {
-				for _, c := range conf.CryptoConfig.CryptoSecrets {
-					if c.AsVolume != "" {
-						volumes = append(volumes, corev1.Volume{
-							Name: generateVolumeNameFromCryptoSecrets(c),
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: c.SecretName,
-									Items: []corev1.KeyToPath{
-										{
-											Key:  c.SecretKey,
-											Path: c.SecretKey,
-										},
-									},
-								},
-							},
-						})
-					}
-				}
-			}
-		}
-	}
-	if function.Spec.Output.ProducerConf != nil && len(function.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets) > 0 {
-		for _, c := range function.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets {
-			if c.AsVolume != "" {
-				volumes = append(volumes, corev1.Volume{
-					Name: generateVolumeNameFromCryptoSecrets(c),
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: c.SecretName,
-							Items: []corev1.KeyToPath{
-								{
-									Key:  c.SecretKey,
-									Path: c.SecretKey,
-								},
-							},
-						},
-					},
-				})
-			}
+	if conf != nil && conf.CryptoConfig != nil && len(conf.CryptoConfig.CryptoSecrets) > 0 {
+		for _, c := range conf.CryptoConfig.CryptoSecrets {
+			volumes = append(volumes, generateVolumeFromCryptoSecret(&c))
 		}
 	}
 	return volumes
 }
 
-func generateVolumesFromSource(source *v1alpha1.Source) []corev1.Volume {
-	volumes := []corev1.Volume{}
-	if source.Spec.Output.ProducerConf != nil && len(source.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets) > 0 {
-		for _, c := range source.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets {
-			if c.AsVolume != "" {
-				volumes = append(volumes, corev1.Volume{
-					Name: generateVolumeNameFromCryptoSecrets(c),
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: c.SecretName,
-							Items: []corev1.KeyToPath{
-								{
-									Key:  c.SecretKey,
-									Path: c.SecretKey,
-								},
-							},
-						},
+func generateVolumeFromCryptoSecret(secret *v1alpha1.CryptoSecret) corev1.Volume {
+	return corev1.Volume{
+		Name: generateVolumeNameFromCryptoSecrets(secret),
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: secret.SecretName,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  secret.SecretKey,
+						Path: secret.SecretKey,
 					},
-				})
-			}
-		}
+				},
+			},
+		},
 	}
-	return volumes
 }
 
-func generateContainerVolumeMountsFromSink(sink *v1alpha1.Sink) []corev1.VolumeMount {
+func generateVolumeMountFromCryptoSecret(secret *v1alpha1.CryptoSecret) corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      generateVolumeNameFromCryptoSecrets(secret),
+		MountPath: secret.AsVolume,
+	}
+}
+
+func generateContainerVolumeMountsFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
-	if sink.Spec.Input.SourceSpecs != nil && len(sink.Spec.Input.SourceSpecs) > 0 {
-		for _, conf := range sink.Spec.Input.SourceSpecs {
-			if len(conf.CryptoConfig.CryptoSecrets) > 0 {
+	if len(confs) > 0 {
+		for _, conf := range confs {
+			if conf.CryptoConfig != nil && len(conf.CryptoConfig.CryptoSecrets) > 0 {
 				for _, c := range conf.CryptoConfig.CryptoSecrets {
 					if c.AsVolume != "" {
-						mounts = append(mounts, corev1.VolumeMount{
-							Name:      generateVolumeNameFromCryptoSecrets(c),
-							MountPath: c.AsVolume,
-						})
+						mounts = append(mounts, generateVolumeMountFromCryptoSecret(&c))
 					}
 				}
 			}
@@ -545,15 +487,12 @@ func generateContainerVolumeMountsFromSink(sink *v1alpha1.Sink) []corev1.VolumeM
 	return mounts
 }
 
-func generateContainerVolumeMountsFromSource(source *v1alpha1.Source) []corev1.VolumeMount {
+func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
-	if source.Spec.Output.ProducerConf != nil && len(source.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets) > 0 {
-		for _, c := range source.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets {
+	if conf != nil && conf.CryptoConfig != nil && len(conf.CryptoConfig.CryptoSecrets) > 0 {
+		for _, c := range conf.CryptoConfig.CryptoSecrets {
 			if c.AsVolume != "" {
-				mounts = append(mounts, corev1.VolumeMount{
-					Name:      generateVolumeNameFromCryptoSecrets(c),
-					MountPath: c.AsVolume,
-				})
+				mounts = append(mounts, generateVolumeMountFromCryptoSecret(&c))
 			}
 		}
 	}
@@ -562,29 +501,14 @@ func generateContainerVolumeMountsFromSource(source *v1alpha1.Source) []corev1.V
 
 func generateContainerVolumeMountsFromFunction(function *v1alpha1.Function) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
-	if function.Spec.Input.SourceSpecs != nil && len(function.Spec.Input.SourceSpecs) > 0 {
-		for _, conf := range function.Spec.Input.SourceSpecs {
-			if len(conf.CryptoConfig.CryptoSecrets) > 0 {
-				for _, c := range conf.CryptoConfig.CryptoSecrets {
-					if c.AsVolume != "" {
-						mounts = append(mounts, corev1.VolumeMount{
-							Name:      generateVolumeNameFromCryptoSecrets(c),
-							MountPath: c.AsVolume,
-						})
-					}
-				}
-			}
-		}
-	}
-	if function.Spec.Output.ProducerConf != nil && len(function.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets) > 0 {
-		for _, c := range function.Spec.Output.ProducerConf.CryptoConfig.CryptoSecrets {
-			if c.AsVolume != "" {
-				mounts = append(mounts, corev1.VolumeMount{
-					Name:      generateVolumeNameFromCryptoSecrets(c),
-					MountPath: c.AsVolume,
-				})
-			}
-		}
-	}
+	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(function.Spec.Output.ProducerConf)...)
+	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(function.Spec.Input.SourceSpecs)...)
 	return mounts
+}
+
+func generateContainerVolumesFromFunction(function *v1alpha1.Function) []corev1.Volume {
+	volumes := []corev1.Volume{}
+	volumes = append(volumes, generateContainerVolumesFromProducerConf(function.Spec.Output.ProducerConf)...)
+	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(function.Spec.Input.SourceSpecs)...)
+	return volumes
 }

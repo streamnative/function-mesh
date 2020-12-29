@@ -109,10 +109,10 @@ type CryptoConfig struct {
 	EncryptionKeys              []string          `json:"encryptionKeys,omitempty"`
 	ProducerCryptoFailureAction string            `json:"producerCryptoFailureAction,omitempty"`
 	ConsumerCryptoFailureAction string            `json:"consumerCryptoFailureAction,omitempty"`
-	CryptoSecrets               []CryptoSecrets   `json:"cryptoSecrets,omitempty"`
+	CryptoSecrets               []CryptoSecret    `json:"cryptoSecrets,omitempty"`
 }
 
-type CryptoSecrets struct {
+type CryptoSecret struct {
 	SecretName string `json:"secretName"`
 	SecretKey  string `json:"secretKey"`
 	AsVolume   string `json:"asVolume,omitempty"`

@@ -63,7 +63,7 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		Resources:       sink.Spec.Resources,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		EnvFrom:         generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthConfig),
-		VolumeMounts:    generateContainerVolumeMountsFromSink(sink),
+		VolumeMounts:    generateContainerVolumeMountsFromConsumerConfigs(sink.Spec.Input.SourceSpecs),
 	}
 }
 
@@ -77,7 +77,7 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 }
 
 func makeSinkVolumes(sink *v1alpha1.Sink) []corev1.Volume {
-	return generateVolumesFromSink(sink)
+	return generateContainerVolumesFromConsumerConfigs(sink.Spec.Input.SourceSpecs)
 }
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {

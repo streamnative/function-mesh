@@ -58,7 +58,7 @@ func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
 }
 
 func makeFunctionVolumes(function *v1alpha1.Function) []corev1.Volume {
-	return generateVolumesFromFunction(function)
+	return generateContainerVolumesFromFunction(function)
 }
 
 func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
