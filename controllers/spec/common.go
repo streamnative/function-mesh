@@ -37,14 +37,16 @@ import (
 const EnvShardID = "SHARD_ID"
 const FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
 const DefaultRunnerImage = "streamnative/pulsar-all:2.7.0-rc-pm-3"
+const PulsarAdminExecutableFile = "/pulsar/bin/pulsar-admin"
+const PulsarDownloadRootDir = "/pulsar"
 
 const ComponentSource = "source"
 const ComponentSink = "sink"
 const ComponentFunction = "function"
 
-const PackageNameFunctionPrefix = "function"
-const PackageNameSinkPrefix = "sink"
-const PackageNameSourcePrefix = "source"
+const PackageNameFunctionPrefix = "function://"
+const PackageNameSinkPrefix = "sink://"
+const PackageNameSourcePrefix = "source://"
 
 var GRPCPort = corev1.ContainerPort{
 	Name:          "grpc",
@@ -180,18 +182,18 @@ func getDownloadCommand(downloadPath, componentPackage string) []string {
 	// to replace it for downloading packages from packages management service.
 	if hasPackageNamePrefix(downloadPath) {
 		return []string{
-			"/pulsar/bin/pulsar-admin",
+			PulsarAdminExecutableFile,
 			"--admin-url",
 			"$webServiceURL",
 			"packages",
 			"download",
 			downloadPath,
 			"--path",
-			"/pulsar/" + componentPackage,
+			PulsarDownloadRootDir + "/" + componentPackage,
 		}
 	}
 	return []string{
-		"/pulsar/bin/pulsar-admin", // TODO configurable pulsar ROOTDIR and adminCLI
+		PulsarAdminExecutableFile, // TODO configurable pulsar ROOTDIR and adminCLI
 		"--admin-url",
 		"$webServiceURL",
 		"functions",
@@ -199,7 +201,7 @@ func getDownloadCommand(downloadPath, componentPackage string) []string {
 		"--path",
 		downloadPath,
 		"--destination-file",
-		"/pulsar/" + componentPackage,
+		PulsarDownloadRootDir + "/" + componentPackage,
 	}
 }
 

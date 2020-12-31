@@ -34,3 +34,6 @@ jobs:
       - name: Check License Header
         run: |
           go test license_test.go
+
+      - name: Run unit test check
+        run: go test -v ./controller/spec/...
