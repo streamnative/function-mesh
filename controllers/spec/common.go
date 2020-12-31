@@ -205,7 +205,7 @@ func getDownloadCommand(downloadPath, componentPackage string) []string {
 	}
 }
 
-// TODO: do a more strict check for the package name
+// TODO: do a more strict check for the package name https://github.com/streamnative/function-mesh/issues/49
 func hasPackageNamePrefix(packagesName string) bool {
 	return strings.HasPrefix(packagesName, PackageNameFunctionPrefix) ||
 		strings.HasPrefix(packagesName, PackageNameSinkPrefix) ||
