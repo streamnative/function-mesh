@@ -34,6 +34,8 @@ spec:
   java:
     jar: connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar
     jarLocation: "" # use pulsar provided connectors
+    # use package name:
+    # jarLocation: function://public/default/nul-test-java-source@v1
   clusterName: test-pulsar
 ---
 apiVersion: v1
