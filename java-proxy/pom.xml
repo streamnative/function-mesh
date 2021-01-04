@@ -34,6 +34,8 @@
         <log4j2.version>2.14.0</log4j2.version>
         <kubernetes-client.version>10.0.0</kubernetes-client.version>
         <license.plugin.version>3.0</license.plugin.version>
+        <mockito.version>1.10.19</mockito.version>
+        <powermock.version>1.7.4</powermock.version>
     </properties>
 
     <dependencies>
@@ -61,6 +63,21 @@
             <groupId>io.kubernetes</groupId>
             <artifactId>client-java</artifactId>
             <version>${kubernetes-client.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito</artifactId>
+            <version>${powermock.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <version>${powermock.version}</version>
         </dependency>
     </dependencies>
 

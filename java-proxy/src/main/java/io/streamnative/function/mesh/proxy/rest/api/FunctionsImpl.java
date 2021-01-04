@@ -105,14 +105,20 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                     FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData =
                             new FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData();
                     functionInstanceStatusData.setRunning(true);
-                    v1alpha1Function.getStatus().getConditions().forEach((s, v1alpha1FunctionStatusConditions) -> {
-                        if (v1alpha1FunctionStatusConditions.getStatus().equals("False")) {
-                            functionInstanceStatusData.setRunning(false);
-                        }
-                    });
-                    functionInstanceStatusData.setWorkerId(v1alpha1Function.getSpec().getClusterName());
-                    functionInstanceStatus.setStatus(functionInstanceStatusData);
-                    functionStatus.addInstance(functionInstanceStatus);
+                    if ( v1alpha1Function.getStatus() != null) {
+                        v1alpha1Function.getStatus().getConditions().forEach((s, v1alpha1FunctionStatusConditions) -> {
+                            if (v1alpha1FunctionStatusConditions.getStatus() != null
+                                    && v1alpha1FunctionStatusConditions.getStatus().equals("False")) {
+                                functionInstanceStatusData.setRunning(false);
+                            }
+                        });
+                        functionInstanceStatusData.setWorkerId(v1alpha1Function.getSpec().getClusterName());
+                        functionInstanceStatus.setStatus(functionInstanceStatusData);
+                        functionStatus.addInstance(functionInstanceStatus);
+                    } else {
+                        functionInstanceStatusData.setRunning(false);
+                    }
+                    functionStatus.setNumInstances(functionStatus.getInstances().size());
                 } else {
                     log.error("Parse json failed for {}", response.body());
                 }
