@@ -90,13 +90,7 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
-                                encryptionKeys:
-                                  items:
-                                    type: string
-                                  type: array
-                                producerCryptoFailureAction:
-                                  type: string
-                                secrets:
+                                cryptoSecrets:
                                   items:
                                     properties:
                                       asVolume:
@@ -110,6 +104,12 @@ spec:
                                     - secretName
                                     type: object
                                   type: array
+                                encryptionKeys:
+                                  items:
+                                    type: string
+                                  type: array
+                                producerCryptoFailureAction:
+                                  type: string
                               type: object
                             isRegexPattern:
                               type: boolean
@@ -174,13 +174,7 @@ spec:
                                 additionalProperties:
                                   type: string
                                 type: object
-                              encryptionKeys:
-                                items:
-                                  type: string
-                                type: array
-                              producerCryptoFailureAction:
-                                type: string
-                              secrets:
+                              cryptoSecrets:
                                 items:
                                   properties:
                                     asVolume:
@@ -194,6 +188,12 @@ spec:
                                   - secretName
                                   type: object
                                 type: array
+                              encryptionKeys:
+                                items:
+                                  type: string
+                                type: array
+                              producerCryptoFailureAction:
+                                type: string
                             type: object
                           maxPendingMessages:
                             format: int32
@@ -337,13 +337,7 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
-                                encryptionKeys:
-                                  items:
-                                    type: string
-                                  type: array
-                                producerCryptoFailureAction:
-                                  type: string
-                                secrets:
+                                cryptoSecrets:
                                   items:
                                     properties:
                                       asVolume:
@@ -357,6 +351,12 @@ spec:
                                     - secretName
                                     type: object
                                   type: array
+                                encryptionKeys:
+                                  items:
+                                    type: string
+                                  type: array
+                                producerCryptoFailureAction:
+                                  type: string
                               type: object
                             isRegexPattern:
                               type: boolean
@@ -529,13 +529,7 @@ spec:
                                 additionalProperties:
                                   type: string
                                 type: object
-                              encryptionKeys:
-                                items:
-                                  type: string
-                                type: array
-                              producerCryptoFailureAction:
-                                type: string
-                              secrets:
+                              cryptoSecrets:
                                 items:
                                   properties:
                                     asVolume:
@@ -549,6 +543,12 @@ spec:
                                   - secretName
                                   type: object
                                 type: array
+                              encryptionKeys:
+                                items:
+                                  type: string
+                                type: array
+                              producerCryptoFailureAction:
+                                type: string
                             type: object
                           maxPendingMessages:
                             format: int32

@@ -269,6 +269,9 @@ func unmarshalConsumerConfig(conf string) v1alpha1.ConsumerConfig {
 }
 
 func generateCryptoSpec(conf *v1alpha1.CryptoConfig) *proto.CryptoSpec {
+	if conf == nil {
+		return nil
+	}
 	configs, _ := json.Marshal(conf.CryptoKeyReaderConfig)
 	return &proto.CryptoSpec{
 		CryptoKeyReaderClassName:    conf.CryptoKeyReaderClassName,
