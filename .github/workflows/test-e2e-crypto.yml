@@ -1,0 +1,50 @@
+name: Precommit - Test Function Kind with E2E Crypto
+on:
+  pull_request:
+    branches:
+      - '*'
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Check if this pull request only changes documentation
+        id:   docs
+        uses: apache/pulsar-test-infra/diff-only@master
+        with:
+          args: site2 .asf.yaml ct.yaml
+
+      - name: Deploy k8s cluster env
+        run: |
+          .ci/deploy_pulsar_cluster.sh
+
+      - name: Install operator-sdk
+        run: |
+          RELEASE_VERSION=v1.2.0
+          curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
+          chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu && sudo mkdir -p /usr/local/bin/ && sudo cp operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu /usr/local/bin/operator-sdk && rm operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
+
+      #      - name: Add CRD, controller or webhooks
+      #        run: |
+      #          operator-sdk create api --group cloud --version v1alpha1 --kind Function --resource=true --controller=true
+      #          operator-sdk create webhook --group cloud.streamnative.io --version v1alpha1 --kind Function --defaulting --programmatic-validation
+
+      - name: Deploy function mesh server
+        run: |
+          make generate
+          make install
+          nohup make run &
+
+      - name: Test Function kind
+        run: |
+          kubectl apply -f config/samples/cloud_v1alpha1_function_crypto.yaml
+          kubectl get all
+
+      - name: Verfy Function Mesh
+        run: |
+          .ci/verify_function_mesh.sh function-crypto-sample
