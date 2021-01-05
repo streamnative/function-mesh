@@ -85,6 +85,7 @@ type ConsumerConfig struct {
 	SchemaProperties   map[string]string `json:"schemaProperties,omitempty"`
 	ConsumerProperties map[string]string `json:"consumerProperties,omitempty"`
 	ReceiverQueueSize  int32             `json:"receiverQueueSize,omitempty"`
+	CryptoConfig       *CryptoConfig     `json:"cryptoConfig,omitempty"`
 }
 
 type OutputConf struct {
@@ -96,9 +97,26 @@ type OutputConf struct {
 }
 
 type ProducerConfig struct {
-	MaxPendingMessages                 int32 `json:"maxPendingMessages,omitempty"`
-	MaxPendingMessagesAcrossPartitions int32 `json:"maxPendingMessagesAcrossPartitions,omitempty"`
-	UseThreadLocalProducers            bool  `json:"useThreadLocalProducers,omitempty"`
+	MaxPendingMessages                 int32         `json:"maxPendingMessages,omitempty"`
+	MaxPendingMessagesAcrossPartitions int32         `json:"maxPendingMessagesAcrossPartitions,omitempty"`
+	UseThreadLocalProducers            bool          `json:"useThreadLocalProducers,omitempty"`
+	CryptoConfig                       *CryptoConfig `json:"cryptoConfig,omitempty"`
+}
+
+type CryptoConfig struct {
+	CryptoKeyReaderClassName    string            `json:"cryptoKeyReaderClassName,omitempty"`
+	CryptoKeyReaderConfig       map[string]string `json:"cryptoKeyReaderConfig,omitempty"`
+	EncryptionKeys              []string          `json:"encryptionKeys,omitempty"`
+	ProducerCryptoFailureAction string            `json:"producerCryptoFailureAction,omitempty"`
+	ConsumerCryptoFailureAction string            `json:"consumerCryptoFailureAction,omitempty"`
+	CryptoSecrets               []CryptoSecret    `json:"cryptoSecrets,omitempty"`
+}
+
+type CryptoSecret struct {
+	SecretName string `json:"secretName"`
+	SecretKey  string `json:"secretKey"`
+	AsVolume   string `json:"asVolume,omitempty"`
+	//AsEnv      string `json:"asEnv,omitempty"`
 }
 
 type SubscribePosition string

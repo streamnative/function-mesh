@@ -103,5 +103,6 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Service{}).
 		Owns(&autov1.HorizontalPodAutoscaler{}).
+		Owns(&corev1.Secret{}).
 		Complete(r)
 }

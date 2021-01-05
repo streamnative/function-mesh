@@ -39,7 +39,7 @@ func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
 
 func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
 	objectMeta := MakeSourceObjectMeta(source)
-	return MakeStatefulSet(objectMeta, source.Spec.Replicas, MakeSourceContainer(source), makeSourceLabels(source))
+	return MakeStatefulSet(objectMeta, source.Spec.Replicas, MakeSourceContainer(source), makeSourceVolumes(source), makeSourceLabels(source))
 }
 
 func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {
@@ -63,6 +63,7 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		Resources:       source.Spec.Resources,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		EnvFrom:         generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthConfig),
+		VolumeMounts:    generateContainerVolumeMountsFromProducerConf(source.Spec.Output.ProducerConf),
 	}
 }
 
@@ -73,6 +74,10 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 	labels["namespace"] = source.Namespace
 
 	return labels
+}
+
+func makeSourceVolumes(source *v1alpha1.Source) []corev1.Volume {
+	return generateContainerVolumesFromProducerConf(source.Spec.Output.ProducerConf)
 }
 
 func makeSourceCommand(source *v1alpha1.Source) []string {

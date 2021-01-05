@@ -85,7 +85,6 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, req ctrl.Request,
 	function *v1alpha1.Function) error {
 	condition := function.Status.Conditions[v1alpha1.StatefulSet]
-
 	if condition.Status == metav1.ConditionTrue {
 		return nil
 	}
