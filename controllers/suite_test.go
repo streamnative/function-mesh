@@ -18,10 +18,11 @@
 package controllers
 
 import (
-	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/streamnative/function-mesh/api/v1alpha1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -33,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
 	// +kubebuilder:scaffold:imports
 )
 
@@ -66,8 +66,8 @@ var _ = BeforeSuite(func(done Done) {
 			CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
 		}
 	}
-
-	cfg, err := testEnv.Start()
+	var err error
+	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
@@ -80,7 +80,7 @@ var _ = BeforeSuite(func(done Done) {
 	// +kubebuilder:scaffold:scheme
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme:             scheme.Scheme,
 		MetricsBindAddress: ":8090",
 	})
 	Expect(err).ToNot(HaveOccurred())

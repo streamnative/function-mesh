@@ -19,6 +19,12 @@ jobs:
 
       - name: InstallTool
         run: |
+          curl -L https://go.kubebuilder.io/dl/2.3.1/linux/amd64 | tar -xz -C /tmp/
+          mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
+          export PATH=$PATH:/usr/local/kubebuilder/bin
+
+      - name: InstallKubebuilder
+        run: |
           wget -O - -q https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.18.0
           ./bin/golangci-lint --version
 
@@ -37,3 +43,7 @@ jobs:
 
       - name: Run unit test check
         run: go test -v ./controllers/spec/...
+
+      - name: Run envtest for controller
+        run: go test ./controllers/ -v -ginkgo.v
+
