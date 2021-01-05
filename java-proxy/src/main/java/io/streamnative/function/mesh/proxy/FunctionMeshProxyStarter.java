@@ -39,6 +39,7 @@ public class FunctionMeshProxyStarter {
         } catch (Throwable th) {
             log.error("Encountered error in function worker.", th);
             worker.stop();
+            Runtime.getRuntime().halt(1);
         }
     }
 }

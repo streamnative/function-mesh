@@ -44,10 +44,8 @@ public class FunctionMeshProxyWorker {
 
     public FunctionMeshProxyWorker(WorkerConfig workerConfig) {
         this.workerConfig = workerConfig;
-        // This is for test, We can also make a nar package and load it with WorkerServiceLoader.load(workerConfig)
         this.workerService = new FunctionMeshProxyService();
         this.errorNotifier = ErrorNotifier.getDefaultImpl();
-
     }
 
     protected void start() throws Exception {

@@ -43,6 +43,7 @@ import org.apache.pulsar.zookeeper.ZooKeeperCache;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 
 /**
@@ -68,7 +69,7 @@ public class FunctionMeshProxyService implements WorkerService {
     }
 
     @Override
-    public void initAsStandalone(WorkerConfig workerConfig) {
+    public void initAsStandalone(WorkerConfig workerConfig) throws Exception {
         this.init(workerConfig);
     }
 
@@ -78,43 +79,30 @@ public class FunctionMeshProxyService implements WorkerService {
                            ZooKeeperCache zooKeeperCache,
                            ConfigurationCacheService configurationCacheService,
                            InternalConfigurationData internalConfigurationData) {
-        // No need to implement
+        // to do https://github.com/streamnative/function-mesh/issues/57
     }
 
-    public void init(WorkerConfig workerConfig) {
+    public void init(WorkerConfig workerConfig) throws Exception {
         this.workerConfig = workerConfig;
-        this.initTestKubernetesClient();
+        this.initKubernetesClient();
         this.functions = new FunctionsImpl(() -> FunctionMeshProxyService.this);
     }
 
-    private void initKubernetesClient() {
+    private void initKubernetesClient() throws IOException {
         try {
             apiClient = Config.defaultClient();
             coreV1Api = new CoreV1Api(Config.defaultClient());
             customObjectsApi = new CustomObjectsApi(Config.defaultClient());
         } catch (java.io.IOException e) {
             log.error("Initialization kubernetes client failed, exception: {}", e.getMessage());
-        }
-    }
-
-    private void initTestKubernetesClient() {
-        try {
-            String homePath = System.getProperties().getProperty("user.home");
-            File f = new File(homePath + "/.kube/config");
-            Reader input = new FileReader(f);
-            apiClient = Config.fromConfig(input);
-            coreV1Api = new CoreV1Api(apiClient);
-            customObjectsApi = new CustomObjectsApi(apiClient);
-            log.info("Initialization kubernetes client successfully");
-        } catch (java.io.IOException e) {
-            log.error("Initialization kubernetes client failed, exception: {}", e.getMessage());
+            throw e;
         }
     }
 
     public void start(AuthenticationService authenticationService,
                       AuthorizationService authorizationService,
                       ErrorNotifier errorNotifier) {
-
+        // https://github.com/streamnative/function-mesh/issues/58
     }
 
     public void stop() {
@@ -126,11 +114,12 @@ public class FunctionMeshProxyService implements WorkerService {
     }
 
     public Workers<? extends WorkerService> getWorkers() {
+        // to do https://github.com/streamnative/function-mesh/issues/55
         return null;
     }
 
     public void generateFunctionsStats(SimpleTextOutputStream out) {
-
+        // to do https://github.com/streamnative/function-mesh/issues/56
     }
 
 }

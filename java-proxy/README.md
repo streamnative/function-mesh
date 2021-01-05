@@ -14,6 +14,8 @@ gcloud container clusters get-credentials cluster-1 --region us-central1-c --pro
 
 Importing a project into the idea development environment.
 
+Configuration environment variable `KUBECONFIG` for idea development environment.
+
 #### Test Interface
 
 ```shell script
