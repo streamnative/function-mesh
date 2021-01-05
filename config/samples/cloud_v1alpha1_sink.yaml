@@ -30,6 +30,8 @@ spec:
   java:
     jar: connectors/pulsar-io-elastic-search-2.7.0-rc-pm-3.nar
     jarLocation: "" # use pulsar provided connectors
+    # use package name:
+    # jarLocation: function://public/default/nul-test-java-sink@v1
   clusterName: test-pulsar
   autoAck: true
 ---

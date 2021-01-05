@@ -37,6 +37,8 @@ spec:
   golang:
     go: go_func_all
     goLocation: public/default/nlu-test-go-function
+    # use package name:
+    # goLocation: function://public/default/nul-test-go-function@v1
   # to be delete & use admission hook
   clusterName: test-pulsar
   autoAck: true
