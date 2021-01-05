@@ -19,6 +19,10 @@ package spec
 
 import (
 	"encoding/json"
+	"regexp"
+	"strings"
+
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
@@ -80,17 +84,21 @@ func generateInputSpec(sourceConf v1alpha1.InputConf) map[string]*proto.Consumer
 			IsRegexPattern:     false,
 			SchemaProperties:   consumerConf.SchemaProperties,
 			ConsumerProperties: consumerConf.ConsumerProperties,
+			CryptoSpec:         generateCryptoSpec(consumerConf.CryptoConfig),
 		}
 	}
 
-	for topicName, conf := range sourceConf.SourceSpecs {
-		inputSpecs[topicName] = &proto.ConsumerSpec{
-			SchemaType:         conf.SchemaType,
-			SerdeClassName:     conf.SerdeClassName,
-			IsRegexPattern:     conf.IsRegexPattern,
-			ReceiverQueueSize:  &proto.ConsumerSpec_ReceiverQueueSize{Value: conf.ReceiverQueueSize},
-			SchemaProperties:   conf.SchemaProperties,
-			ConsumerProperties: conf.ConsumerProperties,
+	if sourceConf.SourceSpecs != nil && len(sourceConf.SourceSpecs) > 0 {
+		for topicName, conf := range sourceConf.SourceSpecs {
+			inputSpecs[topicName] = &proto.ConsumerSpec{
+				SchemaType:         conf.SchemaType,
+				SerdeClassName:     conf.SerdeClassName,
+				IsRegexPattern:     conf.IsRegexPattern,
+				ReceiverQueueSize:  &proto.ConsumerSpec_ReceiverQueueSize{Value: conf.ReceiverQueueSize},
+				SchemaProperties:   conf.SchemaProperties,
+				ConsumerProperties: conf.ConsumerProperties,
+				CryptoSpec:         generateCryptoSpec(conf.CryptoConfig),
+			}
 		}
 	}
 
@@ -142,6 +150,7 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 			MaxPendingMessages:                 function.Spec.Output.ProducerConf.MaxPendingMessages,
 			MaxPendingMessagesAcrossPartitions: function.Spec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions,
 			UseThreadLocalProducers:            function.Spec.Output.ProducerConf.UseThreadLocalProducers,
+			CryptoSpec:                         generateCryptoSpec(function.Spec.Output.ProducerConf.CryptoConfig),
 		}
 
 		sinkSpec.ProducerSpec = producerConfig
@@ -187,6 +196,7 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 			MaxPendingMessages:                 source.Spec.Output.ProducerConf.MaxPendingMessages,
 			MaxPendingMessagesAcrossPartitions: source.Spec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions,
 			UseThreadLocalProducers:            source.Spec.Output.ProducerConf.UseThreadLocalProducers,
+			CryptoSpec:                         generateCryptoSpec(source.Spec.Output.ProducerConf.CryptoConfig),
 		},
 		SerDeClassName: source.Spec.Output.SinkSerdeClassName,
 		SchemaType:     source.Spec.Output.SinkSchemaType,
@@ -256,4 +266,49 @@ func unmarshalConsumerConfig(conf string) v1alpha1.ConsumerConfig {
 	// TODO: check unmarshel error in admission hook
 	json.Unmarshal([]byte(conf), &config)
 	return config
+}
+
+func generateCryptoSpec(conf *v1alpha1.CryptoConfig) *proto.CryptoSpec {
+	if conf == nil {
+		return nil
+	}
+	configs, _ := json.Marshal(conf.CryptoKeyReaderConfig)
+	return &proto.CryptoSpec{
+		CryptoKeyReaderClassName:    conf.CryptoKeyReaderClassName,
+		CryptoKeyReaderConfig:       string(configs),
+		ProducerEncryptionKeyName:   conf.EncryptionKeys,
+		ProducerCryptoFailureAction: getProducerProtoFailureAction(conf.ProducerCryptoFailureAction),
+		ConsumerCryptoFailureAction: getConsumerProtoFailureAction(conf.ConsumerCryptoFailureAction),
+	}
+}
+
+func getConsumerProtoFailureAction(action string) proto.CryptoSpec_FailureAction {
+	if r, has := proto.CryptoSpec_FailureAction_value[action]; has {
+		return proto.CryptoSpec_FailureAction(r)
+	}
+	return proto.CryptoSpec_FAIL
+}
+
+func getProducerProtoFailureAction(action string) proto.CryptoSpec_FailureAction {
+	if r, has := proto.CryptoSpec_FailureAction_value[action]; has {
+		return proto.CryptoSpec_FailureAction(r)
+	}
+	return proto.CryptoSpec_FAIL
+}
+
+func generateVolumeNameFromCryptoSecrets(c *v1alpha1.CryptoSecret) string {
+	return sanitizeVolumeName(c.SecretName + "-" + c.SecretKey)
+}
+
+var invalidDNS1123Characters = regexp.MustCompile("[^-a-z0-9]+")
+
+// sanitizeVolumeName ensures that the given volume name is a valid DNS-1123 label
+// accepted by Kubernetes.
+func sanitizeVolumeName(name string) string {
+	name = strings.ToLower(name)
+	name = invalidDNS1123Characters.ReplaceAllString(name, "-")
+	if len(name) > validation.DNS1123LabelMaxLength {
+		name = name[0:validation.DNS1123LabelMaxLength]
+	}
+	return strings.Trim(name, "-")
 }

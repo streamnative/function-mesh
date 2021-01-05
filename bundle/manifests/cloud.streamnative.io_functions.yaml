@@ -1,19 +1,17 @@
-
----
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: sinks.cloud.streamnative.io
+  name: functions.cloud.streamnative.io
 spec:
   group: cloud.streamnative.io
   names:
-    kind: Sink
-    listKind: SinkList
-    plural: sinks
-    singular: sink
+    kind: Function
+    listKind: FunctionList
+    plural: functions
+    singular: function
   scope: Namespaced
   subresources:
     scale:
@@ -23,22 +21,18 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Topic is the Schema for the sinks API
+      description: Function is the Schema for the functions API
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         spec:
-          description: SinkSpec defines the desired state of Topic
+          description: FunctionSpec defines the desired state of Function
           properties:
             autoAck:
               type: boolean
@@ -50,6 +44,12 @@ spec:
               type: string
             deadLetterTopic:
               type: string
+            forwardSourceMessageProperty:
+              type: boolean
+            funcConfig:
+              additionalProperties:
+                type: string
+              type: object
             golang:
               properties:
                 go:
@@ -84,7 +84,13 @@ spec:
                             additionalProperties:
                               type: string
                             type: object
-                          cryptoSecrets:
+                          encryptionKeys:
+                            items:
+                              type: string
+                            type: array
+                          producerCryptoFailureAction:
+                            type: string
+                          secrets:
                             items:
                               properties:
                                 asVolume:
@@ -98,12 +104,6 @@ spec:
                               - secretName
                               type: object
                             type: array
-                          encryptionKeys:
-                            items:
-                              type: string
-                            type: array
-                          producerCryptoFailureAction:
-                            type: string
                         type: object
                       isRegexPattern:
                         type: boolean
@@ -134,19 +134,75 @@ spec:
                 jarLocation:
                   type: string
               type: object
+            logTopic:
+              type: string
             maxMessageRetry:
+              format: int32
+              type: integer
+            maxPendingAsyncRequests:
               format: int32
               type: integer
             maxReplicas:
               format: int32
               type: integer
             name:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "make" to regenerate code after modifying this file'
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run "make" to regenerate code after modifying this file'
               type: string
-            negativeAckRedeliveryDelayMs:
-              format: int32
-              type: integer
+            output:
+              properties:
+                customSchemaSinks:
+                  additionalProperties:
+                    type: string
+                  type: object
+                producerConf:
+                  properties:
+                    cryptoConfig:
+                      properties:
+                        consumerCryptoFailureAction:
+                          type: string
+                        cryptoKeyReaderClassName:
+                          type: string
+                        cryptoKeyReaderConfig:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        encryptionKeys:
+                          items:
+                            type: string
+                          type: array
+                        producerCryptoFailureAction:
+                          type: string
+                        secrets:
+                          items:
+                            properties:
+                              asVolume:
+                                type: string
+                              secretKey:
+                                type: string
+                              secretName:
+                                type: string
+                            required:
+                            - secretKey
+                            - secretName
+                            type: object
+                          type: array
+                      type: object
+                    maxPendingMessages:
+                      format: int32
+                      type: integer
+                    maxPendingMessagesAcrossPartitions:
+                      format: int32
+                      type: integer
+                    useThreadLocalProducers:
+                      type: boolean
+                  type: object
+                sinkSchemaType:
+                  type: string
+                sinkSerdeClassName:
+                  type: string
+                topic:
+                  type: string
+              type: object
             processingGuarantee:
               type: string
             pulsar:
@@ -154,8 +210,7 @@ spec:
                 authConfig:
                   type: string
                 pulsarConfig:
-                  description: The config map need to contain the following fields
-                    webServiceURL brokerServiceURL
+                  description: The config map need to contain the following fields webServiceURL brokerServiceURL
                   type: string
               type: object
             python:
@@ -178,8 +233,7 @@ spec:
                     - type: string
                     pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                     x-kubernetes-int-or-string: true
-                  description: 'Limits describes the maximum amount of compute resources
-                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                   type: object
                 requests:
                   additionalProperties:
@@ -188,12 +242,11 @@ spec:
                     - type: string
                     pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                     x-kubernetes-int-or-string: true
-                  description: 'Requests describes the minimum amount of compute resources
-                    required. If Requests is omitted for a container, it defaults
-                    to Limits if that is explicitly specified, otherwise to an implementation-defined
-                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                   type: object
               type: object
+            retainKeyOrdering:
+              type: boolean
             retainOrdering:
               type: boolean
             runtimeFlags:
@@ -206,10 +259,6 @@ spec:
                   path:
                     type: string
                 type: object
-              type: object
-            sinkConfig:
-              additionalProperties:
-                type: string
               type: object
             sinkType:
               type: string
@@ -226,12 +275,11 @@ spec:
               type: integer
           type: object
         status:
-          description: SinkStatus defines the observed state of Topic
+          description: FunctionStatus defines the observed state of Function
           properties:
             conditions:
               additionalProperties:
-                description: The `Status` of a given `Condition` and the `Action`
-                  needed to reach the `Status`
+                description: The `Status` of a given `Condition` and the `Action` needed to reach the `Status`
                 properties:
                   action:
                     type: string
@@ -240,9 +288,7 @@ spec:
                   status:
                     type: string
                 type: object
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "make" to regenerate code after modifying
-                this file'
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run "make" to regenerate code after modifying this file'
               type: object
             replicas:
               format: int32

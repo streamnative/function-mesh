@@ -1,5 +1,3 @@
-
----
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -22,14 +20,10 @@ spec:
       description: FunctionMesh is the Schema for the functionmeshes API
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
@@ -90,7 +84,13 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
-                                cryptoSecrets:
+                                encryptionKeys:
+                                  items:
+                                    type: string
+                                  type: array
+                                producerCryptoFailureAction:
+                                  type: string
+                                secrets:
                                   items:
                                     properties:
                                       asVolume:
@@ -104,12 +104,6 @@ spec:
                                     - secretName
                                     type: object
                                   type: array
-                                encryptionKeys:
-                                  items:
-                                    type: string
-                                  type: array
-                                producerCryptoFailureAction:
-                                  type: string
                               type: object
                             isRegexPattern:
                               type: boolean
@@ -152,9 +146,7 @@ spec:
                     format: int32
                     type: integer
                   name:
-                    description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of
-                      cluster Important: Run "make" to regenerate code after modifying
-                      this file'
+                    description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run "make" to regenerate code after modifying this file'
                     type: string
                   output:
                     properties:
@@ -174,7 +166,13 @@ spec:
                                 additionalProperties:
                                   type: string
                                 type: object
-                              cryptoSecrets:
+                              encryptionKeys:
+                                items:
+                                  type: string
+                                type: array
+                              producerCryptoFailureAction:
+                                type: string
+                              secrets:
                                 items:
                                   properties:
                                     asVolume:
@@ -188,12 +186,6 @@ spec:
                                   - secretName
                                   type: object
                                 type: array
-                              encryptionKeys:
-                                items:
-                                  type: string
-                                type: array
-                              producerCryptoFailureAction:
-                                type: string
                             type: object
                           maxPendingMessages:
                             format: int32
@@ -218,8 +210,7 @@ spec:
                       authConfig:
                         type: string
                       pulsarConfig:
-                        description: The config map need to contain the following
-                          fields webServiceURL brokerServiceURL
+                        description: The config map need to contain the following fields webServiceURL brokerServiceURL
                         type: string
                     type: object
                   python:
@@ -233,8 +224,7 @@ spec:
                     format: int32
                     type: integer
                   resources:
-                    description: ResourceRequirements describes the compute resource
-                      requirements.
+                    description: ResourceRequirements describes the compute resource requirements.
                     properties:
                       limits:
                         additionalProperties:
@@ -243,8 +233,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Limits describes the maximum amount of compute
-                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
                         additionalProperties:
@@ -253,10 +242,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Requests describes the minimum amount of compute
-                          resources required. If Requests is omitted for a container,
-                          it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
                   retainKeyOrdering:
@@ -337,7 +323,13 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
-                                cryptoSecrets:
+                                encryptionKeys:
+                                  items:
+                                    type: string
+                                  type: array
+                                producerCryptoFailureAction:
+                                  type: string
+                                secrets:
                                   items:
                                     properties:
                                       asVolume:
@@ -351,12 +343,6 @@ spec:
                                     - secretName
                                     type: object
                                   type: array
-                                encryptionKeys:
-                                  items:
-                                    type: string
-                                  type: array
-                                producerCryptoFailureAction:
-                                  type: string
                               type: object
                             isRegexPattern:
                               type: boolean
@@ -394,9 +380,7 @@ spec:
                     format: int32
                     type: integer
                   name:
-                    description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of
-                      cluster Important: Run "make" to regenerate code after modifying
-                      this file'
+                    description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run "make" to regenerate code after modifying this file'
                     type: string
                   negativeAckRedeliveryDelayMs:
                     format: int32
@@ -408,8 +392,7 @@ spec:
                       authConfig:
                         type: string
                       pulsarConfig:
-                        description: The config map need to contain the following
-                          fields webServiceURL brokerServiceURL
+                        description: The config map need to contain the following fields webServiceURL brokerServiceURL
                         type: string
                     type: object
                   python:
@@ -423,8 +406,7 @@ spec:
                     format: int32
                     type: integer
                   resources:
-                    description: ResourceRequirements describes the compute resource
-                      requirements.
+                    description: ResourceRequirements describes the compute resource requirements.
                     properties:
                       limits:
                         additionalProperties:
@@ -433,8 +415,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Limits describes the maximum amount of compute
-                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
                         additionalProperties:
@@ -443,10 +424,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Requests describes the minimum amount of compute
-                          resources required. If Requests is omitted for a container,
-                          it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
                   retainOrdering:
@@ -507,9 +485,7 @@ spec:
                     format: int32
                     type: integer
                   name:
-                    description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of
-                      cluster Important: Run "make" to regenerate code after modifying
-                      this file'
+                    description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run "make" to regenerate code after modifying this file'
                     type: string
                   output:
                     properties:
@@ -529,7 +505,13 @@ spec:
                                 additionalProperties:
                                   type: string
                                 type: object
-                              cryptoSecrets:
+                              encryptionKeys:
+                                items:
+                                  type: string
+                                type: array
+                              producerCryptoFailureAction:
+                                type: string
+                              secrets:
                                 items:
                                   properties:
                                     asVolume:
@@ -543,12 +525,6 @@ spec:
                                   - secretName
                                   type: object
                                 type: array
-                              encryptionKeys:
-                                items:
-                                  type: string
-                                type: array
-                              producerCryptoFailureAction:
-                                type: string
                             type: object
                           maxPendingMessages:
                             format: int32
@@ -573,8 +549,7 @@ spec:
                       authConfig:
                         type: string
                       pulsarConfig:
-                        description: The config map need to contain the following
-                          fields webServiceURL brokerServiceURL
+                        description: The config map need to contain the following fields webServiceURL brokerServiceURL
                         type: string
                     type: object
                   python:
@@ -588,8 +563,7 @@ spec:
                     format: int32
                     type: integer
                   resources:
-                    description: ResourceRequirements describes the compute resource
-                      requirements.
+                    description: ResourceRequirements describes the compute resource requirements.
                     properties:
                       limits:
                         additionalProperties:
@@ -598,8 +572,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Limits describes the maximum amount of compute
-                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
                         additionalProperties:
@@ -608,10 +581,7 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Requests describes the minimum amount of compute
-                          resources required. If Requests is omitted for a container,
-                          it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
                   runtimeFlags:
@@ -643,8 +613,7 @@ spec:
           properties:
             functionConditions:
               additionalProperties:
-                description: The `Status` of a given `Condition` and the `Action`
-                  needed to reach the `Status`
+                description: The `Status` of a given `Condition` and the `Action` needed to reach the `Status`
                 properties:
                   action:
                     type: string
@@ -656,8 +625,7 @@ spec:
               type: object
             sinkConditions:
               additionalProperties:
-                description: The `Status` of a given `Condition` and the `Action`
-                  needed to reach the `Status`
+                description: The `Status` of a given `Condition` and the `Action` needed to reach the `Status`
                 properties:
                   action:
                     type: string
@@ -669,8 +637,7 @@ spec:
               type: object
             sourceConditions:
               additionalProperties:
-                description: The `Status` of a given `Condition` and the `Action`
-                  needed to reach the `Status`
+                description: The `Status` of a given `Condition` and the `Action` needed to reach the `Status`
                 properties:
                   action:
                     type: string
@@ -679,9 +646,7 @@ spec:
                   status:
                     type: string
                 type: object
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "make" to regenerate code after modifying
-                this file'
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run "make" to regenerate code after modifying this file'
               type: object
           type: object
       type: object

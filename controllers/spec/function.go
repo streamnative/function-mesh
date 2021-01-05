@@ -44,7 +44,7 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
 	return MakeStatefulSet(objectMeta, function.Spec.Replicas,
-		MakeFunctionContainer(function), makeFunctionLabels(function))
+		MakeFunctionContainer(function), makeFunctionVolumes(function), makeFunctionLabels(function))
 }
 
 func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
@@ -55,6 +55,10 @@ func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
 			*metav1.NewControllerRef(function, function.GroupVersionKind()),
 		},
 	}
+}
+
+func makeFunctionVolumes(function *v1alpha1.Function) []corev1.Volume {
+	return generateContainerVolumesFromFunction(function)
 }
 
 func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
@@ -68,6 +72,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		Resources:       function.Spec.Resources,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		EnvFrom:         generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthConfig),
+		VolumeMounts:    generateContainerVolumeMountsFromFunction(function),
 	}
 }
 

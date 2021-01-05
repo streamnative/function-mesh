@@ -103,25 +103,25 @@ func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
 }
 
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *corev1.Container,
-	labels map[string]string) *appsv1.StatefulSet {
+	volumes []corev1.Volume, labels map[string]string) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: *objectMeta,
-		Spec:       *MakeStatefulSetSpec(replicas, container, labels),
+		Spec:       *MakeStatefulSetSpec(replicas, container, volumes, labels),
 	}
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
-	labels map[string]string) *appsv1.StatefulSetSpec {
+	volumes []corev1.Volume, labels map[string]string) *appsv1.StatefulSetSpec {
 	return &appsv1.StatefulSetSpec{
 		Replicas: replicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: labels,
 		},
-		Template:            *MakePodTemplate(container, labels),
+		Template:            *MakePodTemplate(container, volumes, labels),
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
@@ -129,7 +129,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	}
 }
 
-func MakePodTemplate(container *corev1.Container, labels map[string]string) *corev1.PodTemplateSpec {
+func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume, labels map[string]string) *corev1.PodTemplateSpec {
 	ZeroGracePeriod := int64(0)
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
@@ -139,6 +139,7 @@ func MakePodTemplate(container *corev1.Container, labels map[string]string) *cor
 			// Tolerations: nil TODO
 			Containers:                    []corev1.Container{*container},
 			TerminationGracePeriodSeconds: &ZeroGracePeriod,
+			Volumes:                       volumes,
 		},
 	}
 }
@@ -420,4 +421,94 @@ func generateContainerEnvFrom(messagingConfig string, authConfig string) []corev
 	}
 
 	return envs
+}
+
+func generateContainerVolumesFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.Volume {
+	volumes := []corev1.Volume{}
+	if len(confs) > 0 {
+		for _, conf := range confs {
+			if conf.CryptoConfig != nil && len(conf.CryptoConfig.CryptoSecrets) > 0 {
+				for _, c := range conf.CryptoConfig.CryptoSecrets {
+					volumes = append(volumes, generateVolumeFromCryptoSecret(&c))
+				}
+			}
+		}
+	}
+	return volumes
+}
+
+func generateContainerVolumesFromProducerConf(conf *v1alpha1.ProducerConfig) []corev1.Volume {
+	volumes := []corev1.Volume{}
+	if conf != nil && conf.CryptoConfig != nil && len(conf.CryptoConfig.CryptoSecrets) > 0 {
+		for _, c := range conf.CryptoConfig.CryptoSecrets {
+			volumes = append(volumes, generateVolumeFromCryptoSecret(&c))
+		}
+	}
+	return volumes
+}
+
+func generateVolumeFromCryptoSecret(secret *v1alpha1.CryptoSecret) corev1.Volume {
+	return corev1.Volume{
+		Name: generateVolumeNameFromCryptoSecrets(secret),
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: secret.SecretName,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  secret.SecretKey,
+						Path: secret.SecretKey,
+					},
+				},
+			},
+		},
+	}
+}
+
+func generateVolumeMountFromCryptoSecret(secret *v1alpha1.CryptoSecret) corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      generateVolumeNameFromCryptoSecrets(secret),
+		MountPath: secret.AsVolume,
+	}
+}
+
+func generateContainerVolumeMountsFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.VolumeMount {
+	mounts := []corev1.VolumeMount{}
+	if len(confs) > 0 {
+		for _, conf := range confs {
+			if conf.CryptoConfig != nil && len(conf.CryptoConfig.CryptoSecrets) > 0 {
+				for _, c := range conf.CryptoConfig.CryptoSecrets {
+					if c.AsVolume != "" {
+						mounts = append(mounts, generateVolumeMountFromCryptoSecret(&c))
+					}
+				}
+			}
+		}
+	}
+	return mounts
+}
+
+func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig) []corev1.VolumeMount {
+	mounts := []corev1.VolumeMount{}
+	if conf != nil && conf.CryptoConfig != nil && len(conf.CryptoConfig.CryptoSecrets) > 0 {
+		for _, c := range conf.CryptoConfig.CryptoSecrets {
+			if c.AsVolume != "" {
+				mounts = append(mounts, generateVolumeMountFromCryptoSecret(&c))
+			}
+		}
+	}
+	return mounts
+}
+
+func generateContainerVolumeMountsFromFunction(function *v1alpha1.Function) []corev1.VolumeMount {
+	mounts := []corev1.VolumeMount{}
+	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(function.Spec.Output.ProducerConf)...)
+	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(function.Spec.Input.SourceSpecs)...)
+	return mounts
+}
+
+func generateContainerVolumesFromFunction(function *v1alpha1.Function) []corev1.Volume {
+	volumes := []corev1.Volume{}
+	volumes = append(volumes, generateContainerVolumesFromProducerConf(function.Spec.Output.ProducerConf)...)
+	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(function.Spec.Input.SourceSpecs)...)
+	return volumes
 }

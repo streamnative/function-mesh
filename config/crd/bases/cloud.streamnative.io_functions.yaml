@@ -60,6 +60,8 @@ spec:
               properties:
                 go:
                   type: string
+                goLocation:
+                  type: string
               type: object
             input:
               properties:
@@ -77,6 +79,37 @@ spec:
                       consumerProperties:
                         additionalProperties:
                           type: string
+                        type: object
+                      cryptoConfig:
+                        properties:
+                          consumerCryptoFailureAction:
+                            type: string
+                          cryptoKeyReaderClassName:
+                            type: string
+                          cryptoKeyReaderConfig:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          cryptoSecrets:
+                            items:
+                              properties:
+                                asVolume:
+                                  type: string
+                                secretKey:
+                                  type: string
+                                secretName:
+                                  type: string
+                              required:
+                              - secretKey
+                              - secretName
+                              type: object
+                            type: array
+                          encryptionKeys:
+                            items:
+                              type: string
+                            type: array
+                          producerCryptoFailureAction:
+                            type: string
                         type: object
                       isRegexPattern:
                         type: boolean
@@ -130,6 +163,37 @@ spec:
                   type: object
                 producerConf:
                   properties:
+                    cryptoConfig:
+                      properties:
+                        consumerCryptoFailureAction:
+                          type: string
+                        cryptoKeyReaderClassName:
+                          type: string
+                        cryptoKeyReaderConfig:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        cryptoSecrets:
+                          items:
+                            properties:
+                              asVolume:
+                                type: string
+                              secretKey:
+                                type: string
+                              secretName:
+                                type: string
+                            required:
+                            - secretKey
+                            - secretName
+                            type: object
+                          type: array
+                        encryptionKeys:
+                          items:
+                            type: string
+                          type: array
+                        producerCryptoFailureAction:
+                          type: string
+                      type: object
                     maxPendingMessages:
                       format: int32
                       type: integer
@@ -160,6 +224,8 @@ spec:
             python:
               properties:
                 py:
+                  type: string
+                pyLocation:
                   type: string
               type: object
             replicas:
