@@ -43,20 +43,18 @@ var _ = Describe("FunctionMesh Controller", func() {
 		It("Should create pulsar configmap successfully", func() {
 			Expect(k8sClient.Create(context.Background(), pulsarConfig)).Should(Succeed())
 		})
-
-		for _, functionSpec := range mesh.Spec.Functions {
-			function := spec.MakeFunctionComponent(makeComponentName(mesh.Name, functionSpec.Name), mesh, &functionSpec)
-			It("Should create function successfully", func() {
+		It("Should create function-mesh functions successfully", func() {
+			for _, functionSpec := range mesh.Spec.Functions {
+				function := spec.MakeFunctionComponent(makeComponentName(mesh.Name, functionSpec.Name), mesh, &functionSpec)
 				Expect(k8sClient.Create(context.Background(), function)).Should(Succeed())
-			})
-		}
-
-		for _, functionSpec := range mesh.Spec.Functions {
-			function := spec.MakeFunctionComponent(makeComponentName(mesh.Name, functionSpec.Name), mesh, &functionSpec)
-			It("Should delete function successfully", func() {
+			}
+		})
+		It("Should delete function-mesh functions successfully", func() {
+			for _, functionSpec := range mesh.Spec.Functions {
+				function := spec.MakeFunctionComponent(makeComponentName(mesh.Name, functionSpec.Name), mesh, &functionSpec)
 				Expect(k8sClient.Delete(context.Background(), function)).Should(Succeed())
-			})
-		}
+			}
+		})
 
 		It("Should delete pulsar configmap successfully", func() {
 			Expect(k8sClient.Delete(context.Background(), pulsarConfig)).Should(Succeed())
