@@ -24,115 +24,12 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("FunctionMesh Controller", func() {
-	var objectMeta = metav1.ObjectMeta{
-		Name:      "test-function-mesh",
-		Namespace: "default",
-		UID:       "dead-beef", // uid not generate automatically with fake k8s
-	}
-	pulsarConfig := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-pulsar",
-			Namespace: "default",
-		},
-		Data: map[string]string{
-			"webServiceURL":    "http://test-pulsar-broker.default.svc.cluster.local:8080",
-			"brokerServiceURL": "pulsar://test-pulsar-broker.default.svc.cluster.local:6650",
-		},
-	}
-	var pulsar = &v1alpha1.PulsarMessaging{
-		PulsarConfig: pulsarConfig.Name,
-		//AuthConfig: "test-auth",
-	}
-
 	Context("Simple FunctionMesh", func() {
-		maxPending := int32(1000)
-		replicas := int32(1)
-		maxReplicas := int32(1)
-		trueVal := true
-
-		mesh := &v1alpha1.FunctionMesh{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "FunctionMesh",
-				APIVersion: "cloud.streamnative.io/v1alpha1",
-			},
-			ObjectMeta: objectMeta,
-			Spec: v1alpha1.FunctionMeshSpec{
-				Functions: []v1alpha1.FunctionSpec{
-					{
-						Name:        "ex1",
-						ClassName:   "org.apache.pulsar.functions.api.examples.ExclamationFunction",
-						Tenant:      "public",
-						ClusterName: "test-pulsar",
-						SourceType:  "java.lang.String",
-						SinkType:    "java.lang.String",
-						Input: v1alpha1.InputConf{
-							Topics: []string{
-								"persistent://public/default/functionmesh-input-topic",
-							},
-						},
-						Output: v1alpha1.OutputConf{
-							Topic: "persistent://public/default/mid-topic",
-						},
-						LogTopic:                     "persistent://public/default/logging-function-logs",
-						Timeout:                      0,
-						MaxMessageRetry:              0,
-						ForwardSourceMessageProperty: &trueVal,
-						Replicas:                     &replicas,
-						MaxReplicas:                  &maxReplicas,
-						AutoAck:                      &trueVal,
-						MaxPendingAsyncRequests:      &maxPending,
-						Messaging: v1alpha1.Messaging{
-							Pulsar: pulsar,
-						},
-						Runtime: v1alpha1.Runtime{
-							Java: &v1alpha1.JavaRuntime{
-								Jar:         "pulsar-functions-api-examples.jar",
-								JarLocation: "public/default/nlu-test-functionmesh-ex1",
-							},
-						},
-					},
-					{
-						Name:        "ex2",
-						ClassName:   "org.apache.pulsar.functions.api.examples.ExclamationFunction",
-						Tenant:      "public",
-						ClusterName: "test-pulsar",
-						SourceType:  "java.lang.String",
-						SinkType:    "java.lang.String",
-						Input: v1alpha1.InputConf{
-							Topics: []string{
-								"persistent://public/default/mid-topic",
-							},
-						},
-						Output: v1alpha1.OutputConf{
-							Topic: "persistent://public/default/functionmesh-output-topic",
-						},
-						LogTopic:                     "persistent://public/default/logging-function-logs",
-						Timeout:                      0,
-						MaxMessageRetry:              0,
-						ForwardSourceMessageProperty: &trueVal,
-						Replicas:                     &replicas,
-						MaxReplicas:                  &maxReplicas,
-						AutoAck:                      &trueVal,
-						MaxPendingAsyncRequests:      &maxPending,
-						Messaging: v1alpha1.Messaging{
-							Pulsar: pulsar,
-						},
-						Runtime: v1alpha1.Runtime{
-							Java: &v1alpha1.JavaRuntime{
-								Jar:         "pulsar-functions-api-examples.jar",
-								JarLocation: "public/default/nlu-test-functionmesh-ex2",
-							},
-						},
-					},
-				},
-			},
-		}
-
+		pulsarConfig := makeSamplePulsarConfig()
+		mesh := makeFunctionMeshSample()
 		if mesh.Status.FunctionConditions == nil {
 			mesh.Status.FunctionConditions = make(map[string]v1alpha1.ResourceCondition)
 		}
