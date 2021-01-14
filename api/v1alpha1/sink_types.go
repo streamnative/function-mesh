@@ -55,6 +55,8 @@ type SinkSpec struct {
 	CleanupSubscription  bool              `json:"cleanupSubscription,omitempty"`
 	SubscriptionPosition SubscribePosition `json:"subscriptionPosition,omitempty"`
 
+	Pod PodPolicy `json:"pod,omitempty"`
+
 	Messaging `json:",inline"`
 	Runtime   `json:",inline"`
 }
