@@ -18,10 +18,14 @@
  */
 package io.streamnative.function.mesh.proxy;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.util.Config;
+import io.kubernetes.client.util.KubeConfig;
+import io.streamnative.function.mesh.proxy.kubeclient.GCPAuthenticator;
 import io.streamnative.function.mesh.proxy.rest.api.FunctionsImpl;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -90,9 +94,12 @@ public class FunctionMeshProxyService implements WorkerService {
 
     private void initKubernetesClient() throws IOException {
         try {
+            // setup automation refresh auth token for GCP
+            KubeConfig.registerAuthenticator(new GCPAuthenticator(GoogleCredentials.getApplicationDefault()));
             apiClient = Config.defaultClient();
-            coreV1Api = new CoreV1Api(Config.defaultClient());
-            customObjectsApi = new CustomObjectsApi(Config.defaultClient());
+            Configuration.setDefaultApiClient(this.apiClient);
+            coreV1Api = new CoreV1Api(this.apiClient);
+            customObjectsApi = new CustomObjectsApi(this.apiClient);
         } catch (java.io.IOException e) {
             log.error("Initialization kubernetes client failed, exception: {}", e.getMessage());
             throw e;
