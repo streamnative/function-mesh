@@ -35,6 +35,11 @@ spec:
   pulsar:
     pulsarConfig: "test-pulsar"
     #authConfig: "test-auth"
+  pod:
+    labels:
+      "locaction": "mtv"
+    annotations:
+      "managed-function": "true"
   java:
     jar: pulsar-functions-api-examples.jar
     jarLocation: public/default/nlu-test-java-function

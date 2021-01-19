@@ -39,7 +39,8 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 
 func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, MakeSinkContainer(sink), makeSinkVolumes(sink), MakeSinkLabels(sink))
+	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, MakeSinkContainer(sink),
+		makeSinkVolumes(sink), MakeSinkLabels(sink), sink.Spec.Pod)
 }
 
 func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {

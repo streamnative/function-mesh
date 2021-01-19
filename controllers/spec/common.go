@@ -103,25 +103,25 @@ func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
 }
 
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *corev1.Container,
-	volumes []corev1.Volume, labels map[string]string) *appsv1.StatefulSet {
+	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: *objectMeta,
-		Spec:       *MakeStatefulSetSpec(replicas, container, volumes, labels),
+		Spec:       *MakeStatefulSetSpec(replicas, container, volumes, labels, policy),
 	}
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
-	volumes []corev1.Volume, labels map[string]string) *appsv1.StatefulSetSpec {
+	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy) *appsv1.StatefulSetSpec {
 	return &appsv1.StatefulSetSpec{
 		Replicas: replicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: labels,
 		},
-		Template:            *MakePodTemplate(container, volumes, labels),
+		Template:            *MakePodTemplate(container, volumes, labels, policy),
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
@@ -129,17 +129,21 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	}
 }
 
-func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume, labels map[string]string) *corev1.PodTemplateSpec {
-	ZeroGracePeriod := int64(0)
+func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
+	labels map[string]string, policy v1alpha1.PodPolicy) *corev1.PodTemplateSpec {
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: labels,
+			Labels:      mergeLabels(labels, policy.Labels),
+			Annotations: policy.Annotations,
 		},
 		Spec: corev1.PodSpec{
-			// Tolerations: nil TODO
 			Containers:                    []corev1.Container{*container},
-			TerminationGracePeriodSeconds: &ZeroGracePeriod,
+			TerminationGracePeriodSeconds: &policy.TerminationGracePeriodSeconds,
 			Volumes:                       volumes,
+			NodeSelector:                  policy.NodeSelector,
+			Affinity:                      policy.Affinity,
+			Tolerations:                   policy.Tolerations,
+			SecurityContext:               policy.SecurityContext,
 		},
 	}
 }
@@ -511,4 +515,18 @@ func generateContainerVolumesFromFunction(function *v1alpha1.Function) []corev1.
 	volumes = append(volumes, generateContainerVolumesFromProducerConf(function.Spec.Output.ProducerConf)...)
 	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(function.Spec.Input.SourceSpecs)...)
 	return volumes
+}
+
+func mergeLabels(label1, label2 map[string]string) map[string]string {
+	label := make(map[string]string)
+
+	for k, v := range label1 {
+		label[k] = v
+	}
+
+	for k, v := range label2 {
+		label[k] = v
+	}
+
+	return label
 }

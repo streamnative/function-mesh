@@ -44,6 +44,8 @@ type SourceSpec struct {
 	ProcessingGuarantee ProcessGuarantee            `json:"processingGuarantee,omitempty"`
 	RuntimeFlags        string                      `json:"runtimeFlags,omitempty"`
 
+	Pod PodPolicy `json:"pod,omitempty"`
+
 	Messaging `json:",inline"`
 	Runtime   `json:",inline"`
 }
