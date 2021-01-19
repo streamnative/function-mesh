@@ -32,6 +32,7 @@ import java.util.Map;
 public class GCPAuthenticator implements Authenticator {
     private static final String ACCESS_TOKEN = "access-token";
     private static final String EXPIRY = "expiry";
+    private static final String NAME = "gcp";
 
     private final GoogleCredentials credentials;
 
@@ -40,15 +41,15 @@ public class GCPAuthenticator implements Authenticator {
     }
 
     public String getName() {
-        return "gcp";
+        return NAME;
     }
 
     public String getToken(Map<String, Object> config) {
-        return (String) config.get("access-token");
+        return (String) config.get(ACCESS_TOKEN);
     }
 
     public boolean isExpired(Map<String, Object> config) {
-        Object expiryObj = config.get("expiry");
+        Object expiryObj = config.get(EXPIRY);
         Instant expiry = null;
         if (expiryObj instanceof Date) {
             expiry = ((Date) expiryObj).toInstant();
