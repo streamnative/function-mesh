@@ -35,11 +35,17 @@ spec:
   pulsar:
     pulsarConfig: "test-pulsar"
     #authConfig: "test-auth"
+  volumeMounts:
+    - mountPath: /cache
+      name: cache-volume
   pod:
     labels:
       "locaction": "mtv"
     annotations:
       "managed-function": "true"
+    volumes:
+    - name: cache-volume
+      emptyDir: {}
   java:
     jar: pulsar-functions-api-examples.jar
     jarLocation: public/default/nlu-test-java-function

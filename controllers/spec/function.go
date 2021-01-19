@@ -58,7 +58,15 @@ func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
 }
 
 func makeFunctionVolumes(function *v1alpha1.Function) []corev1.Volume {
-	return generateContainerVolumesFromFunction(function)
+	return generatePodVolumes(function.Spec.Pod.Volumes,
+		function.Spec.Output.ProducerConf,
+		function.Spec.Input.SourceSpecs)
+}
+
+func makeFunctionVolumeMounts(function *v1alpha1.Function) []corev1.VolumeMount {
+	return generateContainerVolumeMounts(function.Spec.VolumeMounts,
+		function.Spec.Output.ProducerConf,
+		function.Spec.Input.SourceSpecs)
 }
 
 func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
@@ -72,7 +80,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		Resources:       function.Spec.Resources,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		EnvFrom:         generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthConfig),
-		VolumeMounts:    generateContainerVolumeMountsFromFunction(function),
+		VolumeMounts:    makeFunctionVolumeMounts(function),
 	}
 }
 
