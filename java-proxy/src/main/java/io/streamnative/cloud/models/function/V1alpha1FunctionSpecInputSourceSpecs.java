@@ -31,22 +31,25 @@
 
 package io.streamnative.cloud.models.function;
 
-import java.util.Objects;
-
 import com.google.gson.annotations.SerializedName;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * V1alpha1FunctionSpecInputSourceSpecs
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2020-12-30T11:26:19.304Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-01-19T11:47:27.069Z[Etc/UTC]")
 public class V1alpha1FunctionSpecInputSourceSpecs {
   public static final String SERIALIZED_NAME_CONSUMER_PROPERTIES = "consumerProperties";
   @SerializedName(SERIALIZED_NAME_CONSUMER_PROPERTIES)
   private Map<String, String> consumerProperties = null;
+
+  public static final String SERIALIZED_NAME_CRYPTO_CONFIG = "cryptoConfig";
+  @SerializedName(SERIALIZED_NAME_CRYPTO_CONFIG)
+  private V1alpha1FunctionSpecInputCryptoConfig cryptoConfig;
 
   public static final String SERIALIZED_NAME_IS_REGEX_PATTERN = "isRegexPattern";
   @SerializedName(SERIALIZED_NAME_IS_REGEX_PATTERN)
@@ -97,6 +100,29 @@ public class V1alpha1FunctionSpecInputSourceSpecs {
 
   public void setConsumerProperties(Map<String, String> consumerProperties) {
     this.consumerProperties = consumerProperties;
+  }
+
+
+  public V1alpha1FunctionSpecInputSourceSpecs cryptoConfig(V1alpha1FunctionSpecInputCryptoConfig cryptoConfig) {
+    
+    this.cryptoConfig = cryptoConfig;
+    return this;
+  }
+
+   /**
+   * Get cryptoConfig
+   * @return cryptoConfig
+  **/
+  @javax.annotation.Nullable
+  @ApiModelProperty(value = "")
+
+  public V1alpha1FunctionSpecInputCryptoConfig getCryptoConfig() {
+    return cryptoConfig;
+  }
+
+
+  public void setCryptoConfig(V1alpha1FunctionSpecInputCryptoConfig cryptoConfig) {
+    this.cryptoConfig = cryptoConfig;
   }
 
 
@@ -233,6 +259,7 @@ public class V1alpha1FunctionSpecInputSourceSpecs {
     }
     V1alpha1FunctionSpecInputSourceSpecs v1alpha1FunctionSpecInputSourceSpecs = (V1alpha1FunctionSpecInputSourceSpecs) o;
     return Objects.equals(this.consumerProperties, v1alpha1FunctionSpecInputSourceSpecs.consumerProperties) &&
+        Objects.equals(this.cryptoConfig, v1alpha1FunctionSpecInputSourceSpecs.cryptoConfig) &&
         Objects.equals(this.isRegexPattern, v1alpha1FunctionSpecInputSourceSpecs.isRegexPattern) &&
         Objects.equals(this.receiverQueueSize, v1alpha1FunctionSpecInputSourceSpecs.receiverQueueSize) &&
         Objects.equals(this.schemaProperties, v1alpha1FunctionSpecInputSourceSpecs.schemaProperties) &&
@@ -242,7 +269,7 @@ public class V1alpha1FunctionSpecInputSourceSpecs {
 
   @Override
   public int hashCode() {
-    return Objects.hash(consumerProperties, isRegexPattern, receiverQueueSize, schemaProperties, schemaType, serdeClassname);
+    return Objects.hash(consumerProperties, cryptoConfig, isRegexPattern, receiverQueueSize, schemaProperties, schemaType, serdeClassname);
   }
 
 
@@ -251,6 +278,7 @@ public class V1alpha1FunctionSpecInputSourceSpecs {
     StringBuilder sb = new StringBuilder();
     sb.append("class V1alpha1FunctionSpecInputSourceSpecs {\n");
     sb.append("    consumerProperties: ").append(toIndentedString(consumerProperties)).append("\n");
+    sb.append("    cryptoConfig: ").append(toIndentedString(cryptoConfig)).append("\n");
     sb.append("    isRegexPattern: ").append(toIndentedString(isRegexPattern)).append("\n");
     sb.append("    receiverQueueSize: ").append(toIndentedString(receiverQueueSize)).append("\n");
     sb.append("    schemaProperties: ").append(toIndentedString(schemaProperties)).append("\n");
