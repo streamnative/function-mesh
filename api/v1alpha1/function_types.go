@@ -59,6 +59,8 @@ type FunctionSpec struct {
 	CleanupSubscription  bool              `json:"cleanupSubscription,omitempty"`
 	SubscriptionPosition SubscribePosition `json:"subscriptionPosition,omitempty"`
 
+	Pod PodPolicy `json:"pod,omitempty"`
+
 	// TODO: windowconfig, customRuntimeOptions?
 
 	Messaging `json:",inline"`

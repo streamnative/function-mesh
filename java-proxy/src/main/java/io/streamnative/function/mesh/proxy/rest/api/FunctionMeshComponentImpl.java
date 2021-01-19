@@ -18,8 +18,11 @@
  */
 package io.streamnative.function.mesh.proxy.rest.api;
 
+import io.streamnative.cloud.models.function.V1alpha1FunctionList;
 import io.streamnative.function.mesh.proxy.FunctionMeshProxyService;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Call;
+import okhttp3.Response;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.functions.FunctionConfig;
@@ -32,6 +35,7 @@ import org.apache.pulsar.functions.worker.service.api.Component;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -43,6 +47,8 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
     protected final Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier;
     protected final Function.FunctionDetails.ComponentType componentType;
 
+    final String plural = "functions";
+
     final String group = "cloud.streamnative.io";
 
     final String version = "v1alpha1";
@@ -53,6 +59,20 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
         // If you want to support function-mesh, this type needs to be changed
         this.componentType = componentType;
     }
+
+    public <T> T executeCall(Call call, Class<T> c) throws Exception {
+        Response response;
+        response = call.execute();
+        if (response.isSuccessful() && response.body() != null) {
+            String data = response.body().string();
+            return worker().getApiClient().getJSON().getGson().fromJson(data, c);
+        } else {
+            String err = String.format("failed to perform the request: responseCode: %s, responseBody: %s",
+                    response.code(), response.body());
+            throw new Exception(err);
+        }
+    }
+
     @Override
     public FunctionConfig getFunctionInfo(final String tenant,
                                           final String namespace,
@@ -136,10 +156,10 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
 
     @Override
     public void restartFunctionInstances(final String tenant,
-                                              final String namespace,
-                                              final String componentName,
-                                              final String clientRole,
-                                              final AuthenticationDataSource clientAuthenticationDataHttps) {
+                                         final String namespace,
+                                         final String componentName,
+                                         final String clientRole,
+                                         final AuthenticationDataSource clientAuthenticationDataHttps) {
 
     }
 
@@ -180,11 +200,32 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
 
     @Override
     public List<String> listFunctions(final String tenant,
-                               final String namespace,
-                               final String clientRole,
-                               final AuthenticationDataSource clientAuthenticationDataHttps) {
-        return null;
+                                      final String namespace,
+                                      final String clientRole,
+                                      final AuthenticationDataSource clientAuthenticationDataHttps) {
+        List<String> result = new LinkedList<>();
+        try {
+            Call call = worker().getCustomObjectsApi().listNamespacedCustomObjectCall(
+                    group,
+                    version,
+                    namespace, plural,
+                    "false",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    false,
+                    null);
 
+            V1alpha1FunctionList list = executeCall(call, V1alpha1FunctionList.class);
+            list.getItems().forEach(n -> result.add(n.getMetadata().getName()));
+        } catch (Exception e) {
+            log.error("failed to fetch functions list from namespace {}, error message: {}", namespace, e.getMessage());
+        }
+
+        return result;
     }
 
     @Override
@@ -200,12 +241,12 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
 
     @Override
     public void putFunctionState(final String tenant,
-                                      final String namespace,
-                                      final String functionName,
-                                      final String key,
-                                      final FunctionState state,
-                                      final String clientRole,
-                                      final AuthenticationDataSource clientAuthenticationDataHttps) {
+                                 final String namespace,
+                                 final String functionName,
+                                 final String key,
+                                 final FunctionState state,
+                                 final String clientRole,
+                                 final AuthenticationDataSource clientAuthenticationDataHttps) {
 
     }
 
@@ -218,8 +259,8 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
 
     @Override
     public StreamingOutput downloadFunction(String path,
-                                     String clientRole,
-                                     AuthenticationDataHttps clientAuthenticationDataHttps) {
+                                            String clientRole,
+                                            AuthenticationDataHttps clientAuthenticationDataHttps) {
         // To do
         return null;
     }

@@ -34,15 +34,31 @@ type PulsarMessaging struct {
 	AuthConfig   string `json:"authConfig,omitempty"`
 }
 
-// TODO: put them into the pulsar cofig or separate it?
-//type AuthenticationConfig struct {
-//	clientAuthenticationPlugin     string
-//	clientAuthenticationParameters string
-//	tlsTrustCertsFilePath          string
-//	useTls                         bool
-//	tlsAllowInsecureConnection     bool
-//	tlsHostnameVerificationEnable  bool
-//}
+type PodPolicy struct {
+	// Labels specifies the labels to attach to pod the operator creates for the cluster.
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// NodeSelector specifies a map of key-value pairs. For a pod to be eligible to run
+	// on a node, the node must have each of the indicated key-value pairs as labels.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Affinity specifies the scheduling constraints of a pod
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
+	// Tolerations specifies the tolerations of a Pod
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// Annotations specifies the annotations to attach to pods the operator creates
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// SecurityContext specifies the security context for the entire pod
+	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context
+	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+
+	// TerminationGracePeriodSeconds is the amount of time that kubernetes will give
+	// for a pod before terminating it.
+	TerminationGracePeriodSeconds int64 `json:"terminationGracePeriodSeconds,omitempty"`
+}
 
 type Runtime struct {
 	Java   *JavaRuntime   `json:"java,omitempty"`

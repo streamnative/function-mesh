@@ -44,7 +44,7 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
 	return MakeStatefulSet(objectMeta, function.Spec.Replicas,
-		MakeFunctionContainer(function), makeFunctionVolumes(function), makeFunctionLabels(function))
+		MakeFunctionContainer(function), makeFunctionVolumes(function), makeFunctionLabels(function), function.Spec.Pod)
 }
 
 func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
