@@ -1,0 +1,55 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: function-mesh.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: FunctionMesh is the Schema for the functionmeshes API
+      displayName: Function Mesh
+      kind: FunctionMesh
+      name: functionmeshes.cloud.streamnative.io
+      version: v1alpha1
+    - description: Topic is the Schema for the sinks API
+      displayName: Sink
+      kind: Sink
+      name: sinks.cloud.streamnative.io
+      version: v1alpha1
+    - description: Source is the Schema for the sources API
+      displayName: Source
+      kind: Source
+      name: sources.cloud.streamnative.io
+      version: v1alpha1
+  description: function mesh
+  displayName: function-mesh
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - pulsar
+  - function-mesh
+  links:
+  - name: Function Mesh
+    url: https://function-mesh.domain
+  maturity: alpha
+  provider:
+    name: streamnative
+  version: 0.0.0

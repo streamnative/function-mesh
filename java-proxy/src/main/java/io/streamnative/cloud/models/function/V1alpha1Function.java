@@ -31,18 +31,18 @@
 
 package io.streamnative.cloud.models.function;
 
-import java.util.Objects;
-
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
+import java.util.Objects;
+
 /**
  * Function is the Schema for the functions API
  */
 @ApiModel(description = "Function is the Schema for the functions API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2020-12-30T11:26:19.304Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-01-19T11:47:27.069Z[Etc/UTC]")
 public class V1alpha1Function implements io.kubernetes.client.common.KubernetesObject {
   public static final String SERIALIZED_NAME_API_VERSION = "apiVersion";
   @SerializedName(SERIALIZED_NAME_API_VERSION)

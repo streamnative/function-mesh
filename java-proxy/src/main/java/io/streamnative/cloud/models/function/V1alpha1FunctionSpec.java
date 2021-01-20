@@ -31,20 +31,19 @@
 
 package io.streamnative.cloud.models.function;
 
-import java.util.Objects;
-
 import com.google.gson.annotations.SerializedName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * FunctionSpec defines the desired state of Function
  */
 @ApiModel(description = "FunctionSpec defines the desired state of Function")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2020-12-30T11:26:19.304Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-01-19T11:47:27.069Z[Etc/UTC]")
 public class V1alpha1FunctionSpec {
   public static final String SERIALIZED_NAME_AUTO_ACK = "autoAck";
   @SerializedName(SERIALIZED_NAME_AUTO_ACK)
@@ -109,6 +108,10 @@ public class V1alpha1FunctionSpec {
   public static final String SERIALIZED_NAME_OUTPUT = "output";
   @SerializedName(SERIALIZED_NAME_OUTPUT)
   private V1alpha1FunctionSpecOutput output;
+
+  public static final String SERIALIZED_NAME_POD = "pod";
+  @SerializedName(SERIALIZED_NAME_POD)
+  private V1alpha1FunctionSpecPod pod;
 
   public static final String SERIALIZED_NAME_PROCESSING_GUARANTEE = "processingGuarantee";
   @SerializedName(SERIALIZED_NAME_PROCESSING_GUARANTEE)
@@ -547,6 +550,29 @@ public class V1alpha1FunctionSpec {
   }
 
 
+  public V1alpha1FunctionSpec pod(V1alpha1FunctionSpecPod pod) {
+    
+    this.pod = pod;
+    return this;
+  }
+
+   /**
+   * Get pod
+   * @return pod
+  **/
+  @javax.annotation.Nullable
+  @ApiModelProperty(value = "")
+
+  public V1alpha1FunctionSpecPod getPod() {
+    return pod;
+  }
+
+
+  public void setPod(V1alpha1FunctionSpecPod pod) {
+    this.pod = pod;
+  }
+
+
   public V1alpha1FunctionSpec processingGuarantee(String processingGuarantee) {
     
     this.processingGuarantee = processingGuarantee;
@@ -925,6 +951,7 @@ public class V1alpha1FunctionSpec {
         Objects.equals(this.maxReplicas, v1alpha1FunctionSpec.maxReplicas) &&
         Objects.equals(this.name, v1alpha1FunctionSpec.name) &&
         Objects.equals(this.output, v1alpha1FunctionSpec.output) &&
+        Objects.equals(this.pod, v1alpha1FunctionSpec.pod) &&
         Objects.equals(this.processingGuarantee, v1alpha1FunctionSpec.processingGuarantee) &&
         Objects.equals(this.pulsar, v1alpha1FunctionSpec.pulsar) &&
         Objects.equals(this.python, v1alpha1FunctionSpec.python) &&
@@ -944,7 +971,7 @@ public class V1alpha1FunctionSpec {
 
   @Override
   public int hashCode() {
-    return Objects.hash(autoAck, className, cleanupSubscription, clusterName, deadLetterTopic, forwardSourceMessageProperty, funcConfig, golang, input, java, logTopic, maxMessageRetry, maxPendingAsyncRequests, maxReplicas, name, output, processingGuarantee, pulsar, python, replicas, resources, retainKeyOrdering, retainOrdering, runtimeFlags, secretsMap, sinkType, sourceType, subscriptionName, subscriptionPosition, tenant, timeout);
+    return Objects.hash(autoAck, className, cleanupSubscription, clusterName, deadLetterTopic, forwardSourceMessageProperty, funcConfig, golang, input, java, logTopic, maxMessageRetry, maxPendingAsyncRequests, maxReplicas, name, output, pod, processingGuarantee, pulsar, python, replicas, resources, retainKeyOrdering, retainOrdering, runtimeFlags, secretsMap, sinkType, sourceType, subscriptionName, subscriptionPosition, tenant, timeout);
   }
 
 
@@ -968,6 +995,7 @@ public class V1alpha1FunctionSpec {
     sb.append("    maxReplicas: ").append(toIndentedString(maxReplicas)).append("\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    output: ").append(toIndentedString(output)).append("\n");
+    sb.append("    pod: ").append(toIndentedString(pod)).append("\n");
     sb.append("    processingGuarantee: ").append(toIndentedString(processingGuarantee)).append("\n");
     sb.append("    pulsar: ").append(toIndentedString(pulsar)).append("\n");
     sb.append("    python: ").append(toIndentedString(python)).append("\n");
