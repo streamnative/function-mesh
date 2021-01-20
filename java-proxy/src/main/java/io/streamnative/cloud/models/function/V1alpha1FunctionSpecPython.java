@@ -31,19 +31,23 @@
 
 package io.streamnative.cloud.models.function;
 
-import java.util.Objects;
-
 import com.google.gson.annotations.SerializedName;
 import io.swagger.annotations.ApiModelProperty;
+
+import java.util.Objects;
 
 /**
  * V1alpha1FunctionSpecPython
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2020-12-30T11:26:19.304Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-01-19T11:47:27.069Z[Etc/UTC]")
 public class V1alpha1FunctionSpecPython {
   public static final String SERIALIZED_NAME_PY = "py";
   @SerializedName(SERIALIZED_NAME_PY)
   private String py;
+
+  public static final String SERIALIZED_NAME_PY_LOCATION = "pyLocation";
+  @SerializedName(SERIALIZED_NAME_PY_LOCATION)
+  private String pyLocation;
 
 
   public V1alpha1FunctionSpecPython py(String py) {
@@ -69,6 +73,29 @@ public class V1alpha1FunctionSpecPython {
   }
 
 
+  public V1alpha1FunctionSpecPython pyLocation(String pyLocation) {
+    
+    this.pyLocation = pyLocation;
+    return this;
+  }
+
+   /**
+   * Get pyLocation
+   * @return pyLocation
+  **/
+  @javax.annotation.Nullable
+  @ApiModelProperty(value = "")
+
+  public String getPyLocation() {
+    return pyLocation;
+  }
+
+
+  public void setPyLocation(String pyLocation) {
+    this.pyLocation = pyLocation;
+  }
+
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -78,12 +105,13 @@ public class V1alpha1FunctionSpecPython {
       return false;
     }
     V1alpha1FunctionSpecPython v1alpha1FunctionSpecPython = (V1alpha1FunctionSpecPython) o;
-    return Objects.equals(this.py, v1alpha1FunctionSpecPython.py);
+    return Objects.equals(this.py, v1alpha1FunctionSpecPython.py) &&
+        Objects.equals(this.pyLocation, v1alpha1FunctionSpecPython.pyLocation);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(py);
+    return Objects.hash(py, pyLocation);
   }
 
 
@@ -92,6 +120,7 @@ public class V1alpha1FunctionSpecPython {
     StringBuilder sb = new StringBuilder();
     sb.append("class V1alpha1FunctionSpecPython {\n");
     sb.append("    py: ").append(toIndentedString(py)).append("\n");
+    sb.append("    pyLocation: ").append(toIndentedString(pyLocation)).append("\n");
     sb.append("}");
     return sb.toString();
   }

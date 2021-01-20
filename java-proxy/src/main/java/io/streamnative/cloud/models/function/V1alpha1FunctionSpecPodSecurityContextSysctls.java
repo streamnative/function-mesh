@@ -32,67 +32,67 @@
 package io.streamnative.cloud.models.function;
 
 import com.google.gson.annotations.SerializedName;
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.util.Objects;
 
 /**
- * V1alpha1FunctionSpecJava
+ * Sysctl defines a kernel parameter to be set
  */
+@ApiModel(description = "Sysctl defines a kernel parameter to be set")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-01-19T11:47:27.069Z[Etc/UTC]")
-public class V1alpha1FunctionSpecJava {
-  public static final String SERIALIZED_NAME_JAR = "jar";
-  @SerializedName(SERIALIZED_NAME_JAR)
-  private String jar;
+public class V1alpha1FunctionSpecPodSecurityContextSysctls {
+  public static final String SERIALIZED_NAME_NAME = "name";
+  @SerializedName(SERIALIZED_NAME_NAME)
+  private String name;
 
-  public static final String SERIALIZED_NAME_JAR_LOCATION = "jarLocation";
-  @SerializedName(SERIALIZED_NAME_JAR_LOCATION)
-  private String jarLocation;
+  public static final String SERIALIZED_NAME_VALUE = "value";
+  @SerializedName(SERIALIZED_NAME_VALUE)
+  private String value;
 
 
-  public V1alpha1FunctionSpecJava jar(String jar) {
+  public V1alpha1FunctionSpecPodSecurityContextSysctls name(String name) {
     
-    this.jar = jar;
+    this.name = name;
     return this;
   }
 
    /**
-   * Get jar
-   * @return jar
+   * Name of a property to set
+   * @return name
   **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "Name of a property to set")
 
-  public String getJar() {
-    return jar;
+  public String getName() {
+    return name;
   }
 
 
-  public void setJar(String jar) {
-    this.jar = jar;
+  public void setName(String name) {
+    this.name = name;
   }
 
 
-  public V1alpha1FunctionSpecJava jarLocation(String jarLocation) {
+  public V1alpha1FunctionSpecPodSecurityContextSysctls value(String value) {
     
-    this.jarLocation = jarLocation;
+    this.value = value;
     return this;
   }
 
    /**
-   * Get jarLocation
-   * @return jarLocation
+   * Value of a property to set
+   * @return value
   **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "Value of a property to set")
 
-  public String getJarLocation() {
-    return jarLocation;
+  public String getValue() {
+    return value;
   }
 
 
-  public void setJarLocation(String jarLocation) {
-    this.jarLocation = jarLocation;
+  public void setValue(String value) {
+    this.value = value;
   }
 
 
@@ -104,23 +104,23 @@ public class V1alpha1FunctionSpecJava {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = (V1alpha1FunctionSpecJava) o;
-    return Objects.equals(this.jar, v1alpha1FunctionSpecJava.jar) &&
-        Objects.equals(this.jarLocation, v1alpha1FunctionSpecJava.jarLocation);
+    V1alpha1FunctionSpecPodSecurityContextSysctls v1alpha1FunctionSpecPodSecurityContextSysctls = (V1alpha1FunctionSpecPodSecurityContextSysctls) o;
+    return Objects.equals(this.name, v1alpha1FunctionSpecPodSecurityContextSysctls.name) &&
+        Objects.equals(this.value, v1alpha1FunctionSpecPodSecurityContextSysctls.value);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(jar, jarLocation);
+    return Objects.hash(name, value);
   }
 
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1FunctionSpecJava {\n");
-    sb.append("    jar: ").append(toIndentedString(jar)).append("\n");
-    sb.append("    jarLocation: ").append(toIndentedString(jarLocation)).append("\n");
+    sb.append("class V1alpha1FunctionSpecPodSecurityContextSysctls {\n");
+    sb.append("    name: ").append(toIndentedString(name)).append("\n");
+    sb.append("    value: ").append(toIndentedString(value)).append("\n");
     sb.append("}");
     return sb.toString();
   }

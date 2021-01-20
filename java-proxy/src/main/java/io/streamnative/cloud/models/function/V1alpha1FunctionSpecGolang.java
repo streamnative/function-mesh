@@ -31,19 +31,23 @@
 
 package io.streamnative.cloud.models.function;
 
-import java.util.Objects;
-
 import com.google.gson.annotations.SerializedName;
 import io.swagger.annotations.ApiModelProperty;
+
+import java.util.Objects;
 
 /**
  * V1alpha1FunctionSpecGolang
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2020-12-30T11:26:19.304Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-01-19T11:47:27.069Z[Etc/UTC]")
 public class V1alpha1FunctionSpecGolang {
   public static final String SERIALIZED_NAME_GO = "go";
   @SerializedName(SERIALIZED_NAME_GO)
   private String go;
+
+  public static final String SERIALIZED_NAME_GO_LOCATION = "goLocation";
+  @SerializedName(SERIALIZED_NAME_GO_LOCATION)
+  private String goLocation;
 
 
   public V1alpha1FunctionSpecGolang go(String go) {
@@ -69,6 +73,29 @@ public class V1alpha1FunctionSpecGolang {
   }
 
 
+  public V1alpha1FunctionSpecGolang goLocation(String goLocation) {
+    
+    this.goLocation = goLocation;
+    return this;
+  }
+
+   /**
+   * Get goLocation
+   * @return goLocation
+  **/
+  @javax.annotation.Nullable
+  @ApiModelProperty(value = "")
+
+  public String getGoLocation() {
+    return goLocation;
+  }
+
+
+  public void setGoLocation(String goLocation) {
+    this.goLocation = goLocation;
+  }
+
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -78,12 +105,13 @@ public class V1alpha1FunctionSpecGolang {
       return false;
     }
     V1alpha1FunctionSpecGolang v1alpha1FunctionSpecGolang = (V1alpha1FunctionSpecGolang) o;
-    return Objects.equals(this.go, v1alpha1FunctionSpecGolang.go);
+    return Objects.equals(this.go, v1alpha1FunctionSpecGolang.go) &&
+        Objects.equals(this.goLocation, v1alpha1FunctionSpecGolang.goLocation);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(go);
+    return Objects.hash(go, goLocation);
   }
 
 
@@ -92,6 +120,7 @@ public class V1alpha1FunctionSpecGolang {
     StringBuilder sb = new StringBuilder();
     sb.append("class V1alpha1FunctionSpecGolang {\n");
     sb.append("    go: ").append(toIndentedString(go)).append("\n");
+    sb.append("    goLocation: ").append(toIndentedString(goLocation)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -31,16 +31,20 @@
 
 package io.streamnative.cloud.models.function;
 
-import java.util.Objects;
-
 import com.google.gson.annotations.SerializedName;
 import io.swagger.annotations.ApiModelProperty;
+
+import java.util.Objects;
 
 /**
  * V1alpha1FunctionSpecOutputProducerConf
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2020-12-30T11:26:19.304Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-01-19T11:47:27.069Z[Etc/UTC]")
 public class V1alpha1FunctionSpecOutputProducerConf {
+  public static final String SERIALIZED_NAME_CRYPTO_CONFIG = "cryptoConfig";
+  @SerializedName(SERIALIZED_NAME_CRYPTO_CONFIG)
+  private V1alpha1FunctionSpecInputCryptoConfig cryptoConfig;
+
   public static final String SERIALIZED_NAME_MAX_PENDING_MESSAGES = "maxPendingMessages";
   @SerializedName(SERIALIZED_NAME_MAX_PENDING_MESSAGES)
   private Integer maxPendingMessages;
@@ -52,6 +56,29 @@ public class V1alpha1FunctionSpecOutputProducerConf {
   public static final String SERIALIZED_NAME_USE_THREAD_LOCAL_PRODUCERS = "useThreadLocalProducers";
   @SerializedName(SERIALIZED_NAME_USE_THREAD_LOCAL_PRODUCERS)
   private Boolean useThreadLocalProducers;
+
+
+  public V1alpha1FunctionSpecOutputProducerConf cryptoConfig(V1alpha1FunctionSpecInputCryptoConfig cryptoConfig) {
+    
+    this.cryptoConfig = cryptoConfig;
+    return this;
+  }
+
+   /**
+   * Get cryptoConfig
+   * @return cryptoConfig
+  **/
+  @javax.annotation.Nullable
+  @ApiModelProperty(value = "")
+
+  public V1alpha1FunctionSpecInputCryptoConfig getCryptoConfig() {
+    return cryptoConfig;
+  }
+
+
+  public void setCryptoConfig(V1alpha1FunctionSpecInputCryptoConfig cryptoConfig) {
+    this.cryptoConfig = cryptoConfig;
+  }
 
 
   public V1alpha1FunctionSpecOutputProducerConf maxPendingMessages(Integer maxPendingMessages) {
@@ -132,14 +159,15 @@ public class V1alpha1FunctionSpecOutputProducerConf {
       return false;
     }
     V1alpha1FunctionSpecOutputProducerConf v1alpha1FunctionSpecOutputProducerConf = (V1alpha1FunctionSpecOutputProducerConf) o;
-    return Objects.equals(this.maxPendingMessages, v1alpha1FunctionSpecOutputProducerConf.maxPendingMessages) &&
+    return Objects.equals(this.cryptoConfig, v1alpha1FunctionSpecOutputProducerConf.cryptoConfig) &&
+        Objects.equals(this.maxPendingMessages, v1alpha1FunctionSpecOutputProducerConf.maxPendingMessages) &&
         Objects.equals(this.maxPendingMessagesAcrossPartitions, v1alpha1FunctionSpecOutputProducerConf.maxPendingMessagesAcrossPartitions) &&
         Objects.equals(this.useThreadLocalProducers, v1alpha1FunctionSpecOutputProducerConf.useThreadLocalProducers);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(maxPendingMessages, maxPendingMessagesAcrossPartitions, useThreadLocalProducers);
+    return Objects.hash(cryptoConfig, maxPendingMessages, maxPendingMessagesAcrossPartitions, useThreadLocalProducers);
   }
 
 
@@ -147,6 +175,7 @@ public class V1alpha1FunctionSpecOutputProducerConf {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class V1alpha1FunctionSpecOutputProducerConf {\n");
+    sb.append("    cryptoConfig: ").append(toIndentedString(cryptoConfig)).append("\n");
     sb.append("    maxPendingMessages: ").append(toIndentedString(maxPendingMessages)).append("\n");
     sb.append("    maxPendingMessagesAcrossPartitions: ").append(toIndentedString(maxPendingMessagesAcrossPartitions)).append("\n");
     sb.append("    useThreadLocalProducers: ").append(toIndentedString(useThreadLocalProducers)).append("\n");
