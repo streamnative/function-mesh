@@ -64,7 +64,7 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		Resources:       source.Spec.Resources,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		EnvFrom:         generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthConfig),
-		VolumeMounts:    generateContainerVolumeMountsFromProducerConf(source.Spec.Output.ProducerConf),
+		VolumeMounts:    makeSourceVolumeMounts(source),
 	}
 }
 
@@ -78,7 +78,11 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 }
 
 func makeSourceVolumes(source *v1alpha1.Source) []corev1.Volume {
-	return generateContainerVolumesFromProducerConf(source.Spec.Output.ProducerConf)
+	return generatePodVolumes(source.Spec.Pod.Volumes, source.Spec.Output.ProducerConf, nil)
+}
+
+func makeSourceVolumeMounts(source *v1alpha1.Source) []corev1.VolumeMount {
+	return generateContainerVolumeMounts(source.Spec.VolumeMounts, source.Spec.Output.ProducerConf, nil)
 }
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
