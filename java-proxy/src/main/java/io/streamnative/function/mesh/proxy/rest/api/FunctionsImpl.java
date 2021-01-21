@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,19 +21,21 @@ package io.streamnative.function.mesh.proxy.rest.api;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.streamnative.cloud.models.function.*;
 import io.streamnative.function.mesh.proxy.FunctionMeshProxyService;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
+import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.UpdateOptions;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
+import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.worker.service.api.Functions;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
+import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Path;
@@ -51,7 +53,6 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
         super(functionMeshProxyServiceSupplier, Function.FunctionDetails.ComponentType.FUNCTION);
     }
 
-    @SneakyThrows
     @Override
     public void registerFunction(final String tenant,
                                  final String namespace,
@@ -62,6 +63,19 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                                  final FunctionConfig functionConfig,
                                  final String clientRole,
                                  AuthenticationDataHttps clientAuthenticationDataHttps) {
+        if (tenant == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
+        }
+        if (namespace == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Namespace is not provided");
+        }
+        if (functionName == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Function name is not provided");
+        }
+        if (functionConfig == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Function config is not provided");
+        }
+
         V1alpha1Function v1alpha1Function = new V1alpha1Function();
         v1alpha1Function.setKind(Kind);
         v1alpha1Function.setApiVersion(String.format("%s/%s", group, version));
@@ -73,15 +87,23 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
 
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());
-        // TODO: Determine the value of `setSourceType`, `setSinkType`
-        v1alpha1FunctionSpec.setSourceType("java.lang.String");
-        v1alpha1FunctionSpec.setSinkType("java.lang.String");
+
+        ConsumerConfig consumerConfig = functionConfig.getInputSpecs().get("source");
+        if (consumerConfig == null || StringUtils.isBlank(consumerConfig.getSerdeClassName())) {
+            throw new RestException(Response.Status.BAD_REQUEST, "inputSpecs.source.serdeClassName is not provided");
+        }
+        if (StringUtils.isBlank(functionConfig.getOutputSerdeClassName())) {
+            throw new RestException(Response.Status.BAD_REQUEST, "outputSerdeClassName is not provided");
+        }
+        v1alpha1FunctionSpec.setSourceType(consumerConfig.getSerdeClassName());
+        v1alpha1FunctionSpec.setSinkType(functionConfig.getOutputSerdeClassName());
 
         v1alpha1FunctionSpec.setForwardSourceMessageProperty(functionConfig.getForwardSourceMessageProperty());
         v1alpha1FunctionSpec.setMaxPendingAsyncRequests(functionConfig.getMaxPendingAsyncRequests());
 
-        v1alpha1FunctionSpec.setReplicas(1);
-        v1alpha1FunctionSpec.setMaxReplicas(1);
+        Integer parallelism = functionConfig.getParallelism() == null ? 1 : functionConfig.getParallelism();
+        v1alpha1FunctionSpec.setReplicas(parallelism);
+        v1alpha1FunctionSpec.setMaxReplicas(parallelism);
 
         v1alpha1FunctionSpec.setLogTopic(functionConfig.getLogTopic());
 
@@ -93,47 +115,64 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
         v1alpha1FunctionSpecOutput.setTopic(functionConfig.getOutput());
         v1alpha1FunctionSpec.setOutput(v1alpha1FunctionSpecOutput);
 
-        // TODO: Determine how to allocate reasonable CPU and memory resources for pod.
         V1alpha1FunctionSpecResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecResources();
         Map<String, Object> limits = new HashMap<>();
-        limits.put("cpu", "0.2");
-        limits.put("memory", "1.1G");
+        if (functionConfig.getResources() == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "resources is not provided");
+        }
+        Double cpu = functionConfig.getResources().getCpu();
+        if (functionConfig.getResources().getCpu() == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "resources.cpu is not provided");
+        }
+        Long memory = functionConfig.getResources().getRam();
+        if (functionConfig.getResources().getRam() == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "resources.ram is not provided");
+        }
+        String cpuValue = cpu.toString();
+        String memoryValue = memory.toString() + "G";
+        limits.put("cpu", cpuValue);
+        limits.put("memory", memoryValue);
         Map<String, Object> requests = new HashMap<>();
-        limits.put("cpu", "0.1");
-        limits.put("memory", "1G");
+        limits.put("cpu", cpuValue);
+        limits.put("memory", memoryValue);
         v1alpha1FunctionSpecResources.setLimits(limits);
         v1alpha1FunctionSpecResources.setRequests(requests);
+        v1alpha1FunctionSpec.setResources(v1alpha1FunctionSpecResources);
 
-        //  TODO: Determine which cluster to use.
         V1alpha1FunctionSpecPulsar v1alpha1FunctionSpecPulsar = new V1alpha1FunctionSpecPulsar();
-        v1alpha1FunctionSpecPulsar.setPulsarConfig("test-pulsar"); // tests-pulsar is ConfigMap
+        v1alpha1FunctionSpecPulsar.setPulsarConfig(functionName);
         v1alpha1FunctionSpec.setPulsar(v1alpha1FunctionSpecPulsar);
 
+        String location = String.format("%s/%s/%s",tenant,namespace,functionName);
         if (StringUtils.isNotEmpty(functionConfig.getJar())) {
             V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
             Path path = Paths.get(functionConfig.getJar());
             v1alpha1FunctionSpecJava.setJar(path.getFileName().toString());
-            // TODO: Determine the location of jar file.
-            v1alpha1FunctionSpecJava.setJarLocation("");
+            v1alpha1FunctionSpecJava.setJarLocation(location);
             v1alpha1FunctionSpec.setJava(v1alpha1FunctionSpecJava);
         } else if (StringUtils.isNotEmpty(functionConfig.getPy())) {
             V1alpha1FunctionSpecPython v1alpha1FunctionSpecPython = new V1alpha1FunctionSpecPython();
             Path path = Paths.get(functionConfig.getPy());
             v1alpha1FunctionSpecPython.setPy(path.getFileName().toString());
-            // TODO: Determine the location of py file.
-            v1alpha1FunctionSpecPython.setPyLocation("");
+            v1alpha1FunctionSpecPython.setPyLocation(location);
             v1alpha1FunctionSpec.setPython(v1alpha1FunctionSpecPython);
         } else if (StringUtils.isNotEmpty(functionConfig.getGo())) {
             V1alpha1FunctionSpecGolang v1alpha1FunctionSpecGolang = new V1alpha1FunctionSpecGolang();
             Path path = Paths.get(functionConfig.getGo());
             v1alpha1FunctionSpecGolang.setGo(path.getFileName().toString());
-            v1alpha1FunctionSpecGolang.setGoLocation("");
-            // TODO: Determine the location of golang file.
+            v1alpha1FunctionSpecGolang.setGoLocation(location);
             v1alpha1FunctionSpec.setGolang(v1alpha1FunctionSpecGolang);
         }
 
-        // TODO: Determine the value of cluster name
-        v1alpha1FunctionSpec.setClusterName("test-pulsar");
+        if (functionConfig.getUserConfig() == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "userConfig is not provided");
+        }
+        Object clusterName = functionConfig.getUserConfig().get("clusterName");
+        if (clusterName == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "userConfig.clusterName is not provided");
+        }
+
+        v1alpha1FunctionSpec.setClusterName(clusterName.toString());
         v1alpha1FunctionSpec.setAutoAck(functionConfig.getAutoAck());
 
         v1alpha1Function.setSpec(v1alpha1FunctionSpec);
@@ -148,11 +187,12 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                     null);
             V1alpha1Function res = executeCall(call, V1alpha1Function.class);
             if (res == null) {
-                throw new Exception("failed to register the function");
+                throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, "failed to create this function: " +
+                        "failed to create custom object");
             }
         } catch (Exception e) {
-            log.error("register {} function failed from namespace {}", functionName, namespace);
-            throw e;
+            log.error("register {}/{}/{} function failed, error message: {}", tenant, namespace, functionName, e);
+            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
