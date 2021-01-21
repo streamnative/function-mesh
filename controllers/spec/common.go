@@ -503,14 +503,6 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 	return mounts
 }
 
-func generateContainerVolumeMountsFromFunction(function *v1alpha1.Function) []corev1.VolumeMount {
-	mounts := []corev1.VolumeMount{}
-	mounts = append(mounts, function.Spec.VolumeMounts...)
-	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(function.Spec.Output.ProducerConf)...)
-	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(function.Spec.Input.SourceSpecs)...)
-	return mounts
-}
-
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
 	consumerConfs map[string]v1alpha1.ConsumerConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
