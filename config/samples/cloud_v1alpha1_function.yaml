@@ -46,6 +46,8 @@ spec:
     volumes:
     - name: cache-volume
       emptyDir: {}
+    imagePullSecrets:
+    - name: regcred
   java:
     jar: pulsar-functions-api-examples.jar
     jarLocation: public/default/nlu-test-java-function

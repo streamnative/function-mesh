@@ -62,6 +62,10 @@ type PodPolicy struct {
 	// List of volumes that can be mounted by containers belonging to the pod.
 	// More info: https://kubernetes.io/docs/concepts/storage/volumes
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// ImagePullSecrets is an optional list of references to secrets in the same
+	// namespace to use for pulling any of the images used by this PodSpec.
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 type Runtime struct {
