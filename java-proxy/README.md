@@ -18,6 +18,7 @@ Configuration environment variable `KUBECONFIG` for idea development environment
 
 #### Test Interface
 
+#### getFunctionStatus
 ```shell script
 ./bin/pulsar-admin --admin-url http://localhost:6750 functions status --tenant public --namespace default --name functionmesh-sample-ex1
 ```
@@ -26,6 +27,23 @@ or
 
 ```shell script
 curl http://localhost:6750/admin/v3/functions/test/default/functionmesh-sample-ex1/status
+```
+
+#### registerFunction
+ ```shell script
+./bin/pulsar-admin --admin-url http://localhost:6750 functions create \
+   --jar target/my-jar-with-dependencies.jar \
+   --classname org.example.functions.WordCountFunction \
+   --tenant public \
+   --namespace default \
+   --name word-count \
+   --inputs persistent://public/default/sentences \
+   --output persistent://public/default/count \
+   --input-specs {"source": {"serdeClassName": "java.lang.String"}} \
+   --output-serde-classname java.lang.String \
+   --cpu 0.1 \
+   --ram 1 \
+   --user-config {"clusterName": "test-pulsar"}
 ```
 
 
