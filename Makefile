@@ -1,7 +1,15 @@
 # Current Operator version
 VERSION ?= 0.1.1
-# Default bundle image tag
-BUNDLE_IMG ?= controller-bundle:$(VERSION)
+# Default image tag
+BUNDLE_IMG ?= function-mesh-controller-bundle:$(VERSION)
+OPERATOR_IMG ?= function-mesh-operator:$(VERSION)
+
+GOOS := $(if $(GOOS),$(GOOS),linux)
+GOARCH := $(if $(GOARCH),$(GOARCH),amd64)
+GOENV  := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
+GO     := $(GOENV) go
+GO_BUILD := $(GO) build -trimpath
+
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -31,15 +39,15 @@ test: generate fmt vet manifests
 
 # Build manager binary
 manager: generate fmt vet
-	go build -o bin/manager main.go
+	$(GO_BUILD) -o bin/function-mesh-controller-manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
 	go run ./main.go
 
 # Install CRDs into a cluster
-install: manifests kustomize
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+install: manifests kustomize crd
+	kubectl apply -f manifests/crd.yaml
 
 # Uninstall CRDs from a cluster
 uninstall: manifests kustomize
@@ -118,3 +126,11 @@ bundle: manifests
 .PHONY: bundle-build
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+crd: manifests
+	$(KUSTOMIZE) build config/crd > manifests/crd.yaml
+
+release: manifests manager operator-docker-image
+
+operator-docker-image:
+	docker build -f operator.Dockerfile -t $(OPERATOR_IMG) .
