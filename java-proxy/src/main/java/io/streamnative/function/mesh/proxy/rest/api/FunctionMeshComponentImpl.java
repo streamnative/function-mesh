@@ -67,8 +67,8 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
             String data = response.body().string();
             return worker().getApiClient().getJSON().getGson().fromJson(data, c);
         } else {
-            String err = String.format("failed to perform the request: responseCode: %s, responseBody: %s",
-                    response.code(), response.body());
+            String err = String.format("failed to perform the request: responseCode: %s, responseMessage: %s",
+                    response.code(), response.message());
             throw new Exception(err);
         }
     }
