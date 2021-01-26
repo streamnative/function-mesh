@@ -144,6 +144,9 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
         v1alpha1FunctionSpec.setPulsar(v1alpha1FunctionSpecPulsar);
 
         String location = String.format("%s/%s/%s",tenant,namespace,functionName);
+        if (StringUtils.isNotEmpty(functionPkgUrl)) {
+            location = functionPkgUrl;
+        }
         if (StringUtils.isNotEmpty(functionConfig.getJar())) {
             V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
             Path path = Paths.get(functionConfig.getJar());
