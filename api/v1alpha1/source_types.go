@@ -43,6 +43,7 @@ type SourceSpec struct {
 	SecretsMap          map[string]SecretRef        `json:"secretsMap,omitempty"`
 	ProcessingGuarantee ProcessGuarantee            `json:"processingGuarantee,omitempty"`
 	RuntimeFlags        string                      `json:"runtimeFlags,omitempty"`
+	VolumeMounts        []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
 
 	Pod PodPolicy `json:"pod,omitempty"`
 

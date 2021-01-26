@@ -144,6 +144,7 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 			Affinity:                      policy.Affinity,
 			Tolerations:                   policy.Tolerations,
 			SecurityContext:               policy.SecurityContext,
+			ImagePullSecrets:              policy.ImagePullSecrets,
 		},
 	}
 }
@@ -503,17 +504,21 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 	return mounts
 }
 
-func generateContainerVolumeMountsFromFunction(function *v1alpha1.Function) []corev1.VolumeMount {
+func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
+	consumerConfs map[string]v1alpha1.ConsumerConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
-	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(function.Spec.Output.ProducerConf)...)
-	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(function.Spec.Input.SourceSpecs)...)
+	mounts = append(mounts, volumeMounts...)
+	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
+	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)
 	return mounts
 }
 
-func generateContainerVolumesFromFunction(function *v1alpha1.Function) []corev1.Volume {
+func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.ProducerConfig,
+	consumerConfs map[string]v1alpha1.ConsumerConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
-	volumes = append(volumes, generateContainerVolumesFromProducerConf(function.Spec.Output.ProducerConf)...)
-	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(function.Spec.Input.SourceSpecs)...)
+	volumes = append(volumes, podVolumes...)
+	volumes = append(volumes, generateContainerVolumesFromProducerConf(producerConf)...)
+	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(consumerConfs)...)
 	return volumes
 }
 
