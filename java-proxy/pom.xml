@@ -36,7 +36,6 @@
         <license.plugin.version>3.0</license.plugin.version>
         <mockito.version>1.10.19</mockito.version>
         <powermock.version>1.7.4</powermock.version>
-        <google-auth.version>0.22.2</google-auth.version>
     </properties>
 
     <dependencies>
@@ -79,11 +78,6 @@
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
             <version>${powermock.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.auth</groupId>
-            <artifactId>google-auth-library-oauth2-http</artifactId>
-            <version>${google-auth.version}</version>
         </dependency>
     </dependencies>
 
