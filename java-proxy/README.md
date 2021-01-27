@@ -39,13 +39,45 @@ curl http://localhost:6750/admin/v3/functions/test/default/functionmesh-sample-e
    --name word-count \
    --inputs persistent://public/default/sentences \
    --output persistent://public/default/count \
-   --input-specs {"source": {"serdeClassName": "java.lang.String"}} \
+   --input-specs "{"source": {"serdeClassName": "java.lang.String"}}" \
    --output-serde-classname java.lang.String \
    --cpu 0.1 \
    --ram 1 \
-   --user-config {"clusterName": "test-pulsar"}
+   --user-config "{"clusterName": "test-pulsar"}"
 ```
 
+#### updateFunction
+ ```shell script
+./bin/pulsar-admin --admin-url http://localhost:6750 functions update \
+   --jar target/my-jar-with-dependencies.jar \
+   --classname org.example.functions.WordCountFunction \
+   --tenant public \
+   --namespace default \
+   --name word-count \
+   --inputs persistent://public/default/sentences \
+   --output persistent://public/default/count \
+   --input-specs "{"source": {"serdeClassName": "java.lang.String"}}" \
+   --output-serde-classname java.lang.String \
+   --cpu 0.2 \
+   --ram 1 \
+   --user-config "{"clusterName": "test-pulsar"}"
+```
+
+#### getFunctionInfo
+ ```shell script
+./bin/pulsar-admin --admin-url http://localhost:6750 functions get \
+   --tenant public \
+   --namespace default \
+   --name word-count
+```
+
+#### deregisterFunction
+ ```shell script
+./bin/pulsar-admin --admin-url http://localhost:6750 functions delete \
+   --tenant public \
+   --namespace default \
+   --name word-count
+```
 
 ## More tools
 

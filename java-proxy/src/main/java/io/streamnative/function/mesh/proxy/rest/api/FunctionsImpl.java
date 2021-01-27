@@ -115,11 +115,7 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                     null,
                     null
             );
-            V1alpha1Function res = executeCall(call, V1alpha1Function.class);
-            if (res == null) {
-                throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("failed to register " +
-                        "%s/%s/%s function: failed to replace custom object", tenant, namespace, functionName));
-            }
+            executeCall(call, V1alpha1Function.class);
         } catch (Exception e) {
             log.error("register {}/{}/{} function failed, error message: {}", tenant, namespace, functionName, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -139,16 +135,26 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                                UpdateOptions updateOptions) {
         validateUpdateFunctionRequestParams(tenant, namespace, functionName, functionConfig);
 
-        V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(
-                kind,
-                group,
-                version,
-                functionName,
-                functionPkgUrl,
-                functionConfig
-        );
         try {
-            Call call = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
+            Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
+                    group,
+                    version,
+                    namespace,
+                    plural,
+                    functionName,
+                    null
+            );
+            V1alpha1Function oldFn = executeCall(getCall, V1alpha1Function.class);
+            V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(
+                    kind,
+                    group,
+                    version,
+                    functionName,
+                    functionPkgUrl,
+                    functionConfig
+            );
+            v1alpha1Function.getMetadata().setResourceVersion(oldFn.getMetadata().getResourceVersion());
+            Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
                     group,
                     version,
                     namespace,
@@ -159,11 +165,7 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                     null,
                     null
             );
-            V1alpha1Function res = executeCall(call, V1alpha1Function.class);
-            if (res == null) {
-                throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("failed to update " +
-                        "%s/%s/%s function: failed to replace custom object", tenant, namespace, functionName));
-            }
+            executeCall(replaceCall, V1alpha1Function.class);
         } catch (Exception e) {
             log.error("update {}/{}/{} function failed, error message: {}", tenant, namespace, functionName, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -179,7 +181,7 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
         validateDeregisterFunctionRequestParams(tenant, namespace, componentName);
 
         try {
-            worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
+            Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
                     group,
                     version,
                     namespace,
@@ -192,6 +194,7 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                     null,
                     null
             );
+            executeCall(call, null);
         } catch (Exception e) {
             log.error("deregister {}/{}/{} function failed, error message: {}", tenant, namespace, componentName, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -216,10 +219,6 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                     null
             );
             V1alpha1Function v1alpha1Function = executeCall(call, V1alpha1Function.class);
-            if (v1alpha1Function == null) {
-                throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("failed to get " +
-                        "%s/%s/%s function: failed to get custom object", tenant, namespace, componentName));
-            }
             return FunctionsUtil.createFunctionConfigFromV1alpha1Function(tenant, namespace, componentName,
                     v1alpha1Function);
         } catch (Exception e) {
