@@ -34,11 +34,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class FunctionsUtil {
-
-    final static String cpuKey = "cpu";
-    final static String memoryKey = "memory";
-    final static String sourceKey = "source";
-    final static String clusterNameKey = "clusterName";
+    public final static String cpuKey = "cpu";
+    public final static String memoryKey = "memory";
+    public final static String sourceKey = "source";
+    public final static String clusterNameKey = "clusterName";
 
     public static V1alpha1Function createV1alpha1FunctionFromFunctionConfig(String kind, String group, String version
             , String functionName, String functionPkgUrl, FunctionConfig functionConfig) {
@@ -82,7 +81,6 @@ public class FunctionsUtil {
         v1alpha1FunctionSpec.setOutput(v1alpha1FunctionSpecOutput);
 
         V1alpha1FunctionSpecResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecResources();
-        Map<String, Object> limits = new HashMap<>();
         if (functionConfig.getResources() == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "resources is not provided");
         }
@@ -96,13 +94,12 @@ public class FunctionsUtil {
         }
         String cpuValue = cpu.toString();
         String memoryValue = memory.toString() + "G";
+        Map<String, Object> limits = new HashMap<>();
         limits.put(cpuKey, cpuValue);
         limits.put(memoryKey, memoryValue);
-        Map<String, Object> requests = new HashMap<>();
-        limits.put(cpuKey, cpuValue);
-        limits.put(memoryKey, memoryValue);
+
         v1alpha1FunctionSpecResources.setLimits(limits);
-        v1alpha1FunctionSpecResources.setRequests(requests);
+        v1alpha1FunctionSpecResources.setRequests(limits);
         v1alpha1FunctionSpec.setResources(v1alpha1FunctionSpecResources);
 
         V1alpha1FunctionSpecPulsar v1alpha1FunctionSpecPulsar = new V1alpha1FunctionSpecPulsar();
@@ -166,7 +163,7 @@ public class FunctionsUtil {
         Map<String, ConsumerConfig> inputSpecs = new HashMap<>();
         ConsumerConfig sourceVaule = new ConsumerConfig();
         sourceVaule.setSerdeClassName(v1alpha1FunctionSpec.getSourceType());
-        inputSpecs.put("source", sourceVaule);
+        inputSpecs.put(sourceKey, sourceVaule);
         functionConfig.setInputSpecs(inputSpecs);
         functionConfig.setOutputSerdeClassName(v1alpha1FunctionSpec.getSinkType());
 
