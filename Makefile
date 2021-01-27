@@ -130,7 +130,10 @@ bundle-build:
 crd: manifests
 	$(KUSTOMIZE) build config/crd > manifests/crd.yaml
 
-release: manifests manager operator-docker-image
+rbac: manifests
+	$(KUSTOMIZE) build config/rbac > manifests/rbac.yaml
+
+release: manifests crd rbac manager operator-docker-image
 
 operator-docker-image:
 	docker build -f operator.Dockerfile -t $(OPERATOR_IMG) .
