@@ -26,9 +26,6 @@ import java.io.File;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -59,17 +56,6 @@ public class FunctionMeshProxyHandler extends ProxyServlet {
     private static final String KUBERNETES_CA_CRT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
 
     private static final String KUBERNETES_TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
-
-    private static final String FUNCTION_PODS_SERVICE_CLAIM = "x-api-name";
-
-    private static final String FUNCTION_SERVICE_METRICS_PORT = "9094";
-
-    private static final Set<String> routes = new HashSet<>(Arrays.asList(
-            "/admin/v2/worker",
-            "/admin/v2/worker-stats",
-            "/admin/worker-stats",
-            "/admin/worker"
-    ));
 
     @Override
     protected HttpClient createHttpClient() throws ServletException {
