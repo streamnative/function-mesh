@@ -1,8 +1,9 @@
 # Current Operator version
 VERSION ?= 0.1.1
 # Default image tag
+DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 BUNDLE_IMG ?= function-mesh-controller-bundle:$(VERSION)
-OPERATOR_IMG ?= function-mesh-operator:$(VERSION)
+OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh-operator:$(VERSION)
 
 GOOS := $(if $(GOOS),$(GOOS),linux)
 GOARCH := $(if $(GOARCH),$(GOARCH),amd64)
@@ -78,10 +79,6 @@ generate: controller-gen
 docker-build: test
 	docker build . -t ${IMG}
 
-# Push the docker image
-docker-push:
-	docker push ${IMG}
-
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:
@@ -133,7 +130,10 @@ crd: manifests
 rbac: manifests
 	$(KUSTOMIZE) build config/rbac > manifests/rbac.yaml
 
-release: manifests crd rbac manager operator-docker-image
+release: manifests crd rbac manager operator-docker-image docker-push
 
-operator-docker-image:
+operator-docker-image: test
 	docker build -f operator.Dockerfile -t $(OPERATOR_IMG) .
+
+docker-push:
+	docker push $(OPERATOR_IMG)

@@ -2,11 +2,7 @@
 kind: ServiceAccount
 apiVersion: v1
 metadata:
-  {{- if eq .Values.appendReleaseSuffix true}}
-  name: {{ .Values.controllerManager.serviceAccount }}-{{ .Release.Name }}
-  {{- else }}
   name: {{ .Values.controllerManager.serviceAccount }}
-  {{- end }}
   labels:
     app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
@@ -17,7 +13,7 @@ metadata:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Release.Name }}:function-mesh-controller-manager
+  name: {{ .Release.Name }}-function-mesh-controller-manager
   labels:
     app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
@@ -182,11 +178,14 @@ rules:
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources: ["rolebindings","clusterrolebindings"]
   verbs: ["create","get","update", "delete"]
+- apiGroups: ["autoscaling"]
+  resources: ["horizontalpodautoscalers"]
+  verbs: ["create", "delete", "patch", "update", "get", "watch", "list"]
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Release.Name }}:function-mesh-controller-manager
+  name: {{ .Release.Name }}-function-mesh-controller-manager
   labels:
     app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
@@ -199,6 +198,6 @@ subjects:
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: {{ .Release.Name }}:function-mesh-controller-manager
+  name: {{ .Release.Name }}-function-mesh-controller-manager
   apiGroup: rbac.authorization.k8s.io
 {{- end }}
