@@ -12,6 +12,21 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Docker meta
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v1
+        with:
+          images: ${GITHUB_ACTOR}/function-mesh
+          tag-latest: true
+          tag-semver: |
+            {{github.event.release.tag_name}}
+
       - name: Set up GO 1.13
         uses: actions/setup-go@v1
         with:
@@ -27,11 +42,9 @@ jobs:
         id: build_release
         env:
           VERSION: ${{ github.event.release.tag_name }}
-          DOCKER_USER: ${{ secrets.DOCKER_USER }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_REPO: ${GITHUB_ACTOR}
         run: |
           DOCKER_REPO=${GITHUB_ACTOR} make release
-          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
           DOCKER_REPO=${GITHUB_ACTOR} make docker-push
 
       - name: Publish docker image
@@ -43,8 +56,4 @@ jobs:
           context: .
           file: ./operator.Dockerfile
           push: true
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          tags: |
-            "${GITHUB_ACTOR}/function-mesh:${{ github.event.release.tag_name }}"
-            "${GITHUB_ACTOR}/function-mesh:latest"
+          tags: ${{ steps.docker_meta.outputs.tags }}
