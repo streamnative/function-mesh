@@ -27,8 +27,8 @@ jobs:
         id: build_release
         env:
           VERSION: ${{ github.event.release.tag_name }}
-        run: |
-          make release
+          DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
+        run: make release
 
       - name: Publish docker image
         uses: docker/build-push-action@v2
