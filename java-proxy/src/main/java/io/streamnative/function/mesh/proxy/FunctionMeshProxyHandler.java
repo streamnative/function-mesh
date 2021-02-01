@@ -156,8 +156,8 @@ public class FunctionMeshProxyHandler extends ProxyServlet {
             }
         }
         if (isFunctionMeshRestRequest) {
-            String controllerHost = System.getenv(KUBERNETES_SERVICE_HOST);
-            url.append("https://").append(controllerHost).append(controllerHost).append(":").append(KUBERNETES_SERVICE_PORT);
+            String controllerHost = this.getEnvironment(KUBERNETES_SERVICE_HOST);
+            url.append("https://").append(controllerHost).append(":").append(KUBERNETES_SERVICE_PORT).append(requestUri);
             String query = request.getQueryString();
             if (query != null) {
                 url.append("?").append(query);
@@ -171,6 +171,10 @@ public class FunctionMeshProxyHandler extends ProxyServlet {
             return rewrittenUrl.toString();
         }
         return null;
+    }
+
+    protected String getEnvironment(String key) {
+        return System.getenv(key);
     }
 
     @Override
