@@ -27,7 +27,11 @@ jobs:
         id: build_release
         env:
           VERSION: ${{ github.event.release.tag_name }}
-        run: DOCKER_REPO=${GITHUB_ACTOR} make release
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          DOCKER_REPO=${GITHUB_ACTOR} make release
+          DOCKER_USER=${DOCKER_USER} DOCKER_PASSWORD=${DOCKER_PASSWORD} make docker-push
 
       - name: Publish docker image
         uses: docker/build-push-action@v2
@@ -39,5 +43,5 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: |
-            ${GITHUB_ACTOR}/function-mesh:${{ github.event.release.tag_name }}
-            ${GITHUB_ACTOR}/function-mesh:latest
+            ${{ GITHUB_ACTOR }}/function-mesh:${{ github.event.release.tag_name }}
+            ${{ GITHUB_ACTOR }}/function-mesh:latest
