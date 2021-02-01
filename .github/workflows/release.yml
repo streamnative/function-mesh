@@ -27,8 +27,7 @@ jobs:
         id: build_release
         env:
           VERSION: ${{ github.event.release.tag_name }}
-          DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
-        run: make release
+        run: DOCKER_REPO=${GITHUB_ACTOR} make release
 
       - name: Publish docker image
         uses: docker/build-push-action@v2
@@ -36,10 +35,9 @@ jobs:
         with:
           context: .
           file: ./operator.Dockerfile
-          repository: streamnative/function-mesh
           push: true
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: |
-            streamnative/function-mesh:${{ github.event.release.tag_name }}
-            streamnative/function-mesh:latest
+            ${GITHUB_ACTOR}/function-mesh:${{ github.event.release.tag_name }}
+            ${GITHUB_ACTOR}/function-mesh:latest
