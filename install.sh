@@ -40,7 +40,7 @@ FLAGS:
         --force-kubectl      Force reinstall kubectl client if it is already installed
         --force-kind         Force reinstall KinD if it is already installed
 OPTIONS:
-    -v, --version            Version of function-mesh, default value: latest
+    -v, --version            Version of function-mesh, default value: v0.1.2
     -l, --local [kind]       Choose a way to run a local kubernetes cluster, supported value: kind,
                              If this value is not set and the Kubernetes is not installed, this script will exit with 1.
     -n, --name               Name of Kubernetes cluster, default value: kind
@@ -56,7 +56,7 @@ EOF
 
 main() {
   local local_kube="kind"
-  local cm_version="latest"
+  local cm_version="v0.1.2"
   local kind_name="kind"
   local kind_version="v0.7.0"
   local node_num=2
@@ -180,7 +180,7 @@ main() {
   #    fi
 
   if [ "${crd}" == "" ]; then
-    crd="https://raw.githubusercontent.com/streamnative/function-mesh/${cm_version}/manifests/crd.yaml"
+    crd="https://github.com/streamnative/function-mesh/releases/download/${cm_version}/crd.yaml"
   fi
 
   need_cmd "sed"

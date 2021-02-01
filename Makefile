@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= v0.1.3
+VERSION ?= v0.1.2
 # Default image tag
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 BUNDLE_IMG ?= function-mesh-controller-bundle:$(VERSION)
