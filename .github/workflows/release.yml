@@ -46,5 +46,5 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: |
-            ${GITHUB_ACTOR}/function-mesh:${{ github.event.release.tag_name }}
-            ${GITHUB_ACTOR}/function-mesh:latest
+            "${GITHUB_ACTOR}/function-mesh:${{ github.event.release.tag_name }}"
+            "${GITHUB_ACTOR}/function-mesh:latest"
