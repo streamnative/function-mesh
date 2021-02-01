@@ -21,8 +21,11 @@ jobs:
       - name: Docker meta
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+          DOCKER_REPO: "${GITHUB_ACTOR}/function-mesh"
         with:
-          images: ${GITHUB_ACTOR}/function-mesh
+          images: "$DOCKER_REPO"
           tag-latest: true
           tag-semver: |
             {{github.event.release.tag_name}}
