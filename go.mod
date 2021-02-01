@@ -12,10 +12,12 @@ require (
 	github.com/onsi/gomega v1.10.4
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.1.0 // indirect
+	github.com/streamnative/pulsarctl v0.5.0
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.25.0
+	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6
 	k8s.io/client-go v0.18.6
