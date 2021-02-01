@@ -1,6 +1,18 @@
 # Function-Mesh
 A Kubernetes-Native way to run pulsar functions, connectors and composed function meshes.
 
+## Install
+
+```bash
+curl -sSL https://github.com/streamnative/function-mesh/releases/download/v0.1.2/install.sh | bash
+```
+
+The above command installs all the CRDs, required service account configuration, and all function-mesh operator components. Before you start running a function-mesh example, verify if Function Mesh is installed correctly.
+
+Note:
+
+> install.sh is suitable for trying Function Mesh out. If you want to use Function Mesh in production or other serious scenarios, Helm is the recommended deployment method.
+
 ## Prerequisite
 - Git
 - [operator-sdk](https://sdk.operatorframework.io/)

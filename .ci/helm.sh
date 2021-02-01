@@ -57,8 +57,8 @@ function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
     git clone https://github.com/streamnative/charts.git pulsar-charts
     cd pulsar-charts
-    cp ../.ci/clusters/values.yaml pulsar-charts/pulsar/mini_values.yaml
-    cd pulsar-charts
+    cp ../.ci/clusters/values.yaml charts/pulsar/mini_values.yaml
+    cd charts
     helm repo add loki https://grafana.github.io/loki/charts
     helm dependency update pulsar
     ${HELM} install sn-platform --values ./pulsar/mini_values.yaml ./pulsar --debug

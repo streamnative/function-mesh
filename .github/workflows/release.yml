@@ -63,3 +63,12 @@ jobs:
           asset_name: rbac.yaml
           tag: ${{ github.ref }}
           overwrite: true
+
+      - name: Upload install.sh to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: install.sh
+          asset_name: install.sh
+          tag: ${{ github.ref }}
+          overwrite: true
