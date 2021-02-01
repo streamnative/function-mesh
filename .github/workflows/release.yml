@@ -31,7 +31,8 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           DOCKER_REPO=${GITHUB_ACTOR} make release
-          DOCKER_USER=${DOCKER_USER} DOCKER_PASSWORD=${DOCKER_PASSWORD} DOCKER_REPO=${GITHUB_ACTOR} make docker-push
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
+          DOCKER_REPO=${GITHUB_ACTOR} make docker-push
 
       - name: Publish docker image
         uses: docker/build-push-action@v2
