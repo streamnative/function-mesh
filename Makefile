@@ -1,9 +1,9 @@
 # Current Operator version
-VERSION ?= 0.1.1
+VERSION ?= 0.1.3
 # Default image tag
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 BUNDLE_IMG ?= function-mesh-controller-bundle:$(VERSION)
-OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh-operator:$(VERSION)
+OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:$(VERSION)
 
 GOOS := $(if $(GOOS),$(GOOS),linux)
 GOARCH := $(if $(GOARCH),$(GOARCH),amd64)
@@ -130,7 +130,7 @@ crd: manifests
 rbac: manifests
 	$(KUSTOMIZE) build config/rbac > manifests/rbac.yaml
 
-release: manifests crd rbac manager operator-docker-image docker-push
+release: manifests crd rbac manager operator-docker-image
 
 operator-docker-image: test
 	docker build -f operator.Dockerfile -t $(OPERATOR_IMG) .
