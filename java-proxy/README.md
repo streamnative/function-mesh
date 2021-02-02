@@ -56,7 +56,12 @@ crd yaml [file](https://github.com/streamnative/function-mesh/tree/master/config
 Note: add the field `preserveUnknownFields: false` to spec for avoid this [issue]()https://github.com/kubernetes-client/java/issues/1254
 
 ```shell script
-LOCAL_MANIFEST_FILE=/Users/tuteng/streamnative/temp-data/cloud.streamnative.io_functions.yaml
+tmpDir=/tmp/functions-mesh/crd
+mkdir -p $tmpDir
+cp ../config/crd/bases $tmpDir
+
+LOCAL_MANIFEST_FILE=${tmpDir}/cloud.streamnative.io_sources.yaml
+
 docker run \
   --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
