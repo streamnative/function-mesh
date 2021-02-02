@@ -26,17 +26,19 @@ jobs:
   lint-test:
     runs-on: ubuntu-latest
     steps:
+      - name: clean disk
+        run: |
+          sudo swapoff -a
+          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt clean
+          docker rmi $(docker images -q) -f
+          df -h
+
       - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Check if this pull request only changes documentation
-        id:   docs
-        uses: apache/pulsar-test-infra/diff-only@master
-        with:
-          args: site2 .asf.yaml ct.yaml
 
       - name: Test k8s cluster env
         run: |
