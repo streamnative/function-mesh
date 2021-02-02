@@ -40,12 +40,6 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Check if this pull request only changes documentation
-        id:   docs
-        uses: apache/pulsar-test-infra/diff-only@master
-        with:
-          args: site2 .asf.yaml ct.yaml
-
       - name: Test k8s cluster env
         run: |
           .ci/deploy_pulsar_cluster.sh
