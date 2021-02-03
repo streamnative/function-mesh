@@ -64,6 +64,9 @@ public class FunctionMeshProxyService implements WorkerService {
     private CustomObjectsApi customObjectsApi;
     private ApiClient apiClient;
 
+    private AuthenticationService authenticationService;
+    private AuthorizationService authorizationService;
+
     public FunctionMeshProxyService() {
 
     }
@@ -102,7 +105,8 @@ public class FunctionMeshProxyService implements WorkerService {
     public void start(AuthenticationService authenticationService,
                       AuthorizationService authorizationService,
                       ErrorNotifier errorNotifier) {
-        // https://github.com/streamnative/function-mesh/issues/58
+        this.authenticationService = authenticationService;
+        this.authorizationService = authorizationService;
     }
 
     public void stop() {
