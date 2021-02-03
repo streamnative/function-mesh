@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.util.Config;
 import io.streamnative.function.mesh.proxy.rest.api.FunctionsImpl;
+import io.streamnative.function.mesh.proxy.rest.api.SourcesImpl;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pulsar.broker.ServiceConfiguration;
@@ -89,6 +90,7 @@ public class FunctionMeshProxyService implements WorkerService {
         this.workerConfig = workerConfig;
         this.initKubernetesClient();
         this.functions = new FunctionsImpl(() -> FunctionMeshProxyService.this);
+        this.sources = new SourcesImpl(() -> FunctionMeshProxyService.this);
     }
 
     private void initKubernetesClient() throws IOException {
