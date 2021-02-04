@@ -36,6 +36,7 @@
         <license.plugin.version>3.0</license.plugin.version>
         <mockito.version>1.10.19</mockito.version>
         <powermock.version>1.7.4</powermock.version>
+        <jetty.version>9.4.35.v20201120</jetty.version>
     </properties>
 
     <dependencies>
@@ -78,6 +79,16 @@
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
             <version>${powermock.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-proxy</artifactId>
+            <version>${jetty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-client</artifactId>
+            <version>${jetty.version}</version>
         </dependency>
     </dependencies>
 
