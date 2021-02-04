@@ -56,12 +56,19 @@ crd yaml [file](https://github.com/streamnative/function-mesh/tree/master/config
 Note: add the field `preserveUnknownFields: false` to spec for avoid this [issue]()https://github.com/kubernetes-client/java/issues/1254
 
 ```shell script
-tmpDir=/tmp/functions-mesh/crd
-mkdir -p $tmpDir
-cp ../config/crd/bases $tmpDir
+CRD_FILE=cloud.streamnative.io_sources.yaml # Target CRD file
 
-LOCAL_MANIFEST_FILE=${tmpDir}/cloud.streamnative.io_sources.yaml
+GEN_DIR=/tmp/functions-mesh/crd
+mkdir -p $GEN_DIR
+cp ../config/crd/bases/* $GEN_DIR
+cd $GEN_DIR
 
+LOCAL_MANIFEST_FILE=$GEN_DIR/$CRD_FILE
+
+# yq site: https://mikefarah.gitbook.io/yq/
+yq e ".spec.preserveUnknownFields = false" -i $CRD_FILE 
+
+docker rm -f kind-control-plane
 docker run \
   --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
@@ -74,4 +81,6 @@ docker run \
   -n io.streamnative.cloud \
   -p io.streamnative.cloud \
   -o "$(pwd)"
+
+open $GEN_DIR
 ```
