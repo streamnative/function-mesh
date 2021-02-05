@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.streamnative.cloud.models.source.*;
 import lombok.Data;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.client.api.ConsumerCryptoFailureAction;
@@ -30,9 +31,16 @@ import org.apache.pulsar.common.functions.CryptoConfig;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SourceConfig;
+import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.common.util.RestException;
+import org.apache.pulsar.functions.utils.FunctionCommon;
+import org.apache.pulsar.functions.utils.io.ConnectorUtils;
 
 import javax.ws.rs.core.Response;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -50,14 +58,14 @@ public class SourcesUtil {
     public final static String cpuKey = "cpu";
     public final static String memoryKey = "memory";
 
-    private static Map<String, String> transformedMapValueToString(Map<String, Object> map) {
+    public static Map<String, String> transformedMapValueToString(Map<String, Object> map) {
         if (map == null) {
             return null;
         }
         return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())));
     }
 
-    private static Map<String, Object> transformedMapValueToObject(Map<String, String> map) {
+    public static Map<String, Object> transformedMapValueToObject(Map<String, String> map) {
         if (map == null) {
             return null;
         }
@@ -66,7 +74,9 @@ public class SourcesUtil {
 
     public static V1alpha1Source createV1alpha1SourceFromSourceConfig(String kind, String group, String version,
                                                                       String sourceName, String sourcePkgUrl,
-                                                                      SourceConfig sourceConfig) {
+                                                                      InputStream uploadedInputStream,
+                                                                      SourceConfig sourceConfig) throws IOException,
+            URISyntaxException, ClassNotFoundException {
         V1alpha1Source v1alpha1Source = new V1alpha1Source();
         v1alpha1Source.setKind(kind);
         v1alpha1Source.setApiVersion(String.format("%s/%s", group, version));
@@ -79,9 +89,20 @@ public class SourcesUtil {
         V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
         v1alpha1SourceSpec.setClassName(sourceConfig.getClassName());
 
-        // TODO: determine the value of sourceType and sinkType.
-        v1alpha1SourceSpec.setSourceType("");
-        v1alpha1SourceSpec.setSinkType("");
+        File file;
+        if (Strings.isNotEmpty(sourcePkgUrl)) {
+            file = FunctionCommon.extractFileFromPkgURL(sourcePkgUrl);
+        } else {
+            file = FunctionCommon.createPkgTempFile();
+            FileUtils.copyInputStreamToFile(uploadedInputStream, file);
+        }
+        NarClassLoader narClassLoader = FunctionCommon.extractNarClassLoader(null, file, null);
+        String sourceClassName = ConnectorUtils.getIOSourceClass(narClassLoader);
+        Class<?> sourceClass = narClassLoader.loadClass(sourceClassName);
+        Class<?> sourceType = FunctionCommon.getSourceType(sourceClass);
+
+        v1alpha1SourceSpec.setSourceType(sourceType.getName());
+        v1alpha1SourceSpec.setSinkType(sourceType.getName());
 
         Integer parallelism = sourceConfig.getParallelism() == null ? 1 : sourceConfig.getParallelism();
         v1alpha1SourceSpec.setReplicas(parallelism);
@@ -89,6 +110,7 @@ public class SourcesUtil {
 
         V1alpha1SourceSpecOutput v1alpha1SourceSpecOutput = new V1alpha1SourceSpecOutput();
         v1alpha1SourceSpecOutput.setTopic(sourceConfig.getTopicName());
+        v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
 
         ProducerConfig producerConfig = sourceConfig.getProducerConfig();
         if (producerConfig != null) {
@@ -141,7 +163,7 @@ public class SourcesUtil {
         v1alpha1SourceSpec.setPulsar(pulsar);
 
         String location = String.format("%s/%s/%s", sourceConfig.getTenant(), sourceConfig.getNamespace(),
-                sourceConfig);
+                sourceConfig.getName());
         if (StringUtils.isNotEmpty(sourcePkgUrl)) {
             location = sourcePkgUrl;
         }
@@ -150,6 +172,7 @@ public class SourcesUtil {
         V1alpha1SourceSpecJava v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
         v1alpha1SourceSpecJava.setJar(jar);
         v1alpha1SourceSpecJava.setJarLocation(location);
+        v1alpha1SourceSpec.setJava(v1alpha1SourceSpecJava);
 
         String customRuntimeOptionsJSON = sourceConfig.getCustomRuntimeOptions();
         if (Strings.isEmpty(customRuntimeOptionsJSON)) {
@@ -222,6 +245,8 @@ public class SourcesUtil {
         if (sourceSpecJava != null) {
             sourceConfig.setArchive(sourceSpecJava.getJar());
         }
+
+        sourceConfig.setConfigs(transformedMapValueToObject(sourceSpec.getSourceConfig()));
 
         CustomRuntimeOptions customRuntimeOptions = new CustomRuntimeOptions();
         customRuntimeOptions.setClusterName(sourceSpec.getClusterName());

@@ -97,10 +97,9 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
                                AuthenticationDataHttps clientAuthenticationDataHttps) {
         validateRegisterSourceRequestParams(tenant, namespace, sourceName, sourceConfig);
 
-        V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
-                sourceName, sourcePkgUrl, sourceConfig);
-
         try {
+            V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
+                    sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig);
             Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(group, version, namespace,
                     plural,
                     v1alpha1Source,
@@ -144,6 +143,7 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
                     version,
                     sourceName,
                     sourcePkgUrl,
+                    uploadedInputStream,
                     sourceConfig
             );
             v1alpha1Source.getMetadata().setResourceVersion(oldRes.getMetadata().getResourceVersion());
