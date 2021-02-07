@@ -49,6 +49,8 @@ import java.util.function.Supplier;
 public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<FunctionMeshProxyService> {
     private final String kind = "Source";
 
+    private final String plural = "sources";
+
     public SourcesImpl(Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier) {
         super(functionMeshProxyServiceSupplier, Function.FunctionDetails.ComponentType.SOURCE);
     }
