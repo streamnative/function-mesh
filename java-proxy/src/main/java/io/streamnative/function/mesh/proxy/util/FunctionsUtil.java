@@ -93,7 +93,7 @@ public class FunctionsUtil {
             throw new RestException(Response.Status.BAD_REQUEST, "resources.ram is not provided");
         }
         String cpuValue = cpu.toString();
-        String memoryValue = memory.toString() + "G";
+        String memoryValue = memory.toString();
         Map<String, Object> limits = new HashMap<>();
         limits.put(cpuKey, cpuValue);
         limits.put(memoryKey, memoryValue);
@@ -175,7 +175,7 @@ public class FunctionsUtil {
         Resources resources = new Resources();
         Map<String, Object> functionResource = v1alpha1FunctionSpec.getResources().getLimits();
         resources.setCpu(Double.parseDouble(functionResource.get(cpuKey).toString()));
-        resources.setRam(Long.parseLong(functionResource.get(memoryKey).toString().replace("G", "")));
+        resources.setRam(Long.parseLong(functionResource.get(memoryKey).toString()));
         functionConfig.setResources(resources);
 
         Map<String, Object> userConfig = new HashMap<>();

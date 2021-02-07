@@ -107,7 +107,7 @@ public class FunctionsUtilTest {
         V1alpha1FunctionSpecResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecResources();
         Map<String, Object> requestRes = new HashMap<>();
         String cpuValue = cpu.toString();
-        String memoryValue = ram.toString() + "G";
+        String memoryValue = ram.toString();
         requestRes.put(FunctionsUtil.cpuKey, cpuValue);
         requestRes.put(FunctionsUtil.memoryKey, memoryValue);
         v1alpha1FunctionSpecResources.setLimits(requestRes);
@@ -178,7 +178,7 @@ public class FunctionsUtilTest {
         V1alpha1FunctionSpecResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecResources();
         Map<String, Object> requestRes = new HashMap<>();
         String cpuValue = cpu.toString();
-        String memoryValue = ram.toString() + "G";
+        String memoryValue = ram.toString();
         requestRes.put(FunctionsUtil.cpuKey, cpuValue);
         requestRes.put(FunctionsUtil.memoryKey, memoryValue);
         v1alpha1FunctionSpecResources.setLimits(requestRes);
