@@ -129,7 +129,7 @@ public class SourcesUtilTest {
         V1alpha1SourceSpecResources v1alpha1SourceSpecResources = new V1alpha1SourceSpecResources();
         Map<String, Object> requestRes = new HashMap<>();
         String cpuValue = cpu.toString();
-        String memoryValue = ram.toString() + "G";
+        String memoryValue = ram.toString();
         requestRes.put(SourcesUtil.cpuKey, cpuValue);
         requestRes.put(SourcesUtil.memoryKey, memoryValue);
 
@@ -198,7 +198,7 @@ public class SourcesUtilTest {
         V1alpha1SourceSpecResources v1alpha1SourceSpecResources = new V1alpha1SourceSpecResources();
         Map<String, Object> requestRes = new HashMap<>();
         String cpuValue = cpu.toString();
-        String memoryValue = ram.toString() + "G";
+        String memoryValue = ram.toString();
         requestRes.put(SourcesUtil.cpuKey, cpuValue);
         requestRes.put(SourcesUtil.memoryKey, memoryValue);
 
