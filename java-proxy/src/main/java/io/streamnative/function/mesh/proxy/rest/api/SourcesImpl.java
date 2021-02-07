@@ -25,6 +25,7 @@ import io.streamnative.function.mesh.proxy.FunctionMeshProxyService;
 import io.streamnative.function.mesh.proxy.util.SourcesUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.functions.UpdateOptions;
@@ -181,15 +182,12 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
             SourceStatus.SourceInstanceStatus sourceInstanceStatus = new SourceStatus.SourceInstanceStatus();
             SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData =
                     new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
-            sourceInstanceStatusData.setRunning(true);
+            sourceInstanceStatusData.setRunning(false);
             V1alpha1SourceStatus v1alpha1SourceStatus = v1alpha1Source.getStatus();
             if (v1alpha1SourceStatus != null) {
-                v1alpha1SourceStatus.getConditions().forEach((s, statusConditions) -> {
-                    if (statusConditions.getStatus() != null
-                            && statusConditions.getStatus().equals("False")) {
-                        sourceInstanceStatusData.setRunning(false);
-                    }
-                });
+                boolean running = v1alpha1SourceStatus.getConditions().values()
+                        .stream().allMatch(n -> StringUtils.isNotEmpty(n.getStatus()) && n.getStatus().equals("True"));
+                sourceInstanceStatusData.setRunning(running);
                 sourceInstanceStatusData.setWorkerId(v1alpha1Source.getSpec().getClusterName());
                 sourceInstanceStatus.setStatus(sourceInstanceStatusData);
                 sourceStatus.addInstance(sourceInstanceStatus);
