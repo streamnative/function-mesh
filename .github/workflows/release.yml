@@ -41,10 +41,9 @@ jobs:
         id: build_release
         env:
           VERSION: ${{ github.event.release.tag_name }}
-          DOCKER_REPO: ${GITHUB_ACTOR}
         run: |
-          DOCKER_REPO=${GITHUB_ACTOR} make release
-          DOCKER_REPO=${GITHUB_ACTOR} make docker-push
+          make release
+          make docker-push
 
       - name: Upload crd.yaml to release
         uses: svenstaro/upload-release-action@v2
