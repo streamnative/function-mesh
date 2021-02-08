@@ -18,15 +18,13 @@
  */
 package io.streamnative.function.mesh.proxy.rest.api;
 
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.streamnative.cloud.models.function.*;
+import io.streamnative.cloud.models.function.V1alpha1Function;
 import io.streamnative.function.mesh.proxy.FunctionMeshProxyService;
+import io.streamnative.function.mesh.proxy.util.FunctionsUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
-import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.UpdateOptions;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
@@ -38,31 +36,18 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Supplier;
 
 @Slf4j
 public class FunctionsImpl extends FunctionMeshComponentImpl implements Functions<FunctionMeshProxyService> {
-    final String Kind = "Function";
 
     public FunctionsImpl(Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier) {
         super(functionMeshProxyServiceSupplier, Function.FunctionDetails.ComponentType.FUNCTION);
     }
 
-    @Override
-    public void registerFunction(final String tenant,
-                                 final String namespace,
-                                 final String functionName,
-                                 final InputStream uploadedInputStream,
-                                 final FormDataContentDisposition fileDetail,
-                                 final String functionPkgUrl,
-                                 final FunctionConfig functionConfig,
-                                 final String clientRole,
-                                 AuthenticationDataHttps clientAuthenticationDataHttps) {
+
+    private void validateRegisterFunctionRequestParams(String tenant, String namespace, String functionName,
+                                                       FunctionConfig functionConfig) {
         if (tenant == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
         }
@@ -75,124 +60,62 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
         if (functionConfig == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Function config is not provided");
         }
+    }
 
-        V1alpha1Function v1alpha1Function = new V1alpha1Function();
-        v1alpha1Function.setKind(Kind);
-        v1alpha1Function.setApiVersion(String.format("%s/%s", group, version));
+    private void validateUpdateFunctionRequestParams(String tenant, String namespace, String functionName,
+                                                     FunctionConfig functionConfig) {
+        validateRegisterFunctionRequestParams(tenant, namespace, functionName, functionConfig);
+    }
 
-        V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
-        v1ObjectMeta.setName(functionConfig.getName());
-        v1ObjectMeta.setNamespace(functionConfig.getNamespace());
-        v1alpha1Function.setMetadata(v1ObjectMeta);
-
-        V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
-        v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());
-
-        ConsumerConfig consumerConfig = functionConfig.getInputSpecs().get("source");
-        if (consumerConfig == null || StringUtils.isBlank(consumerConfig.getSerdeClassName())) {
-            throw new RestException(Response.Status.BAD_REQUEST, "inputSpecs.source.serdeClassName is not provided");
+    private void validateDeregisterFunctionRequestParams(String tenant, String namespace, String functionName) {
+        if (tenant == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
         }
-        if (StringUtils.isBlank(functionConfig.getOutputSerdeClassName())) {
-            throw new RestException(Response.Status.BAD_REQUEST, "outputSerdeClassName is not provided");
+        if (namespace == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Namespace is not provided");
         }
-        v1alpha1FunctionSpec.setSourceType(consumerConfig.getSerdeClassName());
-        v1alpha1FunctionSpec.setSinkType(functionConfig.getOutputSerdeClassName());
-
-        v1alpha1FunctionSpec.setForwardSourceMessageProperty(functionConfig.getForwardSourceMessageProperty());
-        v1alpha1FunctionSpec.setMaxPendingAsyncRequests(functionConfig.getMaxPendingAsyncRequests());
-
-        Integer parallelism = functionConfig.getParallelism() == null ? 1 : functionConfig.getParallelism();
-        v1alpha1FunctionSpec.setReplicas(parallelism);
-        v1alpha1FunctionSpec.setMaxReplicas(parallelism);
-
-        v1alpha1FunctionSpec.setLogTopic(functionConfig.getLogTopic());
-
-        V1alpha1FunctionSpecInput v1alpha1FunctionSpecInput = new V1alpha1FunctionSpecInput();
-        v1alpha1FunctionSpecInput.setTopics(new ArrayList<>(functionConfig.getInputs()));
-        v1alpha1FunctionSpec.setInput(v1alpha1FunctionSpecInput);
-
-        V1alpha1FunctionSpecOutput v1alpha1FunctionSpecOutput = new V1alpha1FunctionSpecOutput();
-        v1alpha1FunctionSpecOutput.setTopic(functionConfig.getOutput());
-        v1alpha1FunctionSpec.setOutput(v1alpha1FunctionSpecOutput);
-
-        V1alpha1FunctionSpecResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecResources();
-        Map<String, Object> limits = new HashMap<>();
-        if (functionConfig.getResources() == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "resources is not provided");
+        if (functionName == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Function name is not provided");
         }
-        Double cpu = functionConfig.getResources().getCpu();
-        if (functionConfig.getResources().getCpu() == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "resources.cpu is not provided");
-        }
-        Long memory = functionConfig.getResources().getRam();
-        if (functionConfig.getResources().getRam() == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "resources.ram is not provided");
-        }
-        String cpuValue = cpu.toString();
-        String memoryValue = memory.toString() + "G";
-        limits.put("cpu", cpuValue);
-        limits.put("memory", memoryValue);
-        Map<String, Object> requests = new HashMap<>();
-        limits.put("cpu", cpuValue);
-        limits.put("memory", memoryValue);
-        v1alpha1FunctionSpecResources.setLimits(limits);
-        v1alpha1FunctionSpecResources.setRequests(requests);
-        v1alpha1FunctionSpec.setResources(v1alpha1FunctionSpecResources);
+    }
 
-        V1alpha1FunctionSpecPulsar v1alpha1FunctionSpecPulsar = new V1alpha1FunctionSpecPulsar();
-        v1alpha1FunctionSpecPulsar.setPulsarConfig(functionName);
-        v1alpha1FunctionSpec.setPulsar(v1alpha1FunctionSpecPulsar);
+    private void validateGetFunctionInfoRequestParams(String tenant, String namespace, String functionName) {
+        validateDeregisterFunctionRequestParams(tenant, namespace, functionName);
+    }
 
-        String location = String.format("%s/%s/%s",tenant,namespace,functionName);
-        if (StringUtils.isNotEmpty(functionPkgUrl)) {
-            location = functionPkgUrl;
-        }
-        if (StringUtils.isNotEmpty(functionConfig.getJar())) {
-            V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
-            Path path = Paths.get(functionConfig.getJar());
-            v1alpha1FunctionSpecJava.setJar(path.getFileName().toString());
-            v1alpha1FunctionSpecJava.setJarLocation(location);
-            v1alpha1FunctionSpec.setJava(v1alpha1FunctionSpecJava);
-        } else if (StringUtils.isNotEmpty(functionConfig.getPy())) {
-            V1alpha1FunctionSpecPython v1alpha1FunctionSpecPython = new V1alpha1FunctionSpecPython();
-            Path path = Paths.get(functionConfig.getPy());
-            v1alpha1FunctionSpecPython.setPy(path.getFileName().toString());
-            v1alpha1FunctionSpecPython.setPyLocation(location);
-            v1alpha1FunctionSpec.setPython(v1alpha1FunctionSpecPython);
-        } else if (StringUtils.isNotEmpty(functionConfig.getGo())) {
-            V1alpha1FunctionSpecGolang v1alpha1FunctionSpecGolang = new V1alpha1FunctionSpecGolang();
-            Path path = Paths.get(functionConfig.getGo());
-            v1alpha1FunctionSpecGolang.setGo(path.getFileName().toString());
-            v1alpha1FunctionSpecGolang.setGoLocation(location);
-            v1alpha1FunctionSpec.setGolang(v1alpha1FunctionSpecGolang);
-        }
+    @Override
+    public void registerFunction(final String tenant,
+                                 final String namespace,
+                                 final String functionName,
+                                 final InputStream uploadedInputStream,
+                                 final FormDataContentDisposition fileDetail,
+                                 final String functionPkgUrl,
+                                 final FunctionConfig functionConfig,
+                                 final String clientRole,
+                                 AuthenticationDataHttps clientAuthenticationDataHttps) {
+        validateRegisterFunctionRequestParams(tenant, namespace, functionName, functionConfig);
 
-        if (functionConfig.getUserConfig() == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "userConfig is not provided");
-        }
-        Object clusterName = functionConfig.getUserConfig().get("clusterName");
-        if (clusterName == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "userConfig.clusterName is not provided");
-        }
-
-        v1alpha1FunctionSpec.setClusterName(clusterName.toString());
-        v1alpha1FunctionSpec.setAutoAck(functionConfig.getAutoAck());
-
-        v1alpha1Function.setSpec(v1alpha1FunctionSpec);
-
+        V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(
+                kind,
+                group,
+                version,
+                functionName,
+                functionPkgUrl,
+                functionConfig
+        );
         try {
-            Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(group, version, namespace,
+            Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(
+                    group,
+                    version,
+                    namespace,
                     plural,
                     v1alpha1Function,
                     null,
                     null,
                     null,
-                    null);
-            V1alpha1Function res = executeCall(call, V1alpha1Function.class);
-            if (res == null) {
-                throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, "failed to create this function: " +
-                        "failed to create custom object");
-            }
+                    null
+            );
+            executeCall(call, V1alpha1Function.class);
         } catch (Exception e) {
             log.error("register {}/{}/{} function failed, error message: {}", tenant, namespace, functionName, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -210,7 +133,98 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                                final String clientRole,
                                AuthenticationDataHttps clientAuthenticationDataHttps,
                                UpdateOptions updateOptions) {
+        validateUpdateFunctionRequestParams(tenant, namespace, functionName, functionConfig);
 
+        try {
+            Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
+                    group,
+                    version,
+                    namespace,
+                    plural,
+                    functionName,
+                    null
+            );
+            V1alpha1Function oldFn = executeCall(getCall, V1alpha1Function.class);
+            V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(
+                    kind,
+                    group,
+                    version,
+                    functionName,
+                    functionPkgUrl,
+                    functionConfig
+            );
+            v1alpha1Function.getMetadata().setResourceVersion(oldFn.getMetadata().getResourceVersion());
+            Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
+                    group,
+                    version,
+                    namespace,
+                    plural,
+                    functionName,
+                    v1alpha1Function,
+                    null,
+                    null,
+                    null
+            );
+            executeCall(replaceCall, V1alpha1Function.class);
+        } catch (Exception e) {
+            log.error("update {}/{}/{} function failed, error message: {}", tenant, namespace, functionName, e);
+            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public void deregisterFunction(final String tenant,
+                                   final String namespace,
+                                   final String componentName,
+                                   final String clientRole,
+                                   AuthenticationDataHttps clientAuthenticationDataHttps) {
+        validateDeregisterFunctionRequestParams(tenant, namespace, componentName);
+
+        try {
+            Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
+                    group,
+                    version,
+                    namespace,
+                    plural,
+                    componentName,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+            );
+            executeCall(call, null);
+        } catch (Exception e) {
+            log.error("deregister {}/{}/{} function failed, error message: {}", tenant, namespace, componentName, e);
+            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public FunctionConfig getFunctionInfo(final String tenant,
+                                          final String namespace,
+                                          final String componentName,
+                                          final String clientRole,
+                                          final AuthenticationDataSource clientAuthenticationDataHttps) {
+        validateGetFunctionInfoRequestParams(tenant, namespace, componentName);
+
+        try {
+            Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
+                    group,
+                    version,
+                    namespace,
+                    plural,
+                    componentName,
+                    null
+            );
+            V1alpha1Function v1alpha1Function = executeCall(call, V1alpha1Function.class);
+            return FunctionsUtil.createFunctionConfigFromV1alpha1Function(tenant, namespace, componentName,
+                    v1alpha1Function);
+        } catch (Exception e) {
+            log.error("get {}/{}/{} function failed, error message: {}", tenant, namespace, componentName, e);
+            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
     }
 
     @Override

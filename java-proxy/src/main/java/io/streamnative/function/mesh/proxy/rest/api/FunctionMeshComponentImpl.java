@@ -25,7 +25,6 @@ import okhttp3.Call;
 import okhttp3.Response;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
-import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.FunctionState;
 import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.policies.data.FunctionStats;
@@ -53,6 +52,8 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
 
     final String version = "v1alpha1";
 
+    final String kind = "Function";
+
     public FunctionMeshComponentImpl(Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier,
                                      Function.FunctionDetails.ComponentType componentType) {
         this.functionMeshProxyServiceSupplier = functionMeshProxyServiceSupplier;
@@ -65,23 +66,17 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
         response = call.execute();
         if (response.isSuccessful() && response.body() != null) {
             String data = response.body().string();
+            if (c == null) {
+                return null;
+            }
             return worker().getApiClient().getJSON().getGson().fromJson(data, c);
         } else {
-            String err = String.format("failed to perform the request: responseCode: %s, responseMessage: %s",
-                    response.code(), response.message());
+            String body = response.body() != null ? response.body().string() : "";
+            String err = String.format(
+                    "failed to perform the request: responseCode: %s, responseMessage: %s, responseBody: %s",
+                    response.code(), response.message(), body);
             throw new Exception(err);
         }
-    }
-
-    @Override
-    public FunctionConfig getFunctionInfo(final String tenant,
-                                          final String namespace,
-                                          final String componentName,
-                                          final String clientRole,
-                                          final AuthenticationDataSource clientAuthenticationDataHttps) {
-
-        FunctionConfig functionConfig = new FunctionConfig();
-        return functionConfig;
     }
 
     @Override
@@ -92,15 +87,6 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
             log.info("Failed to get worker service", t);
             throw t;
         }
-    }
-
-    @Override
-    public void deregisterFunction(final String tenant,
-                                   final String namespace,
-                                   final String componentName,
-                                   final String clientRole,
-                                   AuthenticationDataHttps clientAuthenticationDataHttps) {
-
     }
 
     @Override
