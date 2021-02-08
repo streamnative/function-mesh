@@ -48,8 +48,11 @@ func init() {
 
 func main() {
 	var metricsAddr string
+	var leaderElectionID string
 	var enableLeaderElection bool
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&leaderElectionID, "leader-election-id", "a3f45fce.streamnative.io",
+		"the name of the configmap that leader election will use for holding the leader lock.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -62,7 +65,7 @@ func main() {
 		MetricsBindAddress: metricsAddr,
 		Port:               9443,
 		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "a3f45fce.streamnative.io",
+		LeaderElectionID:   leaderElectionID,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

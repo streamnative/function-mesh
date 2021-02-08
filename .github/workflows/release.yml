@@ -17,7 +17,15 @@ jobs:
           docker rmi $(docker images -q) -f
           df -h
 
-      - uses: actions/checkout@v1
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Set up GO 1.13
         uses: actions/setup-go@v1
         with:
@@ -29,10 +37,37 @@ jobs:
         with:
           version: 2.3.1
 
-      - name: Publish
-        uses: docker/build-push-action@v1
+      - name: build release
+        id: build_release
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          make release
+          make docker-push
+
+      - name: Upload crd.yaml to release
+        uses: svenstaro/upload-release-action@v2
         with:
-          repository: streamnative/function-mesh
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          tags: ${{ github.event.release.tag_name }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: manifests/crd.yaml
+          asset_name: crd.yaml
+          tag: ${{ github.ref }}
+          overwrite: true
+
+      - name: Upload rbac.yaml to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: manifests/rbac.yaml
+          asset_name: rbac.yaml
+          tag: ${{ github.ref }}
+          overwrite: true
+
+      - name: Upload install.sh to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: install.sh
+          asset_name: install.sh
+          tag: ${{ github.ref }}
+          overwrite: true
