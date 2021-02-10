@@ -25,6 +25,7 @@ import okhttp3.Call;
 import okhttp3.Response;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
+import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.FunctionState;
 import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.policies.data.FunctionStats;
@@ -59,6 +60,26 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
         this.functionMeshProxyServiceSupplier = functionMeshProxyServiceSupplier;
         // If you want to support function-mesh, this type needs to be changed
         this.componentType = componentType;
+    }
+
+    @Override
+    public FunctionConfig getFunctionInfo(final String tenant,
+                                          final String namespace,
+                                          final String componentName,
+                                          final String clientRole,
+                                          final AuthenticationDataSource clientAuthenticationDataHttps) {
+
+        FunctionConfig functionConfig = new FunctionConfig();
+        return functionConfig;
+    }
+
+    @Override
+    public void deregisterFunction(final String tenant,
+                                   final String namespace,
+                                   final String componentName,
+                                   final String clientRole,
+                                   AuthenticationDataHttps clientAuthenticationDataHttps) {
+
     }
 
     public <T> T executeCall(Call call, Class<T> c) throws Exception {
