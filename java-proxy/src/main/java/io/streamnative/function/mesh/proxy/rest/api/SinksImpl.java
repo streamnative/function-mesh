@@ -235,9 +235,12 @@ public class SinksImpl extends FunctionMeshComponentImpl
                                                         && n.getStatus().equals("True"));
                 sinkInstanceStatusData.setRunning(running);
                 sinkInstanceStatusData.setWorkerId(v1alpha1Sink.getSpec().getClusterName());
+                sinkStatus.addInstance(sinkInstanceStatus);
+                sinkInstanceStatus.setStatus(sinkInstanceStatusData);
             } else {
                 sinkInstanceStatusData.setRunning(false);
             }
+
             sinkStatus.setNumInstances(sinkStatus.getInstances().size());
         } catch (Exception e) {
             log.error(

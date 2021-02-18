@@ -1,24 +1,21 @@
-/*
- * *
- *  * Licensed to the Apache Software Foundation (ASF) under one
- *  * or more contributor license agreements.  See the NOTICE file
- *  * distributed with this work for additional information
- *  * regarding copyright ownership.  The ASF licenses this file
- *  * to you under the Apache License, Version 2.0 (the
- *  * "License"); you may not use this file except in compliance
- *  * with the License.  You may obtain a copy of the License at
- *  *
- *  *   http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing,
- *  * software distributed under the License is distributed on an
- *  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  * KIND, either express or implied.  See the License for the
- *  * specific language governing permissions and limitations
- *  * under the License.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 package io.streamnative.function.mesh.proxy.rest.api;
 
 import io.kubernetes.client.openapi.ApiClient;
@@ -62,88 +59,99 @@ import java.util.function.Supplier;
 import static org.powermock.api.mockito.PowerMockito.spy;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Response.class, RealResponseBody.class, FunctionCommon.class, ConnectorUtils.class, FileUtils.class})
+@PrepareForTest({
+    Response.class,
+    RealResponseBody.class,
+    FunctionCommon.class,
+    ConnectorUtils.class,
+    FileUtils.class
+})
 @PowerMockIgnore({"javax.management.*"})
 public class SourcesImpTest {
     @Test
-    public void testRegisterSource() throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
-        String testBody = "{\n" +
-                "    \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n" +
-                "    \"kind\": \"Source\",\n" +
-                "    \"metadata\": {\n" +
-                "        \"annotations\": {\n" +
-                "            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"cloud.streamnative.io/v1alpha1\\\",\\\"kind\\\":\\\"Source\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"source-sample\\\",\\\"namespace\\\":\\\"default\\\"},\\\"spec\\\":{\\\"className\\\":\\\"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\\\",\\\"clusterName\\\":\\\"test-pulsar\\\",\\\"java\\\":{\\\"jar\\\":\\\"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\\\",\\\"jarLocation\\\":\\\"\\\"},\\\"maxReplicas\\\":1,\\\"output\\\":{\\\"producerConf\\\":{\\\"maxPendingMessages\\\":1000,\\\"maxPendingMessagesAcrossPartitions\\\":50000,\\\"useThreadLocalProducers\\\":true},\\\"topic\\\":\\\"persistent://public/default/destination\\\"},\\\"pulsar\\\":{\\\"pulsarConfig\\\":\\\"test-source\\\"},\\\"replicas\\\":1,\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"0.2\\\",\\\"memory\\\":\\\"1.1G\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"0.1\\\",\\\"memory\\\":\\\"1G\\\"}},\\\"sinkType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\",\\\"sourceConfig\\\":{\\\"database.whitelist\\\":\\\"inventory\\\",\\\"mongodb.hosts\\\":\\\"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\\\",\\\"mongodb.name\\\":\\\"dbserver1\\\",\\\"mongodb.password\\\":\\\"dbz\\\",\\\"mongodb.task.id\\\":\\\"1\\\",\\\"mongodb.user\\\":\\\"debezium\\\",\\\"pulsar.service.url\\\":\\\"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\\\"},\\\"sourceType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\"}}\\n\"\n" +
-                "        },\n" +
-                "        \"creationTimestamp\": \"2020-11-27T07:07:57Z\",\n" +
-                "        \"generation\": 1,\n" +
-                "        \"name\": \"source-sample\",\n" +
-                "        \"namespace\": \"default\",\n" +
-                "        \"resourceVersion\": \"881034\",\n" +
-                "        \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/sources/source-sample\",\n" +
-                "        \"uid\": \"8aed505e-38e4-4a8b-93f6-6f753dbf7ebc\"\n" +
-                "    },\n" +
-                "    \"spec\": {\n" +
-                "        \"className\": \"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\",\n" +
-                "        \"clusterName\": \"test-pulsar\",\n" +
-                "        \"java\": {\n" +
-                "            \"jar\": \"pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\",\n" +
-                "            \"jarLocation\": \"public/default/source-sample\"\n" +
-                "        },\n" +
-                "        \"maxReplicas\": 1,\n" +
-                "        \"output\": {\n" +
-                "            \"producerConf\": {\n" +
-                "                \"maxPendingMessages\": 1000,\n" +
-                "                \"maxPendingMessagesAcrossPartitions\": 50000,\n" +
-                "                \"useThreadLocalProducers\": true\n" +
-                "            },\n" +
-                "            \"topic\": \"persistent://public/default/destination\"\n" +
-                "        },\n" +
-                "        \"pulsar\": {\n" +
-                "            \"pulsarConfig\": \"test-source\"\n" +
-                "        },\n" +
-                "        \"replicas\": 1,\n" +
-                "        \"resources\": {\n" +
-                "            \"limits\": {\n" +
-                "                \"cpu\": \"0.1\",\n" +
-                "                \"memory\": \"1\"\n" +
-                "            },\n" +
-                "            \"requests\": {\n" +
-                "                \"cpu\": \"0.1\",\n" +
-                "                \"memory\": \"1\"\n" +
-                "            }\n" +
-                "        },\n" +
-                "        \"sinkType\": \"org.apache.pulsar.common.schema.KeyValue\",\n" +
-                "        \"sourceConfig\": {\n" +
-                "            \"name\": \"test-sourceConfig\"" +
-                "        },\n" +
-                "        \"sourceType\": \"org.apache.pulsar.common.schema.KeyValue\"\n" +
-                "    },\n" +
-                "    \"status\": {\n" +
-                "        \"conditions\": {\n" +
-                "            \"HorizontalPodAutoscaler\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"HPAReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            },\n" +
-                "            \"Service\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"ServiceReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            },\n" +
-                "            \"StatefulSet\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"StatefulSetReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            }\n" +
-                "        },\n" +
-                "        \"replicas\": 1,\n" +
-                "        \"selector\": \"component=source,name=source-sample,namespace=default\"\n" +
-                "    }\n" +
-                "}";
-        FunctionMeshProxyService functionMeshProxyService = PowerMockito.mock(FunctionMeshProxyService.class);
-        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier = () -> functionMeshProxyService;
+    public void testRegisterSource()
+            throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
+        String testBody =
+                "{\n"
+                        + "    \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n"
+                        + "    \"kind\": \"Source\",\n"
+                        + "    \"metadata\": {\n"
+                        + "        \"annotations\": {\n"
+                        + "            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"cloud.streamnative.io/v1alpha1\\\",\\\"kind\\\":\\\"Source\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"source-sample\\\",\\\"namespace\\\":\\\"default\\\"},\\\"spec\\\":{\\\"className\\\":\\\"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\\\",\\\"clusterName\\\":\\\"test-pulsar\\\",\\\"java\\\":{\\\"jar\\\":\\\"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\\\",\\\"jarLocation\\\":\\\"\\\"},\\\"maxReplicas\\\":1,\\\"output\\\":{\\\"producerConf\\\":{\\\"maxPendingMessages\\\":1000,\\\"maxPendingMessagesAcrossPartitions\\\":50000,\\\"useThreadLocalProducers\\\":true},\\\"topic\\\":\\\"persistent://public/default/destination\\\"},\\\"pulsar\\\":{\\\"pulsarConfig\\\":\\\"test-source\\\"},\\\"replicas\\\":1,\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"0.2\\\",\\\"memory\\\":\\\"1.1G\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"0.1\\\",\\\"memory\\\":\\\"1G\\\"}},\\\"sinkType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\",\\\"sourceConfig\\\":{\\\"database.whitelist\\\":\\\"inventory\\\",\\\"mongodb.hosts\\\":\\\"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\\\",\\\"mongodb.name\\\":\\\"dbserver1\\\",\\\"mongodb.password\\\":\\\"dbz\\\",\\\"mongodb.task.id\\\":\\\"1\\\",\\\"mongodb.user\\\":\\\"debezium\\\",\\\"pulsar.service.url\\\":\\\"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\\\"},\\\"sourceType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\"}}\\n\"\n"
+                        + "        },\n"
+                        + "        \"creationTimestamp\": \"2020-11-27T07:07:57Z\",\n"
+                        + "        \"generation\": 1,\n"
+                        + "        \"name\": \"source-sample\",\n"
+                        + "        \"namespace\": \"default\",\n"
+                        + "        \"resourceVersion\": \"881034\",\n"
+                        + "        \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/sources/source-sample\",\n"
+                        + "        \"uid\": \"8aed505e-38e4-4a8b-93f6-6f753dbf7ebc\"\n"
+                        + "    },\n"
+                        + "    \"spec\": {\n"
+                        + "        \"className\": \"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\",\n"
+                        + "        \"clusterName\": \"test-pulsar\",\n"
+                        + "        \"java\": {\n"
+                        + "            \"jar\": \"pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\",\n"
+                        + "            \"jarLocation\": \"public/default/source-sample\"\n"
+                        + "        },\n"
+                        + "        \"maxReplicas\": 1,\n"
+                        + "        \"output\": {\n"
+                        + "            \"producerConf\": {\n"
+                        + "                \"maxPendingMessages\": 1000,\n"
+                        + "                \"maxPendingMessagesAcrossPartitions\": 50000,\n"
+                        + "                \"useThreadLocalProducers\": true\n"
+                        + "            },\n"
+                        + "            \"topic\": \"persistent://public/default/destination\"\n"
+                        + "        },\n"
+                        + "        \"pulsar\": {\n"
+                        + "            \"pulsarConfig\": \"test-source\"\n"
+                        + "        },\n"
+                        + "        \"replicas\": 1,\n"
+                        + "        \"resources\": {\n"
+                        + "            \"limits\": {\n"
+                        + "                \"cpu\": \"0.1\",\n"
+                        + "                \"memory\": \"1\"\n"
+                        + "            },\n"
+                        + "            \"requests\": {\n"
+                        + "                \"cpu\": \"0.1\",\n"
+                        + "                \"memory\": \"1\"\n"
+                        + "            }\n"
+                        + "        },\n"
+                        + "        \"sinkType\": \"org.apache.pulsar.common.schema.KeyValue\",\n"
+                        + "        \"sourceConfig\": {\n"
+                        + "            \"name\": \"test-sourceConfig\""
+                        + "        },\n"
+                        + "        \"sourceType\": \"org.apache.pulsar.common.schema.KeyValue\"\n"
+                        + "    },\n"
+                        + "    \"status\": {\n"
+                        + "        \"conditions\": {\n"
+                        + "            \"HorizontalPodAutoscaler\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"HPAReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            },\n"
+                        + "            \"Service\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"ServiceReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            },\n"
+                        + "            \"StatefulSet\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"StatefulSetReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            }\n"
+                        + "        },\n"
+                        + "        \"replicas\": 1,\n"
+                        + "        \"selector\": \"component=source,name=source-sample,namespace=default\"\n"
+                        + "    }\n"
+                        + "}";
+        FunctionMeshProxyService functionMeshProxyService =
+                PowerMockito.mock(FunctionMeshProxyService.class);
+        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier =
+                () -> functionMeshProxyService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
+                .thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -177,7 +185,8 @@ public class SourcesImpTest {
         PowerMockito.mockStatic(FunctionCommon.class);
         PowerMockito.mockStatic(ConnectorUtils.class);
         PowerMockito.mockStatic(FileUtils.class);
-        PowerMockito.when(FunctionCommon.extractNarClassLoader(null, narFile, null)).thenReturn(narClassLoader);
+        PowerMockito.when(FunctionCommon.extractNarClassLoader(null, narFile, null))
+                .thenReturn(narClassLoader);
         PowerMockito.when(FunctionCommon.createPkgTempFile()).thenReturn(narFile);
         PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
         PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
@@ -196,21 +205,30 @@ public class SourcesImpTest {
         sourceConfig.setResources(resources);
         sourceConfig.setCustomRuntimeOptions(customRuntimeOptions);
 
-        V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
-                componentName, null, uploadedInputStream, sourceConfig);
-
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()
-                .createNamespacedCustomObjectCall(
+        V1alpha1Source v1alpha1Source =
+                SourcesUtil.createV1alpha1SourceFromSourceConfig(
+                        kind,
                         group,
                         version,
-                        namespace,
-                        plural,
-                        v1alpha1Source,
+                        componentName,
                         null,
-                        null,
-                        null,
-                        null
-                )).thenReturn(call);
+                        uploadedInputStream,
+                        sourceConfig);
+
+        PowerMockito.when(
+                        functionMeshProxyService
+                                .getCustomObjectsApi()
+                                .createNamespacedCustomObjectCall(
+                                        group,
+                                        version,
+                                        namespace,
+                                        plural,
+                                        v1alpha1Source,
+                                        null,
+                                        null,
+                                        null,
+                                        null))
+                .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
@@ -221,95 +239,107 @@ public class SourcesImpTest {
 
         SourcesImpl sources = spy(new SourcesImpl(functionMeshProxyServiceSupplier));
         try {
-            sources.registerSource(tenant, namespace, componentName, uploadedInputStream, null, null, sourceConfig, null, null);
+            sources.registerSource(
+                    tenant,
+                    namespace,
+                    componentName,
+                    uploadedInputStream,
+                    null,
+                    null,
+                    sourceConfig,
+                    null,
+                    null);
         } catch (Exception exception) {
             Assert.fail("No exception, but got error message:" + exception.getMessage());
         }
     }
 
     @Test
-    public void testUpdateSource() throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
-        String getBody = "{\n" +
-                "    \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n" +
-                "    \"kind\": \"Source\",\n" +
-                "    \"metadata\": {\n" +
-                "        \"resourceVersion\": \"881033\"" +
-                "    }\n" +
-                "}";
+    public void testUpdateSource()
+            throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
+        String getBody =
+                "{\n"
+                        + "    \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n"
+                        + "    \"kind\": \"Source\",\n"
+                        + "    \"metadata\": {\n"
+                        + "        \"resourceVersion\": \"881033\""
+                        + "    }\n"
+                        + "}";
 
-        String replaceBody = "{\n" +
-                "    \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n" +
-                "    \"kind\": \"Source\",\n" +
-                "    \"metadata\": {\n" +
-                "        \"annotations\": {\n" +
-                "            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"cloud.streamnative.io/v1alpha1\\\",\\\"kind\\\":\\\"Source\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"source-sample\\\",\\\"namespace\\\":\\\"default\\\"},\\\"spec\\\":{\\\"className\\\":\\\"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\\\",\\\"clusterName\\\":\\\"test-pulsar\\\",\\\"java\\\":{\\\"jar\\\":\\\"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\\\",\\\"jarLocation\\\":\\\"\\\"},\\\"maxReplicas\\\":1,\\\"output\\\":{\\\"producerConf\\\":{\\\"maxPendingMessages\\\":1000,\\\"maxPendingMessagesAcrossPartitions\\\":50000,\\\"useThreadLocalProducers\\\":true},\\\"topic\\\":\\\"persistent://public/default/destination\\\"},\\\"pulsar\\\":{\\\"pulsarConfig\\\":\\\"test-source\\\"},\\\"replicas\\\":1,\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"0.2\\\",\\\"memory\\\":\\\"1.1G\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"0.1\\\",\\\"memory\\\":\\\"1G\\\"}},\\\"sinkType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\",\\\"sourceConfig\\\":{\\\"database.whitelist\\\":\\\"inventory\\\",\\\"mongodb.hosts\\\":\\\"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\\\",\\\"mongodb.name\\\":\\\"dbserver1\\\",\\\"mongodb.password\\\":\\\"dbz\\\",\\\"mongodb.task.id\\\":\\\"1\\\",\\\"mongodb.user\\\":\\\"debezium\\\",\\\"pulsar.service.url\\\":\\\"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\\\"},\\\"sourceType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\"}}\\n\"\n" +
-                "        },\n" +
-                "        \"creationTimestamp\": \"2020-11-27T07:07:57Z\",\n" +
-                "        \"generation\": 1,\n" +
-                "        \"name\": \"source-sample\",\n" +
-                "        \"namespace\": \"default\",\n" +
-                "        \"resourceVersion\": \"881034\",\n" +
-                "        \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/sources/source-sample\",\n" +
-                "        \"uid\": \"8aed505e-38e4-4a8b-93f6-6f753dbf7ebc\"\n" +
-                "    },\n" +
-                "    \"spec\": {\n" +
-                "        \"className\": \"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\",\n" +
-                "        \"clusterName\": \"test-pulsar\",\n" +
-                "        \"java\": {\n" +
-                "            \"jar\": \"pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\",\n" +
-                "            \"jarLocation\": \"public/default/source-sample\"\n" +
-                "        },\n" +
-                "        \"maxReplicas\": 1,\n" +
-                "        \"output\": {\n" +
-                "            \"producerConf\": {\n" +
-                "                \"maxPendingMessages\": 1000,\n" +
-                "                \"maxPendingMessagesAcrossPartitions\": 50000,\n" +
-                "                \"useThreadLocalProducers\": true\n" +
-                "            },\n" +
-                "            \"topic\": \"persistent://public/default/destination\"\n" +
-                "        },\n" +
-                "        \"pulsar\": {\n" +
-                "            \"pulsarConfig\": \"test-source\"\n" +
-                "        },\n" +
-                "        \"replicas\": 1,\n" +
-                "        \"resources\": {\n" +
-                "            \"limits\": {\n" +
-                "                \"cpu\": \"0.1\",\n" +
-                "                \"memory\": \"1\"\n" +
-                "            },\n" +
-                "            \"requests\": {\n" +
-                "                \"cpu\": \"0.1\",\n" +
-                "                \"memory\": \"1\"\n" +
-                "            }\n" +
-                "        },\n" +
-                "        \"sinkType\": \"org.apache.pulsar.common.schema.KeyValue\",\n" +
-                "        \"sourceConfig\": {\n" +
-                "            \"name\": \"test-sourceConfig\"" +
-                "        },\n" +
-                "        \"sourceType\": \"org.apache.pulsar.common.schema.KeyValue\"\n" +
-                "    },\n" +
-                "    \"status\": {\n" +
-                "        \"conditions\": {\n" +
-                "            \"HorizontalPodAutoscaler\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"HPAReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            },\n" +
-                "            \"Service\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"ServiceReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            },\n" +
-                "            \"StatefulSet\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"StatefulSetReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            }\n" +
-                "        },\n" +
-                "        \"replicas\": 1,\n" +
-                "        \"selector\": \"component=source,name=source-sample,namespace=default\"\n" +
-                "    }\n" +
-                "}";
+        String replaceBody =
+                "{\n"
+                        + "    \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n"
+                        + "    \"kind\": \"Source\",\n"
+                        + "    \"metadata\": {\n"
+                        + "        \"annotations\": {\n"
+                        + "            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"cloud.streamnative.io/v1alpha1\\\",\\\"kind\\\":\\\"Source\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"source-sample\\\",\\\"namespace\\\":\\\"default\\\"},\\\"spec\\\":{\\\"className\\\":\\\"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\\\",\\\"clusterName\\\":\\\"test-pulsar\\\",\\\"java\\\":{\\\"jar\\\":\\\"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\\\",\\\"jarLocation\\\":\\\"\\\"},\\\"maxReplicas\\\":1,\\\"output\\\":{\\\"producerConf\\\":{\\\"maxPendingMessages\\\":1000,\\\"maxPendingMessagesAcrossPartitions\\\":50000,\\\"useThreadLocalProducers\\\":true},\\\"topic\\\":\\\"persistent://public/default/destination\\\"},\\\"pulsar\\\":{\\\"pulsarConfig\\\":\\\"test-source\\\"},\\\"replicas\\\":1,\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"0.2\\\",\\\"memory\\\":\\\"1.1G\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"0.1\\\",\\\"memory\\\":\\\"1G\\\"}},\\\"sinkType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\",\\\"sourceConfig\\\":{\\\"database.whitelist\\\":\\\"inventory\\\",\\\"mongodb.hosts\\\":\\\"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\\\",\\\"mongodb.name\\\":\\\"dbserver1\\\",\\\"mongodb.password\\\":\\\"dbz\\\",\\\"mongodb.task.id\\\":\\\"1\\\",\\\"mongodb.user\\\":\\\"debezium\\\",\\\"pulsar.service.url\\\":\\\"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\\\"},\\\"sourceType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\"}}\\n\"\n"
+                        + "        },\n"
+                        + "        \"creationTimestamp\": \"2020-11-27T07:07:57Z\",\n"
+                        + "        \"generation\": 1,\n"
+                        + "        \"name\": \"source-sample\",\n"
+                        + "        \"namespace\": \"default\",\n"
+                        + "        \"resourceVersion\": \"881034\",\n"
+                        + "        \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/sources/source-sample\",\n"
+                        + "        \"uid\": \"8aed505e-38e4-4a8b-93f6-6f753dbf7ebc\"\n"
+                        + "    },\n"
+                        + "    \"spec\": {\n"
+                        + "        \"className\": \"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\",\n"
+                        + "        \"clusterName\": \"test-pulsar\",\n"
+                        + "        \"java\": {\n"
+                        + "            \"jar\": \"pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\",\n"
+                        + "            \"jarLocation\": \"public/default/source-sample\"\n"
+                        + "        },\n"
+                        + "        \"maxReplicas\": 1,\n"
+                        + "        \"output\": {\n"
+                        + "            \"producerConf\": {\n"
+                        + "                \"maxPendingMessages\": 1000,\n"
+                        + "                \"maxPendingMessagesAcrossPartitions\": 50000,\n"
+                        + "                \"useThreadLocalProducers\": true\n"
+                        + "            },\n"
+                        + "            \"topic\": \"persistent://public/default/destination\"\n"
+                        + "        },\n"
+                        + "        \"pulsar\": {\n"
+                        + "            \"pulsarConfig\": \"test-source\"\n"
+                        + "        },\n"
+                        + "        \"replicas\": 1,\n"
+                        + "        \"resources\": {\n"
+                        + "            \"limits\": {\n"
+                        + "                \"cpu\": \"0.1\",\n"
+                        + "                \"memory\": \"1\"\n"
+                        + "            },\n"
+                        + "            \"requests\": {\n"
+                        + "                \"cpu\": \"0.1\",\n"
+                        + "                \"memory\": \"1\"\n"
+                        + "            }\n"
+                        + "        },\n"
+                        + "        \"sinkType\": \"org.apache.pulsar.common.schema.KeyValue\",\n"
+                        + "        \"sourceConfig\": {\n"
+                        + "            \"name\": \"test-sourceConfig\""
+                        + "        },\n"
+                        + "        \"sourceType\": \"org.apache.pulsar.common.schema.KeyValue\"\n"
+                        + "    },\n"
+                        + "    \"status\": {\n"
+                        + "        \"conditions\": {\n"
+                        + "            \"HorizontalPodAutoscaler\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"HPAReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            },\n"
+                        + "            \"Service\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"ServiceReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            },\n"
+                        + "            \"StatefulSet\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"StatefulSetReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            }\n"
+                        + "        },\n"
+                        + "        \"replicas\": 1,\n"
+                        + "        \"selector\": \"component=source,name=source-sample,namespace=default\"\n"
+                        + "    }\n"
+                        + "}";
 
         String group = "cloud.streamnative.io";
         String plural = "sources";
@@ -339,7 +369,8 @@ public class SourcesImpTest {
         PowerMockito.mockStatic(FunctionCommon.class);
         PowerMockito.mockStatic(ConnectorUtils.class);
         PowerMockito.mockStatic(FileUtils.class);
-        PowerMockito.when(FunctionCommon.extractNarClassLoader(null, narFile, null)).thenReturn(narClassLoader);
+        PowerMockito.when(FunctionCommon.extractNarClassLoader(null, narFile, null))
+                .thenReturn(narClassLoader);
         PowerMockito.when(FunctionCommon.createPkgTempFile()).thenReturn(narFile);
         PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
         PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
@@ -358,10 +389,13 @@ public class SourcesImpTest {
         sourceConfig.setResources(resources);
         sourceConfig.setCustomRuntimeOptions(customRuntimeOptions);
 
-        FunctionMeshProxyService functionMeshProxyService = PowerMockito.mock(FunctionMeshProxyService.class);
-        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier = () -> functionMeshProxyService;
+        FunctionMeshProxyService functionMeshProxyService =
+                PowerMockito.mock(FunctionMeshProxyService.class);
+        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier =
+                () -> functionMeshProxyService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
+                .thenReturn(customObjectsApi);
 
         Call getCall = PowerMockito.mock(Call.class);
         Response getResponse = PowerMockito.mock(Response.class);
@@ -385,122 +419,142 @@ public class SourcesImpTest {
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()
-                .getNamespacedCustomObjectCall(
+        PowerMockito.when(
+                        functionMeshProxyService
+                                .getCustomObjectsApi()
+                                .getNamespacedCustomObjectCall(
+                                        group, version, namespace, plural, componentName, null))
+                .thenReturn(getCall);
+
+        V1alpha1Source v1alpha1Source =
+                SourcesUtil.createV1alpha1SourceFromSourceConfig(
+                        kind,
                         group,
                         version,
-                        namespace,
-                        plural,
                         componentName,
-                        null
-                )).thenReturn(getCall);
-
-        V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group,
-                version, componentName, null, uploadedInputStream, sourceConfig);
+                        null,
+                        uploadedInputStream,
+                        sourceConfig);
         v1alpha1Source.getMetadata().setResourceVersion("881033");
 
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()
-                .replaceNamespacedCustomObjectCall(
-                        group,
-                        version,
-                        namespace,
-                        plural,
-                        componentName,
-                        v1alpha1Source,
-                        null,
-                        null,
-                        null
-                )).thenReturn(getCall);
+        PowerMockito.when(
+                        functionMeshProxyService
+                                .getCustomObjectsApi()
+                                .replaceNamespacedCustomObjectCall(
+                                        group,
+                                        version,
+                                        namespace,
+                                        plural,
+                                        componentName,
+                                        v1alpha1Source,
+                                        null,
+                                        null,
+                                        null))
+                .thenReturn(getCall);
 
         SourcesImpl sources = spy(new SourcesImpl(functionMeshProxyServiceSupplier));
 
         try {
-            sources.updateSource(tenant, namespace, componentName, uploadedInputStream, null, null, sourceConfig,
-                    null, null, null);
+            sources.updateSource(
+                    tenant,
+                    namespace,
+                    componentName,
+                    uploadedInputStream,
+                    null,
+                    null,
+                    sourceConfig,
+                    null,
+                    null,
+                    null);
         } catch (Exception exception) {
             Assert.fail("Expected no exception to be thrown but got" + exception.getMessage());
         }
     }
 
     @Test
-    public void testGetSourceStatus() throws ClassNotFoundException, IOException, URISyntaxException, ApiException {
-        String testBody = "{\n" +
-                "    \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n" +
-                "    \"kind\": \"Source\",\n" +
-                "    \"metadata\": {\n" +
-                "        \"annotations\": {\n" +
-                "            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"cloud.streamnative.io/v1alpha1\\\",\\\"kind\\\":\\\"Source\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"source-sample\\\",\\\"namespace\\\":\\\"default\\\"},\\\"spec\\\":{\\\"className\\\":\\\"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\\\",\\\"clusterName\\\":\\\"test-pulsar\\\",\\\"java\\\":{\\\"jar\\\":\\\"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\\\",\\\"jarLocation\\\":\\\"\\\"},\\\"maxReplicas\\\":1,\\\"output\\\":{\\\"producerConf\\\":{\\\"maxPendingMessages\\\":1000,\\\"maxPendingMessagesAcrossPartitions\\\":50000,\\\"useThreadLocalProducers\\\":true},\\\"topic\\\":\\\"persistent://public/default/destination\\\"},\\\"pulsar\\\":{\\\"pulsarConfig\\\":\\\"test-source\\\"},\\\"replicas\\\":1,\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"0.2\\\",\\\"memory\\\":\\\"1.1G\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"0.1\\\",\\\"memory\\\":\\\"1G\\\"}},\\\"sinkType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\",\\\"sourceConfig\\\":{\\\"database.whitelist\\\":\\\"inventory\\\",\\\"mongodb.hosts\\\":\\\"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\\\",\\\"mongodb.name\\\":\\\"dbserver1\\\",\\\"mongodb.password\\\":\\\"dbz\\\",\\\"mongodb.task.id\\\":\\\"1\\\",\\\"mongodb.user\\\":\\\"debezium\\\",\\\"pulsar.service.url\\\":\\\"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\\\"},\\\"sourceType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\"}}\\n\"\n" +
-                "        },\n" +
-                "        \"creationTimestamp\": \"2020-11-27T07:07:57Z\",\n" +
-                "        \"generation\": 1,\n" +
-                "        \"name\": \"source-mongodb-sample\",\n" +
-                "        \"namespace\": \"default\",\n" +
-                "        \"resourceVersion\": \"881034\",\n" +
-                "        \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/sources/source-sample\",\n" +
-                "        \"uid\": \"8aed505e-38e4-4a8b-93f6-6f753dbf7ebc\"\n" +
-                "    },\n" +
-                "    \"spec\": {\n" +
-                "        \"className\": \"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\",\n" +
-                "        \"clusterName\": \"test-pulsar\",\n" +
-                "        \"java\": {\n" +
-                "            \"jar\": \"pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\",\n" +
-                "            \"jarLocation\": \"public/default/source-sample\"\n" +
-                "        },\n" +
-                "        \"maxReplicas\": 1,\n" +
-                "        \"output\": {\n" +
-                "            \"producerConf\": {\n" +
-                "                \"maxPendingMessages\": 1000,\n" +
-                "                \"maxPendingMessagesAcrossPartitions\": 50000,\n" +
-                "                \"useThreadLocalProducers\": true\n" +
-                "            },\n" +
-                "            \"topic\": \"persistent://public/default/destination\"\n" +
-                "        },\n" +
-                "        \"pulsar\": {\n" +
-                "            \"pulsarConfig\": \"test-source\"\n" +
-                "        },\n" +
-                "        \"replicas\": 1,\n" +
-                "        \"resources\": {\n" +
-                "            \"limits\": {\n" +
-                "                \"cpu\": \"0.1\",\n" +
-                "                \"memory\": \"1\"\n" +
-                "            },\n" +
-                "            \"requests\": {\n" +
-                "                \"cpu\": \"0.1\",\n" +
-                "                \"memory\": \"1\"\n" +
-                "            }\n" +
-                "        },\n" +
-                "        \"sinkType\": \"org.apache.pulsar.common.schema.KeyValue\",\n" +
-                "        \"sourceConfig\": {\n" +
-                "            \"name\": \"test-sourceConfig\"" +
-                "        },\n" +
-                "        \"sourceType\": \"org.apache.pulsar.common.schema.KeyValue\"\n" +
-                "    },\n" +
-                "    \"status\": {\n" +
-                "        \"conditions\": {\n" +
-                "            \"HorizontalPodAutoscaler\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"HPAReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            },\n" +
-                "            \"Service\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"ServiceReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            },\n" +
-                "            \"StatefulSet\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"StatefulSetReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            }\n" +
-                "        },\n" +
-                "        \"replicas\": 1,\n" +
-                "        \"selector\": \"component=source,name=source-sample,namespace=default\"\n" +
-                "    }\n" +
-                "}";
-        FunctionMeshProxyService functionMeshProxyService = PowerMockito.mock(FunctionMeshProxyService.class);
-        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier = () -> functionMeshProxyService;
+    public void testGetSourceStatus()
+            throws ClassNotFoundException, IOException, URISyntaxException, ApiException {
+        String testBody =
+                "{\n"
+                        + "    \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n"
+                        + "    \"kind\": \"Source\",\n"
+                        + "    \"metadata\": {\n"
+                        + "        \"annotations\": {\n"
+                        + "            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"cloud.streamnative.io/v1alpha1\\\",\\\"kind\\\":\\\"Source\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"source-sample\\\",\\\"namespace\\\":\\\"default\\\"},\\\"spec\\\":{\\\"className\\\":\\\"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\\\",\\\"clusterName\\\":\\\"test-pulsar\\\",\\\"java\\\":{\\\"jar\\\":\\\"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\\\",\\\"jarLocation\\\":\\\"\\\"},\\\"maxReplicas\\\":1,\\\"output\\\":{\\\"producerConf\\\":{\\\"maxPendingMessages\\\":1000,\\\"maxPendingMessagesAcrossPartitions\\\":50000,\\\"useThreadLocalProducers\\\":true},\\\"topic\\\":\\\"persistent://public/default/destination\\\"},\\\"pulsar\\\":{\\\"pulsarConfig\\\":\\\"test-source\\\"},\\\"replicas\\\":1,\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"0.2\\\",\\\"memory\\\":\\\"1.1G\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"0.1\\\",\\\"memory\\\":\\\"1G\\\"}},\\\"sinkType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\",\\\"sourceConfig\\\":{\\\"database.whitelist\\\":\\\"inventory\\\",\\\"mongodb.hosts\\\":\\\"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\\\",\\\"mongodb.name\\\":\\\"dbserver1\\\",\\\"mongodb.password\\\":\\\"dbz\\\",\\\"mongodb.task.id\\\":\\\"1\\\",\\\"mongodb.user\\\":\\\"debezium\\\",\\\"pulsar.service.url\\\":\\\"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\\\"},\\\"sourceType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\"}}\\n\"\n"
+                        + "        },\n"
+                        + "        \"creationTimestamp\": \"2020-11-27T07:07:57Z\",\n"
+                        + "        \"generation\": 1,\n"
+                        + "        \"name\": \"source-mongodb-sample\",\n"
+                        + "        \"namespace\": \"default\",\n"
+                        + "        \"resourceVersion\": \"881034\",\n"
+                        + "        \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/sources/source-sample\",\n"
+                        + "        \"uid\": \"8aed505e-38e4-4a8b-93f6-6f753dbf7ebc\"\n"
+                        + "    },\n"
+                        + "    \"spec\": {\n"
+                        + "        \"className\": \"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\",\n"
+                        + "        \"clusterName\": \"test-pulsar\",\n"
+                        + "        \"java\": {\n"
+                        + "            \"jar\": \"pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\",\n"
+                        + "            \"jarLocation\": \"public/default/source-sample\"\n"
+                        + "        },\n"
+                        + "        \"maxReplicas\": 1,\n"
+                        + "        \"output\": {\n"
+                        + "            \"producerConf\": {\n"
+                        + "                \"maxPendingMessages\": 1000,\n"
+                        + "                \"maxPendingMessagesAcrossPartitions\": 50000,\n"
+                        + "                \"useThreadLocalProducers\": true\n"
+                        + "            },\n"
+                        + "            \"topic\": \"persistent://public/default/destination\"\n"
+                        + "        },\n"
+                        + "        \"pulsar\": {\n"
+                        + "            \"pulsarConfig\": \"test-source\"\n"
+                        + "        },\n"
+                        + "        \"replicas\": 1,\n"
+                        + "        \"resources\": {\n"
+                        + "            \"limits\": {\n"
+                        + "                \"cpu\": \"0.1\",\n"
+                        + "                \"memory\": \"1\"\n"
+                        + "            },\n"
+                        + "            \"requests\": {\n"
+                        + "                \"cpu\": \"0.1\",\n"
+                        + "                \"memory\": \"1\"\n"
+                        + "            }\n"
+                        + "        },\n"
+                        + "        \"sinkType\": \"org.apache.pulsar.common.schema.KeyValue\",\n"
+                        + "        \"sourceConfig\": {\n"
+                        + "            \"name\": \"test-sourceConfig\""
+                        + "        },\n"
+                        + "        \"sourceType\": \"org.apache.pulsar.common.schema.KeyValue\"\n"
+                        + "    },\n"
+                        + "    \"status\": {\n"
+                        + "        \"conditions\": {\n"
+                        + "            \"HorizontalPodAutoscaler\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"HPAReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            },\n"
+                        + "            \"Service\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"ServiceReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            },\n"
+                        + "            \"StatefulSet\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"StatefulSetReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            }\n"
+                        + "        },\n"
+                        + "        \"replicas\": 1,\n"
+                        + "        \"selector\": \"component=source,name=source-sample,namespace=default\"\n"
+                        + "    }\n"
+                        + "}";
+        FunctionMeshProxyService functionMeshProxyService =
+                PowerMockito.mock(FunctionMeshProxyService.class);
+        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier =
+                () -> functionMeshProxyService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
+                .thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -513,15 +567,12 @@ public class SourcesImpTest {
         String namespace = "default";
         String componentName = "source-mongodb-sample";
 
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()
-                .getNamespacedCustomObjectCall(
-                        group,
-                        version,
-                        namespace,
-                        plural,
-                        componentName,
-                        null
-                )).thenReturn(call);
+        PowerMockito.when(
+                        functionMeshProxyService
+                                .getCustomObjectsApi()
+                                .getNamespacedCustomObjectCall(
+                                        group, version, namespace, plural, componentName, null))
+                .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
@@ -531,12 +582,15 @@ public class SourcesImpTest {
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
         SourcesImpl sources = spy(new SourcesImpl(functionMeshProxyServiceSupplier));
-        SourceStatus sourceStatus = sources.getSourceStatus(tenant, namespace, componentName, null, null, null);
+        SourceStatus sourceStatus =
+                sources.getSourceStatus(tenant, namespace, componentName, null, null, null);
 
         SourceStatus expectedSourceStatus = new SourceStatus();
-        SourceStatus.SourceInstanceStatus expectedSourceInstanceStatus = new SourceStatus.SourceInstanceStatus();
-        SourceStatus.SourceInstanceStatus.SourceInstanceStatusData expectedSourceInstanceStatusData =
-                new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
+        SourceStatus.SourceInstanceStatus expectedSourceInstanceStatus =
+                new SourceStatus.SourceInstanceStatus();
+        SourceStatus.SourceInstanceStatus.SourceInstanceStatusData
+                expectedSourceInstanceStatusData =
+                        new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
         expectedSourceInstanceStatusData.setRunning(true);
         expectedSourceInstanceStatusData.setWorkerId("test-pulsar");
         expectedSourceInstanceStatus.setStatus(expectedSourceInstanceStatusData);
@@ -547,84 +601,89 @@ public class SourcesImpTest {
     }
 
     @Test
-    public void testGetSourceInfo() throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
-        String testBody = "{\n" +
-                "    \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n" +
-                "    \"kind\": \"Source\",\n" +
-                "    \"metadata\": {\n" +
-                "        \"annotations\": {\n" +
-                "            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"cloud.streamnative.io/v1alpha1\\\",\\\"kind\\\":\\\"Source\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"source-sample\\\",\\\"namespace\\\":\\\"default\\\"},\\\"spec\\\":{\\\"className\\\":\\\"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\\\",\\\"clusterName\\\":\\\"test-pulsar\\\",\\\"java\\\":{\\\"jar\\\":\\\"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\\\",\\\"jarLocation\\\":\\\"\\\"},\\\"maxReplicas\\\":1,\\\"output\\\":{\\\"producerConf\\\":{\\\"maxPendingMessages\\\":1000,\\\"maxPendingMessagesAcrossPartitions\\\":50000,\\\"useThreadLocalProducers\\\":true},\\\"topic\\\":\\\"persistent://public/default/destination\\\"},\\\"pulsar\\\":{\\\"pulsarConfig\\\":\\\"test-source\\\"},\\\"replicas\\\":1,\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"0.2\\\",\\\"memory\\\":\\\"1.1G\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"0.1\\\",\\\"memory\\\":\\\"1G\\\"}},\\\"sinkType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\",\\\"sourceConfig\\\":{\\\"database.whitelist\\\":\\\"inventory\\\",\\\"mongodb.hosts\\\":\\\"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\\\",\\\"mongodb.name\\\":\\\"dbserver1\\\",\\\"mongodb.password\\\":\\\"dbz\\\",\\\"mongodb.task.id\\\":\\\"1\\\",\\\"mongodb.user\\\":\\\"debezium\\\",\\\"pulsar.service.url\\\":\\\"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\\\"},\\\"sourceType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\"}}\\n\"\n" +
-                "        },\n" +
-                "        \"creationTimestamp\": \"2020-11-27T07:07:57Z\",\n" +
-                "        \"generation\": 1,\n" +
-                "        \"name\": \"source-sample\",\n" +
-                "        \"namespace\": \"default\",\n" +
-                "        \"resourceVersion\": \"881034\",\n" +
-                "        \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/sources/source-sample\",\n" +
-                "        \"uid\": \"8aed505e-38e4-4a8b-93f6-6f753dbf7ebc\"\n" +
-                "    },\n" +
-                "    \"spec\": {\n" +
-                "        \"className\": \"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\",\n" +
-                "        \"clusterName\": \"test-pulsar\",\n" +
-                "        \"java\": {\n" +
-                "            \"jar\": \"pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\",\n" +
-                "            \"jarLocation\": \"public/default/source-sample\"\n" +
-                "        },\n" +
-                "        \"maxReplicas\": 1,\n" +
-                "        \"output\": {\n" +
-                "            \"producerConf\": {\n" +
-                "                \"maxPendingMessages\": 1000,\n" +
-                "                \"maxPendingMessagesAcrossPartitions\": 50000,\n" +
-                "                \"useThreadLocalProducers\": true\n" +
-                "            },\n" +
-                "            \"topic\": \"persistent://public/default/destination\"\n" +
-                "        },\n" +
-                "        \"pulsar\": {\n" +
-                "            \"pulsarConfig\": \"test-source\"\n" +
-                "        },\n" +
-                "        \"replicas\": 1,\n" +
-                "        \"resources\": {\n" +
-                "            \"limits\": {\n" +
-                "                \"cpu\": \"0.1\",\n" +
-                "                \"memory\": \"1\"\n" +
-                "            },\n" +
-                "            \"requests\": {\n" +
-                "                \"cpu\": \"0.1\",\n" +
-                "                \"memory\": \"1\"\n" +
-                "            }\n" +
-                "        },\n" +
-                "        \"sinkType\": \"org.apache.pulsar.common.schema.KeyValue\",\n" +
-                "        \"sourceConfig\": {\n" +
-                "            \"name\": \"test-sourceConfig\"" +
-                "        },\n" +
-                "        \"sourceType\": \"org.apache.pulsar.common.schema.KeyValue\"\n" +
-                "    },\n" +
-                "    \"status\": {\n" +
-                "        \"conditions\": {\n" +
-                "            \"HorizontalPodAutoscaler\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"HPAReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            },\n" +
-                "            \"Service\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"ServiceReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            },\n" +
-                "            \"StatefulSet\": {\n" +
-                "                \"action\": \"NoAction\",\n" +
-                "                \"condition\": \"StatefulSetReady\",\n" +
-                "                \"status\": \"True\"\n" +
-                "            }\n" +
-                "        },\n" +
-                "        \"replicas\": 1,\n" +
-                "        \"selector\": \"component=source,name=source-sample,namespace=default\"\n" +
-                "    }\n" +
-                "}";
-        FunctionMeshProxyService functionMeshProxyService = PowerMockito.mock(FunctionMeshProxyService.class);
-        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier = () -> functionMeshProxyService;
+    public void testGetSourceInfo()
+            throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
+        String testBody =
+                "{\n"
+                        + "    \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n"
+                        + "    \"kind\": \"Source\",\n"
+                        + "    \"metadata\": {\n"
+                        + "        \"annotations\": {\n"
+                        + "            \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"cloud.streamnative.io/v1alpha1\\\",\\\"kind\\\":\\\"Source\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"source-sample\\\",\\\"namespace\\\":\\\"default\\\"},\\\"spec\\\":{\\\"className\\\":\\\"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\\\",\\\"clusterName\\\":\\\"test-pulsar\\\",\\\"java\\\":{\\\"jar\\\":\\\"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\\\",\\\"jarLocation\\\":\\\"\\\"},\\\"maxReplicas\\\":1,\\\"output\\\":{\\\"producerConf\\\":{\\\"maxPendingMessages\\\":1000,\\\"maxPendingMessagesAcrossPartitions\\\":50000,\\\"useThreadLocalProducers\\\":true},\\\"topic\\\":\\\"persistent://public/default/destination\\\"},\\\"pulsar\\\":{\\\"pulsarConfig\\\":\\\"test-source\\\"},\\\"replicas\\\":1,\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"0.2\\\",\\\"memory\\\":\\\"1.1G\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"0.1\\\",\\\"memory\\\":\\\"1G\\\"}},\\\"sinkType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\",\\\"sourceConfig\\\":{\\\"database.whitelist\\\":\\\"inventory\\\",\\\"mongodb.hosts\\\":\\\"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\\\",\\\"mongodb.name\\\":\\\"dbserver1\\\",\\\"mongodb.password\\\":\\\"dbz\\\",\\\"mongodb.task.id\\\":\\\"1\\\",\\\"mongodb.user\\\":\\\"debezium\\\",\\\"pulsar.service.url\\\":\\\"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\\\"},\\\"sourceType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\"}}\\n\"\n"
+                        + "        },\n"
+                        + "        \"creationTimestamp\": \"2020-11-27T07:07:57Z\",\n"
+                        + "        \"generation\": 1,\n"
+                        + "        \"name\": \"source-sample\",\n"
+                        + "        \"namespace\": \"default\",\n"
+                        + "        \"resourceVersion\": \"881034\",\n"
+                        + "        \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/sources/source-sample\",\n"
+                        + "        \"uid\": \"8aed505e-38e4-4a8b-93f6-6f753dbf7ebc\"\n"
+                        + "    },\n"
+                        + "    \"spec\": {\n"
+                        + "        \"className\": \"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\",\n"
+                        + "        \"clusterName\": \"test-pulsar\",\n"
+                        + "        \"java\": {\n"
+                        + "            \"jar\": \"pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\",\n"
+                        + "            \"jarLocation\": \"public/default/source-sample\"\n"
+                        + "        },\n"
+                        + "        \"maxReplicas\": 1,\n"
+                        + "        \"output\": {\n"
+                        + "            \"producerConf\": {\n"
+                        + "                \"maxPendingMessages\": 1000,\n"
+                        + "                \"maxPendingMessagesAcrossPartitions\": 50000,\n"
+                        + "                \"useThreadLocalProducers\": true\n"
+                        + "            },\n"
+                        + "            \"topic\": \"persistent://public/default/destination\"\n"
+                        + "        },\n"
+                        + "        \"pulsar\": {\n"
+                        + "            \"pulsarConfig\": \"test-source\"\n"
+                        + "        },\n"
+                        + "        \"replicas\": 1,\n"
+                        + "        \"resources\": {\n"
+                        + "            \"limits\": {\n"
+                        + "                \"cpu\": \"0.1\",\n"
+                        + "                \"memory\": \"1\"\n"
+                        + "            },\n"
+                        + "            \"requests\": {\n"
+                        + "                \"cpu\": \"0.1\",\n"
+                        + "                \"memory\": \"1\"\n"
+                        + "            }\n"
+                        + "        },\n"
+                        + "        \"sinkType\": \"org.apache.pulsar.common.schema.KeyValue\",\n"
+                        + "        \"sourceConfig\": {\n"
+                        + "            \"name\": \"test-sourceConfig\""
+                        + "        },\n"
+                        + "        \"sourceType\": \"org.apache.pulsar.common.schema.KeyValue\"\n"
+                        + "    },\n"
+                        + "    \"status\": {\n"
+                        + "        \"conditions\": {\n"
+                        + "            \"HorizontalPodAutoscaler\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"HPAReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            },\n"
+                        + "            \"Service\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"ServiceReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            },\n"
+                        + "            \"StatefulSet\": {\n"
+                        + "                \"action\": \"NoAction\",\n"
+                        + "                \"condition\": \"StatefulSetReady\",\n"
+                        + "                \"status\": \"True\"\n"
+                        + "            }\n"
+                        + "        },\n"
+                        + "        \"replicas\": 1,\n"
+                        + "        \"selector\": \"component=source,name=source-sample,namespace=default\"\n"
+                        + "    }\n"
+                        + "}";
+        FunctionMeshProxyService functionMeshProxyService =
+                PowerMockito.mock(FunctionMeshProxyService.class);
+        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier =
+                () -> functionMeshProxyService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
+                .thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -637,15 +696,12 @@ public class SourcesImpTest {
         String namespace = "default";
         String componentName = "source-mongodb-sample";
 
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()
-                .getNamespacedCustomObjectCall(
-                        group,
-                        version,
-                        namespace,
-                        plural,
-                        componentName,
-                        null
-                )).thenReturn(call);
+        PowerMockito.when(
+                        functionMeshProxyService
+                                .getCustomObjectsApi()
+                                .getNamespacedCustomObjectCall(
+                                        group, version, namespace, plural, componentName, null))
+                .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
@@ -693,100 +749,105 @@ public class SourcesImpTest {
     }
 
     @Test
-    public void testGetSourceList() throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
-        String testBody = "{\n" +
-                "    \"apiVersion\": \"v1\",\n" +
-                "    \"items\": [\n" +
-                "        {\n" +
-                "            \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n" +
-                "            \"kind\": \"Source\",\n" +
-                "            \"metadata\": {\n" +
-                "                \"annotations\": {\n" +
-                "                    \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"cloud.streamnative.io/v1alpha1\\\",\\\"kind\\\":\\\"Source\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"source-sample\\\",\\\"namespace\\\":\\\"default\\\"},\\\"spec\\\":{\\\"className\\\":\\\"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\\\",\\\"clusterName\\\":\\\"test-pulsar\\\",\\\"java\\\":{\\\"jar\\\":\\\"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\\\",\\\"jarLocation\\\":\\\"\\\"},\\\"maxReplicas\\\":1,\\\"output\\\":{\\\"producerConf\\\":{\\\"maxPendingMessages\\\":1000,\\\"maxPendingMessagesAcrossPartitions\\\":50000,\\\"useThreadLocalProducers\\\":true},\\\"topic\\\":\\\"persistent://public/default/destination\\\"},\\\"pulsar\\\":{\\\"pulsarConfig\\\":\\\"test-source\\\"},\\\"replicas\\\":1,\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"0.2\\\",\\\"memory\\\":\\\"1.1G\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"0.1\\\",\\\"memory\\\":\\\"1G\\\"}},\\\"sinkType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\",\\\"sourceConfig\\\":{\\\"database.whitelist\\\":\\\"inventory\\\",\\\"mongodb.hosts\\\":\\\"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\\\",\\\"mongodb.name\\\":\\\"dbserver1\\\",\\\"mongodb.password\\\":\\\"dbz\\\",\\\"mongodb.task.id\\\":\\\"1\\\",\\\"mongodb.user\\\":\\\"debezium\\\",\\\"pulsar.service.url\\\":\\\"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\\\"},\\\"sourceType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\"}}\\n\"\n" +
-                "                },\n" +
-                "                \"creationTimestamp\": \"2020-11-27T07:07:57Z\",\n" +
-                "                \"generation\": 1,\n" +
-                "                \"name\": \"source-sample\",\n" +
-                "                \"namespace\": \"default\",\n" +
-                "                \"resourceVersion\": \"881034\",\n" +
-                "                \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/sources/source-sample\",\n" +
-                "                \"uid\": \"8aed505e-38e4-4a8b-93f6-6f753dbf7ebc\"\n" +
-                "            },\n" +
-                "            \"spec\": {\n" +
-                "                \"className\": \"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\",\n" +
-                "                \"clusterName\": \"test-pulsar\",\n" +
-                "                \"java\": {\n" +
-                "                    \"jar\": \"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\",\n" +
-                "                    \"jarLocation\": \"\"\n" +
-                "                },\n" +
-                "                \"maxReplicas\": 1,\n" +
-                "                \"output\": {\n" +
-                "                    \"producerConf\": {\n" +
-                "                        \"maxPendingMessages\": 1000,\n" +
-                "                        \"maxPendingMessagesAcrossPartitions\": 50000,\n" +
-                "                        \"useThreadLocalProducers\": true\n" +
-                "                    },\n" +
-                "                    \"topic\": \"persistent://public/default/destination\"\n" +
-                "                },\n" +
-                "                \"pulsar\": {\n" +
-                "                    \"pulsarConfig\": \"test-source\"\n" +
-                "                },\n" +
-                "                \"replicas\": 1,\n" +
-                "                \"resources\": {\n" +
-                "                    \"limits\": {\n" +
-                "                        \"cpu\": \"0.2\",\n" +
-                "                        \"memory\": \"1.1G\"\n" +
-                "                    },\n" +
-                "                    \"requests\": {\n" +
-                "                        \"cpu\": \"0.1\",\n" +
-                "                        \"memory\": \"1G\"\n" +
-                "                    }\n" +
-                "                },\n" +
-                "                \"sinkType\": \"org.apache.pulsar.common.schema.KeyValue\",\n" +
-                "                \"sourceConfig\": {\n" +
-                "                    \"database.whitelist\": \"inventory\",\n" +
-                "                    \"mongodb.hosts\": \"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\",\n" +
-                "                    \"mongodb.name\": \"dbserver1\",\n" +
-                "                    \"mongodb.password\": \"dbz\",\n" +
-                "                    \"mongodb.task.id\": \"1\",\n" +
-                "                    \"mongodb.user\": \"debezium\",\n" +
-                "                    \"pulsar.service.url\": \"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\"\n" +
-                "                },\n" +
-                "                \"sourceType\": \"org.apache.pulsar.common.schema.KeyValue\"\n" +
-                "            },\n" +
-                "            \"status\": {\n" +
-                "                \"conditions\": {\n" +
-                "                    \"HorizontalPodAutoscaler\": {\n" +
-                "                        \"action\": \"NoAction\",\n" +
-                "                        \"condition\": \"HPAReady\",\n" +
-                "                        \"status\": \"True\"\n" +
-                "                    },\n" +
-                "                    \"Service\": {\n" +
-                "                        \"action\": \"NoAction\",\n" +
-                "                        \"condition\": \"ServiceReady\",\n" +
-                "                        \"status\": \"True\"\n" +
-                "                    },\n" +
-                "                    \"StatefulSet\": {\n" +
-                "                        \"action\": \"NoAction\",\n" +
-                "                        \"condition\": \"StatefulSetReady\",\n" +
-                "                        \"status\": \"True\"\n" +
-                "                    }\n" +
-                "                },\n" +
-                "                \"replicas\": 1,\n" +
-                "                \"selector\": \"component=source,name=source-sample,namespace=default\"\n" +
-                "            }\n" +
-                "        }\n" +
-                "    ],\n" +
-                "    \"kind\": \"List\",\n" +
-                "    \"metadata\": {\n" +
-                "        \"resourceVersion\": \"\",\n" +
-                "        \"selfLink\": \"\"\n" +
-                "    }\n" +
-                "}";
-        FunctionMeshProxyService functionMeshProxyService = PowerMockito.mock(FunctionMeshProxyService.class);
-        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier = () -> functionMeshProxyService;
+    public void testGetSourceList()
+            throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
+        String testBody =
+                "{\n"
+                        + "    \"apiVersion\": \"v1\",\n"
+                        + "    \"items\": [\n"
+                        + "        {\n"
+                        + "            \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n"
+                        + "            \"kind\": \"Source\",\n"
+                        + "            \"metadata\": {\n"
+                        + "                \"annotations\": {\n"
+                        + "                    \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"cloud.streamnative.io/v1alpha1\\\",\\\"kind\\\":\\\"Source\\\",\\\"metadata\\\":{\\\"annotations\\\":{},\\\"name\\\":\\\"source-sample\\\",\\\"namespace\\\":\\\"default\\\"},\\\"spec\\\":{\\\"className\\\":\\\"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\\\",\\\"clusterName\\\":\\\"test-pulsar\\\",\\\"java\\\":{\\\"jar\\\":\\\"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\\\",\\\"jarLocation\\\":\\\"\\\"},\\\"maxReplicas\\\":1,\\\"output\\\":{\\\"producerConf\\\":{\\\"maxPendingMessages\\\":1000,\\\"maxPendingMessagesAcrossPartitions\\\":50000,\\\"useThreadLocalProducers\\\":true},\\\"topic\\\":\\\"persistent://public/default/destination\\\"},\\\"pulsar\\\":{\\\"pulsarConfig\\\":\\\"test-source\\\"},\\\"replicas\\\":1,\\\"resources\\\":{\\\"limits\\\":{\\\"cpu\\\":\\\"0.2\\\",\\\"memory\\\":\\\"1.1G\\\"},\\\"requests\\\":{\\\"cpu\\\":\\\"0.1\\\",\\\"memory\\\":\\\"1G\\\"}},\\\"sinkType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\",\\\"sourceConfig\\\":{\\\"database.whitelist\\\":\\\"inventory\\\",\\\"mongodb.hosts\\\":\\\"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\\\",\\\"mongodb.name\\\":\\\"dbserver1\\\",\\\"mongodb.password\\\":\\\"dbz\\\",\\\"mongodb.task.id\\\":\\\"1\\\",\\\"mongodb.user\\\":\\\"debezium\\\",\\\"pulsar.service.url\\\":\\\"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\\\"},\\\"sourceType\\\":\\\"org.apache.pulsar.common.schema.KeyValue\\\"}}\\n\"\n"
+                        + "                },\n"
+                        + "                \"creationTimestamp\": \"2020-11-27T07:07:57Z\",\n"
+                        + "                \"generation\": 1,\n"
+                        + "                \"name\": \"source-sample\",\n"
+                        + "                \"namespace\": \"default\",\n"
+                        + "                \"resourceVersion\": \"881034\",\n"
+                        + "                \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/sources/source-sample\",\n"
+                        + "                \"uid\": \"8aed505e-38e4-4a8b-93f6-6f753dbf7ebc\"\n"
+                        + "            },\n"
+                        + "            \"spec\": {\n"
+                        + "                \"className\": \"org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource\",\n"
+                        + "                \"clusterName\": \"test-pulsar\",\n"
+                        + "                \"java\": {\n"
+                        + "                    \"jar\": \"connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar\",\n"
+                        + "                    \"jarLocation\": \"\"\n"
+                        + "                },\n"
+                        + "                \"maxReplicas\": 1,\n"
+                        + "                \"output\": {\n"
+                        + "                    \"producerConf\": {\n"
+                        + "                        \"maxPendingMessages\": 1000,\n"
+                        + "                        \"maxPendingMessagesAcrossPartitions\": 50000,\n"
+                        + "                        \"useThreadLocalProducers\": true\n"
+                        + "                    },\n"
+                        + "                    \"topic\": \"persistent://public/default/destination\"\n"
+                        + "                },\n"
+                        + "                \"pulsar\": {\n"
+                        + "                    \"pulsarConfig\": \"test-source\"\n"
+                        + "                },\n"
+                        + "                \"replicas\": 1,\n"
+                        + "                \"resources\": {\n"
+                        + "                    \"limits\": {\n"
+                        + "                        \"cpu\": \"0.2\",\n"
+                        + "                        \"memory\": \"1.1G\"\n"
+                        + "                    },\n"
+                        + "                    \"requests\": {\n"
+                        + "                        \"cpu\": \"0.1\",\n"
+                        + "                        \"memory\": \"1G\"\n"
+                        + "                    }\n"
+                        + "                },\n"
+                        + "                \"sinkType\": \"org.apache.pulsar.common.schema.KeyValue\",\n"
+                        + "                \"sourceConfig\": {\n"
+                        + "                    \"database.whitelist\": \"inventory\",\n"
+                        + "                    \"mongodb.hosts\": \"rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017\",\n"
+                        + "                    \"mongodb.name\": \"dbserver1\",\n"
+                        + "                    \"mongodb.password\": \"dbz\",\n"
+                        + "                    \"mongodb.task.id\": \"1\",\n"
+                        + "                    \"mongodb.user\": \"debezium\",\n"
+                        + "                    \"pulsar.service.url\": \"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\"\n"
+                        + "                },\n"
+                        + "                \"sourceType\": \"org.apache.pulsar.common.schema.KeyValue\"\n"
+                        + "            },\n"
+                        + "            \"status\": {\n"
+                        + "                \"conditions\": {\n"
+                        + "                    \"HorizontalPodAutoscaler\": {\n"
+                        + "                        \"action\": \"NoAction\",\n"
+                        + "                        \"condition\": \"HPAReady\",\n"
+                        + "                        \"status\": \"True\"\n"
+                        + "                    },\n"
+                        + "                    \"Service\": {\n"
+                        + "                        \"action\": \"NoAction\",\n"
+                        + "                        \"condition\": \"ServiceReady\",\n"
+                        + "                        \"status\": \"True\"\n"
+                        + "                    },\n"
+                        + "                    \"StatefulSet\": {\n"
+                        + "                        \"action\": \"NoAction\",\n"
+                        + "                        \"condition\": \"StatefulSetReady\",\n"
+                        + "                        \"status\": \"True\"\n"
+                        + "                    }\n"
+                        + "                },\n"
+                        + "                \"replicas\": 1,\n"
+                        + "                \"selector\": \"component=source,name=source-sample,namespace=default\"\n"
+                        + "            }\n"
+                        + "        }\n"
+                        + "    ],\n"
+                        + "    \"kind\": \"List\",\n"
+                        + "    \"metadata\": {\n"
+                        + "        \"resourceVersion\": \"\",\n"
+                        + "        \"selfLink\": \"\"\n"
+                        + "    }\n"
+                        + "}";
+        FunctionMeshProxyService functionMeshProxyService =
+                PowerMockito.mock(FunctionMeshProxyService.class);
+        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier =
+                () -> functionMeshProxyService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
+                .thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -796,21 +857,13 @@ public class SourcesImpTest {
         String plural = "sources";
         String version = "v1alpha1";
 
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()
-                .listClusterCustomObjectCall(
-                        group,
-                        version,
-                        plural,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null
-                )).thenReturn(call);
+        PowerMockito.when(
+                        functionMeshProxyService
+                                .getCustomObjectsApi()
+                                .listClusterCustomObjectCall(
+                                        group, version, plural, null, null, null, null, null, null,
+                                        null, null, null))
+                .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
@@ -835,5 +888,4 @@ public class SourcesImpTest {
 
         Assert.assertEquals(expectedList, actualList);
     }
-
 }
