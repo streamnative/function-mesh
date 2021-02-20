@@ -66,6 +66,15 @@ type PodPolicy struct {
 	// ImagePullSecrets is an optional list of references to secrets in the same
 	// namespace to use for pulling any of the images used by this PodSpec.
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
+	// Init containers of the pod. A typical use case could be using an init
+	// container to download a remote jar to a local path.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+	InitContainers []corev1.Container `json:"initContainers,omitempty"`
+
+	// Sidecar containers running alongside with the main function container in the
+	// pod.
+	Sidecars []corev1.Container `json:"sidecars,omitempty"`
 }
 
 type Runtime struct {
