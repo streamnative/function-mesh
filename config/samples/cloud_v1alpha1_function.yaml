@@ -48,6 +48,14 @@ spec:
       emptyDir: {}
     imagePullSecrets:
     - name: regcred
+    initContainers:
+    - name: init-function
+      image: busybox:1.28
+      command: ['sh', '-c', 'echo The app is running! && sleep 30']
+    sidecars:
+    - name: sidecar-function
+      image: busybox:1.28
+      command: ['sh', '-c', 'echo The app is running! && sleep 30000']
   java:
     jar: pulsar-functions-api-examples.jar
     jarLocation: public/default/nlu-test-java-function
