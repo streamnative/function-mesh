@@ -49,7 +49,7 @@ run: generate fmt vet manifests
 
 # Install CRDs into a cluster
 install: manifests kustomize crd
-	kubectl apply -f manifests/crd.yaml
+	kubectl create -f manifests/crd.yaml
 
 # Uninstall CRDs from a cluster
 uninstall: manifests kustomize
@@ -89,7 +89,7 @@ ifeq (, $(shell which controller-gen))
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0 ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.4 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
