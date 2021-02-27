@@ -1,0 +1,34 @@
+name: Integration :: function-runner-images
+on:
+  pull_request:
+    branches:
+      - '*'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: clean disk
+        run: |
+          sudo swapoff -a
+          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt clean
+          docker rmi $(docker images -q) -f
+          df -h
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Deploy k8s cluster env
+        run: |
+          .ci/deploy_pulsar_cluster.sh .ci/clusters/values_custom_runner_images.yaml
+
+      - name: Build runner images
+        run: |
+          PULSAR_IMAGE_TAG=2.7.0 PULSAR_IMAGE=apachepulsar/pulsar-all KIND_PUSH=true images/build.sh
+
+      - name: Verify function runner
+        run: |
+          .ci/verify_function_runner.sh
