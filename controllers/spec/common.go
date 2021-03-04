@@ -38,6 +38,9 @@ const (
 	EnvShardID                 = "SHARD_ID"
 	FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
 	DefaultRunnerImage         = "streamnative/pulsar-all:2.7.0-rc-pm-3"
+	DefaultJavaRunnerImage     = "streamnative/pulsar-functions-java-runner:2.7.0"
+	DefaultPythonRunnerImage   = "streamnative/pulsar-functions-python-runner:2.7.0"
+	DefaultGoRunnerImage       = "streamnative/pulsar-functions-go-runner:2.7.0"
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 	PulsarDownloadRootDir      = "/pulsar"
 
@@ -555,4 +558,17 @@ func generateAnnotations(customAnnotations map[string]string) map[string]string 
 	}
 
 	return annotations
+}
+
+func getFunctionRunnerImage(runtime *v1alpha1.Runtime) string {
+	if runtime != nil {
+		if runtime.Java != nil && runtime.Java.Jar != "" {
+			return DefaultJavaRunnerImage
+		} else if runtime.Python != nil && runtime.Python.Py != "" {
+			return DefaultPythonRunnerImage
+		} else if runtime.Golang != nil && runtime.Golang.Go != "" {
+			return DefaultGoRunnerImage
+		}
+	}
+	return DefaultRunnerImage
 }
