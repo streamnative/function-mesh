@@ -60,6 +60,12 @@ jobs:
         with:
           java-version: 1.8
 
+      - name: Set up yq
+      - uses: chrisdickinson/setup-yq@latest
+
+      - name: Get node image
+        run: docker pull kindest/node:v1.20.2
+
       - name: Auto generate crd model 
         run: cd java-proxy && ./tool/generate-crd.sh
 
