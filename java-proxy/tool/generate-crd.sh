@@ -33,9 +33,9 @@ LOCAL_MANIFEST_SOURCES_FILE=$GEN_DIR/$CRD_SOURCES_FILE
 LOCAL_MANIFEST_SINKS_FILE=$GEN_DIR/$CRD_SINKS_FILE
 
 # yq site: https://mikefarah.gitbook.io/yq/
-yq e ".spec.preserveUnknownFields = false" -i $CRD_FUNCTIONS_FILE
-yq e ".spec.preserveUnknownFields = false" -i $CRD_SOURCES_FILE
-yq e ".spec.preserveUnknownFields = false" -i $CRD_SINKS_FILE
+yq eval ".spec.preserveUnknownFields = false" -i $CRD_FUNCTIONS_FILE
+yq eval ".spec.preserveUnknownFields = false" -i $CRD_SOURCES_FILE
+yq eval ".spec.preserveUnknownFields = false" -i $CRD_SINKS_FILE
 
 #docker rm -f kind-control-plane
 # Generate functions crd
