@@ -44,7 +44,7 @@ kubectl create namespace pulsar
 ci::install_storage_provisioner
 
 # install pulsar chart
-ci::install_pulsar_charts
+ci::install_pulsar_charts "$VALUES_FILE"
 
 # test producer
 ci::test_pulsar_producer

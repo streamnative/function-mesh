@@ -34,19 +34,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const EnvShardID = "SHARD_ID"
-const FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
-const DefaultRunnerImage = "streamnative/pulsar-all:2.7.0-rc-pm-3"
-const PulsarAdminExecutableFile = "/pulsar/bin/pulsar-admin"
-const PulsarDownloadRootDir = "/pulsar"
+const (
+	EnvShardID                 = "SHARD_ID"
+	FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
+	DefaultRunnerImage         = "streamnative/pulsar-all:2.7.0-rc-pm-3"
+	DefaultJavaRunnerImage     = "streamnative/pulsar-functions-java-runner:2.7.0"
+	DefaultPythonRunnerImage   = "streamnative/pulsar-functions-python-runner:2.7.0"
+	DefaultGoRunnerImage       = "streamnative/pulsar-functions-go-runner:2.7.0"
+	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
+	PulsarDownloadRootDir      = "/pulsar"
 
-const ComponentSource = "source"
-const ComponentSink = "sink"
-const ComponentFunction = "function"
+	ComponentSource   = "source"
+	ComponentSink     = "sink"
+	ComponentFunction = "function"
 
-const PackageNameFunctionPrefix = "function://"
-const PackageNameSinkPrefix = "sink://"
-const PackageNameSourcePrefix = "source://"
+	PackageNameFunctionPrefix = "function://"
+	PackageNameSinkPrefix     = "sink://"
+	PackageNameSourcePrefix   = "source://"
+
+	AnnotationPrometheusScrape = "prometheus.io/scrape"
+	AnnotationPrometheusPort   = "prometheus.io/port"
+)
 
 var GRPCPort = corev1.ContainerPort{
 	Name:          "grpc",
@@ -134,10 +142,11 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      mergeLabels(labels, policy.Labels),
-			Annotations: policy.Annotations,
+			Annotations: generateAnnotations(policy.Annotations),
 		},
 		Spec: corev1.PodSpec{
-			Containers:                    []corev1.Container{*container},
+			InitContainers:                policy.InitContainers,
+			Containers:                    append(policy.Sidecars, *container),
 			TerminationGracePeriodSeconds: &policy.TerminationGracePeriodSeconds,
 			Volumes:                       volumes,
 			NodeSelector:                  policy.NodeSelector,
@@ -534,4 +543,32 @@ func mergeLabels(label1, label2 map[string]string) map[string]string {
 	}
 
 	return label
+}
+
+func generateAnnotations(customAnnotations map[string]string) map[string]string {
+	annotations := make(map[string]string)
+
+	// controlled annotations
+	annotations[AnnotationPrometheusScrape] = "true"
+	annotations[AnnotationPrometheusPort] = strconv.Itoa(int(MetricsPort.ContainerPort))
+
+	// customized annotations which may override any previous set annotations
+	for k, v := range customAnnotations {
+		annotations[k] = v
+	}
+
+	return annotations
+}
+
+func getFunctionRunnerImage(runtime *v1alpha1.Runtime) string {
+	if runtime != nil {
+		if runtime.Java != nil && runtime.Java.Jar != "" {
+			return DefaultJavaRunnerImage
+		} else if runtime.Python != nil && runtime.Python.Py != "" {
+			return DefaultPythonRunnerImage
+		} else if runtime.Golang != nil && runtime.Golang.Go != "" {
+			return DefaultGoRunnerImage
+		}
+	}
+	return DefaultRunnerImage
 }

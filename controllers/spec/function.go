@@ -73,7 +73,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-function",
-		Image:           DefaultRunnerImage,
+		Image:           getFunctionRunnerImage(&function.Spec.Runtime),
 		Command:         makeFunctionCommand(function),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
 		Env:             generateContainerEnv(function.Spec.SecretsMap),
