@@ -17,6 +17,7 @@
 # under the License.
 #
 
+set -x
 CRD_FUNCTIONS_FILE=cloud.streamnative.io_functions.yaml # Target functions CRD file
 CRD_SOURCES_FILE=cloud.streamnative.io_sources.yaml # Target sources CRD file
 CRD_SINKS_FILE=cloud.streamnative.io_sinks.yaml # Target sinks CRD file
@@ -51,7 +52,6 @@ docker run \
   -p io.streamnative.cloud.function \
   -o "$(pwd)"
 
-docker rm -f kind-control-plane
 # Generate sources crd
 docker run \
   --rm \

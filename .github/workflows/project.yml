@@ -61,7 +61,11 @@ jobs:
           java-version: 1.8
 
       - name: Set up yq
-        uses: chrisdickinson/setup-yq@latest
+        run: |
+          apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CC86BB64
+          add-apt-repository ppa:rmescandon/yq
+          apt update
+          apt install yq -y
 
       - name: Get node image
         run: docker pull kindest/node:v1.20.2
