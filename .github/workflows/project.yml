@@ -61,7 +61,7 @@ jobs:
           java-version: 1.8
 
       - name: Set up yq
-      - uses: chrisdickinson/setup-yq@latest
+        uses: chrisdickinson/setup-yq@latest
 
       - name: Get node image
         run: docker pull kindest/node:v1.20.2
