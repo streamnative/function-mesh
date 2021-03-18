@@ -22,7 +22,7 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import io.streamnative.cloud.models.function.V1alpha1Function;
+import io.streamnative.cloud.function.models.V1alpha1Function;
 import io.streamnative.function.mesh.proxy.FunctionMeshProxyService;
 import io.streamnative.function.mesh.proxy.testdata.Generate;
 import io.streamnative.function.mesh.proxy.util.FunctionsUtil;
@@ -535,11 +535,11 @@ public class FunctionsImplTest {
                 "    \"resources\": {\n" +
                 "      \"limits\": {\n" +
                 "        \"cpu\": \"0.1\",\n" +
-                "        \"memory\": \"1G\"\n" +
+                "        \"memory\": \"1024\"\n" +
                 "      },\n" +
                 "      \"requests\": {\n" +
                 "        \"cpu\": \"0.1\",\n" +
-                "        \"memory\": \"1G\"\n" +
+                "        \"memory\": \"1024\"\n" +
                 "      }\n" +
                 "    },\n" +
                 "    \"sinkType\": \"java.lang.String\",\n" +
@@ -579,7 +579,8 @@ public class FunctionsImplTest {
         PowerMockito.when(responseBody.string()).thenReturn(testBody);
         PowerMockito.when(functionMeshProxyService.getApiClient()).thenReturn(apiClient);
         FunctionsImpl functions = spy(new FunctionsImpl(functionMeshProxyServiceSupplier));
-        FunctionConfig functionConfig = functions.getFunctionInfo(tenant, namespace, functionName, null, null);
+        FunctionConfig functionConfig = functions.getFunctionInfo(
+                tenant, namespace, functionName, null, null);
 
         V1alpha1Function v1alpha1Function = json.getGson().fromJson(testBody, V1alpha1Function.class);
         FunctionConfig expectedFunctionConfig = FunctionsUtil.createFunctionConfigFromV1alpha1Function(tenant,

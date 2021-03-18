@@ -55,3 +55,11 @@ jobs:
       - name: Run envtest for controller
         run: go test ./controllers/ -v -ginkgo.v
 
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+
+      - name: Run mesh proxy unit test
+        run: mvn clean install
+

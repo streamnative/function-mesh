@@ -18,9 +18,9 @@
  */
 package io.streamnative.function.mesh.proxy.rest.api;
 
-import io.streamnative.cloud.models.source.V1alpha1Source;
-import io.streamnative.cloud.models.source.V1alpha1SourceList;
-import io.streamnative.cloud.models.source.V1alpha1SourceStatus;
+import io.streamnative.cloud.source.models.V1alpha1Source;
+import io.streamnative.cloud.source.models.V1alpha1SourceList;
+import io.streamnative.cloud.source.models.V1alpha1SourceStatus;
 import io.streamnative.function.mesh.proxy.FunctionMeshProxyService;
 import io.streamnative.function.mesh.proxy.util.SourcesUtil;
 import lombok.extern.slf4j.Slf4j;

@@ -20,7 +20,7 @@ package io.streamnative.function.mesh.proxy.util;
 
 import com.google.gson.Gson;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.streamnative.cloud.models.sink.*;
+import io.streamnative.cloud.sink.models.*;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -128,7 +128,7 @@ public class SinksUtil {
         }
         String cpuValue = cpu.toString();
         String memoryValue = memory.toString();
-        Map<String, Object> limits = new HashMap<>();
+        Map<String, String> limits = new HashMap<>();
         limits.put(cpuKey, cpuValue);
         limits.put(memoryKey, memoryValue);
 
@@ -198,7 +198,7 @@ public class SinksUtil {
         V1alpha1SinkSpecResources v1alpha1SinkSpecResources = v1alpha1SinkSpec.getResources();
         if (v1alpha1SinkSpecResources != null) {
             Resources resources = new Resources();
-            Map<String, Object> limits = v1alpha1SinkSpecResources.getLimits();
+            Map<String, String> limits = v1alpha1SinkSpecResources.getLimits();
             resources.setCpu(Double.parseDouble(limits.get(cpuKey).toString()));
             resources.setRam(Long.parseLong(limits.get(memoryKey).toString()));
             sinkConfig.setResources(resources);

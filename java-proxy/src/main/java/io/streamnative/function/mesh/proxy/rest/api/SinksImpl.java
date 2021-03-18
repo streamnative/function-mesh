@@ -18,8 +18,8 @@
  */
 package io.streamnative.function.mesh.proxy.rest.api;
 
-import io.streamnative.cloud.models.sink.V1alpha1Sink;
-import io.streamnative.cloud.models.sink.V1alpha1SinkStatus;
+import io.streamnative.cloud.sink.models.V1alpha1Sink;
+import io.streamnative.cloud.sink.models.V1alpha1SinkStatus;
 import io.streamnative.function.mesh.proxy.FunctionMeshProxyService;
 import io.streamnative.function.mesh.proxy.util.SinksUtil;
 import lombok.extern.slf4j.Slf4j;
