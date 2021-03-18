@@ -37,6 +37,8 @@ yq eval ".spec.preserveUnknownFields = false" -i $CRD_FUNCTIONS_FILE
 yq eval ".spec.preserveUnknownFields = false" -i $CRD_SOURCES_FILE
 yq eval ".spec.preserveUnknownFields = false" -i $CRD_SINKS_FILE
 
+docker pull docker.pkg.github.com/kubernetes-client/java/crd-model-gen:v1.0.3
+docker pull kindest/node:v1.20.2
 #docker rm -f kind-control-plane
 # Generate functions crd
 docker run \
