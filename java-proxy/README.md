@@ -116,3 +116,14 @@ docker run \
 
 open $GEN_DIR
 ```
+
+### A auto tool for generated crd
+
+```shell script
+./tool/generate-crd.sh
+```
+
+Then add license for crd model file
+```shell script
+mvn license:format
+```

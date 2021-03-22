@@ -22,7 +22,7 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import io.streamnative.cloud.models.sink.V1alpha1Sink;
+import io.streamnative.cloud.sink.models.V1alpha1Sink;
 import io.streamnative.function.mesh.proxy.FunctionMeshProxyService;
 import io.streamnative.function.mesh.proxy.util.SinksUtil;
 import okhttp3.Call;

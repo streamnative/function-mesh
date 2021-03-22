@@ -19,7 +19,7 @@
 package io.streamnative.function.mesh.proxy.util;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.streamnative.cloud.models.sink.*;
+import io.streamnative.cloud.sink.models.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SinkConfig;
@@ -132,7 +132,7 @@ public class SinksUtilTest {
         v1alpha1SinkSpec.setPulsar(v1alpha1SinkSpecPulsar);
 
         V1alpha1SinkSpecResources v1alpha1SinkSpecResources = new V1alpha1SinkSpecResources();
-        Map<String, Object> requestRes = new HashMap<>();
+        Map<String, String> requestRes = new HashMap<>();
         String cpuValue = cpu.toString();
         String memoryValue = ram.toString();
         requestRes.put(SourcesUtil.cpuKey, cpuValue);
@@ -205,7 +205,7 @@ public class SinksUtilTest {
         v1alpha1SinkSpec.setPulsar(v1alpha1SinkSpecPulsar);
 
         V1alpha1SinkSpecResources v1alpha1SinkSpecResources = new V1alpha1SinkSpecResources();
-        Map<String, Object> requestRes = new HashMap<>();
+        Map<String, String> requestRes = new HashMap<>();
         String cpuValue = cpu.toString();
         String memoryValue = ram.toString();
         requestRes.put(SourcesUtil.cpuKey, cpuValue);

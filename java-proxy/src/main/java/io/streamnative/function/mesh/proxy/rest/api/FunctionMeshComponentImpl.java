@@ -18,7 +18,7 @@
  */
 package io.streamnative.function.mesh.proxy.rest.api;
 
-import io.streamnative.cloud.models.function.V1alpha1FunctionList;
+import io.streamnative.cloud.function.models.V1alpha1FunctionList;
 import io.streamnative.function.mesh.proxy.FunctionMeshProxyService;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
