@@ -2,12 +2,33 @@
 
 This is a proxy that is used to forward requests to the k8s.
 
+### Run with pulsar broker
+
+#### Prerequisite
+
+* Pulsar 2.8.0 or later
+
+#### Update configuration file
+
+Add the following configuration to the `functions_worker.yml` configuration file:
+
+```$xslt
+functionsWorkerServiceNarPackage: /YOUR-NAR-PATH/java-proxy-1.0-SNAPSHOT.nar
+```
+Replace the `YOUR-NAR-PATH` variable with your real path.
+
+#### Start pulsar service
+
+```$xslt
+./bin/pulsar standalone -a 127.0.0.1 -nss
+```
+
 ### Configuring the development environment
 
 #### Configuration kubernetes environment
  
 ```shell script
-gcloud container clusters get-credentials cluster-1 --region us-central1-c --project sn-demo-279007
+gcloud container clusters get-credentials api --zone us-west1-b --project sncloud-dev-tuteng
 ```
 
 #### Start service
