@@ -84,7 +84,7 @@ jobs:
           mvn clean install
           cp java-proxy-${{ github.event.release.tag_name }}-SNAPSHOT ../
 
-      - name: Upload java proxy nar to release
+      - name: Upload java proxy nar package to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
