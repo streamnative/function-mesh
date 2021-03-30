@@ -37,10 +37,11 @@ import (
 const (
 	EnvShardID                 = "SHARD_ID"
 	FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
-	DefaultRunnerImage         = "streamnative/pulsar-all:2.7.0-rc-pm-3"
-	DefaultJavaRunnerImage     = "streamnative/pulsar-functions-java-runner:2.7.0"
-	DefaultPythonRunnerImage   = "streamnative/pulsar-functions-python-runner:2.7.0"
-	DefaultGoRunnerImage       = "streamnative/pulsar-functions-go-runner:2.7.0"
+	DefaultRunnerTag		   = "2.7.1"
+	DefaultRunnerImage         = "streamnative/pulsar-all:" + DefaultRunnerTag
+	DefaultJavaRunnerImage     = "streamnative/pulsar-functions-java-runner:" + DefaultRunnerTag
+	DefaultPythonRunnerImage   = "streamnative/pulsar-functions-python-runner:" + DefaultRunnerTag
+	DefaultGoRunnerImage       = "streamnative/pulsar-functions-go-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 	PulsarDownloadRootDir      = "/pulsar"
 
