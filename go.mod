@@ -3,11 +3,11 @@ module github.com/streamnative/function-mesh
 go 1.13
 
 require (
-	github.com/davecgh/go-spew v1.1.1
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
-	github.com/google/gofuzz v1.1.0
+	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.4
 	github.com/pkg/errors v0.9.1 // indirect
