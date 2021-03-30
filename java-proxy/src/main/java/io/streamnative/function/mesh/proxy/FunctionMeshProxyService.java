@@ -31,6 +31,7 @@ import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationService;
 import org.apache.pulsar.broker.authorization.AuthorizationService;
 import org.apache.pulsar.broker.cache.ConfigurationCacheService;
+import org.apache.pulsar.broker.resources.PulsarResources;
 import org.apache.pulsar.common.conf.InternalConfigurationData;
 import org.apache.pulsar.common.util.SimpleTextOutputStream;
 import org.apache.pulsar.functions.worker.ErrorNotifier;
@@ -80,11 +81,10 @@ public class FunctionMeshProxyService implements WorkerService {
 
     @Override
     public void initInBroker(ServiceConfiguration brokerConfig,
-                           WorkerConfig workerConfig,
-                           ZooKeeperCache zooKeeperCache,
+                           WorkerConfig workerConfig, PulsarResources pulsarResources,
                            ConfigurationCacheService configurationCacheService,
-                           InternalConfigurationData internalConfigurationData) {
-        // to do https://github.com/streamnative/function-mesh/issues/57
+                           InternalConfigurationData internalConfigurationData) throws Exception {
+        this.init(workerConfig);
     }
 
     public void init(WorkerConfig workerConfig) throws Exception {
