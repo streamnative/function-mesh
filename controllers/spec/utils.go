@@ -191,7 +191,7 @@ func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
 
 func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 	var producerSpec proto.ProducerSpec
-	var cryptoSpec *proto.CryptoSpec = nil
+	var cryptoSpec *proto.CryptoSpec
 	if source.Spec.Output.ProducerConf != nil {
 		if source.Spec.Output.ProducerConf.CryptoConfig != nil {
 			cryptoSpec = generateCryptoSpec(source.Spec.Output.ProducerConf.CryptoConfig)
