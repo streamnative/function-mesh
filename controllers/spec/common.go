@@ -566,15 +566,12 @@ func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
 	img := spec.Image
 	if img != "" {
 		return img
-	}
-	if runtime != nil {
-		if runtime.Java != nil && runtime.Java.Jar != "" {
-			return DefaultJavaRunnerImage
-		} else if runtime.Python != nil && runtime.Python.Py != "" {
-			return DefaultPythonRunnerImage
-		} else if runtime.Golang != nil && runtime.Golang.Go != "" {
-			return DefaultGoRunnerImage
-		}
+	} else if runtime.Java != nil && runtime.Java.Jar != "" {
+		return DefaultJavaRunnerImage
+	} else if runtime.Python != nil && runtime.Python.Py != "" {
+		return DefaultPythonRunnerImage
+	} else if runtime.Golang != nil && runtime.Golang.Go != "" {
+		return DefaultGoRunnerImage
 	}
 	return DefaultRunnerImage
 }
@@ -584,15 +581,12 @@ func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
 	img := spec.Image
 	if img != "" {
 		return img
-	}
-	if runtime != nil {
-		if runtime.Java != nil && runtime.Java.Jar != "" {
-			return DefaultJavaRunnerImage
-		} else if runtime.Python != nil && runtime.Python.Py != "" {
-			return DefaultPythonRunnerImage
-		} else if runtime.Golang != nil && runtime.Golang.Go != "" {
-			return DefaultGoRunnerImage
-		}
+	} else if runtime.Java != nil && runtime.Java.Jar != "" {
+		return DefaultJavaRunnerImage
+	} else if runtime.Python != nil && runtime.Python.Py != "" {
+		return DefaultPythonRunnerImage
+	} else if runtime.Golang != nil && runtime.Golang.Go != "" {
+		return DefaultGoRunnerImage
 	}
 	return DefaultRunnerImage
 }
@@ -602,15 +596,13 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 	img := spec.Image
 	if img != "" {
 		return img
+	} else if runtime.Java != nil && runtime.Java.Jar != "" {
+		return DefaultJavaRunnerImage
+	} else if runtime.Python != nil && runtime.Python.Py != "" {
+		return DefaultPythonRunnerImage
+	} else if runtime.Golang != nil && runtime.Golang.Go != "" {
+		return DefaultGoRunnerImage
 	}
-	if runtime != nil {
-		if runtime.Java != nil && runtime.Java.Jar != "" {
-			return DefaultJavaRunnerImage
-		} else if runtime.Python != nil && runtime.Python.Py != "" {
-			return DefaultPythonRunnerImage
-		} else if runtime.Golang != nil && runtime.Golang.Go != "" {
-			return DefaultGoRunnerImage
-		}
-	}
+
 	return DefaultRunnerImage
 }
