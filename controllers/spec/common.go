@@ -561,7 +561,48 @@ func generateAnnotations(customAnnotations map[string]string) map[string]string 
 	return annotations
 }
 
-func getFunctionRunnerImage(runtime *v1alpha1.Runtime) string {
+func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
+	runtime := &spec.Runtime
+	img := spec.Image
+	if img != "" {
+		return img
+	}
+	if runtime != nil {
+		if runtime.Java != nil && runtime.Java.Jar != "" {
+			return DefaultJavaRunnerImage
+		} else if runtime.Python != nil && runtime.Python.Py != "" {
+			return DefaultPythonRunnerImage
+		} else if runtime.Golang != nil && runtime.Golang.Go != "" {
+			return DefaultGoRunnerImage
+		}
+	}
+	return DefaultRunnerImage
+}
+
+func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
+	runtime := &spec.Runtime
+	img := spec.Image
+	if img != "" {
+		return img
+	}
+	if runtime != nil {
+		if runtime.Java != nil && runtime.Java.Jar != "" {
+			return DefaultJavaRunnerImage
+		} else if runtime.Python != nil && runtime.Python.Py != "" {
+			return DefaultPythonRunnerImage
+		} else if runtime.Golang != nil && runtime.Golang.Go != "" {
+			return DefaultGoRunnerImage
+		}
+	}
+	return DefaultRunnerImage
+}
+
+func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
+	runtime := &spec.Runtime
+	img := spec.Image
+	if img != "" {
+		return img
+	}
 	if runtime != nil {
 		if runtime.Java != nil && runtime.Java.Jar != "" {
 			return DefaultJavaRunnerImage

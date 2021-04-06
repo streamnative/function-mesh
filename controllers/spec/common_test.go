@@ -89,24 +89,24 @@ func TestGetDownloadCommand(t *testing.T) {
 }
 
 func TestGetFunctionRunnerImage(t *testing.T) {
-	javaRuntime := &v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+	javaRuntime := v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
 		Jar:         "test.jar",
 		JarLocation: "test",
 	}}
-	image := getFunctionRunnerImage(javaRuntime)
+	image := getFunctionRunnerImage(&v1alpha1.FunctionSpec{Runtime: javaRuntime})
 	assert.Equal(t, image, DefaultJavaRunnerImage)
 
-	pythonRuntime := &v1alpha1.Runtime{Python: &v1alpha1.PythonRuntime{
+	pythonRuntime := v1alpha1.Runtime{Python: &v1alpha1.PythonRuntime{
 		Py:         "test.py",
 		PyLocation: "test",
 	}}
-	image = getFunctionRunnerImage(pythonRuntime)
+	image = getFunctionRunnerImage(&v1alpha1.FunctionSpec{Runtime: pythonRuntime})
 	assert.Equal(t, image, DefaultPythonRunnerImage)
 
-	goRuntime := &v1alpha1.Runtime{Golang: &v1alpha1.GoRuntime{
+	goRuntime := v1alpha1.Runtime{Golang: &v1alpha1.GoRuntime{
 		Go:         "test",
 		GoLocation: "test",
 	}}
-	image = getFunctionRunnerImage(goRuntime)
+	image = getFunctionRunnerImage(&v1alpha1.FunctionSpec{Runtime: goRuntime})
 	assert.Equal(t, image, DefaultGoRunnerImage)
 }
