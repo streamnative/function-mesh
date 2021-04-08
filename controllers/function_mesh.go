@@ -133,7 +133,7 @@ func (r *FunctionMeshReconciler) observeSources(ctx context.Context, mesh *v1alp
 func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha1.FunctionMesh) error {
 	for _, sinkSpec := range mesh.Spec.Sinks {
 		// present the original name to use in Status, but underlying use the complete-name
-		condition, ok := mesh.Status.SourceConditions[sinkSpec.Name]
+		condition, ok := mesh.Status.SinkConditions[sinkSpec.Name]
 		if !ok {
 			mesh.Status.SinkConditions[sinkSpec.Name] = v1alpha1.ResourceCondition{
 				Condition: v1alpha1.SinkReady,
@@ -199,7 +199,7 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 	}
 
 	for _, sinkSpec := range mesh.Spec.Sinks {
-		condition := mesh.Status.SourceConditions[sinkSpec.Name]
+		condition := mesh.Status.SinkConditions[sinkSpec.Name]
 		if condition.Status == metav1.ConditionTrue {
 			continue
 		}

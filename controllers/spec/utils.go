@@ -165,6 +165,7 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 		Namespace:            source.Namespace,
 		Name:                 source.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
+		LogTopic:             source.Spec.LogTopic,
 		ProcessingGuarantees: convertProcessingGuarantee(source.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(source.Spec.SourceConfig),
 		SecretsMap:           marshalSecretsMap(source.Spec.SecretsMap),
@@ -189,15 +190,23 @@ func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
 }
 
 func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
-	return &proto.SinkSpec{
-		TypeClassName: source.Spec.SinkType,
-		Topic:         source.Spec.Output.Topic,
-		ProducerSpec: &proto.ProducerSpec{
+	var producerSpec proto.ProducerSpec
+	var cryptoSpec *proto.CryptoSpec
+	if source.Spec.Output.ProducerConf != nil {
+		if source.Spec.Output.ProducerConf.CryptoConfig != nil {
+			cryptoSpec = generateCryptoSpec(source.Spec.Output.ProducerConf.CryptoConfig)
+		}
+		producerSpec = proto.ProducerSpec{
 			MaxPendingMessages:                 source.Spec.Output.ProducerConf.MaxPendingMessages,
 			MaxPendingMessagesAcrossPartitions: source.Spec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions,
 			UseThreadLocalProducers:            source.Spec.Output.ProducerConf.UseThreadLocalProducers,
-			CryptoSpec:                         generateCryptoSpec(source.Spec.Output.ProducerConf.CryptoConfig),
-		},
+			CryptoSpec:                         cryptoSpec,
+		}
+	}
+	return &proto.SinkSpec{
+		TypeClassName:  source.Spec.SinkType,
+		Topic:          source.Spec.Output.Topic,
+		ProducerSpec:   &producerSpec,
 		SerDeClassName: source.Spec.Output.SinkSerdeClassName,
 		SchemaType:     source.Spec.Output.SinkSchemaType,
 	}
@@ -209,6 +218,7 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		Namespace:            sink.Namespace,
 		Name:                 sink.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
+		LogTopic:             sink.Spec.LogTopic,
 		ProcessingGuarantees: convertProcessingGuarantee(sink.Spec.ProcessingGuarantee),
 		SecretsMap:           marshalSecretsMap(sink.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
