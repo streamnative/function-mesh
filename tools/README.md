@@ -36,9 +36,11 @@ go build
 ./tools
 ```
 
+```
 functions
 └── public
     └── default
         └── test-func.yaml
+```
 
 This is the structure of the final generated configuration file, which can be created directly using the `kubectl` command function.
