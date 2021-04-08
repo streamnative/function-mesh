@@ -96,7 +96,7 @@ public class SinksUtil {
             file = FunctionCommon.createPkgTempFile();
             FileUtils.copyInputStreamToFile(uploadedInputStream, file);
         }
-        NarClassLoader narClassLoader = FunctionCommon.extractNarClassLoader(null, file, null);
+        NarClassLoader narClassLoader = FunctionCommon.extractNarClassLoader(file, null);
         String sourceClassName = ConnectorUtils.getIOSourceClass(narClassLoader);
         Class<?> sourceClass = narClassLoader.loadClass(sourceClassName);
         Class<?> sourceType = FunctionCommon.getSourceType(sourceClass);
