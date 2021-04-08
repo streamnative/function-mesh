@@ -1,13 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	cmdutils "github.com/streamnative/pulsarctl/pkg/cmdutils"
-	"github.com/streamnative/pulsarctl/pkg/pulsar/common"
 	"os"
 	"strings"
-	"gopkg.in/yaml.v2"
+
+	"github.com/ghodss/yaml"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
+	cmdutils "github.com/streamnative/pulsarctl/pkg/cmdutils"
+	"github.com/streamnative/pulsarctl/pkg/pulsar/common"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func main() {
@@ -17,15 +22,6 @@ func main() {
 	if err != nil {
 		fmt.Printf("List tenant failed from service %s\n", cmdutils.PulsarCtlConfig.WebServiceURL)
 		os.Exit(1)
-	}
-	clusters, err := admin.Clusters().List()
-	if err != nil {
-		fmt.Printf("List clusters failed from service %s\n", cmdutils.PulsarCtlConfig.WebServiceURL)
-		os.Exit(1)
-	}
-	var pulsarCluster = ""
-	for _, cluster := range clusters {
-		pulsarCluster = cluster
 	}
 	for _, tenant := range tenants {
 		namespaces, err := admin.Namespaces().GetNamespaces(tenant)
@@ -50,55 +46,132 @@ func main() {
 						function, tenant, namespace, cmdutils.PulsarCtlConfig.WebServiceURL, err)
 					os.Exit(1)
 				}
-				replicas := int32(functionConfig.Parallelism)
-				sourceSpecs := make(map[string]v1alpha1.ConsumerConfig)
-				for s := range functionConfig.InputSpecs {
-					//sourceSpec[s] = functionConfig.InputSpecs[s].SchemaType
-					receiveQueueSize := int32(functionConfig.InputSpecs[s].ReceiverQueueSize)
-					sourceSpecs[s] = v1alpha1.ConsumerConfig{
-						SchemaType:         functionConfig.InputSpecs[s].SchemaType,
-						SerdeClassName:     functionConfig.InputSpecs[s].SerdeClassName,
-						IsRegexPattern:     functionConfig.InputSpecs[s].IsRegexPattern,
-						ReceiverQueueSize:  receiveQueueSize,
-					}
-				}
-				timeoutMs := int32(0)
-				if functionConfig.TimeoutMs != nil {
-					timeoutMs = int32(*functionConfig.TimeoutMs)
-				}
-				topicPattern := ""
-				if functionConfig.TopicsPattern != nil {
-					topicPattern = *functionConfig.TopicsPattern
-				}
-				functionSpec := v1alpha1.FunctionSpec{
-					Name:           functionConfig.Name,
-					ClassName:      functionConfig.ClassName,
-					Tenant:         functionConfig.Tenant,
-					ClusterName:    pulsarCluster,
-					AutoAck:        &functionConfig.AutoAck,
-					RetainOrdering: functionConfig.RetainOrdering,
-					Replicas:       &replicas,
-					Input: v1alpha1.InputConf{
-						Topics:              functionConfig.Inputs,
-						TopicPattern:        topicPattern,
-						CustomSerdeSources:  functionConfig.CustomSerdeInputs,
-						CustomSchemaSources: functionConfig.CustomSchemaInputs,
-						SourceSpecs:         sourceSpecs,
-					},
-					MaxReplicas: &replicas,
-					LogTopic: functionConfig.LogTopic,
-					Timeout: timeoutMs,
-
-					//SinkType: functionConfig.
-				}
-				data, err := yaml.Marshal(&functionSpec)
+				functionStatus, err := functionAdmin.Functions().GetFunctionStatus(
+					tenantNamespace[0], tenantNamespace[1], function)
 				if err != nil {
-					fmt.Printf("Convert function %s config to yaml failed" +
-						" from tenant %s namespace %s service %s err %v",
+					fmt.Printf("Get function %s status failed from tenant %s namespace %s service %s err %v",
 						function, tenant, namespace, cmdutils.PulsarCtlConfig.WebServiceURL, err)
 					os.Exit(1)
 				}
-				fmt.Println(string(data))
+				if len(functionStatus.Instances) > 0 {
+					workerID := functionStatus.Instances[0].Status.WorkerID
+					workerIDList := strings.Split(workerID, "-")
+					pulsarCluster := workerIDList[1]
+					replicas := int32(functionConfig.Parallelism)
+					sourceSpecs := make(map[string]v1alpha1.ConsumerConfig)
+					for s := range functionConfig.InputSpecs {
+						receiveQueueSize := int32(functionConfig.InputSpecs[s].ReceiverQueueSize)
+						sourceSpecs[s] = v1alpha1.ConsumerConfig{
+							SchemaType:        functionConfig.InputSpecs[s].SchemaType,
+							SerdeClassName:    functionConfig.InputSpecs[s].SerdeClassName,
+							IsRegexPattern:    functionConfig.InputSpecs[s].IsRegexPattern,
+							ReceiverQueueSize: receiveQueueSize,
+						}
+					}
+					timeoutMs := int32(0)
+					if functionConfig.TimeoutMs != nil {
+						timeoutMs = int32(*functionConfig.TimeoutMs)
+					}
+					topicPattern := ""
+					if functionConfig.TopicsPattern != nil {
+						topicPattern = *functionConfig.TopicsPattern
+					}
+					topics := make([]string, 0, len(functionConfig.InputSpecs))
+					for k := range functionConfig.InputSpecs {
+						topics = append(topics, k)
+					}
+					funcConfig := make(map[string]string)
+					for key, value := range functionConfig.UserConfig {
+						strKey := fmt.Sprintf("%v", key)
+						strValue := fmt.Sprintf("%v", value)
+						funcConfig[strKey] = strValue
+					}
+					functionSpec := v1alpha1.FunctionSpec{
+						Name:                functionConfig.Name,
+						ClassName:           functionConfig.ClassName,
+						Tenant:              functionConfig.Tenant,
+						ClusterName:         pulsarCluster,
+						AutoAck:             &functionConfig.AutoAck,
+						CleanupSubscription: functionConfig.CleanupSubscription,
+						RetainOrdering:      functionConfig.RetainOrdering,
+						Replicas:            &replicas,
+						Input: v1alpha1.InputConf{
+							Topics:              topics,
+							TopicPattern:        topicPattern,
+							CustomSerdeSources:  functionConfig.CustomSerdeInputs,
+							CustomSchemaSources: functionConfig.CustomSchemaInputs,
+							SourceSpecs:         sourceSpecs,
+						},
+						MaxReplicas: &replicas,
+						LogTopic:    functionConfig.LogTopic,
+						Timeout:     timeoutMs,
+						Output: v1alpha1.OutputConf{
+							Topic:              functionConfig.Output,
+							SinkSerdeClassName: functionConfig.OutputSerdeClassName,
+							SinkSchemaType:     functionConfig.OutputSchemaType,
+						},
+						DeadLetterTopic: functionConfig.DeadLetterTopic,
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse(fmt.Sprintf("%f", functionConfig.Resources.CPU)),
+								corev1.ResourceMemory: resource.MustParse(fmt.Sprintf("%d", functionConfig.Resources.RAM/1024/1024/1024)),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse(fmt.Sprintf("%f", functionConfig.Resources.CPU)),
+								corev1.ResourceMemory: resource.MustParse(fmt.Sprintf("%d", functionConfig.Resources.RAM/1024/1024/1024)),
+							},
+						},
+						FuncConfig: funcConfig,
+					}
+					typeMeta := metav1.TypeMeta{
+						APIVersion: "cloud.streamnative.io/v1alpha1",
+						Kind:       "Function",
+					}
+					objectMeta := metav1.ObjectMeta{
+						Namespace: functionConfig.Namespace,
+						Name:      functionConfig.Name,
+					}
+					functionData := v1alpha1.Function{
+						TypeMeta:   typeMeta,
+						ObjectMeta: objectMeta,
+						Spec:       functionSpec,
+					}
+					data, err := json.Marshal(&functionData)
+					if err != nil {
+						fmt.Printf("Convert function %s config to json failed"+
+							" from tenant %s namespace %s service %s err %v",
+							function, tenant, namespace, cmdutils.PulsarCtlConfig.WebServiceURL, err)
+						os.Exit(1)
+					}
+					y, err := yaml.JSONToYAML(data)
+					if err != nil {
+						fmt.Printf("Convert function %s config to yaml failed"+
+							" from tenant %s namespace %s service %s err %v",
+							function, tenant, namespace, cmdutils.PulsarCtlConfig.WebServiceURL, err)
+						os.Exit(1)
+					}
+					path := "functions/" + namespace
+					err = os.MkdirAll(path, os.ModePerm)
+					if err != nil {
+						fmt.Printf("Create directory failed for function %s from tenant %s namespace %s service %s err %v",
+							function, tenant, namespace, cmdutils.PulsarCtlConfig.WebServiceURL, err)
+						os.Exit(1)
+					}
+					filePath := path + "/" + function + ".yaml"
+					f, err := os.Create(filePath)
+					if err != nil {
+						fmt.Printf("Create yaml file failed for function %s from tenant %s namespace %s service %s err %v",
+							function, tenant, namespace, cmdutils.PulsarCtlConfig.WebServiceURL, err)
+						os.Exit(1)
+					}
+					_, err = f.WriteString(string(y))
+					if err != nil {
+						fmt.Printf("Write yaml file failed for function %s from tenant %s namespace %s service %s err %v",
+							function, tenant, namespace, cmdutils.PulsarCtlConfig.WebServiceURL, err)
+						os.Exit(1)
+					}
+					f.Sync()
+				}
 			}
 		}
 	}
