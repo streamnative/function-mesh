@@ -38,10 +38,11 @@ const (
 	EnvShardID                 = "SHARD_ID"
 	FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
 	DefaultRunnerTag           = "2.7.1"
-	DefaultRunnerImage         = "streamnative/pulsar-all:" + DefaultRunnerTag
-	DefaultJavaRunnerImage     = "streamnative/pulsar-functions-java-runner:" + DefaultRunnerTag
-	DefaultPythonRunnerImage   = "streamnative/pulsar-functions-python-runner:" + DefaultRunnerTag
-	DefaultGoRunnerImage       = "streamnative/pulsar-functions-go-runner:" + DefaultRunnerTag
+	DefaultRunnerPrefix        = "streamnative/"
+	DefaultRunnerImage         = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
+	DefaultJavaRunnerImage     = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
+	DefaultPythonRunnerImage   = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
+	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 	PulsarDownloadRootDir      = "/pulsar"
 
@@ -577,32 +578,17 @@ func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
 }
 
 func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
-	runtime := &spec.Runtime
 	img := spec.Image
 	if img != "" {
 		return img
-	} else if runtime.Java != nil && runtime.Java.Jar != "" {
-		return DefaultJavaRunnerImage
-	} else if runtime.Python != nil && runtime.Python.Py != "" {
-		return DefaultPythonRunnerImage
-	} else if runtime.Golang != nil && runtime.Golang.Go != "" {
-		return DefaultGoRunnerImage
 	}
 	return DefaultRunnerImage
 }
 
 func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
-	runtime := &spec.Runtime
 	img := spec.Image
 	if img != "" {
 		return img
-	} else if runtime.Java != nil && runtime.Java.Jar != "" {
-		return DefaultJavaRunnerImage
-	} else if runtime.Python != nil && runtime.Python.Py != "" {
-		return DefaultPythonRunnerImage
-	} else if runtime.Golang != nil && runtime.Golang.Go != "" {
-		return DefaultGoRunnerImage
 	}
-
 	return DefaultRunnerImage
 }
