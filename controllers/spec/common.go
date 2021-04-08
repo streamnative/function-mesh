@@ -582,6 +582,10 @@ func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
 	if img != "" {
 		return img
 	}
+	if spec.Runtime.Java.Jar != "" && spec.Runtime.Java.JarLocation != "" &&
+		hasPackageNamePrefix(spec.Runtime.Java.JarLocation) {
+		return DefaultJavaRunnerImage
+	}
 	return DefaultRunnerImage
 }
 
@@ -589,6 +593,10 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 	img := spec.Image
 	if img != "" {
 		return img
+	}
+	if spec.Runtime.Java.Jar != "" && spec.Runtime.Java.JarLocation != "" &&
+		hasPackageNamePrefix(spec.Runtime.Java.JarLocation) {
+		return DefaultJavaRunnerImage
 	}
 	return DefaultRunnerImage
 }
