@@ -29,7 +29,7 @@ HELM=${OUTPUT_BIN}/helm
 KUBECTL=${OUTPUT_BIN}/kubectl
 NAMESPACE=pulsar
 CLUSTER=sn-platform
-CLUSTER_ID=$(uuidgen)
+CLUSTER_ID=$(uuidgen | tr "[:upper:]" "[:lower:]")
 
 FUNCTION_NAME=$1
 
@@ -55,9 +55,11 @@ function ci::install_storage_provisioner() {
 
 function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
-    git clone https://github.com/streamnative/charts.git
-    cd charts
-    cp ../.ci/clusters/values.yaml charts/pulsar/mini_values.yaml
+    values=${1:-".ci/clusters/values.yaml"}
+    echo $values
+    git clone https://github.com/streamnative/charts.git pulsar-charts
+    cp ${values} pulsar-charts/charts/pulsar/mini_values.yaml
+    cd pulsar-charts
     cd charts
     helm repo add loki https://grafana.github.io/loki/charts
     helm dependency update pulsar
@@ -102,4 +104,41 @@ function ci::verify_function_mesh() {
       fi
       WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep ${FUNCTION_NAME} | wc -l)
     done
+}
+
+function ci::test_function_runners() {
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-java --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/test-java-input --jar /pulsar/examples/api-examples.jar
+    sleep 15
+    ${KUBECTL} get pods -A
+    sleep 5
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-java" | wc -l)
+    if [[ ${WC} -ne 1 ]]; then
+      return 1
+    fi
+    echo "java runner test done"
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-java
+
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-python --classname exclamation_function.ExclamationFunction --inputs persistent://public/default/test-python-input --py /pulsar/examples/python-examples/exclamation_function.py
+    sleep 15
+    ${KUBECTL} get pods -A
+    sleep 5
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-python" | wc -l)
+    if [[ ${WC} -ne 1 ]]; then
+      return 1
+    fi
+    echo "python runner test done"
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-python
+
+    ${KUBECTL} cp "${FUNCTION_MESH_HOME}/.ci/examples/go-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-1:/pulsar/examples"
+    sleep 1
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-1 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-go --inputs persistent://public/default/test-go-input --go /pulsar/examples/go-examples/exclamationFunc
+    sleep 15
+    ${KUBECTL} get pods -A
+    sleep 5
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-go" | wc -l)
+    if [[ ${WC} -ne 1 ]]; then
+      return 1
+    fi
+    echo "golang runner test done"
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-1 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-go
 }

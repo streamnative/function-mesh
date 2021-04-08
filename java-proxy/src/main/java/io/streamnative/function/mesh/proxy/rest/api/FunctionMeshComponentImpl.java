@@ -18,7 +18,7 @@
  */
 package io.streamnative.function.mesh.proxy.rest.api;
 
-import io.streamnative.cloud.models.function.V1alpha1FunctionList;
+import io.streamnative.cloud.function.models.V1alpha1FunctionList;
 import io.streamnative.function.mesh.proxy.FunctionMeshProxyService;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
@@ -53,24 +53,13 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
 
     final String version = "v1alpha1";
 
+    final String kind = "Function";
+
     public FunctionMeshComponentImpl(Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier,
                                      Function.FunctionDetails.ComponentType componentType) {
         this.functionMeshProxyServiceSupplier = functionMeshProxyServiceSupplier;
         // If you want to support function-mesh, this type needs to be changed
         this.componentType = componentType;
-    }
-
-    public <T> T executeCall(Call call, Class<T> c) throws Exception {
-        Response response;
-        response = call.execute();
-        if (response.isSuccessful() && response.body() != null) {
-            String data = response.body().string();
-            return worker().getApiClient().getJSON().getGson().fromJson(data, c);
-        } else {
-            String err = String.format("failed to perform the request: responseCode: %s, responseMessage: %s",
-                    response.code(), response.message());
-            throw new Exception(err);
-        }
     }
 
     @Override
@@ -85,6 +74,33 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
     }
 
     @Override
+    public void deregisterFunction(final String tenant,
+                                   final String namespace,
+                                   final String componentName,
+                                   final String clientRole,
+                                   AuthenticationDataHttps clientAuthenticationDataHttps) {
+
+    }
+
+    public <T> T executeCall(Call call, Class<T> c) throws Exception {
+        Response response;
+        response = call.execute();
+        if (response.isSuccessful() && response.body() != null) {
+            String data = response.body().string();
+            if (c == null) {
+                return null;
+            }
+            return worker().getApiClient().getJSON().getGson().fromJson(data, c);
+        } else {
+            String body = response.body() != null ? response.body().string() : "";
+            String err = String.format(
+                    "failed to perform the request: responseCode: %s, responseMessage: %s, responseBody: %s",
+                    response.code(), response.message(), body);
+            throw new Exception(err);
+        }
+    }
+
+    @Override
     public FunctionMeshProxyService worker() {
         try {
             return checkNotNull(functionMeshProxyServiceSupplier.get());
@@ -92,15 +108,6 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
             log.info("Failed to get worker service", t);
             throw t;
         }
-    }
-
-    @Override
-    public void deregisterFunction(final String tenant,
-                                   final String namespace,
-                                   final String componentName,
-                                   final String clientRole,
-                                   AuthenticationDataHttps clientAuthenticationDataHttps) {
-
     }
 
     @Override

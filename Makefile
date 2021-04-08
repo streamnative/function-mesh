@@ -1,7 +1,17 @@
 # Current Operator version
-VERSION ?= 0.1.1
-# Default bundle image tag
-BUNDLE_IMG ?= controller-bundle:$(VERSION)
+VERSION ?= v0.1.2
+# Default image tag
+DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
+BUNDLE_IMG ?= function-mesh-controller-bundle:$(VERSION)
+OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:$(VERSION)
+OPERATOR_IMG_LATEST ?= ${DOCKER_REPO}/function-mesh:latest
+
+GOOS := $(if $(GOOS),$(GOOS),linux)
+GOARCH := $(if $(GOARCH),$(GOARCH),amd64)
+GOENV  := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
+GO     := $(GOENV) go
+GO_BUILD := $(GO) build -trimpath
+
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -31,15 +41,15 @@ test: generate fmt vet manifests
 
 # Build manager binary
 manager: generate fmt vet
-	go build -o bin/manager main.go
+	$(GO_BUILD) -o bin/function-mesh-controller-manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
 	go run ./main.go
 
 # Install CRDs into a cluster
-install: manifests kustomize
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+install: manifests kustomize crd
+	kubectl create -f manifests/crd.yaml
 
 # Uninstall CRDs from a cluster
 uninstall: manifests kustomize
@@ -70,10 +80,6 @@ generate: controller-gen
 docker-build: test
 	docker build . -t ${IMG}
 
-# Push the docker image
-docker-push:
-	docker push ${IMG}
-
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:
@@ -83,7 +89,7 @@ ifeq (, $(shell which controller-gen))
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0 ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.4 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
@@ -118,3 +124,19 @@ bundle: manifests
 .PHONY: bundle-build
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+crd: manifests
+	$(KUSTOMIZE) build config/crd > manifests/crd.yaml
+
+rbac: manifests
+	$(KUSTOMIZE) build config/rbac > manifests/rbac.yaml
+
+release: manifests crd rbac manager operator-docker-image
+
+operator-docker-image: test
+	docker build -f operator.Dockerfile -t $(OPERATOR_IMG) .
+	docker tag $(OPERATOR_IMG) $(OPERATOR_IMG_LATEST)
+
+docker-push:
+	docker push $(OPERATOR_IMG)
+	docker push $(OPERATOR_IMG_LATEST)

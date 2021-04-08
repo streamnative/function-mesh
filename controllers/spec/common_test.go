@@ -20,6 +20,8 @@ package spec
 import (
 	"testing"
 
+	"github.com/streamnative/function-mesh/api/v1alpha1"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -84,4 +86,27 @@ func TestGetDownloadCommand(t *testing.T) {
 	for _, v := range testData {
 		doTest(v.downloadPath, v.componentPackage, v.expectedCommand)
 	}
+}
+
+func TestGetFunctionRunnerImage(t *testing.T) {
+	javaRuntime := &v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+		Jar:         "test.jar",
+		JarLocation: "test",
+	}}
+	image := getFunctionRunnerImage(javaRuntime)
+	assert.Equal(t, image, DefaultJavaRunnerImage)
+
+	pythonRuntime := &v1alpha1.Runtime{Python: &v1alpha1.PythonRuntime{
+		Py:         "test.py",
+		PyLocation: "test",
+	}}
+	image = getFunctionRunnerImage(pythonRuntime)
+	assert.Equal(t, image, DefaultPythonRunnerImage)
+
+	goRuntime := &v1alpha1.Runtime{Golang: &v1alpha1.GoRuntime{
+		Go:         "test",
+		GoLocation: "test",
+	}}
+	image = getFunctionRunnerImage(goRuntime)
+	assert.Equal(t, image, DefaultGoRunnerImage)
 }
