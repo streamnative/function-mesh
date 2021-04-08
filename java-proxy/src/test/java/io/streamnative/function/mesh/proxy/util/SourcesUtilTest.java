@@ -75,7 +75,7 @@ public class SourcesUtilTest {
         PowerMockito.mockStatic(FunctionCommon.class);
         PowerMockito.mockStatic(ConnectorUtils.class);
         PowerMockito.mockStatic(FileUtils.class);
-        PowerMockito.when(FunctionCommon.extractNarClassLoader(null, narFile, null)).thenReturn(narClassLoader);
+        PowerMockito.when(FunctionCommon.extractNarClassLoader(narFile, null)).thenReturn(narClassLoader);
         PowerMockito.when(FunctionCommon.createPkgTempFile()).thenReturn(narFile);
         PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
         PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
