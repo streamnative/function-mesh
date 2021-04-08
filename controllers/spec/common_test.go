@@ -110,3 +110,63 @@ func TestGetFunctionRunnerImage(t *testing.T) {
 	image = getFunctionRunnerImage(&v1alpha1.FunctionSpec{Runtime: goRuntime})
 	assert.Equal(t, image, DefaultGoRunnerImage)
 }
+
+func TestGetSinkRunnerImage(t *testing.T) {
+	spec := v1alpha1.SinkSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+		Jar:         "test.jar",
+		JarLocation: "",
+	}}}
+	image := getSinkRunnerImage(&spec)
+	assert.Equal(t, image, DefaultRunnerImage)
+
+	spec = v1alpha1.SinkSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+		Jar:         "test.jar",
+		JarLocation: "test",
+	}}}
+	image = getSinkRunnerImage(&spec)
+	assert.Equal(t, image, DefaultRunnerImage)
+
+	spec = v1alpha1.SinkSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+		Jar:         "test.jar",
+		JarLocation: "sink://public/default/test",
+	}}}
+	image = getSinkRunnerImage(&spec)
+	assert.Equal(t, image, DefaultJavaRunnerImage)
+
+	spec = v1alpha1.SinkSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+		Jar:         "test.jar",
+		JarLocation: "",
+	}}, Image: "streamnative/pulsar-io-test:2.7.1"}
+	image = getSinkRunnerImage(&spec)
+	assert.Equal(t, image, "streamnative/pulsar-io-test:2.7.1")
+}
+
+func TestGetSourceRunnerImage(t *testing.T) {
+	spec := v1alpha1.SourceSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+		Jar:         "test.jar",
+		JarLocation: "",
+	}}}
+	image := getSourceRunnerImage(&spec)
+	assert.Equal(t, image, DefaultRunnerImage)
+
+	spec = v1alpha1.SourceSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+		Jar:         "test.jar",
+		JarLocation: "test",
+	}}}
+	image = getSourceRunnerImage(&spec)
+	assert.Equal(t, image, DefaultRunnerImage)
+
+	spec = v1alpha1.SourceSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+		Jar:         "test.jar",
+		JarLocation: "sink://public/default/test",
+	}}}
+	image = getSourceRunnerImage(&spec)
+	assert.Equal(t, image, DefaultJavaRunnerImage)
+
+	spec = v1alpha1.SourceSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+		Jar:         "test.jar",
+		JarLocation: "",
+	}}, Image: "streamnative/pulsar-io-test:2.7.1"}
+	image = getSourceRunnerImage(&spec)
+	assert.Equal(t, image, "streamnative/pulsar-io-test:2.7.1")
+}
