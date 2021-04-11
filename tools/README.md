@@ -19,7 +19,7 @@ tlsEnableHostnameVerification=false
 Declare environment variables `PULSAR_CLIENT_CONF`
 
 ```
-export PULSAR_CLIENT_CONF=/PATH/pulsarctl.conf
+export PULSAR_CLIENT_CONF=/PATH/pulsarctl.properties
 ```
 
 Replace the `PATH` variable with the absolute path to the configuration file.
