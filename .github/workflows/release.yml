@@ -72,6 +72,12 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
 
+      - name: Set up yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.0/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+          yq --help
+
       - name: Login to GitHub Packages Docker Registry
         uses: docker/login-action@v1
         with:
