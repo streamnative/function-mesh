@@ -100,13 +100,12 @@ jobs:
         run: |
           cd java-proxy
           mvn clean install
-          cp java-proxy-${{ github.event.release.tag_name }}.nar ../
 
       - name: Upload java proxy nar package to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: java-proxy-${{ github.event.release.tag_name }}.nar
+          file: java-proxy/target/java-proxy-${{ github.event.release.tag_name }}.nar
           asset_name: java-proxy-${{ github.event.release.tag_name }}.nar
           tag: ${{ github.ref }}
           overwrite: true
