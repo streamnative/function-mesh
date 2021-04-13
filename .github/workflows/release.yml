@@ -72,6 +72,13 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
 
+      - name: Login to GitHub Packages Docker Registry
+        uses: docker/login-action@v1
+        with:
+          registry: docker.pkg.github.com
+          username: tuteng
+          password: ${{ secrets.IMAGE_GITHUB_TOKEN }}
+
       - name: Auto generate crd model 
         run: cd java-proxy && ./tool/generate-crd.sh
 
