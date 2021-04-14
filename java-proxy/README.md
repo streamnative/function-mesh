@@ -25,15 +25,10 @@ Replace the `YOUR-NAR-PATH` variable with your real path.
 
 ### Configuring the development environment
 
-#### Configuration kubernetes environment
- 
-```shell script
-gcloud container clusters get-credentials api --zone us-west1-b --project sncloud-dev-tuteng
-```
 
 #### Start service
 
-Importing a project into the idea development environment.
+Importing this project into the idea development environment.
 
 Configuration environment variable `KUBECONFIG` for idea development environment.
 
@@ -106,7 +101,7 @@ curl http://localhost:6750/admin/v3/functions/test/default/functionmesh-sample-e
 
 crd yaml [file](https://github.com/streamnative/function-mesh/tree/master/config/crd/bases)
 
-Note: add the field `preserveUnknownFields: false` to spec for avoid this [issue]()https://github.com/kubernetes-client/java/issues/1254
+Note: add the field `preserveUnknownFields: false` to spec for avoid this [issue](https://github.com/kubernetes-client/java/issues/1254)
 
 ```shell script
 CRD_FILE=cloud.streamnative.io_sources.yaml # Target CRD file
