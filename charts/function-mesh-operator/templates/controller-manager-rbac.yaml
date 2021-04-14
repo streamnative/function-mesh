@@ -50,7 +50,7 @@ rules:
     - update
     - patch
 - apiGroups:
-    - cloud.streamnative.io
+    - compute.functionmesh.io
   resources:
     - functionmeshes
   verbs:
@@ -62,7 +62,7 @@ rules:
     - update
     - watch
 - apiGroups:
-    - cloud.streamnative.io
+    - compute.functionmesh.io
   resources:
     - functionmeshes/status
   verbs:
@@ -70,7 +70,7 @@ rules:
     - patch
     - update
 - apiGroups:
-    - cloud.streamnative.io
+    - compute.functionmesh.io
   resources:
     - functions
   verbs:
@@ -82,7 +82,7 @@ rules:
     - update
     - watch
 - apiGroups:
-    - cloud.streamnative.io
+    - compute.functionmesh.io
   resources:
     - functions/status
   verbs:
@@ -90,7 +90,7 @@ rules:
     - patch
     - update
 - apiGroups:
-    - cloud.streamnative.io
+    - compute.functionmesh.io
   resources:
     - sinks
   verbs:
@@ -102,7 +102,7 @@ rules:
     - update
     - watch
 - apiGroups:
-    - cloud.streamnative.io
+    - compute.functionmesh.io
   resources:
     - sinks/status
   verbs:
@@ -110,7 +110,7 @@ rules:
     - patch
     - update
 - apiGroups:
-    - cloud.streamnative.io
+    - compute.functionmesh.io
   resources:
     - sources
   verbs:
@@ -122,7 +122,7 @@ rules:
     - update
     - watch
 - apiGroups:
-    - cloud.streamnative.io
+    - compute.functionmesh.io
   resources:
     - sources/status
   verbs:

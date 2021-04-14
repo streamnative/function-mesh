@@ -5,7 +5,7 @@ metadata:
   name: function-editor-role
 rules:
 - apiGroups:
-  - cloud.streamnative.io
+  - compute.functionmesh.io
   resources:
   - functions
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - cloud.streamnative.io
+  - compute.functionmesh.io
   resources:
   - functions/status
   verbs:

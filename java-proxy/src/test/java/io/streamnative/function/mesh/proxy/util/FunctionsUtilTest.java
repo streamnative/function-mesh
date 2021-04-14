@@ -37,7 +37,7 @@ public class FunctionsUtilTest {
         String tenant = "public";
         String namespace = "default";
         String functionName = "word-count";
-        String group = "cloud.streamnative.io";
+        String group = "compute.functionmesh.io";
         String version = "v1alpha1";
         String kind = "Function";
         String className = "org.example.functions.WordCountFunction";
@@ -136,7 +136,7 @@ public class FunctionsUtilTest {
         String tenant = "public";
         String namespace = "default";
         String functionName = "word-count";
-        String group = "cloud.streamnative.io";
+        String group = "compute.functionmesh.io";
         String version = "v1alpha1";
         String kind = "Function";
         String className = "org.example.functions.WordCountFunction";

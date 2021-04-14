@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: sinks.cloud.streamnative.io
+  name: sinks.compute.functionmesh.io
 spec:
-  group: cloud.streamnative.io
+  group: compute.functionmesh.io
   names:
     kind: Sink
     listKind: SinkList

@@ -88,7 +88,7 @@ crd yaml [file](https://github.com/streamnative/function-mesh/tree/master/config
 Note: add the field `preserveUnknownFields: false` to spec for avoid this [issue]()https://github.com/kubernetes-client/java/issues/1254
 
 ```shell script
-CRD_FILE=cloud.streamnative.io_sources.yaml # Target CRD file
+CRD_FILE=compute.functionmesh.io_sources.yaml # Target CRD file
 
 GEN_DIR=/tmp/functions-mesh/crd
 mkdir -p $GEN_DIR
@@ -110,8 +110,8 @@ docker run \
   docker.pkg.github.com/kubernetes-client/java/crd-model-gen:v1.0.3 \
   /generate.sh \
   -u $LOCAL_MANIFEST_FILE \
-  -n io.streamnative.cloud \
-  -p io.streamnative.cloud \
+  -n io.functionmesh.compute \
+  -p io.functionmesh.compute \
   -o "$(pwd)"
 
 open $GEN_DIR

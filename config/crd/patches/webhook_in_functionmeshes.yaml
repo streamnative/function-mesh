@@ -3,7 +3,7 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: functionmeshes.cloud.streamnative.io
+  name: functionmeshes.compute.functionmesh.io
 spec:
   conversion:
     strategy: Webhook

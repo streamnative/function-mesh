@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: functions.cloud.streamnative.io
+  name: functions.compute.functionmesh.io
 spec:
-  group: cloud.streamnative.io
+  group: compute.functionmesh.io
   names:
     kind: Function
     listKind: FunctionList

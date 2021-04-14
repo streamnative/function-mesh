@@ -34,7 +34,7 @@ jobs:
       #      - name: Add CRD, controller or webhooks
       #        run: |
       #          operator-sdk create api --group cloud --version v1alpha1 --kind Function --resource=true --controller=true
-      #          operator-sdk create webhook --group cloud.streamnative.io --version v1alpha1 --kind Function --defaulting --programmatic-validation
+      #          operator-sdk create webhook --group compute.functionmesh.io --version v1alpha1 --kind Function --defaulting --programmatic-validation
 
       - name: Deploy function mesh server
         run: |

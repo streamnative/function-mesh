@@ -1,4 +1,4 @@
-apiVersion: cloud.streamnative.io/v1alpha1
+apiVersion: compute.functionmesh.io/v1alpha1
 kind: Function
 metadata:
   name: java-function-sample
