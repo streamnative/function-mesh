@@ -53,8 +53,6 @@ public class FunctionsUtil {
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());
 
-        System.out.println("funciton config");
-        System.out.println(functionConfig);
         if (functionConfig.getInputSpecs() != null) {
             ConsumerConfig consumerConfig = functionConfig.getInputSpecs().get(sourceKey);
             if (consumerConfig != null && !StringUtils.isBlank(consumerConfig.getSerdeClassName())) {
