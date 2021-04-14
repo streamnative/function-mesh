@@ -26,7 +26,7 @@
 
     <groupId>io.streamnative.function.mesh.proxy</groupId>
     <artifactId>java-proxy</artifactId>
-    <version>v0.1.3</version>
+    <version>0.1.4-SNAPSHOT</version>
 
     <properties>
         <pulsar.version>2.8.0-rc-202103292206</pulsar.version>

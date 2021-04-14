@@ -14,6 +14,11 @@
 ```
 git clone https://github.com/streamnative/function-mesh
 git checkout -b branch-x.y
+cd java-proxy
+mvn versions:set -DnewVersion=vx.y.z
+git add .
+git commit -m "Update release version for java proxy"
+git push origin branch-x.y
 ```
 
 2. Update the project version and tag
