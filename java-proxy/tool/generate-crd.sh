@@ -33,12 +33,13 @@ LOCAL_MANIFEST_SOURCES_FILE=$GEN_DIR/$CRD_SOURCES_FILE
 LOCAL_MANIFEST_SINKS_FILE=$GEN_DIR/$CRD_SINKS_FILE
 
 # yq site: https://mikefarah.gitbook.io/yq/
-yq eval ".spec.preserveUnknownFields = false" -i $CRD_FUNCTIONS_FILE
-yq eval ".spec.preserveUnknownFields = false" -i $CRD_SOURCES_FILE
-yq eval ".spec.preserveUnknownFields = false" -i $CRD_SINKS_FILE
+#yq eval ".spec.preserveUnknownFields = false" -i $CRD_FUNCTIONS_FILE
+#yq eval ".spec.preserveUnknownFields = false" -i $CRD_SOURCES_FILE
+#yq eval ".spec.preserveUnknownFields = false" -i $CRD_SINKS_FILE
 
 docker pull docker.pkg.github.com/kubernetes-client/java/crd-model-gen:v1.0.3
-docker pull kindest/node:v1.18.2
+docker pull kindest/node:v1.14.10
+docker build --tag crd-model-gen:latest "${DEST_DIR}/tool/crd-model-gen"
 #docker rm -f kind-control-plane
 # Generate functions crd
 docker run \
@@ -46,7 +47,7 @@ docker run \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v "$(pwd)":"$(pwd)" \
   --network host \
-  docker.pkg.github.com/kubernetes-client/java/crd-model-gen:v1.0.3 \
+  crd-model-gen:latest \
   /generate.sh \
   -u $LOCAL_MANIFEST_FUNCTIONS_FILE \
   -n io.streamnative.cloud \
@@ -59,7 +60,7 @@ docker run \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v "$(pwd)":"$(pwd)" \
   --network host \
-  docker.pkg.github.com/kubernetes-client/java/crd-model-gen:v1.0.3 \
+  crd-model-gen:latest \
   /generate.sh \
   -u $LOCAL_MANIFEST_SOURCES_FILE \
   -n io.streamnative.cloud \
@@ -72,7 +73,7 @@ docker run \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v "$(pwd)":"$(pwd)" \
   --network host \
-  docker.pkg.github.com/kubernetes-client/java/crd-model-gen:v1.0.3 \
+  crd-model-gen:latest \
   /generate.sh \
   -u $LOCAL_MANIFEST_SINKS_FILE \
   -n io.streamnative.cloud \

@@ -124,7 +124,7 @@ public class SourcesUtilTest {
         v1alpha1SourceSpec.setPulsar(v1alpha1SourceSpecPulsar);
 
         V1alpha1SourceSpecResources v1alpha1SourceSpecResources = new V1alpha1SourceSpecResources();
-        Map<String, String> requestRes = new HashMap<>();
+        Map<String, Object> requestRes = new HashMap<>();
         String cpuValue = cpu.toString();
         String memoryValue = ram.toString();
         requestRes.put(SourcesUtil.cpuKey, cpuValue);
@@ -193,7 +193,7 @@ public class SourcesUtilTest {
         v1alpha1SourceSpec.setPulsar(v1alpha1SourceSpecPulsar);
 
         V1alpha1SourceSpecResources v1alpha1SourceSpecResources = new V1alpha1SourceSpecResources();
-        Map<String, String> requestRes = new HashMap<>();
+        Map<String, Object> requestRes = new HashMap<>();
         String cpuValue = cpu.toString();
         String memoryValue = ram.toString();
         requestRes.put(SourcesUtil.cpuKey, cpuValue);

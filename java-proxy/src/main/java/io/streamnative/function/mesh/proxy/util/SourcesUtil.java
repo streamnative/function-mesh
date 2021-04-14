@@ -147,7 +147,7 @@ public class SourcesUtil {
         }
         String cpuValue = cpu.toString();
         String memoryValue = memory.toString();
-        Map<String, String> limits = new HashMap<>();
+        Map<String, Object> limits = new HashMap<>();
         limits.put(cpuKey, cpuValue);
         limits.put(memoryKey, memoryValue);
 
@@ -235,7 +235,7 @@ public class SourcesUtil {
         V1alpha1SourceSpecResources sourceSpecResources = sourceSpec.getResources();
         if (sourceSpecResources != null) {
             Resources resources = new Resources();
-            Map<String, String> limits = sourceSpecResources.getLimits();
+            Map<String, Object> limits = sourceSpecResources.getLimits();
             resources.setCpu(Double.parseDouble(limits.get(cpuKey).toString()));
             resources.setRam(Long.parseLong(limits.get(memoryKey).toString()));
             sourceConfig.setResources(resources);

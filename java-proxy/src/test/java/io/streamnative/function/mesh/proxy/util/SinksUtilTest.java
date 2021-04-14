@@ -132,7 +132,7 @@ public class SinksUtilTest {
         v1alpha1SinkSpec.setPulsar(v1alpha1SinkSpecPulsar);
 
         V1alpha1SinkSpecResources v1alpha1SinkSpecResources = new V1alpha1SinkSpecResources();
-        Map<String, String> requestRes = new HashMap<>();
+        Map<String, Object> requestRes = new HashMap<>();
         String cpuValue = cpu.toString();
         String memoryValue = ram.toString();
         requestRes.put(SourcesUtil.cpuKey, cpuValue);
@@ -205,7 +205,7 @@ public class SinksUtilTest {
         v1alpha1SinkSpec.setPulsar(v1alpha1SinkSpecPulsar);
 
         V1alpha1SinkSpecResources v1alpha1SinkSpecResources = new V1alpha1SinkSpecResources();
-        Map<String, String> requestRes = new HashMap<>();
+        Map<String, Object> requestRes = new HashMap<>();
         String cpuValue = cpu.toString();
         String memoryValue = ram.toString();
         requestRes.put(SourcesUtil.cpuKey, cpuValue);
