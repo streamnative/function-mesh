@@ -54,15 +54,19 @@ func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {
 }
 
 func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
+	imagePullPolicy := source.Spec.ImagePullPolicy
+	if imagePullPolicy == "" {
+		imagePullPolicy = corev1.PullIfNotPresent
+	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-source",
-		Image:           DefaultRunnerImage,
+		Image:           getSourceRunnerImage(&source.Spec),
 		Command:         makeSourceCommand(source),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
 		Env:             generateContainerEnv(source.Spec.SecretsMap),
 		Resources:       source.Spec.Resources,
-		ImagePullPolicy: corev1.PullIfNotPresent,
+		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthConfig),
 		VolumeMounts:    makeSourceVolumeMounts(source),
 	}

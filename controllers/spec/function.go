@@ -70,15 +70,19 @@ func makeFunctionVolumeMounts(function *v1alpha1.Function) []corev1.VolumeMount 
 }
 
 func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
+	imagePullPolicy := function.Spec.ImagePullPolicy
+	if imagePullPolicy == "" {
+		imagePullPolicy = corev1.PullIfNotPresent
+	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-function",
-		Image:           getFunctionRunnerImage(&function.Spec.Runtime),
+		Image:           getFunctionRunnerImage(&function.Spec),
 		Command:         makeFunctionCommand(function),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
 		Env:             generateContainerEnv(function.Spec.SecretsMap),
 		Resources:       function.Spec.Resources,
-		ImagePullPolicy: corev1.PullIfNotPresent,
+		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthConfig),
 		VolumeMounts:    makeFunctionVolumeMounts(function),
 	}

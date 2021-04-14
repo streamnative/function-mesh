@@ -54,15 +54,19 @@ func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
 }
 
 func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
+	imagePullPolicy := sink.Spec.ImagePullPolicy
+	if imagePullPolicy == "" {
+		imagePullPolicy = corev1.PullIfNotPresent
+	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-sink",
-		Image:           DefaultRunnerImage,
+		Image:           getSinkRunnerImage(&sink.Spec),
 		Command:         MakeSinkCommand(sink),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
 		Env:             generateContainerEnv(sink.Spec.SecretsMap),
 		Resources:       sink.Spec.Resources,
-		ImagePullPolicy: corev1.PullIfNotPresent,
+		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthConfig),
 		VolumeMounts:    makeSinkVolumeMounts(sink),
 	}
