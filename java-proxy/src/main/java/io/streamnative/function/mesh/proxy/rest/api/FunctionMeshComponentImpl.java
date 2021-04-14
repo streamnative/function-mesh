@@ -49,7 +49,7 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
 
     final String plural = "functions";
 
-    final String group = "cloud.streamnative.io";
+    final String group = "compute.functionmesh.io";
 
     final String version = "v1alpha1";
 

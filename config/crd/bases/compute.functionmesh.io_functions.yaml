@@ -6,14 +6,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: sinks.cloud.streamnative.io
+  name: functions.compute.functionmesh.io
 spec:
-  group: cloud.streamnative.io
+  group: compute.functionmesh.io
   names:
-    kind: Sink
-    listKind: SinkList
-    plural: sinks
-    singular: sink
+    kind: Function
+    listKind: FunctionList
+    plural: functions
+    singular: function
   scope: Namespaced
   subresources:
     scale:
@@ -23,7 +23,7 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Topic is the Schema for the sinks API
+      description: Function is the Schema for the functions API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -34,7 +34,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: SinkSpec defines the desired state of Topic
+          description: FunctionSpec defines the desired state of Function
           properties:
             autoAck:
               type: boolean
@@ -46,6 +46,12 @@ spec:
               type: string
             deadLetterTopic:
               type: string
+            forwardSourceMessageProperty:
+              type: boolean
+            funcConfig:
+              additionalProperties:
+                type: string
+              type: object
             golang:
               properties:
                 go:
@@ -54,7 +60,7 @@ spec:
                   type: string
               type: object
             image:
-              description: Image is the container image used to run sink pods. default is streamnative/pulsar-functions-java-runner
+              description: Image is the container image used to run function pods. default is streamnative/pulsar-functions-java-runner
               type: string
             imagePullPolicy:
               description: Image pull policy, one of Always, Never, IfNotPresent, default to Always.
@@ -141,15 +147,70 @@ spec:
             maxMessageRetry:
               format: int32
               type: integer
+            maxPendingAsyncRequests:
+              format: int32
+              type: integer
             maxReplicas:
               format: int32
               type: integer
             name:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run "make" to regenerate code after modifying this file'
               type: string
-            negativeAckRedeliveryDelayMs:
-              format: int32
-              type: integer
+            output:
+              properties:
+                customSchemaSinks:
+                  additionalProperties:
+                    type: string
+                  type: object
+                producerConf:
+                  properties:
+                    cryptoConfig:
+                      properties:
+                        consumerCryptoFailureAction:
+                          type: string
+                        cryptoKeyReaderClassName:
+                          type: string
+                        cryptoKeyReaderConfig:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        cryptoSecrets:
+                          items:
+                            properties:
+                              asVolume:
+                                type: string
+                              secretKey:
+                                type: string
+                              secretName:
+                                type: string
+                            required:
+                            - secretKey
+                            - secretName
+                            type: object
+                          type: array
+                        encryptionKeys:
+                          items:
+                            type: string
+                          type: array
+                        producerCryptoFailureAction:
+                          type: string
+                      type: object
+                    maxPendingMessages:
+                      format: int32
+                      type: integer
+                    maxPendingMessagesAcrossPartitions:
+                      format: int32
+                      type: integer
+                    useThreadLocalProducers:
+                      type: boolean
+                  type: object
+                sinkSchemaType:
+                  type: string
+                sinkSerdeClassName:
+                  type: string
+                topic:
+                  type: string
+              type: object
             pod:
               properties:
                 affinity:
@@ -2838,6 +2899,8 @@ spec:
                   description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                   type: object
               type: object
+            retainKeyOrdering:
+              type: boolean
             retainOrdering:
               type: boolean
             runtimeFlags:
@@ -2850,10 +2913,6 @@ spec:
                   path:
                     type: string
                 type: object
-              type: object
-            sinkConfig:
-              additionalProperties:
-                type: string
               type: object
             sinkType:
               type: string
@@ -2897,7 +2956,7 @@ spec:
               type: array
           type: object
         status:
-          description: SinkStatus defines the observed state of Topic
+          description: FunctionStatus defines the observed state of Function
           properties:
             conditions:
               additionalProperties:

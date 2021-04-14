@@ -21,7 +21,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	cloudv1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
+	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,15 +39,18 @@ type SourceReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=cloud.streamnative.io,resources=sources,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=cloud.streamnative.io,resources=sources/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sources,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sources/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
 func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	_ = r.Log.WithValues("source", req.NamespacedName)
 
 	// your logic here
-	source := &cloudv1alpha1.Source{}
+	source := &computev1alpha1.Source{}
 	err := r.Get(ctx, req.NamespacedName, source)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -58,7 +61,7 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if source.Status.Conditions == nil {
-		source.Status.Conditions = make(map[cloudv1alpha1.Component]cloudv1alpha1.ResourceCondition)
+		source.Status.Conditions = make(map[computev1alpha1.Component]computev1alpha1.ResourceCondition)
 	}
 
 	err = r.ObserveSourceStatefulSet(ctx, req, source)
@@ -98,7 +101,7 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudv1alpha1.Source{}).
+		For(&computev1alpha1.Source{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Service{}).
 		Owns(&autov1.HorizontalPodAutoscaler{}).

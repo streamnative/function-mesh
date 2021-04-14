@@ -1,22 +1,22 @@
-apiVersion: cloud.streamnative.io/v1alpha1
+apiVersion: compute.functionmesh.io/v1alpha1
 kind: Function
 metadata:
-  name: py-function-sample
+  name: java-function-sample
   namespace: default
 spec:
-  className: exclamation_function.ExclamationFunction
+  className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   sourceType: java.lang.String
   sinkType: java.lang.String
   forwardSourceMessageProperty: true
   MaxPendingAsyncRequests: 1000
   replicas: 1
-  maxReplicas: 1
-  logTopic: persistent://public/default/py-function-logs
+  maxReplicas: 5
+  logTopic: persistent://public/default/logging-function-logs
   input:
     topics:
-    - persistent://public/default/py-function-input-topic
+    - persistent://public/default/java-function-input-topic
   output:
-    topic: persistent://public/default/py-function-output-topic
+    topic: persistent://public/default/java-function-output-topic
   resources:
     requests:
       cpu: "0.1"
@@ -27,19 +27,40 @@ spec:
   # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
   secretsMap:
     "name":
-        path: "test-py-secret"
+        path: "test-secret"
         key: "username"
     "pwd":
-        path: "test-py-secret"
+        path: "test-secret"
         key: "password"
   pulsar:
-    pulsarConfig: "test-py-pulsar"
+    pulsarConfig: "test-pulsar"
     #authConfig: "test-auth"
-  python:
-    py: exclamation_function.py
-    pyLocation: public/default/nlu-test-py-function
+  volumeMounts:
+    - mountPath: /cache
+      name: cache-volume
+  pod:
+    labels:
+      "locaction": "mtv"
+    annotations:
+      "managed-function": "true"
+    volumes:
+    - name: cache-volume
+      emptyDir: {}
+    imagePullSecrets:
+    - name: regcred
+    initContainers:
+    - name: init-function
+      image: busybox:1.28
+      command: ['sh', '-c', 'echo The app is running! && sleep 30']
+    sidecars:
+    - name: sidecar-function
+      image: busybox:1.28
+      command: ['sh', '-c', 'echo The app is running! && sleep 30000']
+  java:
+    jar: pulsar-functions-api-examples.jar
+    jarLocation: public/default/nlu-test-java-function
     # use package name:
-    # pyLocation: function://public/default/nul-py-java-function@v1
+    # jarLocation: function://public/default/nul-test-java-function@v1
   # to be delete & use admission hook
   clusterName: test-pulsar
   autoAck: true
@@ -47,7 +68,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-py-pulsar
+  name: test-pulsar
 data:
     webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
     brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
@@ -70,5 +91,5 @@ data:
   password: MWYyZDFlMmU2N2Rm
 kind: Secret
 metadata:
-  name: test-py-secret
+  name: test-secret
 type: Opaque

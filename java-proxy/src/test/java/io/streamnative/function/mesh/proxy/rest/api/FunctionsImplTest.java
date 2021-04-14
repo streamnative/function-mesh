@@ -54,7 +54,7 @@ public class FunctionsImplTest {
     @Test
     public void getFunctionStatusTest() throws ApiException, IOException {
         String testBody = "{\n" +
-                "  \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n" +
+                "  \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n" +
                 "  \"kind\": \"Function\",\n" +
                 "  \"metadata\": {\n" +
                 "    \"creationTimestamp\": \"2020-11-27T08:08:32Z\",\n" +
@@ -63,7 +63,7 @@ public class FunctionsImplTest {
                 "    \"namespace\": \"default\",\n" +
                 "    \"ownerReferences\": [\n" +
                 "      {\n" +
-                "        \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n" +
+                "        \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n" +
                 "        \"blockOwnerDeletion\": true,\n" +
                 "        \"controller\": true,\n" +
                 "        \"kind\": \"FunctionMesh\",\n" +
@@ -72,7 +72,7 @@ public class FunctionsImplTest {
                 "      }\n" +
                 "    ],\n" +
                 "    \"resourceVersion\": \"899291\",\n" +
-                "    \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/functions/functionmesh-sample-ex1\",\n" +
+                "    \"selfLink\": \"/apis/compute.functionmesh.io/v1alpha1/namespaces/default/functions/functionmesh-sample-ex1\",\n" +
                 "    \"uid\": \"9e4509ba-c8bd-4c76-8905-ea0cf7251552\"\n" +
                 "  },\n" +
                 "  \"spec\": {\n" +
@@ -188,7 +188,7 @@ public class FunctionsImplTest {
     @Test
     public void registerFunctionTest() throws ApiException, IOException {
         String testBody = "{\n" +
-                "  \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n" +
+                "  \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n" +
                 "  \"kind\": \"Function\",\n" +
                 "  \"metadata\": {\n" +
                 "    \"creationTimestamp\": \"2021-01-19T13:19:17Z\",\n" +
@@ -196,7 +196,7 @@ public class FunctionsImplTest {
                 "    \"name\": \"word-count\",\n" +
                 "    \"namespace\": \"default\",\n" +
                 "    \"resourceVersion\": \"24794021\",\n" +
-                "    \"selfLink\": \"/apis/cloud.streamnative.io/v1alpha1/namespaces/default/functions/word-count\",\n" +
+                "    \"selfLink\": \"/apis/compute.functionmesh.io/v1alpha1/namespaces/default/functions/word-count\",\n" +
                 "    \"uid\": \"b9e3ada1-b945-4d70-901c-00d7c7a7b0af\"\n" +
                 "  },\n" +
                 "  \"spec\": {\n" +
@@ -246,7 +246,7 @@ public class FunctionsImplTest {
         String tenant = "public";
         String namespace = "default";
         String functionName = "word-count";
-        String group = "cloud.streamnative.io";
+        String group = "compute.functionmesh.io";
         String plural = "functions";
         String version = "v1alpha1";
         String kind = "Function";
@@ -286,7 +286,7 @@ public class FunctionsImplTest {
     @Test
     public void updateFunctionTest() throws ApiException, IOException {
         String getBody = "{\n" +
-                "  \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n" +
+                "  \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n" +
                 "  \"kind\": \"Function\",\n" +
                 "  \"metadata\": {\n" +
                 "    \"creationTimestamp\": \"2021-01-19T13:19:17Z\",\n" +
@@ -382,7 +382,7 @@ public class FunctionsImplTest {
         String tenant = "public";
         String namespace = "default";
         String functionName = "word-count";
-        String group = "cloud.streamnative.io";
+        String group = "compute.functionmesh.io";
         String plural = "functions";
         String version = "v1alpha1";
         String kind = "Function";
@@ -500,7 +500,7 @@ public class FunctionsImplTest {
     @Test
     public void getFunctionInfoTest() throws ApiException, IOException {
         String testBody = "{\n" +
-                "  \"apiVersion\": \"cloud.streamnative.io/v1alpha1\",\n" +
+                "  \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n" +
                 "  \"kind\": \"Function\",\n" +
                 "  \"metadata\": {\n" +
                 "    \"creationTimestamp\": \"2021-01-19T13:19:17Z\",\n" +

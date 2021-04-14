@@ -5,7 +5,7 @@ metadata:
   name: functionmesh-viewer-role
 rules:
 - apiGroups:
-  - cloud.streamnative.io
+  - compute.functionmesh.io
   resources:
   - functionmeshes
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - cloud.streamnative.io
+  - compute.functionmesh.io
   resources:
   - functionmeshes/status
   verbs:

@@ -45,7 +45,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 @Slf4j
 public class FunctionMeshProxyHandler extends ProxyServlet {
 
-    private static final String FUNCTION_MESH_PATH_PREFIX = "/apis/cloud.streamnative.io/v1alpha1/namespaces";
+    private static final String FUNCTION_MESH_PATH_PREFIX = "/apis/compute.functionmesh.io/v1alpha1/namespaces";
 
     private static final String FUNCTION_MESH_KEY = "functionmeshes";
 

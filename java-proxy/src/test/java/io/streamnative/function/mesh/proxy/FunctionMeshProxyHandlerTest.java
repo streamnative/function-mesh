@@ -45,7 +45,7 @@ public class FunctionMeshProxyHandlerTest {
 
         PowerMockito.when(functionMeshProxyHandler
                 .getEnvironment("KUBERNETES_SERVICE_HOST")).thenReturn("localhost");
-        path = "/apis/cloud.streamnative.io/v1alpha1/namespaces/default/functionmeshes";
+        path = "/apis/compute.functionmesh.io/v1alpha1/namespaces/default/functionmeshes";
         PowerMockito.when(httpServletRequest.getRequestURI()).thenReturn(path);
         PowerMockito.when(httpServletRequest.getQueryString()).thenReturn("limit=500");
         String rewriteTarget = functionMeshProxyHandler.rewriteTarget(httpServletRequest);

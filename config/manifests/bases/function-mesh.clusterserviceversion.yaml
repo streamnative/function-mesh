@@ -13,17 +13,17 @@ spec:
     - description: FunctionMesh is the Schema for the functionmeshes API
       displayName: Function Mesh
       kind: FunctionMesh
-      name: functionmeshes.cloud.streamnative.io
+      name: functionmeshes.compute.functionmesh.io
       version: v1alpha1
     - description: Topic is the Schema for the sinks API
       displayName: Sink
       kind: Sink
-      name: sinks.cloud.streamnative.io
+      name: sinks.compute.functionmesh.io
       version: v1alpha1
     - description: Source is the Schema for the sources API
       displayName: Source
       kind: Source
-      name: sources.cloud.streamnative.io
+      name: sources.compute.functionmesh.io
       version: v1alpha1
   description: function mesh
   displayName: function-mesh

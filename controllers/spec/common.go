@@ -103,7 +103,7 @@ func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
 			ScaleTargetRef: autov1.CrossVersionObjectReference{
 				Kind:       kind,
 				Name:       objectMeta.Name,
-				APIVersion: "cloud.streamnative.io/v1alpha1",
+				APIVersion: "compute.functionmesh.io/v1alpha1",
 			},
 			MinReplicas:                    &minReplicas,
 			MaxReplicas:                    maxReplicas,
