@@ -94,7 +94,7 @@ public class FunctionsUtil {
         }
         String cpuValue = cpu.toString();
         String memoryValue = memory.toString();
-        Map<String, Object> limits = new HashMap<>();
+        Map<String, String> limits = new HashMap<>();
         limits.put(cpuKey, cpuValue);
         limits.put(memoryKey, memoryValue);
 
@@ -173,7 +173,7 @@ public class FunctionsUtil {
         functionConfig.setParallelism(v1alpha1FunctionSpec.getReplicas());
 
         Resources resources = new Resources();
-        Map<String, Object> functionResource = v1alpha1FunctionSpec.getResources().getLimits();
+        Map<String, String> functionResource = v1alpha1FunctionSpec.getResources().getLimits();
         resources.setCpu(Double.parseDouble(functionResource.get(cpuKey).toString()));
         resources.setRam(Long.parseLong(functionResource.get(memoryKey).toString()));
         functionConfig.setResources(resources);
