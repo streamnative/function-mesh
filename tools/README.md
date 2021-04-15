@@ -24,9 +24,11 @@ export PULSAR_CLIENT_CONF=/PATH/pulsarctl.properties
 
 Replace the `PATH` variable with the absolute path to the configuration file.
 
-### Build
+### build from the source code
 
 ```
+git clone https://github.com/streamnative/function-mesh
+cd function-mesh/tools
 go build
 ```
 
@@ -44,3 +46,7 @@ functions
 ```
 
 This is the structure of the final generated configuration file, which can be created directly using the `kubectl` command function.
+
+* public => tenant
+* default => namespace
+* test-func => function name

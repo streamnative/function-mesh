@@ -93,15 +93,22 @@ func main() {
 					if functionConfig.TopicsPattern != nil {
 						topicPattern = *functionConfig.TopicsPattern
 					}
-					topics := make([]string, 0, len(functionConfig.InputSpecs))
-					for k := range functionConfig.InputSpecs {
-						topics = append(topics, k)
+					topics := functionConfig.Inputs
+					if topics == nil {
+						topics = make([]string, 0, len(functionConfig.InputSpecs))
+						for k := range functionConfig.InputSpecs {
+							topics = append(topics, k)
+						}
 					}
 					funcConfig := make(map[string]string)
 					for key, value := range functionConfig.UserConfig {
 						strKey := fmt.Sprintf("%v", key)
 						strValue := fmt.Sprintf("%v", value)
 						funcConfig[strKey] = strValue
+					}
+					maxMessageRetry := int32(0)
+					if functionConfig.MaxMessageRetries != nil {
+						maxMessageRetry = int32(*functionConfig.MaxMessageRetries)
 					}
 					functionSpec := v1alpha1.FunctionSpec{
 						Name:                functionConfig.Name,
@@ -111,7 +118,10 @@ func main() {
 						AutoAck:             &functionConfig.AutoAck,
 						CleanupSubscription: functionConfig.CleanupSubscription,
 						RetainOrdering:      functionConfig.RetainOrdering,
-						Replicas:            &replicas,
+						// Need to be added in pulsarctl
+						// https://github.com/streamnative/pulsarctl/blob/master/pkg/pulsar/utils/function_confg.go
+						// RetainKeyOrdering:   functionConfig.RetainKeyOrdering,
+						Replicas: &replicas,
 						Input: v1alpha1.InputConf{
 							Topics:              topics,
 							TopicPattern:        topicPattern,
@@ -120,12 +130,14 @@ func main() {
 							SourceSpecs:         sourceSpecs,
 						},
 						MaxReplicas: &replicas,
-						LogTopic:    functionConfig.LogTopic,
 						Timeout:     timeoutMs,
 						Output: v1alpha1.OutputConf{
 							Topic:              functionConfig.Output,
 							SinkSerdeClassName: functionConfig.OutputSerdeClassName,
 							SinkSchemaType:     functionConfig.OutputSchemaType,
+							// Need to be added in pulsarctl
+							// https://github.com/streamnative/pulsarctl/blob/master/pkg/pulsar/utils/function_confg.go
+							// CustomSchemaSinks:  functionConfig.CustomSchemaOutputs,
 						},
 						DeadLetterTopic: functionConfig.DeadLetterTopic,
 						Resources: corev1.ResourceRequirements{
@@ -138,10 +150,36 @@ func main() {
 								corev1.ResourceMemory: resource.MustParse(fmt.Sprintf("%d", functionConfig.Resources.RAM/1024/1024/1024)),
 							},
 						},
-						FuncConfig: funcConfig,
+						FuncConfig:      funcConfig,
+						MaxMessageRetry: maxMessageRetry,
+					}
+					if functionConfig.ProcessingGuarantees != "" {
+						switch strings.ToLower(functionConfig.ProcessingGuarantees) {
+						case "atleast_once":
+							functionSpec.ProcessingGuarantee = v1alpha1.AtleastOnce
+						case "atmost_once":
+							functionSpec.ProcessingGuarantee = v1alpha1.AtmostOnce
+						case "effectively_once":
+							functionSpec.ProcessingGuarantee = v1alpha1.EffectivelyOnce
+						}
+					}
+					if functionConfig.SubName != "" {
+						functionSpec.SubscriptionName = functionConfig.SubName
+					}
+					if functionConfig.RuntimeFlags != "" {
+						functionSpec.RuntimeFlags = functionConfig.RuntimeFlags
+					}
+					if functionConfig.Jar != nil && *functionConfig.Jar != "" {
+						functionSpec.Java.Jar = *functionConfig.Jar
+					}
+					if functionConfig.Py != nil && *functionConfig.Py != "" {
+						functionSpec.Python.Py = *functionConfig.Py
+					}
+					if functionConfig.Go != nil && *functionConfig.Go != "" {
+						functionSpec.Golang.Go = *functionConfig.Go
 					}
 					typeMeta := metav1.TypeMeta{
-						APIVersion: "cloud.streamnative.io/v1alpha1",
+						APIVersion: "compute.functionmesh.io/v1alpha1",
 						Kind:       "Function",
 					}
 					objectMeta := metav1.ObjectMeta{
@@ -152,6 +190,9 @@ func main() {
 						TypeMeta:   typeMeta,
 						ObjectMeta: objectMeta,
 						Spec:       functionSpec,
+					}
+					if functionConfig.LogTopic != "" {
+						functionSpec.LogTopic = functionConfig.LogTopic
 					}
 					data, err := json.Marshal(&functionData)
 					if err != nil {
