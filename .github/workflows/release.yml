@@ -41,9 +41,12 @@ jobs:
         id: build_release
         env:
           VERSION: ${{ github.event.release.tag_name }}
+          IMAGE_TAG_BASE: streamnative/function-mesh
+          CATALOG_BRANCH_IMG: latest
         run: |
           make release
           make docker-push
+          make docker-build image-push catalog-build catalog-push
 
       - name: Upload crd.yaml to release
         uses: svenstaro/upload-release-action@v2
@@ -90,7 +93,7 @@ jobs:
           username: tuteng
           password: ${{ secrets.IMAGE_GITHUB_TOKEN }}
 
-      - name: Auto generate crd model 
+      - name: Auto generate crd model
         run: cd java-proxy && ./tool/generate-crd.sh
 
       - name: Format license

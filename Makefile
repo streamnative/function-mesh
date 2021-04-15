@@ -1,10 +1,20 @@
 # Current Operator version
-VERSION ?= v0.1.2
+VERSION ?= 0.1.2
 # Default image tag
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
-BUNDLE_IMG ?= function-mesh-controller-bundle:$(VERSION)
 OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:$(VERSION)
 OPERATOR_IMG_LATEST ?= ${DOCKER_REPO}/function-mesh:latest
+
+# IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
+# This variable is used to construct full image tags for bundle and catalog images.
+#
+# For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
+# example.com/memcached-operator-bundle:$VERSION and example.com/memcached-operator-catalog:$VERSION.
+IMAGE_TAG_BASE ?= function-mesh
+
+# BUNDLE_IMG defines the image:tag used for the bundle.
+# You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
 GOOS := $(if $(GOOS),$(GOOS),linux)
 GOARCH := $(if $(GOARCH),$(GOARCH),amd64)
@@ -80,6 +90,10 @@ generate: controller-gen
 docker-build: test
 	docker build . -t ${IMG}
 
+# Push the docker image
+image-push:
+	docker push ${IMG}
+
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:
@@ -125,6 +139,11 @@ bundle: manifests
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
+.PHONY: bundle-push
+bundle-push: ## Push the bundle image.
+	echo $(BUNDLE_IMG)
+	$(MAKE) image-push IMG=$(BUNDLE_IMG)
+
 crd: manifests
 	$(KUSTOMIZE) build config/crd > manifests/crd.yaml
 
@@ -140,3 +159,54 @@ operator-docker-image: test
 docker-push:
 	docker push $(OPERATOR_IMG)
 	docker push $(OPERATOR_IMG_LATEST)
+
+.PHONY: opm
+OPM = ./bin/opm
+opm: ## Download opm locally if necessary.
+ifeq (,$(wildcard $(OPM)))
+ifeq (,$(shell which opm 2>/dev/null))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(OPM)) ;\
+	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.15.1/$${OS}-$${ARCH}-opm ;\
+	chmod +x $(OPM) ;\
+	}
+else
+OPM = $(shell which opm)
+endif
+endif
+
+# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=example.com/operator-bundle:v0.1.0,example.com/operator-bundle:v0.2.0).
+# These images MUST exist in a registry and be pull-able.
+BUNDLE_IMGS ?= $(BUNDLE_IMG)
+
+# The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
+CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
+
+ifneq ($(origin CATALOG_BRANCH_TAG), undefined)
+CATALOG_BRANCH_IMG ?= $(IMAGE_TAG_BASE)-catalog:$(CATALOG_BRANCH_TAG)
+endif
+
+# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
+ifneq ($(origin CATALOG_BASE_IMG), undefined)
+FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
+endif
+
+# Build a catalog image by adding bundle images to an empty catalog using the operator package manager tool, 'opm'.
+# This recipe invokes 'opm' in 'semver' bundle add mode. For more information on add modes, see:
+# https://github.com/operator-framework/community-operators/blob/7f1438c/docs/packaging-operator.md#updating-your-existing-operator
+.PHONY: catalog-build
+catalog-build: opm ## Build a catalog image.
+	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
+ifneq ($(origin CATALOG_BRANCH_TAG), undefined)
+	docker tag $(CATALOG_IMG) $(CATALOG_BRANCH_IMG)
+endif
+
+# Push the catalog image.
+.PHONY: catalog-push
+catalog-push: ## Push a catalog image.
+	$(MAKE) image-push IMG=$(CATALOG_IMG)
+ifneq ($(origin CATALOG_BRANCH_TAG), undefined)
+	$(MAKE) image-push IMG=$(CATALOG_BRANCH_IMG)
+endif
