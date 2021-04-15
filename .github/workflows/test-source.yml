@@ -43,7 +43,7 @@ jobs:
 
       - name: Start Source Kind
         run: |
-          kubectl apply -f config/samples/cloud_v1alpha1_source.yaml
+          kubectl apply -f config/samples/compute_v1alpha1_source.yaml
           kubectl get sources
 
       - name: Verfy Source

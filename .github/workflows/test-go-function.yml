@@ -48,7 +48,7 @@ jobs:
 
       - name: Test Function kind
         run: |
-          kubectl apply -f .ci/clusters/cloud_v1alpha1_go_function.yaml
+          kubectl apply -f .ci/clusters/compute_v1alpha1_go_function.yaml
           kubectl get all
 
       - name: Verfy Function Mesh
