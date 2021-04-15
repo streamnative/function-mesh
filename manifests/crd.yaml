@@ -61,6 +61,14 @@ spec:
                       goLocation:
                         type: string
                     type: object
+                  image:
+                    description: Image is the container image used to run function
+                      pods. default is streamnative/pulsar-functions-java-runner
+                    type: string
+                  imagePullPolicy:
+                    description: Image pull policy, one of Always, Never, IfNotPresent,
+                      default to Always.
+                    type: string
                   input:
                     properties:
                       customSchemaSources:
@@ -4713,6 +4721,14 @@ spec:
                       goLocation:
                         type: string
                     type: object
+                  image:
+                    description: Image is the container image used to run sink pods.
+                      default is streamnative/pulsar-functions-java-runner
+                    type: string
+                  imagePullPolicy:
+                    description: Image pull policy, one of Always, Never, IfNotPresent,
+                      default to Always.
+                    type: string
                   input:
                     properties:
                       customSchemaSources:
@@ -4790,6 +4806,8 @@ spec:
                       jarLocation:
                         type: string
                     type: object
+                  logTopic:
+                    type: string
                   maxMessageRetry:
                     format: int32
                     type: integer
@@ -9304,6 +9322,14 @@ spec:
                       goLocation:
                         type: string
                     type: object
+                  image:
+                    description: Image is the container image used to run source pods.
+                      default is streamnative/pulsar-functions-java-runner
+                    type: string
+                  imagePullPolicy:
+                    description: Image pull policy, one of Always, Never, IfNotPresent,
+                      default to Always.
+                    type: string
                   java:
                     properties:
                       jar:
@@ -9311,6 +9337,8 @@ spec:
                       jarLocation:
                         type: string
                     type: object
+                  logTopic:
+                    type: string
                   maxReplicas:
                     format: int32
                     type: integer
@@ -13973,6 +14001,14 @@ spec:
                 goLocation:
                   type: string
               type: object
+            image:
+              description: Image is the container image used to run function pods.
+                default is streamnative/pulsar-functions-java-runner
+              type: string
+            imagePullPolicy:
+              description: Image pull policy, one of Always, Never, IfNotPresent,
+                default to Always.
+              type: string
             input:
               properties:
                 customSchemaSources:
@@ -18456,6 +18492,14 @@ spec:
                 goLocation:
                   type: string
               type: object
+            image:
+              description: Image is the container image used to run sink pods. default
+                is streamnative/pulsar-functions-java-runner
+              type: string
+            imagePullPolicy:
+              description: Image pull policy, one of Always, Never, IfNotPresent,
+                default to Always.
+              type: string
             input:
               properties:
                 customSchemaSources:
@@ -18533,6 +18577,8 @@ spec:
                 jarLocation:
                   type: string
               type: object
+            logTopic:
+              type: string
             maxMessageRetry:
               format: int32
               type: integer
@@ -22878,6 +22924,14 @@ spec:
                 goLocation:
                   type: string
               type: object
+            image:
+              description: Image is the container image used to run source pods. default
+                is streamnative/pulsar-functions-java-runner
+              type: string
+            imagePullPolicy:
+              description: Image pull policy, one of Always, Never, IfNotPresent,
+                default to Always.
+              type: string
             java:
               properties:
                 jar:
@@ -22885,6 +22939,8 @@ spec:
                 jarLocation:
                   type: string
               type: object
+            logTopic:
+              type: string
             maxReplicas:
               format: int32
               type: integer

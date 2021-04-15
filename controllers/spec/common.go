@@ -37,10 +37,12 @@ import (
 const (
 	EnvShardID                 = "SHARD_ID"
 	FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
-	DefaultRunnerImage         = "streamnative/pulsar-all:2.7.0-rc-pm-3"
-	DefaultJavaRunnerImage     = "streamnative/pulsar-functions-java-runner:2.7.0"
-	DefaultPythonRunnerImage   = "streamnative/pulsar-functions-python-runner:2.7.0"
-	DefaultGoRunnerImage       = "streamnative/pulsar-functions-go-runner:2.7.0"
+	DefaultRunnerTag           = "2.7.1"
+	DefaultRunnerPrefix        = "streamnative/"
+	DefaultRunnerImage         = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
+	DefaultJavaRunnerImage     = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
+	DefaultPythonRunnerImage   = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
+	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 	PulsarDownloadRootDir      = "/pulsar"
 
@@ -560,15 +562,41 @@ func generateAnnotations(customAnnotations map[string]string) map[string]string 
 	return annotations
 }
 
-func getFunctionRunnerImage(runtime *v1alpha1.Runtime) string {
-	if runtime != nil {
-		if runtime.Java != nil && runtime.Java.Jar != "" {
-			return DefaultJavaRunnerImage
-		} else if runtime.Python != nil && runtime.Python.Py != "" {
-			return DefaultPythonRunnerImage
-		} else if runtime.Golang != nil && runtime.Golang.Go != "" {
-			return DefaultGoRunnerImage
-		}
+func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
+	runtime := &spec.Runtime
+	img := spec.Image
+	if img != "" {
+		return img
+	} else if runtime.Java != nil && runtime.Java.Jar != "" {
+		return DefaultJavaRunnerImage
+	} else if runtime.Python != nil && runtime.Python.Py != "" {
+		return DefaultPythonRunnerImage
+	} else if runtime.Golang != nil && runtime.Golang.Go != "" {
+		return DefaultGoRunnerImage
+	}
+	return DefaultRunnerImage
+}
+
+func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
+	img := spec.Image
+	if img != "" {
+		return img
+	}
+	if spec.Runtime.Java.Jar != "" && spec.Runtime.Java.JarLocation != "" &&
+		hasPackageNamePrefix(spec.Runtime.Java.JarLocation) {
+		return DefaultJavaRunnerImage
+	}
+	return DefaultRunnerImage
+}
+
+func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
+	img := spec.Image
+	if img != "" {
+		return img
+	}
+	if spec.Runtime.Java.Jar != "" && spec.Runtime.Java.JarLocation != "" &&
+		hasPackageNamePrefix(spec.Runtime.Java.JarLocation) {
+		return DefaultJavaRunnerImage
 	}
 	return DefaultRunnerImage
 }

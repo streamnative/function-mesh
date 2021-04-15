@@ -42,12 +42,8 @@ import org.apache.pulsar.functions.worker.service.api.FunctionsV2;
 import org.apache.pulsar.functions.worker.service.api.Sinks;
 import org.apache.pulsar.functions.worker.service.api.Sources;
 import org.apache.pulsar.functions.worker.service.api.Workers;
-import org.apache.pulsar.zookeeper.ZooKeeperCache;
 
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 
 /**
  * Function mesh proxy implement.
@@ -122,7 +118,8 @@ public class FunctionMeshProxyService implements WorkerService {
     }
 
     public Workers<? extends WorkerService> getWorkers() {
-        // to do https://github.com/streamnative/function-mesh/issues/55
+        // No need to implement since in this mode, there's no function worker
+        // Consider ban this api in the production environment
         return null;
     }
 

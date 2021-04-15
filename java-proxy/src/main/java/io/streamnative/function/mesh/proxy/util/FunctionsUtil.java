@@ -53,15 +53,15 @@ public class FunctionsUtil {
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());
 
-        ConsumerConfig consumerConfig = functionConfig.getInputSpecs().get(sourceKey);
-        if (consumerConfig == null || StringUtils.isBlank(consumerConfig.getSerdeClassName())) {
-            throw new RestException(Response.Status.BAD_REQUEST, "inputSpecs.source.serdeClassName is not provided");
+        if (functionConfig.getInputSpecs() != null) {
+            ConsumerConfig consumerConfig = functionConfig.getInputSpecs().get(sourceKey);
+            if (consumerConfig != null && !StringUtils.isBlank(consumerConfig.getSerdeClassName())) {
+                v1alpha1FunctionSpec.setSourceType(consumerConfig.getSerdeClassName());
+            }
         }
-        if (StringUtils.isBlank(functionConfig.getOutputSerdeClassName())) {
-            throw new RestException(Response.Status.BAD_REQUEST, "outputSerdeClassName is not provided");
+        if (!StringUtils.isBlank(functionConfig.getOutputSerdeClassName())) {
+            v1alpha1FunctionSpec.setSinkType(functionConfig.getOutputSerdeClassName());
         }
-        v1alpha1FunctionSpec.setSourceType(consumerConfig.getSerdeClassName());
-        v1alpha1FunctionSpec.setSinkType(functionConfig.getOutputSerdeClassName());
 
         v1alpha1FunctionSpec.setForwardSourceMessageProperty(functionConfig.getForwardSourceMessageProperty());
         v1alpha1FunctionSpec.setMaxPendingAsyncRequests(functionConfig.getMaxPendingAsyncRequests());

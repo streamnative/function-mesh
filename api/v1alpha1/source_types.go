@@ -50,6 +50,13 @@ type SourceSpec struct {
 
 	Messaging `json:",inline"`
 	Runtime   `json:",inline"`
+
+	// Image is the container image used to run source pods.
+	// default is streamnative/pulsar-functions-java-runner
+	Image string `json:"image,omitempty"`
+
+	// Image pull policy, one of Always, Never, IfNotPresent, default to Always.
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // SourceStatus defines the observed state of Source
