@@ -31,11 +31,11 @@ git clone https://github.com/streamnative/function-mesh.git
 - install operator-sdk and use it to add CRD, controller or webhooks
 
 ```bash
-operator-sdk create api --group cloud --version v1alpha1 --kind Function --resource=true --controller-true
+operator-sdk create api --group compute --version v1alpha1 --kind Function --resource=true --controller-true
 ```
 
 ```bash
-operator-sdk create webhook --group cloud.streamnative.io --version v1alpha1 --kind Function --defaulting --programmatic-validation
+operator-sdk create webhook --group compute.functionmesh.io --version v1alpha1 --kind Function --defaulting --programmatic-validation
 ```
 
 ## Deployment
@@ -58,7 +58,7 @@ operator-sdk create webhook --group cloud.streamnative.io --version v1alpha1 --k
     ```
 5. submit a sample CRD to the cluster. You can also submit other CRDs under the `./config/samples` directory
     ```bash
-    kubectl apply -f config/samples/cloud_v1alpha1_function.yaml
+    kubectl apply -f config/samples/compute_v1alpha1_function.yaml
     ```
 6. verify your submission with `kubectl`, and you will see the function pod is running
     ```bash

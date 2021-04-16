@@ -1,0 +1,71 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: go-function-sample
+  namespace: default
+spec:
+  sourceType: java.lang.String
+  sinkType: java.lang.String
+  forwardSourceMessageProperty: true
+  MaxPendingAsyncRequests: 1000
+  replicas: 1
+  maxReplicas: 3
+  logTopic: persistent://public/default/go-function-logs
+  input:
+    topics:
+    - persistent://public/default/input-topic
+  output:
+    topic: persistent://public/default/output-topic
+  resources:
+    requests:
+      cpu: "0.1"
+      memory: 1G
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+  # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
+  secretsMap:
+    "name":
+        path: "test-go-secret"
+        key: "username"
+    "pwd":
+        path: "test-go-secret"
+        key: "password"
+  pulsar:
+    pulsarConfig: "test-go-pulsar"
+    #authConfig: "test-auth"
+  golang:
+    go: test_go_function
+    goLocation: public/default/nlu-test
+  # to be delete & use admission hook
+  clusterName: test
+  autoAck: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-go-pulsar
+data:
+    webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
+    brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
+#---
+#apiVersion: v1
+#kind: ConfigMap
+#metadata:
+#  name: test-auth
+#data:
+#  clientAuthenticationPlugin: "abc"
+#  clientAuthenticationParameters: "xyz"
+#  tlsTrustCertsFilePath: "uvw"
+#  useTls: "true"
+#  tlsAllowInsecureConnection: "false"
+#  tlsHostnameVerificationEnable: "true"
+---
+apiVersion: v1
+data:
+  username: YWRtaW4=
+  password: MWYyZDFlMmU2N2Rm
+kind: Secret
+metadata:
+  name: test-go-secret
+type: Opaque
