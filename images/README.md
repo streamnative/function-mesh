@@ -49,7 +49,7 @@ bin/pulsar-admin packages upload function://my-tenant/my-ns/my-function@0.1 --pa
 
 Then user can define Function Mesh CRDs to use the uploaded function package.
 
-#### Use Function Mesh
+#### Submit to Function Mesh
 
 Below is a sample CRD to create a Java function from package `function://my-tenant/my-ns/my-function@0.1`.
 ```yaml
@@ -105,7 +105,7 @@ COPY example-function.jar /pulsar/
 
 With the `Dockerfile`, you can build the function image and push into image registry (like Docker Hub, or any private registry)
 
-#### Use Function Mesh
+#### Submit to Function Mesh
 
 Assume we build the image from previous step as `streamnative/example-function-image:latest`, and pushed into Docker Hub already.
 
