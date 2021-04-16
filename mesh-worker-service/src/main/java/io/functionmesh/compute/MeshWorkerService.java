@@ -34,6 +34,7 @@ import org.apache.pulsar.broker.cache.ConfigurationCacheService;
 import org.apache.pulsar.broker.resources.PulsarResources;
 import org.apache.pulsar.common.conf.InternalConfigurationData;
 import org.apache.pulsar.common.util.SimpleTextOutputStream;
+import org.apache.pulsar.functions.worker.ConnectorsManager;
 import org.apache.pulsar.functions.worker.ErrorNotifier;
 import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.apache.pulsar.functions.worker.WorkerService;
@@ -65,6 +66,8 @@ public class MeshWorkerService implements WorkerService {
 
     private AuthenticationService authenticationService;
     private AuthorizationService authorizationService;
+
+    private ConnectorsManager connectorsManager;
 
     public MeshWorkerService() {
 
