@@ -5,7 +5,7 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "cloud.streamnative.io/v1alpha1",
+          "apiVersion": "compute.functionmesh.io/v1alpha1",
           "kind": "FunctionMesh",
           "metadata": {
             "name": "functionmesh-sample"
@@ -90,7 +90,7 @@ metadata:
           }
         },
         {
-          "apiVersion": "cloud.streamnative.io/v1alpha1",
+          "apiVersion": "compute.functionmesh.io/v1alpha1",
           "kind": "Sink",
           "metadata": {
             "name": "sink-sample"
@@ -135,7 +135,7 @@ metadata:
           }
         },
         {
-          "apiVersion": "cloud.streamnative.io/v1alpha1",
+          "apiVersion": "compute.functionmesh.io/v1alpha1",
           "kind": "Source",
           "metadata": {
             "name": "source-sample"
@@ -196,20 +196,20 @@ spec:
     - description: FunctionMesh is the Schema for the functionmeshes API
       displayName: Function Mesh
       kind: FunctionMesh
-      name: functionmeshes.cloud.streamnative.io
+      name: functionmeshes.compute.functionmesh.io
       version: v1alpha1
     - kind: Function
-      name: functions.cloud.streamnative.io
+      name: functions.compute.functionmesh.io
       version: v1alpha1
     - description: Topic is the Schema for the sinks API
       displayName: Sink
       kind: Sink
-      name: sinks.cloud.streamnative.io
+      name: sinks.compute.functionmesh.io
       version: v1alpha1
     - description: Source is the Schema for the sources API
       displayName: Source
       kind: Source
-      name: sources.cloud.streamnative.io
+      name: sources.compute.functionmesh.io
       version: v1alpha1
   description: function mesh
   displayName: function-mesh
@@ -221,7 +221,7 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
-          - cloud.streamnative.io
+          - compute.functionmesh.io
           resources:
           - functionmeshes
           verbs:
@@ -233,7 +233,7 @@ spec:
           - update
           - watch
         - apiGroups:
-          - cloud.streamnative.io
+          - compute.functionmesh.io
           resources:
           - functionmeshes/status
           verbs:
@@ -241,7 +241,7 @@ spec:
           - patch
           - update
         - apiGroups:
-          - cloud.streamnative.io
+          - compute.functionmesh.io
           resources:
           - functions
           verbs:
@@ -253,7 +253,7 @@ spec:
           - update
           - watch
         - apiGroups:
-          - cloud.streamnative.io
+          - compute.functionmesh.io
           resources:
           - functions/status
           verbs:
@@ -261,7 +261,7 @@ spec:
           - patch
           - update
         - apiGroups:
-          - cloud.streamnative.io
+          - compute.functionmesh.io
           resources:
           - sinks
           verbs:
@@ -273,7 +273,7 @@ spec:
           - update
           - watch
         - apiGroups:
-          - cloud.streamnative.io
+          - compute.functionmesh.io
           resources:
           - sinks/status
           verbs:
@@ -281,7 +281,7 @@ spec:
           - patch
           - update
         - apiGroups:
-          - cloud.streamnative.io
+          - compute.functionmesh.io
           resources:
           - sources
           verbs:
@@ -293,7 +293,7 @@ spec:
           - update
           - watch
         - apiGroups:
-          - cloud.streamnative.io
+          - compute.functionmesh.io
           resources:
           - sources/status
           verbs:
@@ -425,7 +425,7 @@ spec:
     generateName: vfunction.kb.io
     rules:
     - apiGroups:
-      - cloud.streamnative.io.streamnative.io
+      - compute.functionmesh.io
       apiVersions:
       - v1alpha1
       operations:
@@ -436,7 +436,7 @@ spec:
     sideEffects: None
     targetPort: 9443
     type: ValidatingAdmissionWebhook
-    webhookPath: /validate-cloud-streamnative-io-streamnative-io-v1alpha1-function
+    webhookPath: /validate-compute-functionmesh-io-v1alpha1-function
   - admissionReviewVersions:
     - v1beta1
     containerPort: 443
@@ -445,7 +445,7 @@ spec:
     generateName: vsink.kb.io
     rules:
     - apiGroups:
-      - cloud.streamnative.io.streamnative.io
+      - compute.functionmesh.io
       apiVersions:
       - v1alpha1
       operations:
@@ -456,7 +456,7 @@ spec:
     sideEffects: None
     targetPort: 9443
     type: ValidatingAdmissionWebhook
-    webhookPath: /validate-cloud-streamnative-io-streamnative-io-v1alpha1-sink
+    webhookPath: /validate-compute-functionmesh-io-v1alpha1-sink
   - admissionReviewVersions:
     - v1beta1
     containerPort: 443
@@ -465,7 +465,7 @@ spec:
     generateName: msink.kb.io
     rules:
     - apiGroups:
-      - cloud.streamnative.io.streamnative.io
+      - compute.functionmesh.io
       apiVersions:
       - v1alpha1
       operations:
@@ -476,7 +476,7 @@ spec:
     sideEffects: None
     targetPort: 9443
     type: MutatingAdmissionWebhook
-    webhookPath: /mutate-cloud-streamnative-io-streamnative-io-v1alpha1-sink
+    webhookPath: /mutate-compute-functionmesh-io-v1alpha1-sink
   - admissionReviewVersions:
     - v1beta1
     containerPort: 443
@@ -485,7 +485,7 @@ spec:
     generateName: msource.kb.io
     rules:
     - apiGroups:
-      - cloud.streamnative.io.streamnative.io
+      - compute.functionmesh.io
       apiVersions:
       - v1alpha1
       operations:
@@ -496,4 +496,4 @@ spec:
     sideEffects: None
     targetPort: 9443
     type: MutatingAdmissionWebhook
-    webhookPath: /mutate-cloud-streamnative-io-streamnative-io-v1alpha1-source
+    webhookPath: /mutate-compute-functionmesh-io-v1alpha1-source

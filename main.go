@@ -21,15 +21,15 @@ import (
 	"flag"
 	"os"
 
-	cloudstreamnativeiov1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
-	cloudv1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -41,8 +41,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(cloudv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(cloudstreamnativeiov1alpha1.AddToScheme(scheme))
+	utilruntime.Must(computev1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -51,7 +50,7 @@ func main() {
 	var leaderElectionID string
 	var enableLeaderElection bool
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&leaderElectionID, "leader-election-id", "a3f45fce.streamnative.io",
+	flag.StringVar(&leaderElectionID, "leader-election-id", "a3f45fce.functionmesh.io",
 		"the name of the configmap that leader election will use for holding the leader lock.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
@@ -105,15 +104,15 @@ func main() {
 		os.Exit(1)
 	}
 	if os.Getenv("ENABLE_WEBHOOKS") == "true" {
-		if err = (&cloudstreamnativeiov1alpha1.Function{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&computev1alpha1.Function{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Function")
 			os.Exit(1)
 		}
-		if err = (&cloudstreamnativeiov1alpha1.Source{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&computev1alpha1.Source{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Source")
 			os.Exit(1)
 		}
-		if err = (&cloudstreamnativeiov1alpha1.Sink{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&computev1alpha1.Sink{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Sink")
 			os.Exit(1)
 		}

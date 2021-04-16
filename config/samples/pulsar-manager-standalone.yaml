@@ -111,8 +111,8 @@ data:
     cloud.controller.insecure-skip-tls-verify=false
     cloud.controller.host=controller-host
     cloud.controller.token=controller-token
-    cloud.controller.cluster.claim=cloud.streamnative.io/pulsar-cluster
-    cloud.controller.instance.claim=cloud.streamnative.io/pulsar-instance
+    cloud.controller.cluster.claim=compute.functionmesh.io/pulsar-cluster
+    cloud.controller.instance.claim=compute.functionmesh.io/pulsar-instance
 ---
 apiVersion: v1
 kind: Service

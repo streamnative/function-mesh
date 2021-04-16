@@ -1,15 +1,15 @@
-domain: streamnative.io
+domain: functionmesh.io
 layout: go.kubebuilder.io/v2
 projectName: function-mesh
 repo: github.com/streamnative/function-mesh
 resources:
-- group: cloud
+- group: compute
   kind: FunctionMesh
   version: v1alpha1
-- group: cloud
+- group: compute
   kind: Source
   version: v1alpha1
-- group: cloud
+- group: compute
   kind: Sink
   version: v1alpha1
 version: 3-alpha

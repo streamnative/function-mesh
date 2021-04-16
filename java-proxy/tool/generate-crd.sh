@@ -18,9 +18,9 @@
 #
 
 set -x
-CRD_FUNCTIONS_FILE=cloud.streamnative.io_functions.yaml # Target functions CRD file
-CRD_SOURCES_FILE=cloud.streamnative.io_sources.yaml # Target sources CRD file
-CRD_SINKS_FILE=cloud.streamnative.io_sinks.yaml # Target sinks CRD file
+CRD_FUNCTIONS_FILE=compute.functionmesh.io_functions.yaml # Target functions CRD file
+CRD_SOURCES_FILE=compute.functionmesh.io_sources.yaml # Target sources CRD file
+CRD_SINKS_FILE=compute.functionmesh.io_sinks.yaml # Target sinks CRD file
 
 DEST_DIR=$PWD
 GEN_DIR=/tmp/functions-mesh/crd
@@ -50,8 +50,8 @@ docker run \
   crd-model-gen:latest \
   /generate.sh \
   -u $LOCAL_MANIFEST_FUNCTIONS_FILE \
-  -n io.streamnative.cloud \
-  -p io.streamnative.cloud.function \
+  -n io.functionmesh \
+  -p io.functionmesh.functions \
   -o "$(pwd)"
 
 # Generate sources crd
@@ -63,8 +63,8 @@ docker run \
   crd-model-gen:latest \
   /generate.sh \
   -u $LOCAL_MANIFEST_SOURCES_FILE \
-  -n io.streamnative.cloud \
-  -p io.streamnative.cloud.source \
+  -n io.functionmesh \
+  -p io.functionmesh.sources \
   -o "$(pwd)"
 
 # Generate sinks crd
@@ -76,10 +76,9 @@ docker run \
   crd-model-gen:latest \
   /generate.sh \
   -u $LOCAL_MANIFEST_SINKS_FILE \
-  -n io.streamnative.cloud \
-  -p io.streamnative.cloud.sink \
+  -n io.functionmesh \
+  -p io.functionmesh.sinks \
   -o "$(pwd)"
 #open $GEN_DIR
 
-mkdir -p $DEST_DIR/src/main/java/io/streamnative/cloud/
-cp -r $GEN_DIR/src/main/java/io/streamnative/cloud/* $DEST_DIR/src/main/java/io/streamnative/cloud/
+cp -r $GEN_DIR/src/main/java/io/functionmesh/* $DEST_DIR/src/main/java/io/functionmesh/
