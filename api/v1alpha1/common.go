@@ -134,6 +134,7 @@ type ProducerConfig struct {
 	MaxPendingMessagesAcrossPartitions int32         `json:"maxPendingMessagesAcrossPartitions,omitempty"`
 	UseThreadLocalProducers            bool          `json:"useThreadLocalProducers,omitempty"`
 	CryptoConfig                       *CryptoConfig `json:"cryptoConfig,omitempty"`
+	BatchBuilder                       string        `json:"batchBuilder,omitempty"`
 }
 
 type CryptoConfig struct {
