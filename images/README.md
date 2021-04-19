@@ -11,7 +11,7 @@ The base Runner is located at `./pulsar-functions-base-runner`. The base runner 
 
 The Java Runner is based on Base Runner and contains the Java function instance to run Java functions or connectors.
 
-`streamnative/pulsar-functions-java-runner` at Docker Hub will be automatically update align with Apache Pulsar Release.
+The `streamnative/pulsar-functions-java-runner` Java runner is stored at the Docker Hub and is automatically updated to align with Apache Pulsar release.
 
 ### Python Runner
 [![Docker Image Version (tag latest semver)](https://img.shields.io/docker/v/streamnative/pulsar-functions-python-runner/2.7.1?style=for-the-badge)](https://hub.docker.com/r/streamnative/pulsar-functions-python-runner)
