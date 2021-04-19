@@ -35,6 +35,7 @@ import org.apache.pulsar.common.io.SourceConfig;
 import org.apache.pulsar.common.policies.data.SourceStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Sources;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
@@ -76,18 +77,6 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
         this.validateRegisterSourceRequestParams(tenant, namespace, sourceName, sourceConfig);
     }
 
-    private void validateGetSourceInfoRequestParams(String tenant, String namespace, String sourceName) {
-        if (tenant == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
-        }
-        if (namespace == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Namespace is not provided");
-        }
-        if (sourceName == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Source name is not provided");
-        }
-    }
-
 
     public void registerSource(final String tenant,
                                final String namespace,
@@ -99,7 +88,12 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
                                final String clientRole,
                                AuthenticationDataHttps clientAuthenticationDataHttps) {
         validateRegisterSourceRequestParams(tenant, namespace, sourceName, sourceConfig);
-
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
+        this.validateTenantIsExist(tenant, namespace, sourceName, clientRole);
         try {
             V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
                     sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig);
@@ -128,7 +122,11 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
                              AuthenticationDataHttps clientAuthenticationDataHttps,
                              UpdateOptions updateOptions) {
         validateUpdateSourceRequestParams(tenant, namespace, sourceName, sourceConfig);
-
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
         try {
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
@@ -176,6 +174,11 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
                                         final URI uri,
                                         final String clientRole,
                                         final AuthenticationDataSource clientAuthenticationDataHttps) {
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
         SourceStatus sourceStatus = new SourceStatus();
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
@@ -220,7 +223,7 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
     public SourceConfig getSourceInfo(final String tenant,
                                       final String namespace,
                                       final String componentName) {
-        validateGetSourceInfoRequestParams(tenant, namespace, componentName);
+        this.validateGetInfoRequestParams(tenant, namespace, componentName, kind);
 
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(

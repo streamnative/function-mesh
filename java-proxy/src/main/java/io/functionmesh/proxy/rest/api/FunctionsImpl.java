@@ -30,6 +30,7 @@ import org.apache.pulsar.common.functions.UpdateOptions;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Functions;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
@@ -67,20 +68,8 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
         validateRegisterFunctionRequestParams(tenant, namespace, functionName, functionConfig);
     }
 
-    private void validateDeregisterFunctionRequestParams(String tenant, String namespace, String functionName) {
-        if (tenant == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
-        }
-        if (namespace == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Namespace is not provided");
-        }
-        if (functionName == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Function name is not provided");
-        }
-    }
-
     private void validateGetFunctionInfoRequestParams(String tenant, String namespace, String functionName) {
-        validateDeregisterFunctionRequestParams(tenant, namespace, functionName);
+        this.validateGetInfoRequestParams(tenant, namespace, functionName, kind);
     }
 
     @Override
@@ -94,6 +83,12 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                                  final String clientRole,
                                  AuthenticationDataHttps clientAuthenticationDataHttps) {
         validateRegisterFunctionRequestParams(tenant, namespace, functionName, functionConfig);
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
+        this.validateTenantIsExist(tenant, namespace, functionName, clientRole);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(
                 kind,
@@ -178,7 +173,13 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                                    final String componentName,
                                    final String clientRole,
                                    AuthenticationDataHttps clientAuthenticationDataHttps) {
-        validateDeregisterFunctionRequestParams(tenant, namespace, componentName);
+        this.validateGetInfoRequestParams(tenant, namespace, componentName, "Function");
+
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
 
         try {
             Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
@@ -208,6 +209,12 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                                           final String clientRole,
                                           final AuthenticationDataSource clientAuthenticationDataHttps) {
         validateGetFunctionInfoRequestParams(tenant, namespace, componentName);
+
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
 
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
@@ -246,6 +253,11 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                                             final URI uri,
                                             final String clientRole,
                                             final AuthenticationDataSource clientAuthenticationDataHttps) {
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
         FunctionStatus functionStatus = new FunctionStatus();
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(

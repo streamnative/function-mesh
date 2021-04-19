@@ -25,11 +25,16 @@ import okhttp3.Call;
 import okhttp3.Response;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
+import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.FunctionState;
 import org.apache.pulsar.common.io.ConnectorDefinition;
+import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.policies.data.FunctionStats;
+import org.apache.pulsar.common.policies.data.TenantInfo;
+import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Component;
 
 import javax.ws.rs.core.StreamingOutput;
@@ -37,9 +42,11 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Slf4j
 public abstract class FunctionMeshComponentImpl implements Component<FunctionMeshProxyService> {
@@ -291,6 +298,130 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
     @Override
     public void reloadConnectors(String clientRole) {
 
+    }
+
+    public boolean isSuperUser(String clientRole) {
+        if (clientRole != null) {
+            try {
+                if ((worker().getWorkerConfig().getSuperUserRoles() != null
+                        && worker().getWorkerConfig().getSuperUserRoles().contains(clientRole))) {
+                    return true;
+                }
+                return worker().getAuthorizationService().isSuperUser(clientRole, null)
+                        .get(worker().getWorkerConfig().getZooKeeperOperationTimeoutSeconds(), SECONDS);
+            } catch (InterruptedException e) {
+                log.warn("Time-out {} sec while checking the role {} is a super user role ",
+                        worker().getWorkerConfig().getZooKeeperOperationTimeoutSeconds(), clientRole);
+                throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+            } catch (Exception e) {
+                log.warn("Admin-client with Role - failed to check the role {} is a super user role {} ", clientRole,
+                        e.getMessage(), e);
+                throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+            }
+        }
+        return false;
+    }
+
+    public boolean isAuthorizedRole(String tenant, String namespace, String clientRole,
+                                    AuthenticationDataSource authenticationData) throws PulsarAdminException {
+        if (worker().getWorkerConfig().isAuthorizationEnabled()) {
+            // skip authorization if client role is super-user
+            if (isSuperUser(clientRole)) {
+                return true;
+            }
+
+            if (clientRole != null) {
+                try {
+                    TenantInfo tenantInfo = worker().getBrokerAdmin().tenants().getTenantInfo(tenant);
+                    if (tenantInfo != null && worker().getAuthorizationService().isTenantAdmin(tenant, clientRole, tenantInfo, authenticationData).get()) {
+                        return true;
+                    }
+                } catch (PulsarAdminException.NotFoundException | InterruptedException | ExecutionException e) {
+
+                }
+            }
+
+            // check if role has permissions granted
+            if (clientRole != null && authenticationData != null) {
+                return allowFunctionOps(NamespaceName.get(tenant, namespace), clientRole, authenticationData);
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean allowFunctionOps(NamespaceName namespaceName, String role,
+                                    AuthenticationDataSource authenticationData) {
+        try {
+            switch (componentType) {
+                case SINK:
+                    return worker().getAuthorizationService().allowSinkOpsAsync(
+                            namespaceName, role, authenticationData).get(worker().getWorkerConfig().getZooKeeperOperationTimeoutSeconds(), SECONDS);
+                case SOURCE:
+                    return worker().getAuthorizationService().allowSourceOpsAsync(
+                            namespaceName, role, authenticationData).get(worker().getWorkerConfig().getZooKeeperOperationTimeoutSeconds(), SECONDS);
+                case FUNCTION:
+                default:
+                    return worker().getAuthorizationService().allowFunctionOpsAsync(
+                            namespaceName, role, authenticationData).get(worker().getWorkerConfig().getZooKeeperOperationTimeoutSeconds(), SECONDS);
+            }
+        } catch (InterruptedException e) {
+            log.warn("Time-out {} sec while checking function authorization on {} ", worker().getWorkerConfig().getZooKeeperOperationTimeoutSeconds(), namespaceName);
+            throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        } catch (Exception e) {
+            log.warn("Admin-client with Role - {} failed to get function permissions for namespace - {}. {}", role, namespaceName,
+                    e.getMessage(), e);
+            throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    void validatePermission(String tenant,
+                            String namespace,
+                            String clientRole,
+                            AuthenticationDataSource clientAuthenticationDataHttps,
+                            String componentName) {
+        try {
+            if (!isAuthorizedRole(tenant, namespace, clientRole, clientAuthenticationDataHttps)) {
+                log.warn("{}/{}/{} Client [{}] is not authorized to get {}", tenant, namespace,
+                        componentName, clientRole, ComponentTypeUtils.toString(componentType));
+                throw new RestException(javax.ws.rs.core.Response.Status.UNAUTHORIZED, "client is not authorize to perform operation");
+            }
+        } catch (PulsarAdminException e) {
+            log.error("{}/{}/{} Failed to authorize [{}]", tenant, namespace, componentName, e);
+            throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    void validateGetInfoRequestParams(
+            String tenant, String namespace, String name, String type) {
+        if (tenant == null) {
+            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Tenant is not provided");
+        }
+        if (namespace == null) {
+            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Namespace is not provided");
+        }
+        if (name == null) {
+            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, type + " name is not provided");
+        }
+    }
+
+    void validateTenantIsExist(String tenant, String namespace, String name, String clientRole) {
+        try {
+            // Check tenant exists
+            worker().getBrokerAdmin().tenants().getTenantInfo(tenant);
+
+        } catch (PulsarAdminException.NotAuthorizedException e) {
+            log.error("{}/{}/{} Client [{}] is not authorized to operate {} on tenant", tenant, namespace,
+                    name, clientRole, ComponentTypeUtils.toString(componentType));
+            throw new RestException(javax.ws.rs.core.Response.Status.UNAUTHORIZED, "client is not authorize to perform operation");
+        } catch (PulsarAdminException.NotFoundException e) {
+            log.error("{}/{}/{} Tenant {} does not exist", tenant, namespace, name, tenant);
+            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Tenant does not exist");
+        } catch (PulsarAdminException e) {
+            log.error("{}/{}/{} Issues getting tenant data", tenant, namespace, name, e);
+            throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
     }
 }
 

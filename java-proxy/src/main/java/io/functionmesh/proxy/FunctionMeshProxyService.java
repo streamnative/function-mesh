@@ -32,11 +32,15 @@ import org.apache.pulsar.broker.authentication.AuthenticationService;
 import org.apache.pulsar.broker.authorization.AuthorizationService;
 import org.apache.pulsar.broker.cache.ConfigurationCacheService;
 import org.apache.pulsar.broker.resources.PulsarResources;
+import org.apache.pulsar.client.admin.PulsarAdmin;
+import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.common.conf.InternalConfigurationData;
 import org.apache.pulsar.common.util.SimpleTextOutputStream;
 import org.apache.pulsar.functions.worker.ErrorNotifier;
+import org.apache.pulsar.functions.worker.PulsarWorkerService;
 import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.apache.pulsar.functions.worker.WorkerService;
+import org.apache.pulsar.functions.worker.WorkerUtils;
 import org.apache.pulsar.functions.worker.service.api.Functions;
 import org.apache.pulsar.functions.worker.service.api.FunctionsV2;
 import org.apache.pulsar.functions.worker.service.api.Sinks;
@@ -62,12 +66,47 @@ public class FunctionMeshProxyService implements WorkerService {
     private CoreV1Api coreV1Api;
     private CustomObjectsApi customObjectsApi;
     private ApiClient apiClient;
+    private PulsarAdmin brokerAdmin;
 
     private AuthenticationService authenticationService;
     private AuthorizationService authorizationService;
 
-    public FunctionMeshProxyService() {
+    private final PulsarWorkerService.PulsarClientCreator clientCreator;
 
+    public FunctionMeshProxyService() {
+        this.clientCreator = new PulsarWorkerService.PulsarClientCreator() {
+            @Override
+            public PulsarAdmin newPulsarAdmin(String pulsarServiceUrl, WorkerConfig workerConfig) {
+                // using isBrokerClientAuthenticationEnabled instead of isAuthenticationEnabled in function-worker
+                if (workerConfig.isBrokerClientAuthenticationEnabled()) {
+                    return WorkerUtils.getPulsarAdminClient(
+                            pulsarServiceUrl,
+                            workerConfig.getBrokerClientAuthenticationPlugin(),
+                            workerConfig.getBrokerClientAuthenticationParameters(),
+                            workerConfig.getBrokerClientTrustCertsFilePath(),
+                            workerConfig.isTlsAllowInsecureConnection(),
+                            workerConfig.isTlsEnableHostnameVerification());
+                } else {
+                    return WorkerUtils.getPulsarAdminClient(pulsarServiceUrl);
+                }
+            }
+            @Override
+            public PulsarClient newPulsarClient(String pulsarServiceUrl, WorkerConfig workerConfig) {
+                // using isBrokerClientAuthenticationEnabled instead of isAuthenticationEnabled in function-worker
+                if (workerConfig.isBrokerClientAuthenticationEnabled()) {
+                    return WorkerUtils.getPulsarClient(
+                            pulsarServiceUrl,
+                            workerConfig.getBrokerClientAuthenticationPlugin(),
+                            workerConfig.getBrokerClientAuthenticationParameters(),
+                            workerConfig.isUseTls(),
+                            workerConfig.getBrokerClientTrustCertsFilePath(),
+                            workerConfig.isTlsAllowInsecureConnection(),
+                            workerConfig.isTlsEnableHostnameVerification());
+                } else {
+                    return WorkerUtils.getPulsarClient(pulsarServiceUrl);
+                }
+            }
+        };
     }
 
     @Override
@@ -107,10 +146,13 @@ public class FunctionMeshProxyService implements WorkerService {
                       ErrorNotifier errorNotifier) {
         this.authenticationService = authenticationService;
         this.authorizationService = authorizationService;
+        this.brokerAdmin = clientCreator.newPulsarAdmin(workerConfig.getPulsarWebServiceUrl(), workerConfig);
     }
 
     public void stop() {
-
+        if (null != getBrokerAdmin()) {
+            getBrokerAdmin().close();
+        }
     }
 
     public boolean isInitialized() {

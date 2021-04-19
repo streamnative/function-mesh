@@ -34,6 +34,7 @@ import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.policies.data.SinkStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Sinks;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
@@ -76,19 +77,6 @@ public class SinksImpl extends FunctionMeshComponentImpl
         this.validateRegisterSinkRequestParams(tenant, namespace, sinkName, sinkConfig);
     }
 
-    private void validateGetSinkInfoRequestParams(
-            String tenant, String namespace, String sinkName) {
-        if (tenant == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
-        }
-        if (namespace == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Namespace is not provided");
-        }
-        if (sinkName == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Sink name is not provided");
-        }
-    }
-
     @Override
     public void registerSink(
             final String tenant,
@@ -101,6 +89,12 @@ public class SinksImpl extends FunctionMeshComponentImpl
             final String clientRole,
             AuthenticationDataHttps clientAuthenticationDataHttps) {
         validateRegisterSinkRequestParams(tenant, namespace, sinkName, sinkConfig);
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
+        this.validateTenantIsExist(tenant, namespace, sinkName, clientRole);
         try {
             V1alpha1Sink v1alpha1Sink =
                     SinksUtil.createV1alpha1SkinFromSinkConfig(
@@ -148,7 +142,11 @@ public class SinksImpl extends FunctionMeshComponentImpl
             AuthenticationDataHttps clientAuthenticationDataHttps,
             UpdateOptions updateOptions) {
         validateUpdateSinkRequestParams(tenant, namespace, sinkName, sinkConfig);
-
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
         try {
             Call getCall =
                     worker().getCustomObjectsApi()
@@ -215,6 +213,11 @@ public class SinksImpl extends FunctionMeshComponentImpl
             final String clientRole,
             final AuthenticationDataSource clientAuthenticationDataHttps) {
         SinkStatus sinkStatus = new SinkStatus();
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
         try {
             Call call =
                     worker().getCustomObjectsApi()
@@ -256,8 +259,7 @@ public class SinksImpl extends FunctionMeshComponentImpl
     @Override
     public SinkConfig getSinkInfo(
             final String tenant, final String namespace, final String componentName) {
-        validateGetSinkInfoRequestParams(tenant, namespace, componentName);
-
+        this.validateGetInfoRequestParams(tenant, namespace, componentName, kind);
         try {
             Call call =
                     worker().getCustomObjectsApi()
