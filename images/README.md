@@ -25,7 +25,7 @@ The `streamnative/pulsar-functions-python-runner` Python runner is located at th
 
 The Golang runner provides all the toolchain and dependencies required to run Golang functions.
 
-`streamnative/pulsar-functions-go-runner` at Docker Hub will be automatically update align with Apache Pulsar Release.
+The `streamnative/pulsar-functions-go-runner` Golang runner is located at the Docker Hub and is automatically updated to align with Apache Pulsar release.
 
 ## How to use
 
