@@ -4,7 +4,7 @@ Function Mesh uses runner images as functions / connectors' Pod images. Each run
 
 ## Images
 ### Base Runner
-Base Runner located at `./pulsar-functions-base-runner`, base runner contains basic tool-chains like `/pulsar/bin`, `/pulsar/conf` and `/pulsar/lib` in order to make sure `pulsar-admin` work properly to support [Apache Pulsar Packages](http://pulsar.apache.org/docs/en/next/admin-api-packages/).
+The base Runner is located at `./pulsar-functions-base-runner`. The base runner contains basic tool-chains like `/pulsar/bin`, `/pulsar/conf` and `/pulsar/lib` to ensure that the `pulsar-admin` CLI tool works properly to support [Apache Pulsar Packages](http://pulsar.apache.org/docs/en/next/admin-api-packages/).
 
 ### Java Runner
 [![Docker Image Version (tag latest semver)](https://img.shields.io/docker/v/streamnative/pulsar-functions-java-runner/2.7.1?style=for-the-badge)](https://hub.docker.com/r/streamnative/pulsar-functions-java-runner)
