@@ -16,7 +16,7 @@ The `streamnative/pulsar-functions-java-runner` Java runner is stored at the Doc
 ### Python Runner
 [![Docker Image Version (tag latest semver)](https://img.shields.io/docker/v/streamnative/pulsar-functions-python-runner/2.7.1?style=for-the-badge)](https://hub.docker.com/r/streamnative/pulsar-functions-python-runner)
 
-Python Runner is based on Base Runner, contains Python function instance to run Python functions. User can build their own Python runner to customize python dependencies.
+The Python runner is based on the base runner and contains the Python function instance to run Python functions. You can build your own Python runner to customize Python dependencies.
 
 `streamnative/pulsar-functions-python-runner` at Docker Hub will be automatically update align with Apache Pulsar Release.
 
