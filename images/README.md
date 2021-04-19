@@ -1,6 +1,6 @@
 # Function Mesh Runner Images
 
-Function Mesh uses runner images as functions / connectors' POD image, each runtime runner image only contains necessary tool-chains and libraries for specified runtime.
+Function Mesh uses runner images as functions / connectors' Pod images. Each runtime runner image only contains necessary tool-chains and libraries for specified runtime.
 
 ## Images
 ### Base Runner
