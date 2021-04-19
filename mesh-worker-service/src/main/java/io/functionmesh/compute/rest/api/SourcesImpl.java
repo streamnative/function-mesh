@@ -240,7 +240,19 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         }
     }
 
+    @Override
     public List<ConnectorDefinition> getSourceList() {
+        List<ConnectorDefinition> connectorDefinitions = getListOfConnectors();
+        List<ConnectorDefinition> retval = new ArrayList<>();
+        for (ConnectorDefinition connectorDefinition : connectorDefinitions) {
+            if (!org.apache.commons.lang.StringUtils.isEmpty(connectorDefinition.getSourceClass())) {
+                retval.add(connectorDefinition);
+            }
+        }
+        return retval;
+    }
+
+    public List<ConnectorDefinition> getSourceListBak() {
         List<ConnectorDefinition> connectorDefinitions = new ArrayList<>();
 
         try {
@@ -263,6 +275,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             v1alpha1SourceList.getItems().stream().forEach((n) -> {
                 ConnectorDefinition connectorDefinition = new ConnectorDefinition();
                 connectorDefinition.setName(n.getSpec().getClassName());
+                connectorDefinition.setSinkClass(n.getSpec().getSinkType());
                 connectorDefinition.setSourceClass(n.getSpec().getSourceType());
 
                 connectorDefinitions.add(connectorDefinition);

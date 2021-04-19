@@ -34,7 +34,6 @@ import org.apache.pulsar.broker.cache.ConfigurationCacheService;
 import org.apache.pulsar.broker.resources.PulsarResources;
 import org.apache.pulsar.common.conf.InternalConfigurationData;
 import org.apache.pulsar.common.util.SimpleTextOutputStream;
-import org.apache.pulsar.functions.worker.ConnectorsManager;
 import org.apache.pulsar.functions.worker.ErrorNotifier;
 import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.apache.pulsar.functions.worker.WorkerService;
@@ -67,7 +66,7 @@ public class MeshWorkerService implements WorkerService {
     private AuthenticationService authenticationService;
     private AuthorizationService authorizationService;
 
-    private ConnectorsManager connectorsManager;
+    private FunctionMeshConnectorsManager connectorsManager;
 
     public MeshWorkerService() {
 
@@ -80,9 +79,9 @@ public class MeshWorkerService implements WorkerService {
 
     @Override
     public void initInBroker(ServiceConfiguration brokerConfig,
-                           WorkerConfig workerConfig, PulsarResources pulsarResources,
-                           ConfigurationCacheService configurationCacheService,
-                           InternalConfigurationData internalConfigurationData) throws Exception {
+                             WorkerConfig workerConfig, PulsarResources pulsarResources,
+                             ConfigurationCacheService configurationCacheService,
+                             InternalConfigurationData internalConfigurationData) throws Exception {
         this.init(workerConfig);
     }
 
@@ -110,6 +109,7 @@ public class MeshWorkerService implements WorkerService {
                       ErrorNotifier errorNotifier) {
         this.authenticationService = authenticationService;
         this.authorizationService = authorizationService;
+        this.connectorsManager = new FunctionMeshConnectorsManager();
     }
 
     public void stop() {

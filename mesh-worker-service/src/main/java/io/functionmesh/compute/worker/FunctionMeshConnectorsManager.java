@@ -3,23 +3,61 @@ package io.functionmesh.compute.worker;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.pulsar.functions.utils.io.Connector;
-import org.apache.pulsar.functions.utils.io.ConnectorUtils;
-import org.apache.pulsar.functions.worker.WorkerConfig;
+import org.apache.pulsar.common.io.ConnectorDefinition;
+import org.apache.pulsar.common.util.ObjectMapperFactory;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class FunctionMeshConnectorsManager {
+    private static final String PULSAR_IO_CONNECTORS_CONFIG = "conf/connectors.yaml";
+
     @Getter
     private volatile TreeMap<String, FunctionMeshConnectorDefinition> connectors;
+
+    public FunctionMeshConnectorsManager() {
+        this.connectors = searchForConnectors();
+    }
+
+    public static TreeMap<String, FunctionMeshConnectorDefinition> searchForConnectors() {
+        Path path = Paths.get(PULSAR_IO_CONNECTORS_CONFIG).toAbsolutePath();
+        log.info("Connectors configs in {}", path);
+
+        TreeMap<String, FunctionMeshConnectorDefinition> results = new TreeMap<>();
+
+        if (!path.toFile().exists()) {
+            log.warn("Connectors configs not found");
+            return results;
+        }
+        try {
+            String configs = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+            FunctionMeshConnectorDefinition[] data = ObjectMapperFactory.getThreadLocalYaml().readValue(configs, FunctionMeshConnectorDefinition[].class);
+            for (FunctionMeshConnectorDefinition d : data) {
+                results.put(d.getName(), d);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return results;
+    }
 
     public FunctionMeshConnectorDefinition getConnectorDefinition(String connectorType) {
         return connectors.get(connectorType);
     }
 
-    public void reloadConnectors(WorkerConfig workerConfig) throws IOException {
-        connectors = searchForConnectors(workerConfig.getConnectorsDirectory(), workerConfig.getNarExtractionDirectory());
+    public void reloadConnectors() throws IOException {
+        connectors = searchForConnectors();
+    }
+
+    public List<ConnectorDefinition> getConnectorDefinitions() {
+        return connectors.values().stream().map(v -> (ConnectorDefinition)v).collect(Collectors.toList());
     }
 }

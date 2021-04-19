@@ -280,7 +280,14 @@ public class SinksImpl extends MeshComponentImpl
 
     @Override
     public List<ConnectorDefinition> getSinkList() {
-        return new ArrayList<>();
+        List<ConnectorDefinition> connectorDefinitions = getListOfConnectors();
+        List<ConnectorDefinition> retval = new ArrayList<>();
+        for (ConnectorDefinition connectorDefinition : connectorDefinitions) {
+            if (!org.apache.commons.lang.StringUtils.isEmpty(connectorDefinition.getSinkClass())) {
+                retval.add(connectorDefinition);
+            }
+        }
+        return retval;
     }
 
     @Override

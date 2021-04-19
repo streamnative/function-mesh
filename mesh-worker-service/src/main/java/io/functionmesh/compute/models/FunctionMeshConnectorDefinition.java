@@ -32,7 +32,7 @@ public class FunctionMeshConnectorDefinition extends ConnectorDefinition {
     /**
      * The imageTag to the connector image
      * By default it will align with Pulsar's version
-     * TODO: set imageTag to Pulsar's version by default
+     * TODO: set imageTag to version by default
      */
     private String imageTag;
 }
