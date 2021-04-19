@@ -151,4 +151,4 @@ When you use Function Mesh with self build images, you need to define the execut
 
 ## Scripts
 
-`build.sh` is a bash script to build runner base, Java, Python, and Go runner locally.
+`build.sh` is a bash script used to build base, Java, Python, and Golang runner locally.
