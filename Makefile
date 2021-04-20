@@ -2,7 +2,7 @@
 VERSION ?= 0.1.2
 # Default image tag
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
-OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:$(VERSION)
+OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:v$(VERSION)
 OPERATOR_IMG_LATEST ?= ${DOCKER_REPO}/function-mesh:latest
 
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
@@ -32,7 +32,7 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
-IMG ?= streamnative/function-mesh:v0.1.1
+IMG ?= ${DOCKER_REPO}/function-mesh-operator:v$(VERSION)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
