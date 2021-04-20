@@ -213,7 +213,7 @@ public class SourcesImpTest {
                         componentName,
                         null,
                         uploadedInputStream,
-                        sourceConfig);
+                        sourceConfig, null);
 
         PowerMockito.when(
                 meshWorkerService
@@ -434,7 +434,7 @@ public class SourcesImpTest {
                         componentName,
                         null,
                         uploadedInputStream,
-                        sourceConfig);
+                        sourceConfig, null);
         v1alpha1Source.getMetadata().setResourceVersion("881033");
 
         PowerMockito.when(

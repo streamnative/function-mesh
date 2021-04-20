@@ -207,7 +207,7 @@ public class SinksImpTest {
 
         V1alpha1Sink v1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
-                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig);
+                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null);
 
         PowerMockito.when(
                 meshWorkerService
@@ -412,7 +412,7 @@ public class SinksImpTest {
 
         V1alpha1Sink v1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
-                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig);
+                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null);
         v1alpha1Sink.getMetadata().setResourceVersion("881033");
 
         PowerMockito.when(

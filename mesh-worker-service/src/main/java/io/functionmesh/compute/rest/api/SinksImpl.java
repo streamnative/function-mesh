@@ -110,7 +110,8 @@ public class SinksImpl extends MeshComponentImpl
                             sinkName,
                             sinkPkgUrl,
                             uploadedInputStream,
-                            sinkConfig);
+                            sinkConfig,
+                            this.functionMeshProxyServiceSupplier.get().getConnectorsManager());
             Call call =
                     worker().getCustomObjectsApi()
                             .createNamespacedCustomObjectCall(
@@ -131,6 +132,7 @@ public class SinksImpl extends MeshComponentImpl
                     namespace,
                     sinkConfig,
                     e);
+            e.printStackTrace();
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
@@ -164,7 +166,7 @@ public class SinksImpl extends MeshComponentImpl
                             sinkName,
                             sinkPkgUrl,
                             uploadedInputStream,
-                            sinkConfig);
+                            sinkConfig, this.functionMeshProxyServiceSupplier.get().getConnectorsManager());
             v1alpha1Sink
                     .getMetadata()
                     .setResourceVersion(oldRes.getMetadata().getResourceVersion());

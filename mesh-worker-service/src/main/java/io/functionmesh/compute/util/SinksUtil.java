@@ -19,6 +19,8 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
+import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
+import io.functionmesh.compute.worker.FunctionMeshConnectorsManager;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpec;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInput;
@@ -26,7 +28,10 @@ import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPulsar;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecResources;
 import io.functionmesh.proxy.models.CustomRuntimeOptions;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -49,6 +54,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.apache.pulsar.common.functions.Utils.BUILTIN;
+import static org.apache.pulsar.functions.utils.FunctionCommon.roundDecimal;
+
+@Slf4j
 public class SinksUtil {
     public static final String cpuKey = "cpu";
     public static final String memoryKey = "memory";
@@ -76,7 +85,7 @@ public class SinksUtil {
             String sinkName,
             String sinkPkgUrl,
             InputStream uploadedInputStream,
-            SinkConfig sinkConfig)
+            SinkConfig sinkConfig, FunctionMeshConnectorsManager connectorsManager)
             throws IOException, URISyntaxException, ClassNotFoundException {
         String typeClassName = "";
         V1alpha1Sink v1alpha1Sink = new V1alpha1Sink();
@@ -90,17 +99,22 @@ public class SinksUtil {
 
         V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
 
-        File file;
+        File file = null;
         if (Strings.isNotEmpty(sinkPkgUrl)) {
             file = FunctionCommon.extractFileFromPkgURL(sinkPkgUrl);
-        } else {
+        } else if (uploadedInputStream != null) {
             file = FunctionCommon.createPkgTempFile();
             FileUtils.copyInputStreamToFile(uploadedInputStream, file);
         }
-        NarClassLoader narClassLoader = FunctionCommon.extractNarClassLoader(file, null);
-        String sourceClassName = ConnectorUtils.getIOSourceClass(narClassLoader);
-        Class<?> sourceClass = narClassLoader.loadClass(sourceClassName);
-        Class<?> sourceType = FunctionCommon.getSourceType(sourceClass);
+        if (file != null) {
+            NarClassLoader narClassLoader = FunctionCommon.extractNarClassLoader(file, null);
+            String sinkClassName = ConnectorUtils.getIOSinkClass(narClassLoader);
+            Class<?> sinkClass = narClassLoader.loadClass(sinkClassName);
+            Class<?> sinkType = FunctionCommon.getSourceType(sinkClass);
+
+            v1alpha1SinkSpec.setClassName(sinkClassName);
+            v1alpha1SinkSpec.setTypeClassName(sinkType.getName());
+        }
 
         v1alpha1SinkSpec.setClassName(sourceClassName);
         typeClassName = sourceType.getName();
@@ -116,31 +130,25 @@ public class SinksUtil {
 
         v1alpha1SinkSpec.setSinkConfig(transformedMapValueToString(sinkConfig.getConfigs()));
 
-        if (sinkConfig.getResources() == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "cpu and ram is not provided");
-        }
-        Double cpu = sinkConfig.getResources().getCpu();
-        if (cpu == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "cpu is not provided");
-        }
-        Long memory = sinkConfig.getResources().getRam();
-        if (memory == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "ram is not provided");
-        }
-        String cpuValue = cpu.toString();
-        String memoryValue = memory.toString();
+        double cpu = sinkConfig.getResources() == null && sinkConfig.getResources().getCpu() != 0 ? sinkConfig.getResources().getCpu() : 1;
+        long ramRequest = sinkConfig.getResources() == null && sinkConfig.getResources().getRam() != 0 ? sinkConfig.getResources().getRam() : 1073741824;
+
         Map<String, String> limits = new HashMap<>();
-        limits.put(cpuKey, cpuValue);
-        limits.put(memoryKey, memoryValue);
+        Map<String, String> requests = new HashMap<>();
+
+        long padding = Math.round(ramRequest * (10.0 / 100.0)); // percentMemoryPadding is 0.1
+        long ramWithPadding = ramRequest + padding;
+
+        limits.put(cpuKey, Quantity.fromString(Double.toString(roundDecimal(cpu, 3))).toSuffixedString());
+        limits.put(memoryKey, Quantity.fromString(Long.toString(ramWithPadding)).toSuffixedString());
+
+        requests.put(cpuKey, Quantity.fromString(Double.toString(roundDecimal(cpu, 3))).toSuffixedString());
+        requests.put(memoryKey, Quantity.fromString(Long.toString(ramRequest)).toSuffixedString());
 
         V1alpha1SinkSpecResources v1alpha1SinkSpecResources = new V1alpha1SinkSpecResources();
         v1alpha1SinkSpecResources.setLimits(limits);
-        v1alpha1SinkSpecResources.setRequests(limits);
+        v1alpha1SinkSpecResources.setRequests(requests);
         v1alpha1SinkSpec.setResources(v1alpha1SinkSpecResources);
-
-        V1alpha1SinkSpecPulsar pulsar = new V1alpha1SinkSpecPulsar();
-        pulsar.setPulsarConfig(sinkName);
-        v1alpha1SinkSpec.setPulsar(pulsar);
 
         String location =
                 String.format(
@@ -149,12 +157,31 @@ public class SinksUtil {
         if (StringUtils.isNotEmpty(sinkPkgUrl)) {
             location = sinkPkgUrl;
         }
-        Path path = Paths.get(sinkConfig.getArchive());
-        String jar = path.getFileName().toString();
+        String archive = sinkConfig.getArchive();
         V1alpha1SinkSpecJava v1alpha1SinkSpecJava = new V1alpha1SinkSpecJava();
-        v1alpha1SinkSpecJava.setJar(jar);
-        v1alpha1SinkSpecJava.setJarLocation(location);
-        v1alpha1SinkSpec.setJava(v1alpha1SinkSpecJava);
+        if (connectorsManager != null && archive.startsWith(BUILTIN)) {
+            String connectorType = archive.replaceFirst("^builtin://", "");
+            FunctionMeshConnectorDefinition definition = connectorsManager.getConnectorDefinition(connectorType);
+            if (definition != null) {
+                v1alpha1SinkSpec.setImage(definition.toFullImageURL());
+                if (definition.getSinkClass() != null && v1alpha1SinkSpec.getClassName() == null) {
+                    v1alpha1SinkSpec.setClassName(definition.getSinkClass());
+                }
+                v1alpha1SinkSpecJava.setJar(definition.getJar());
+                v1alpha1SinkSpecJava.setJarLocation("");
+                v1alpha1SinkSpec.setJava(v1alpha1SinkSpecJava);
+            } else {
+                log.warn("cannot find built-in connector {}", connectorType);
+                throw new RestException(Response.Status.BAD_REQUEST, String.format("connectorType %s is not supported yet", connectorType));
+            }
+        } else {
+            Path path = Paths.get(sinkConfig.getArchive());
+            String jar = path.getFileName().toString();
+
+            v1alpha1SinkSpecJava.setJar(jar);
+            v1alpha1SinkSpecJava.setJarLocation(location);
+            v1alpha1SinkSpec.setJava(v1alpha1SinkSpecJava);
+        }
 
         String customRuntimeOptionsJSON = sinkConfig.getCustomRuntimeOptions();
         if (Strings.isEmpty(customRuntimeOptionsJSON)) {
@@ -162,16 +189,33 @@ public class SinksUtil {
                     Response.Status.BAD_REQUEST, "customRuntimeOptions is not provided");
         }
 
-        CustomRuntimeOptions customRuntimeOptions =
-                new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
-        String clusterName = customRuntimeOptions.getClusterName();
-        if (clusterName == null) {
-            throw new RestException(
-                    Response.Status.BAD_REQUEST,
-                    "clusterName is not provided in customRuntimeOptions");
+        String clusterName = CommonUtil.getCurrentClusterName();
+        try {
+            CustomRuntimeOptions customRuntimeOptions =
+                    new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
+
+            if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
+                clusterName = customRuntimeOptions.getClusterName();
+            }
+
+            if (Strings.isNotEmpty(customRuntimeOptions.getTypeClassName())) {
+                v1alpha1SinkSpec.setTypeClassName(customRuntimeOptions.getTypeClassName());
+            }
+        } catch (Exception ignored) {
         }
+
+        if (Strings.isEmpty(clusterName)) {
+            throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided in customRuntimeOptions");
+        }
+
         v1alpha1SinkSpec.setClusterName(clusterName);
-        v1alpha1SinkSpec.setAutoAck(sinkConfig.getAutoAck());
+
+        boolean autoAck = sinkConfig.getAutoAck() != null ? sinkConfig.getAutoAck() : true;
+        v1alpha1SinkSpec.setAutoAck(autoAck);
+
+        V1alpha1SinkSpecPulsar pulsar = new V1alpha1SinkSpecPulsar();
+        pulsar.setPulsarConfig(CommonUtil.getPulsarClusterConfigMapName(clusterName)); // try to reuse the configMap
+        v1alpha1SinkSpec.setPulsar(pulsar);
 
         if (Strings.isNotEmpty(customRuntimeOptions.getTypeClassName()) && Strings.isEmpty(typeClassName)) {
             typeClassName = customRuntimeOptions.getTypeClassName();
@@ -224,5 +268,11 @@ public class SinksUtil {
         sinkConfig.setAutoAck(v1alpha1SinkSpec.getAutoAck());
 
         return sinkConfig;
+    }
+
+    @Data
+    static class CustomRuntimeOptions {
+        private String clusterName;
+        private String typeClassName;
     }
 }

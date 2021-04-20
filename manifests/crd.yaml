@@ -9268,6 +9268,8 @@ spec:
                   timeout:
                     format: int32
                     type: integer
+                  typeClassName:
+                    type: string
                   volumeMounts:
                     items:
                       description: VolumeMount describes a mounting of a Volume within
@@ -13840,6 +13842,8 @@ spec:
                   sourceType:
                     type: string
                   tenant:
+                    type: string
+                  typeClassName:
                     type: string
                   volumeMounts:
                     items:
@@ -22799,6 +22803,8 @@ spec:
             timeout:
               format: int32
               type: integer
+            typeClassName:
+              type: string
             volumeMounts:
               items:
                 description: VolumeMount describes a mounting of a Volume within a
@@ -27202,6 +27208,8 @@ spec:
             sourceType:
               type: string
             tenant:
+              type: string
+            typeClassName:
               type: string
             volumeMounts:
               items:

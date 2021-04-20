@@ -106,7 +106,7 @@ public class SinksUtilTest {
 
         V1alpha1Sink actualV1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
-                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig);
+                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null);
 
         V1alpha1Sink expectedV1alpha1Sink = new V1alpha1Sink();
 

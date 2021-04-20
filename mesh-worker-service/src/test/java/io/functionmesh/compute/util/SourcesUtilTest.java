@@ -102,7 +102,7 @@ public class SourcesUtilTest {
         sourceConfig.setCustomRuntimeOptions(customRuntimeOptions);
 
         V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
-                componentName, null, uploadedInputStream, sourceConfig);
+                componentName, null, uploadedInputStream, sourceConfig, null);
 
         V1alpha1Source expectedV1alpha1Source = new V1alpha1Source();
 

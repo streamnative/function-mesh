@@ -28,7 +28,13 @@ import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerCo
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecResources;
 import io.functionmesh.proxy.models.CustomRuntimeOptions;
+import io.kubernetes.client.custom.Quantity;
+import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
+import io.functionmesh.compute.worker.FunctionMeshConnectorsManager;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -56,6 +62,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.apache.pulsar.common.functions.Utils.BUILTIN;
+import static org.apache.pulsar.functions.utils.FunctionCommon.roundDecimal;
+
+@Data
+class CustomRuntimeOptions {
+    private String clusterName;
+}
+
+@Slf4j
 public class SourcesUtil {
     public final static String cpuKey = "cpu";
     public final static String memoryKey = "memory";
@@ -77,7 +92,8 @@ public class SourcesUtil {
     public static V1alpha1Source createV1alpha1SourceFromSourceConfig(String kind, String group, String version,
                                                                       String sourceName, String sourcePkgUrl,
                                                                       InputStream uploadedInputStream,
-                                                                      SourceConfig sourceConfig) throws IOException,
+                                                                      SourceConfig sourceConfig,
+                                                                      FunctionMeshConnectorsManager connectorsManager) throws IOException,
             URISyntaxException, ClassNotFoundException {
         String typeClassName = "";
         V1alpha1Source v1alpha1Source = new V1alpha1Source();
@@ -92,18 +108,25 @@ public class SourcesUtil {
         V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
         v1alpha1SourceSpec.setClassName(sourceConfig.getClassName());
 
-        File file;
+        File file = null;
         if (Strings.isNotEmpty(sourcePkgUrl)) {
             file = FunctionCommon.extractFileFromPkgURL(sourcePkgUrl);
-        } else {
+        } else if (uploadedInputStream != null) {
             file = FunctionCommon.createPkgTempFile();
             FileUtils.copyInputStreamToFile(uploadedInputStream, file);
         }
-        NarClassLoader narClassLoader = FunctionCommon.extractNarClassLoader(file, null);
-        String sourceClassName = ConnectorUtils.getIOSourceClass(narClassLoader);
-        Class<?> sourceClass = narClassLoader.loadClass(sourceClassName);
-        Class<?> sourceType = FunctionCommon.getSourceType(sourceClass);
+        if (file != null) {
+            NarClassLoader narClassLoader = FunctionCommon.extractNarClassLoader(file, null);
+            String sourceClassName = ConnectorUtils.getIOSourceClass(narClassLoader);
+            Class<?> sourceClass = narClassLoader.loadClass(sourceClassName);
+            Class<?> sourceType = FunctionCommon.getSourceType(sourceClass);
 
+            v1alpha1SourceSpec.setTypeClassName(sourceType.getName());
+        }
+
+        if (sourceConfig.getSchemaType() != null) {
+            v1alpha1SourceSpec.setTypeClassName(sourceConfig.getSchemaType());
+        }
         typeClassName = sourceType.getName();
 
         Integer parallelism = sourceConfig.getParallelism() == null ? 1 : sourceConfig.getParallelism();
@@ -114,6 +137,10 @@ public class SourcesUtil {
         v1alpha1SourceSpecOutput.setTopic(sourceConfig.getTopicName());
         v1alpha1SourceSpecOutput.setTypeClassName(typeClassName);
         v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
+
+        if (sourceConfig.getSerdeClassName() != null) {
+            v1alpha1SourceSpecOutput.setSinkSerdeClassName(sourceConfig.getSerdeClassName());
+        }
 
         ProducerConfig producerConfig = sourceConfig.getProducerConfig();
         if (producerConfig != null) {
@@ -137,57 +164,79 @@ public class SourcesUtil {
             v1alpha1SourceSpecOutputProducerConf.setUseThreadLocalProducers(producerConfig.getUseThreadLocalProducers());
         }
 
-        if (sourceConfig.getResources() == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "cpu and ram is not provided");
-        }
-        Double cpu = sourceConfig.getResources().getCpu();
-        if (sourceConfig.getResources().getCpu() == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "cpu is not provided");
-        }
-        Long memory = sourceConfig.getResources().getRam();
-        if (sourceConfig.getResources().getRam() == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "ram is not provided");
-        }
-        String cpuValue = cpu.toString();
-        String memoryValue = memory.toString();
+        double cpu = sourceConfig.getResources() == null && sourceConfig.getResources().getCpu() != 0 ? sourceConfig.getResources().getCpu() : 1;
+        long ramRequest = sourceConfig.getResources() == null && sourceConfig.getResources().getRam() != 0 ? sourceConfig.getResources().getRam() : 1073741824;
+
         Map<String, String> limits = new HashMap<>();
-        limits.put(cpuKey, cpuValue);
-        limits.put(memoryKey, memoryValue);
+        Map<String, String> requests = new HashMap<>();
+
+        long padding = Math.round(ramRequest * (10.0 / 100.0)); // percentMemoryPadding is 0.1
+        long ramWithPadding = ramRequest + padding;
+
+        limits.put(cpuKey, Quantity.fromString(Double.toString(roundDecimal(cpu, 3))).toSuffixedString());
+        limits.put(memoryKey, Quantity.fromString(Long.toString(ramWithPadding)).toSuffixedString());
+
+        requests.put(cpuKey, Quantity.fromString(Double.toString(roundDecimal(cpu, 3))).toSuffixedString());
+        requests.put(memoryKey, Quantity.fromString(Long.toString(ramRequest)).toSuffixedString());
 
         V1alpha1SourceSpecResources v1alpha1SourceSpecResources = new V1alpha1SourceSpecResources();
         v1alpha1SourceSpecResources.setLimits(limits);
-        v1alpha1SourceSpecResources.setRequests(limits);
+        v1alpha1SourceSpecResources.setRequests(requests);
         v1alpha1SourceSpec.setResources(v1alpha1SourceSpecResources);
 
         v1alpha1SourceSpec.setSourceConfig(transformedMapValueToString(sourceConfig.getConfigs()));
-
-        V1alpha1SourceSpecPulsar pulsar = new V1alpha1SourceSpecPulsar();
-        pulsar.setPulsarConfig(sourceName);
-        v1alpha1SourceSpec.setPulsar(pulsar);
 
         String location = String.format("%s/%s/%s", sourceConfig.getTenant(), sourceConfig.getNamespace(),
                 sourceConfig.getName());
         if (StringUtils.isNotEmpty(sourcePkgUrl)) {
             location = sourcePkgUrl;
         }
-        Path path = Paths.get(sourceConfig.getArchive());
-        String jar = path.getFileName().toString();
+        String archive = sourceConfig.getArchive();
         V1alpha1SourceSpecJava v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
-        v1alpha1SourceSpecJava.setJar(jar);
-        v1alpha1SourceSpecJava.setJarLocation(location);
-        v1alpha1SourceSpec.setJava(v1alpha1SourceSpecJava);
+        if (connectorsManager != null && archive.startsWith(BUILTIN)) {
+            String connectorType = archive.replaceFirst("^builtin://", "");
+            FunctionMeshConnectorDefinition definition = connectorsManager.getConnectorDefinition(connectorType);
+            if (definition != null) {
+                v1alpha1SourceSpec.setImage(definition.toFullImageURL());
+                if (definition.getSourceClass() != null && v1alpha1SourceSpec.getClassName() == null) {
+                    v1alpha1SourceSpec.setClassName(definition.getSourceClass());
+                }
+                v1alpha1SourceSpecJava.setJar(definition.getJar());
+                v1alpha1SourceSpecJava.setJarLocation("");
+                v1alpha1SourceSpec.setJava(v1alpha1SourceSpecJava);
+            } else {
+                log.warn("cannot find built-in connector {}", connectorType);
+                throw new RestException(Response.Status.BAD_REQUEST, String.format("connectorType %s is not supported yet", connectorType));
+            }
+        } else {
+            Path path = Paths.get(sourceConfig.getArchive());
+            String jar = path.getFileName().toString();
+
+            v1alpha1SourceSpecJava.setJar(jar);
+            v1alpha1SourceSpecJava.setJarLocation(location);
+            v1alpha1SourceSpec.setJava(v1alpha1SourceSpecJava);
+        }
 
         String customRuntimeOptionsJSON = sourceConfig.getCustomRuntimeOptions();
         if (Strings.isEmpty(customRuntimeOptionsJSON)) {
             throw new RestException(Response.Status.BAD_REQUEST, "customRuntimeOptions is not provided");
         }
 
-        CustomRuntimeOptions customRuntimeOptions = new Gson().fromJson(customRuntimeOptionsJSON,
-                CustomRuntimeOptions.class);
-        String clusterName = customRuntimeOptions.getClusterName();
-        if (clusterName == null) {
+        String clusterName = CommonUtil.getCurrentClusterName();
+        try {
+            CustomRuntimeOptions customRuntimeOptions = new Gson().fromJson(customRuntimeOptionsJSON,
+                    CustomRuntimeOptions.class);
+
+            if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
+                clusterName = customRuntimeOptions.getClusterName();
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (Strings.isEmpty(clusterName)) {
             throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided in customRuntimeOptions");
         }
+
         v1alpha1SourceSpec.setClusterName(clusterName);
 
         if (Strings.isNotEmpty(customRuntimeOptions.getTypeClassName()) && Strings.isEmpty(typeClassName)) {
@@ -197,6 +246,9 @@ public class SourcesUtil {
         v1alpha1SourceSpecOutput.setTypeClassName(typeClassName);
         v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
 
+        V1alpha1SourceSpecPulsar pulsar = new V1alpha1SourceSpecPulsar();
+        pulsar.setPulsarConfig(CommonUtil.getPulsarClusterConfigMapName(clusterName)); // try to reuse the configMap
+        v1alpha1SourceSpec.setPulsar(pulsar);
         v1alpha1Source.setSpec(v1alpha1SourceSpec);
 
         return v1alpha1Source;

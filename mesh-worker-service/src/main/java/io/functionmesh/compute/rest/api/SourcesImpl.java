@@ -102,7 +102,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
 
         try {
             V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
-                    sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig);
+                    sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig,
+                    this.functionMeshProxyServiceSupplier.get().getConnectorsManager());
             Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(group, version, namespace,
                     plural,
                     v1alpha1Source,
@@ -113,6 +114,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             executeCall(call, V1alpha1Source.class);
         } catch (Exception e) {
             log.error("register {}/{}/{} source failed, error message: {}", tenant, namespace, sourceConfig, e);
+            e.printStackTrace();
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
@@ -147,7 +149,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                     sourceName,
                     sourcePkgUrl,
                     uploadedInputStream,
-                    sourceConfig
+                    sourceConfig,
+                    this.functionMeshProxyServiceSupplier.get().getConnectorsManager()
             );
             v1alpha1Source.getMetadata().setResourceVersion(oldRes.getMetadata().getResourceVersion());
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
