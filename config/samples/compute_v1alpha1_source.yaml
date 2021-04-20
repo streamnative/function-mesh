@@ -1,0 +1,47 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Source
+metadata:
+  name: source-sample
+spec:
+  className: org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource
+  sourceType: org.apache.pulsar.common.schema.KeyValue
+  sinkType: org.apache.pulsar.common.schema.KeyValue
+  replicas: 1
+  maxReplicas: 1
+  output:
+    producerConf:
+      maxPendingMessages: 1000
+      maxPendingMessagesAcrossPartitions: 50000
+      useThreadLocalProducers: true
+    topic: persistent://public/default/destination
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+    requests:
+      cpu: "0.1"
+      memory: 1G
+  sourceConfig:
+    mongodb.hosts: rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017
+    mongodb.name: dbserver1
+    mongodb.user: debezium
+    mongodb.password: dbz
+    mongodb.task.id: "1"
+    database.whitelist: inventory
+    pulsar.service.url: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
+  pulsar:
+    pulsarConfig: "test-source"
+  java:
+    jar: connectors/pulsar-io-debezium-mongodb-2.7.0-rc-pm-3.nar
+    jarLocation: "" # use pulsar provided connectors
+    # use package name:
+    # jarLocation: function://public/default/nul-test-java-source@v1
+  clusterName: test-pulsar
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-source
+data:
+  webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650

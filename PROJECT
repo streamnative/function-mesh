@@ -1,23 +1,23 @@
-domain: streamnative.io
+domain: functionmesh.io
 layout: go.kubebuilder.io/v2
 projectName: function-mesh
 repo: github.com/streamnative/function-mesh
 resources:
-- controller: true
+- group: compute
+  controller: true
   domain: streamnative.io
-  group: cloud
   kind: FunctionMesh
   path: github.com/streamnative/function-mesh/api/v1alpha1
   version: v1alpha1
-- controller: true
+- group: compute
+  controller: true
   domain: streamnative.io
-  group: cloud
   kind: Source
   path: github.com/streamnative/function-mesh/api/v1alpha1
   version: v1alpha1
-- controller: true
+- group: compute
+  controller: true
   domain: streamnative.io
-  group: cloud
   kind: Sink
   path: github.com/streamnative/function-mesh/api/v1alpha1
   version: v1alpha1

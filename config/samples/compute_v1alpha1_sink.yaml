@@ -1,0 +1,44 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Sink
+metadata:
+  name: sink-sample
+spec:
+  # Add fields here
+  className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
+  sourceType: "[B"
+  sinkType: "[B"
+  replicas: 1
+  maxReplicas: 1
+  input:
+    topics:
+    - persistent://public/default/input
+  sinkConfig:
+    elasticSearchUrl: "http://quickstart-es-http.default.svc.cluster.local:9200"
+    indexName: "my_index"
+    typeName: "doc"
+    username: "elastic"
+    password: "wJ757TmoXEd941kXm07Z2GW3"
+  pulsar:
+    pulsarConfig: "test-sink"
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+    requests:
+      cpu: "0.1"
+      memory: 1G
+  java:
+    jar: connectors/pulsar-io-elastic-search-2.7.0-rc-pm-3.nar
+    jarLocation: "" # use pulsar provided connectors
+    # use package name:
+    # jarLocation: function://public/default/nul-test-java-sink@v1
+  clusterName: test-pulsar
+  autoAck: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-sink
+data:
+  webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650

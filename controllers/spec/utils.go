@@ -151,6 +151,7 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 			MaxPendingMessagesAcrossPartitions: function.Spec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions,
 			UseThreadLocalProducers:            function.Spec.Output.ProducerConf.UseThreadLocalProducers,
 			CryptoSpec:                         generateCryptoSpec(function.Spec.Output.ProducerConf.CryptoConfig),
+			BatchBuilder:                       function.Spec.Output.ProducerConf.BatchBuilder,
 		}
 
 		sinkSpec.ProducerSpec = producerConfig
@@ -201,6 +202,7 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 			MaxPendingMessagesAcrossPartitions: source.Spec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions,
 			UseThreadLocalProducers:            source.Spec.Output.ProducerConf.UseThreadLocalProducers,
 			CryptoSpec:                         cryptoSpec,
+			BatchBuilder:                       source.Spec.Output.ProducerConf.BatchBuilder,
 		}
 	}
 	return &proto.SinkSpec{

@@ -24,7 +24,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.streamnative.function.mesh.proxy</groupId>
+    <groupId>io.functionmesh.proxy</groupId>
     <artifactId>java-proxy</artifactId>
     <version>0.1.4-SNAPSHOT</version>
 
@@ -32,7 +32,7 @@
         <pulsar.version>2.8.0-rc-202103292206</pulsar.version>
         <lombok.version>1.18.16</lombok.version>
         <log4j2.version>2.14.0</log4j2.version>
-        <kubernetes-client.version>10.0.0</kubernetes-client.version>
+        <kubernetes-client.version>10.0.1</kubernetes-client.version>
         <license.plugin.version>3.0</license.plugin.version>
         <mockito.version>1.10.19</mockito.version>
         <powermock.version>1.7.4</powermock.version>

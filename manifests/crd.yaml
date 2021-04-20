@@ -4,9 +4,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: functionmeshes.cloud.streamnative.io
+  name: functionmeshes.compute.functionmesh.io
 spec:
-  group: cloud.streamnative.io
+  group: compute.functionmesh.io
   names:
     kind: FunctionMesh
     listKind: FunctionMeshList
@@ -170,6 +170,8 @@ spec:
                         type: object
                       producerConf:
                         properties:
+                          batchBuilder:
+                            type: string
                           cryptoConfig:
                             properties:
                               consumerCryptoFailureAction:
@@ -9355,6 +9357,8 @@ spec:
                         type: object
                       producerConf:
                         properties:
+                          batchBuilder:
+                            type: string
                           cryptoConfig:
                             properties:
                               consumerCryptoFailureAction:
@@ -13944,9 +13948,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: functions.cloud.streamnative.io
+  name: functions.compute.functionmesh.io
 spec:
-  group: cloud.streamnative.io
+  group: compute.functionmesh.io
   names:
     kind: Function
     listKind: FunctionList
@@ -14109,6 +14113,8 @@ spec:
                   type: object
                 producerConf:
                   properties:
+                    batchBuilder:
+                      type: string
                     cryptoConfig:
                       properties:
                         consumerCryptoFailureAction:
@@ -18441,9 +18447,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: sinks.cloud.streamnative.io
+  name: sinks.compute.functionmesh.io
 spec:
-  group: cloud.streamnative.io
+  group: compute.functionmesh.io
   names:
     kind: Sink
     listKind: SinkList
@@ -22879,9 +22885,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: sources.cloud.streamnative.io
+  name: sources.compute.functionmesh.io
 spec:
-  group: cloud.streamnative.io
+  group: compute.functionmesh.io
   names:
     kind: Source
     listKind: SourceList
@@ -22956,6 +22962,8 @@ spec:
                   type: object
                 producerConf:
                   properties:
+                    batchBuilder:
+                      type: string
                     cryptoConfig:
                       properties:
                         consumerCryptoFailureAction:

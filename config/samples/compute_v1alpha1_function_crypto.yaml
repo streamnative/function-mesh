@@ -1,0 +1,98 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: java-function-crypto-sample
+  namespace: default
+spec:
+  className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+  sourceType: java.lang.String
+  sinkType: java.lang.String
+  forwardSourceMessageProperty: true
+  MaxPendingAsyncRequests: 1000
+  replicas: 1
+  maxReplicas: 5
+  logTopic: persistent://public/default/logging-function-logs
+  input:
+    topics:
+      - persistent://public/default/java-function-crypto-input-topic
+    sourceSpecs:
+      "persistent://public/default/java-function-crypto-input-topic":
+        cryptoConfig:
+          cryptoKeyReaderClassName: "org.apache.pulsar.functions.api.examples.RawFileKeyReader"
+          cryptoKeyReaderConfig:
+            PUBLIC: "/keys/test_ecdsa_pubkey.pem"
+            PRIVATE: "/keys/test_ecdsa_privkey.pem"
+          producerCryptoFailureAction: "FAIL"
+          encryptionKeys:
+            - "myapp1"
+          cryptoSecrets:
+            - secretName: "java-function-crypto-sample-crypto-secret"
+              secretKey: "test_ecdsa_privkey.pem"
+              asVolume: "/keys/test_ecdsa_privkey.pem"
+            - secretName: "java-function-crypto-sample-crypto-secret"
+              secretKey: "test_ecdsa_pubkey.pem"
+              asVolume: "/keys/test_ecdsa_pubkey.pem"
+  output:
+    topic: persistent://public/default/java-function-crypto-output-topic
+  resources:
+    requests:
+      cpu: "0.1"
+      memory: 1G
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+  # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
+  secretsMap:
+    "name":
+      path: "test-secret"
+      key: "username"
+    "pwd":
+      path: "test-secret"
+      key: "password"
+  pulsar:
+    pulsarConfig: "test-pulsar"
+    #authConfig: "test-auth"
+  java:
+    jar: pulsar-functions-api-examples.jar
+    jarLocation: public/default/nlu-test-java-function
+  # to be delete & use admission hook
+  clusterName: test-pulsar
+  autoAck: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-pulsar
+data:
+  webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
+#---
+#apiVersion: v1
+#kind: ConfigMap
+#metadata:
+#  name: test-auth
+#data:
+#  clientAuthenticationPlugin: "abc"
+#  clientAuthenticationParameters: "xyz"
+#  tlsTrustCertsFilePath: "uvw"
+#  useTls: "true"
+#  tlsAllowInsecureConnection: "false"
+#  tlsHostnameVerificationEnable: "true"
+---
+apiVersion: v1
+data:
+  username: YWRtaW4=
+  password: MWYyZDFlMmU2N2Rm
+kind: Secret
+metadata:
+  name: test-secret
+type: Opaque
+---
+apiVersion: v1
+data:
+  "test_ecdsa_privkey.pem": LS0tLS1CRUdJTiBFQyBQQVJBTUVURVJTLS0tLS0KQmdVcmdRUUFDZz09Ci0tLS0tRU5EIEVDIFBBUkFNRVRFUlMtLS0tLQotLS0tLUJFR0lOIEVDIFBSSVZBVEUgS0VZLS0tLS0KTUhRQ0FRRUVJRnpKSlpIRTEvMkpPR0VPejFSLzA2NEEzd0hBZmJxTFMvMzB5SW53UTBKVm9BY0dCU3VCQkFBSwpvVVFEUWdBRS9nRzFuSjRIcEdWcHRZZHZiNFRZRUJRVGlLeTBKYXVMamtBV2paakxOVlVuSWhLQlJLbVdTN3IwCjUxZTVUdHB0VG85ZkRUNHcvb3MyZVNNSGlZWXl0QT09Ci0tLS0tRU5EIEVDIFBSSVZBVEUgS0VZLS0tLS0K
+  "test_ecdsa_pubkey.pem": LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZZd0VBWUhLb1pJemowQ0FRWUZLNEVFQUFvRFFnQUUvZ0cxbko0SHBHVnB0WWR2YjRUWUVCUVRpS3kwSmF1TApqa0FXalpqTE5WVW5JaEtCUkttV1M3cjA1MWU1VHRwdFRvOWZEVDR3L29zMmVTTUhpWVl5dEE9PQotLS0tLUVORCBQVUJMSUMgS0VZLS0tLS0K
+kind: Secret
+metadata:
+  name: java-function-crypto-sample-crypto-secret
+type: Opaque

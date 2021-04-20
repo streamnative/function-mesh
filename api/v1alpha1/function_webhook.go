@@ -38,7 +38,7 @@ func (r *Function) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:verbs=create;update,path=/validate-cloud-streamnative-io-streamnative-io-v1alpha1-function,mutating=false,failurePolicy=fail,groups=cloud.streamnative.io.streamnative.io,resources=functions,versions=v1alpha1,name=vfunction.kb.io
+// +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-function,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=functions,verbs=create;update,versions=v1alpha1,name=mfunction.kb.io
 
 var _ webhook.Defaulter = &Function{}
 
@@ -103,7 +103,7 @@ func (r *Function) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-cloud-streamnative-io-streamnative-io-v1alpha1-function,mutating=false,failurePolicy=fail,groups=cloud.streamnative.io.streamnative.io,resources=functions,versions=v1alpha1,name=vfunction.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-function,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=functions,versions=v1alpha1,name=vsink.kb.io
 
 var _ webhook.Validator = &Function{}
 

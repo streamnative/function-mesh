@@ -59,7 +59,7 @@ func makeFunctionSample(functionName string) *v1alpha1.Function {
 	return &v1alpha1.Function{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Function",
-			APIVersion: "cloud.streamnative.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha1",
 		},
 		ObjectMeta: *makeSampleObjectMeta(functionName),
 		Spec: v1alpha1.FunctionSpec{
@@ -136,6 +136,17 @@ func makeFunctionSampleWithCryptoEnabled() *v1alpha1.Function {
 	return function
 }
 
+func makeFunctionSampleWithKeyBasedBatcher() *v1alpha1.Function {
+	function := makeFunctionSample(TestFunctionName)
+	function.Spec.Output = v1alpha1.OutputConf{
+		Topic: "persistent://public/default/java-function-output-topic",
+		ProducerConf: &v1alpha1.ProducerConfig{
+			BatchBuilder: "KEY_BASED",
+		},
+	}
+	return function
+}
+
 func makeFunctionMeshSample() *v1alpha1.FunctionMesh {
 	inputTopic := "persistent://public/default/functionmesh-input-topic"
 	middleTopic := "persistent://public/default/mid-topic"
@@ -150,7 +161,7 @@ func makeFunctionMeshSample() *v1alpha1.FunctionMesh {
 	return &v1alpha1.FunctionMesh{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "FunctionMesh",
-			APIVersion: "cloud.streamnative.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha1",
 		},
 		ObjectMeta: *makeSampleObjectMeta(TestFunctionMeshName),
 		Spec: v1alpha1.FunctionMeshSpec{
@@ -169,7 +180,7 @@ func makeSinkSample() *v1alpha1.Sink {
 	return &v1alpha1.Sink{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Sink",
-			APIVersion: "cloud.streamnative.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha1",
 		},
 		ObjectMeta: *makeSampleObjectMeta(TestSinkName),
 		Spec: v1alpha1.SinkSpec{
@@ -218,7 +229,7 @@ func makeSourceSample() *v1alpha1.Source {
 	return &v1alpha1.Source{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Sink",
-			APIVersion: "cloud.streamnative.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha1",
 		},
 		ObjectMeta: *makeSampleObjectMeta(TestSourceName),
 		Spec: v1alpha1.SourceSpec{

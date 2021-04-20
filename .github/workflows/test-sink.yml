@@ -44,7 +44,7 @@ jobs:
 
       - name: Start Sink Kind
         run: |
-          kubectl apply -f config/samples/cloud_v1alpha1_sink.yaml
+          kubectl apply -f config/samples/compute_v1alpha1_sink.yaml
           kubectl get sinks
 
       - name: Verfy Sink
