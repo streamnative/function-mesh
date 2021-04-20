@@ -164,6 +164,8 @@ spec:
                   type: object
                 producerConf:
                   properties:
+                    batchBuilder:
+                      type: string
                     cryptoConfig:
                       properties:
                         consumerCryptoFailureAction:
