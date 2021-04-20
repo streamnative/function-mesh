@@ -136,6 +136,17 @@ func makeFunctionSampleWithCryptoEnabled() *v1alpha1.Function {
 	return function
 }
 
+func makeFunctionSampleWithKeyBasedBatcher() *v1alpha1.Function {
+	function := makeFunctionSample(TestFunctionName)
+	function.Spec.Output = v1alpha1.OutputConf{
+		Topic: "persistent://public/default/java-function-output-topic",
+		ProducerConf: &v1alpha1.ProducerConfig{
+			BatchBuilder: "KEY_BASED",
+		},
+	}
+	return function
+}
+
 func makeFunctionMeshSample() *v1alpha1.FunctionMesh {
 	inputTopic := "persistent://public/default/functionmesh-input-topic"
 	middleTopic := "persistent://public/default/mid-topic"
