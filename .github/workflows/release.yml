@@ -46,6 +46,7 @@ jobs:
         run: |
           make release
           make docker-push
+          VERSION=$(echo $VERSION|cut -c 2-)
           make docker-build image-push catalog-build catalog-push
 
       - name: Upload crd.yaml to release
