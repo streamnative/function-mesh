@@ -48,7 +48,7 @@ jobs:
         env:
           VERSION: ${{ github.event.release.tag_name }}
           IMAGE_TAG_BASE: streamnative/function-mesh
-          CATALOG_BRANCH_IMG: latest
+          CATALOG_BRANCH_TAG: latest
         run: |
           make release
           make docker-push
