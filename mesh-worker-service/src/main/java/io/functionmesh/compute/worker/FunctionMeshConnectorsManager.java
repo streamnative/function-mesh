@@ -53,7 +53,7 @@ public class FunctionMeshConnectorsManager {
         return connectors.get(connectorType);
     }
 
-    public void reloadConnectors() throws IOException {
+    public void reloadConnectors() {
         connectors = searchForConnectors();
     }
 

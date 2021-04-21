@@ -289,7 +289,7 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
 
     @Override
     public void reloadConnectors(String clientRole) {
-
+        functionMeshProxyServiceSupplier.get().getConnectorsManager().reloadConnectors();
     }
 }
 
