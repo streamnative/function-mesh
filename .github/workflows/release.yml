@@ -47,7 +47,7 @@ jobs:
           make release
           make docker-push
           VERSION=$(echo $VERSION|cut -c 2-)
-          make docker-build image-push catalog-build catalog-push
+          make docker-build image-push bundle bundle-build bundle-push catalog-build catalog-push
 
       - name: Upload crd.yaml to release
         uses: svenstaro/upload-release-action@v2
