@@ -10,7 +10,7 @@ OPERATOR_IMG_LATEST ?= ${DOCKER_REPO}/function-mesh:latest
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
 # example.com/memcached-operator-bundle:$VERSION and example.com/memcached-operator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= function-mesh
+IMAGE_TAG_BASE ?= ${DOCKER_REPO}/function-mesh
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
