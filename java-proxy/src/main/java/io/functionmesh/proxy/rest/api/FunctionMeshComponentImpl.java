@@ -20,6 +20,7 @@ package io.functionmesh.proxy.rest.api;
 
 import io.functionmesh.functions.models.V1alpha1FunctionList;
 import io.functionmesh.proxy.FunctionMeshProxyService;
+import io.functionmesh.proxy.util.KubernetesUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Response;
@@ -222,7 +223,7 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
             Call call = worker().getCustomObjectsApi().listNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace, plural,
+                    KubernetesUtils.getNamespace(), plural,
                     "false",
                     null,
                     null,

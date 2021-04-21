@@ -18,6 +18,8 @@
  */
 package io.functionmesh.proxy.rest.api;
 
+import com.google.protobuf.ByteString;
+import io.functionmesh.proxy.util.KubernetesUtils;
 import io.functionmesh.proxy.util.SourcesUtil;
 import io.functionmesh.proxy.FunctionMeshProxyService;
 import io.functionmesh.sources.models.V1alpha1Source;
@@ -34,6 +36,7 @@ import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.io.SourceConfig;
 import org.apache.pulsar.common.policies.data.SourceStatus;
 import org.apache.pulsar.common.util.RestException;
+import org.apache.pulsar.functions.auth.FunctionAuthData;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Sources;
@@ -44,6 +47,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @Slf4j
@@ -97,7 +101,29 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
         try {
             V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
                     sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig);
-            Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(group, version, namespace,
+            if (worker().getWorkerConfig().isAuthenticationEnabled()) {
+                Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
+                functionDetailsBuilder.setTenant(tenant);
+                functionDetailsBuilder.setNamespace(namespace);
+                functionDetailsBuilder.setName(sourceName);
+                Function.FunctionDetails functionDetails = functionDetailsBuilder.build();
+                worker().getAuthProvider().ifPresent(functionAuthProvider -> {
+                    if (clientAuthenticationDataHttps != null) {
+                        try {
+                            functionAuthProvider.cacheAuthData(functionDetails, clientAuthenticationDataHttps);
+                        } catch (Exception e) {
+                            log.error("Error caching authentication data for {} {}/{}/{}",
+                                    ComponentTypeUtils.toString(componentType), tenant, namespace, sourceName, e);
+
+
+                            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                                    ComponentTypeUtils.toString(componentType), sourceName, e.getMessage()));
+                        }
+                    }
+                });
+            }
+            Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(
+                    group, version, KubernetesUtils.getNamespace(),
                     plural,
                     v1alpha1Source,
                     null,
@@ -128,6 +154,27 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         try {
+            if (worker().getWorkerConfig().isAuthenticationEnabled()) {
+                Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
+                functionDetailsBuilder.setTenant(tenant);
+                functionDetailsBuilder.setNamespace(namespace);
+                functionDetailsBuilder.setName(sourceName);
+                Function.FunctionDetails functionDetails = functionDetailsBuilder.build();
+                worker().getAuthProvider().ifPresent(functionAuthProvider -> {
+                    if (clientAuthenticationDataHttps != null) {
+                        try {
+                            functionAuthProvider.updateAuthData(functionDetails, Optional.empty(), clientAuthenticationDataHttps);
+                        } catch (Exception e) {
+                            log.error("Error caching authentication data for {} {}/{}/{}",
+                                    ComponentTypeUtils.toString(componentType), tenant, namespace, sourceName, e);
+
+
+                            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                                    ComponentTypeUtils.toString(componentType), sourceName, e.getMessage()));
+                        }
+                    }
+                });
+            }
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
@@ -151,7 +198,7 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(),
                     plural,
                     sourceName,
                     v1alpha1Source,
@@ -182,7 +229,7 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
         SourceStatus sourceStatus = new SourceStatus();
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
-                    group, version, namespace, plural, componentName, null);
+                    group, version, KubernetesUtils.getNamespace(), plural, componentName, null);
             V1alpha1Source v1alpha1Source = executeCall(call, V1alpha1Source.class);
             SourceStatus.SourceInstanceStatus sourceInstanceStatus = new SourceStatus.SourceInstanceStatus();
             SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData =
@@ -229,7 +276,7 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(),
                     plural,
                     componentName,
                     null

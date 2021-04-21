@@ -22,6 +22,7 @@ import io.functionmesh.functions.models.V1alpha1Function;
 import io.functionmesh.proxy.FunctionMeshProxyService;
 import io.functionmesh.proxy.testdata.Generate;
 import io.functionmesh.proxy.util.FunctionsUtil;
+import io.functionmesh.proxy.util.KubernetesUtils;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
@@ -30,8 +31,12 @@ import okhttp3.Call;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.internal.http.RealResponseBody;
+import org.apache.pulsar.client.admin.PulsarAdmin;
+import org.apache.pulsar.client.admin.PulsarAdminException;
+import org.apache.pulsar.client.admin.Tenants;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
+import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -142,6 +147,10 @@ public class FunctionsImplTest {
                 return functionMeshProxyService;
             }
         };
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()).thenReturn(customObjectsApi);
         String tenant = "public";
@@ -186,7 +195,7 @@ public class FunctionsImplTest {
     }
 
     @Test
-    public void registerFunctionTest() throws ApiException, IOException {
+    public void registerFunctionTest() throws ApiException, IOException, PulsarAdminException {
         String testBody = "{\n" +
                 "  \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n" +
                 "  \"kind\": \"Function\",\n" +
@@ -238,6 +247,14 @@ public class FunctionsImplTest {
         Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier = () -> functionMeshProxyService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        PulsarAdmin pulsarAdmin = PowerMockito.mock(PulsarAdmin.class);
+        PowerMockito.when(functionMeshProxyService.getBrokerAdmin()).thenReturn(pulsarAdmin);
+        Tenants tenants = PowerMockito.mock(Tenants.class);
+        PowerMockito.when(pulsarAdmin.tenants()).thenReturn(tenants);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -253,6 +270,8 @@ public class FunctionsImplTest {
 
         FunctionConfig functionConfig = Generate.CreateJavaFunctionConfig(tenant, namespace, functionName);
 
+        PowerMockito.when(tenants.getTenantInfo(tenant)).thenReturn(null);
+
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group,
                 version, functionName, null, functionConfig);
 
@@ -260,7 +279,7 @@ public class FunctionsImplTest {
                 .createNamespacedCustomObjectCall(
                         group,
                         version,
-                        namespace,
+                        KubernetesUtils.getNamespace(),
                         plural,
                         v1alpha1Function,
                         null,
@@ -391,6 +410,10 @@ public class FunctionsImplTest {
         Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier = () -> functionMeshProxyService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
 
         Call getCall = PowerMockito.mock(Call.class);
         Response getResponse = PowerMockito.mock(Response.class);
@@ -458,6 +481,10 @@ public class FunctionsImplTest {
         Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier = () -> functionMeshProxyService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -550,6 +577,10 @@ public class FunctionsImplTest {
         Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier = () -> functionMeshProxyService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);

@@ -18,6 +18,7 @@
  */
 package io.functionmesh.proxy.rest.api;
 
+import io.functionmesh.proxy.util.KubernetesUtils;
 import io.functionmesh.proxy.util.SinksUtil;
 import io.functionmesh.proxy.FunctionMeshProxyService;
 import io.functionmesh.sinks.models.V1alpha1Sink;
@@ -110,7 +111,7 @@ public class SinksImpl extends FunctionMeshComponentImpl
                             .createNamespacedCustomObjectCall(
                                     group,
                                     version,
-                                    namespace,
+                                    KubernetesUtils.getNamespace(),
                                     plural,
                                     v1alpha1Sink,
                                     null,
@@ -171,7 +172,7 @@ public class SinksImpl extends FunctionMeshComponentImpl
                             .replaceNamespacedCustomObjectCall(
                                     group,
                                     version,
-                                    namespace,
+                                    KubernetesUtils.getNamespace(),
                                     plural,
                                     sinkName,
                                     v1alpha1Sink,
@@ -222,7 +223,7 @@ public class SinksImpl extends FunctionMeshComponentImpl
             Call call =
                     worker().getCustomObjectsApi()
                             .getNamespacedCustomObjectCall(
-                                    group, version, namespace, plural, componentName, null);
+                                    group, version, KubernetesUtils.getNamespace(), plural, componentName, null);
             V1alpha1Sink v1alpha1Sink = executeCall(call, V1alpha1Sink.class);
             SinkStatus.SinkInstanceStatus sinkInstanceStatus = new SinkStatus.SinkInstanceStatus();
             SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData =
@@ -264,7 +265,7 @@ public class SinksImpl extends FunctionMeshComponentImpl
             Call call =
                     worker().getCustomObjectsApi()
                             .getNamespacedCustomObjectCall(
-                                    group, version, namespace, plural, componentName, null);
+                                    group, version, KubernetesUtils.getNamespace(), plural, componentName, null);
 
             V1alpha1Sink v1alpha1Sink = executeCall(call, V1alpha1Sink.class);
             return SinksUtil.createSinkConfigFromV1alpha1Source(

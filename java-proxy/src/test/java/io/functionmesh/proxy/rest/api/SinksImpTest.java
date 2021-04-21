@@ -19,6 +19,7 @@
 package io.functionmesh.proxy.rest.api;
 
 import io.functionmesh.proxy.FunctionMeshProxyService;
+import io.functionmesh.proxy.util.KubernetesUtils;
 import io.functionmesh.proxy.util.SinksUtil;
 import io.functionmesh.sinks.models.V1alpha1Sink;
 import io.kubernetes.client.openapi.ApiClient;
@@ -30,12 +31,16 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.internal.http.RealResponseBody;
 import org.apache.commons.io.FileUtils;
+import org.apache.pulsar.client.admin.PulsarAdmin;
+import org.apache.pulsar.client.admin.PulsarAdminException;
+import org.apache.pulsar.client.admin.Tenants;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.common.policies.data.SinkStatus;
 import org.apache.pulsar.functions.utils.FunctionCommon;
 import org.apache.pulsar.functions.utils.io.ConnectorUtils;
+import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,7 +77,7 @@ public class SinksImpTest {
 
     @Test
     public void testRegisterSink()
-            throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
+            throws ApiException, IOException, ClassNotFoundException, URISyntaxException, PulsarAdminException {
         // testBody is used to return a V1alpha1Sink JSON and does not care about the content.
         String testBody =
                 "{\n"
@@ -157,6 +162,14 @@ public class SinksImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        PulsarAdmin pulsarAdmin = PowerMockito.mock(PulsarAdmin.class);
+        PowerMockito.when(functionMeshProxyService.getBrokerAdmin()).thenReturn(pulsarAdmin);
+        Tenants tenants = PowerMockito.mock(Tenants.class);
+        PowerMockito.when(pulsarAdmin.tenants()).thenReturn(tenants);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -205,6 +218,8 @@ public class SinksImpTest {
         sinkConfig.setCustomRuntimeOptions(customRuntimeOptions);
         sinkConfig.setAutoAck(autoAck);
 
+        PowerMockito.when(tenants.getTenantInfo(tenant)).thenReturn(null);
+
         V1alpha1Sink v1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, uploadedInputStream, sinkConfig);
@@ -215,7 +230,7 @@ public class SinksImpTest {
                                 .createNamespacedCustomObjectCall(
                                         group,
                                         version,
-                                        namespace,
+                                        KubernetesUtils.getNamespace(),
                                         plural,
                                         v1alpha1Sink,
                                         null,
@@ -380,6 +395,10 @@ public class SinksImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
 
         Call getCall = PowerMockito.mock(Call.class);
         Response getResponse = PowerMockito.mock(Response.class);
@@ -421,7 +440,7 @@ public class SinksImpTest {
                                 .replaceNamespacedCustomObjectCall(
                                         group,
                                         version,
-                                        namespace,
+                                        KubernetesUtils.getNamespace(),
                                         plural,
                                         componentName,
                                         v1alpha1Sink,
@@ -527,6 +546,10 @@ public class SinksImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -647,6 +670,10 @@ public class SinksImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);

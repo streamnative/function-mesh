@@ -21,6 +21,7 @@ package io.functionmesh.proxy.rest.api;
 import io.functionmesh.functions.models.V1alpha1Function;
 import io.functionmesh.proxy.util.FunctionsUtil;
 import io.functionmesh.proxy.FunctionMeshProxyService;
+import io.functionmesh.proxy.util.KubernetesUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
@@ -102,7 +103,7 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
             Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(),
                     plural,
                     v1alpha1Function,
                     null,
@@ -134,7 +135,7 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(),
                     plural,
                     functionName,
                     null
@@ -152,7 +153,7 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(),
                     plural,
                     functionName,
                     v1alpha1Function,
@@ -185,7 +186,7 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
             Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(),
                     plural,
                     componentName,
                     null,
@@ -220,7 +221,7 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(),
                     plural,
                     componentName,
                     null
@@ -261,7 +262,7 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
         FunctionStatus functionStatus = new FunctionStatus();
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
-                    group, version, namespace, plural, componentName, null);
+                    group, version, KubernetesUtils.getNamespace(), plural, componentName, null);
             V1alpha1Function v1alpha1Function = executeCall(call, V1alpha1Function.class);
             FunctionStatus.FunctionInstanceStatus functionInstanceStatus = new FunctionStatus.FunctionInstanceStatus();
             FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData =

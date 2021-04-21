@@ -19,6 +19,7 @@
 package io.functionmesh.proxy.rest.api;
 
 import io.functionmesh.proxy.FunctionMeshProxyService;
+import io.functionmesh.proxy.util.KubernetesUtils;
 import io.functionmesh.proxy.util.SourcesUtil;
 import io.functionmesh.sources.models.V1alpha1Source;
 import io.kubernetes.client.openapi.ApiClient;
@@ -30,6 +31,9 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.internal.http.RealResponseBody;
 import org.apache.commons.io.FileUtils;
+import org.apache.pulsar.client.admin.PulsarAdmin;
+import org.apache.pulsar.client.admin.PulsarAdminException;
+import org.apache.pulsar.client.admin.Tenants;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.ConnectorDefinition;
@@ -38,6 +42,7 @@ import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.common.policies.data.SourceStatus;
 import org.apache.pulsar.functions.utils.FunctionCommon;
 import org.apache.pulsar.functions.utils.io.ConnectorUtils;
+import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,7 +75,7 @@ import static org.powermock.api.mockito.PowerMockito.spy;
 public class SourcesImpTest {
     @Test
     public void testRegisterSource()
-            throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
+            throws ApiException, IOException, ClassNotFoundException, URISyntaxException, PulsarAdminException {
         String testBody =
                 "{\n"
                         + "    \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n"
@@ -152,6 +157,14 @@ public class SourcesImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        PulsarAdmin pulsarAdmin = PowerMockito.mock(PulsarAdmin.class);
+        PowerMockito.when(functionMeshProxyService.getBrokerAdmin()).thenReturn(pulsarAdmin);
+        Tenants tenants = PowerMockito.mock(Tenants.class);
+        PowerMockito.when(pulsarAdmin.tenants()).thenReturn(tenants);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -205,6 +218,7 @@ public class SourcesImpTest {
         sourceConfig.setResources(resources);
         sourceConfig.setCustomRuntimeOptions(customRuntimeOptions);
 
+        PowerMockito.when(tenants.getTenantInfo(tenant)).thenReturn(null);
         V1alpha1Source v1alpha1Source =
                 SourcesUtil.createV1alpha1SourceFromSourceConfig(
                         kind,
@@ -221,7 +235,7 @@ public class SourcesImpTest {
                                 .createNamespacedCustomObjectCall(
                                         group,
                                         version,
-                                        namespace,
+                                        KubernetesUtils.getNamespace(),
                                         plural,
                                         v1alpha1Source,
                                         null,
@@ -396,6 +410,10 @@ public class SourcesImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
 
         Call getCall = PowerMockito.mock(Call.class);
         Response getResponse = PowerMockito.mock(Response.class);
@@ -443,7 +461,7 @@ public class SourcesImpTest {
                                 .replaceNamespacedCustomObjectCall(
                                         group,
                                         version,
-                                        namespace,
+                                        KubernetesUtils.getNamespace(),
                                         plural,
                                         componentName,
                                         v1alpha1Source,
@@ -467,7 +485,7 @@ public class SourcesImpTest {
                     null,
                     null);
         } catch (Exception exception) {
-            Assert.fail("Expected no exception to be thrown but got" + exception.getMessage());
+            Assert.fail("Expected no exception to be thrown but got " + exception.getMessage());
         }
     }
 
@@ -555,6 +573,10 @@ public class SourcesImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -684,6 +706,10 @@ public class SourcesImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -848,6 +874,10 @@ public class SourcesImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(functionMeshProxyService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
