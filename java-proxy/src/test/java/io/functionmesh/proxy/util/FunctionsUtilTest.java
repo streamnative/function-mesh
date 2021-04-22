@@ -78,6 +78,7 @@ public class FunctionsUtilTest {
         functionConfig.setResources(resources);
         Map<String, Object> userConfig = new HashMap<>();
         userConfig.put(FunctionsUtil.clusterNameKey, clusterName);
+        userConfig.put(FunctionsUtil.typeClassNameKey, serdeClassName);
         functionConfig.setUserConfig(userConfig);
         functionConfig.setJar(jar);
 
@@ -95,8 +96,6 @@ public class FunctionsUtilTest {
 
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(className);
-        v1alpha1FunctionSpec.setSourceType(serdeClassName);
-        v1alpha1FunctionSpec.setSinkType(serdeClassName);
         v1alpha1FunctionSpec.setReplicas(parallelism);
         v1alpha1FunctionSpec.setMaxReplicas(parallelism);
 
@@ -104,10 +103,12 @@ public class FunctionsUtilTest {
         List<String> topics = new ArrayList<>();
         topics.add(input);
         v1alpha1FunctionSpecInput.setTopics(topics);
+        v1alpha1FunctionSpecInput.setTypeClassName(serdeClassName);
         v1alpha1FunctionSpec.setInput(v1alpha1FunctionSpecInput);
 
         V1alpha1FunctionSpecOutput v1alpha1FunctionSpecOutput = new V1alpha1FunctionSpecOutput();
         v1alpha1FunctionSpecOutput.setTopic(output);
+        v1alpha1FunctionSpecOutput.setTypeClassName(serdeClassName);
         v1alpha1FunctionSpec.setOutput(v1alpha1FunctionSpecOutput);
 
         V1alpha1FunctionSpecResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecResources();
@@ -166,8 +167,6 @@ public class FunctionsUtilTest {
 
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(className);
-        v1alpha1FunctionSpec.setSourceType(serdeClassName);
-        v1alpha1FunctionSpec.setSinkType(serdeClassName);
         v1alpha1FunctionSpec.setReplicas(parallelism);
         v1alpha1FunctionSpec.setMaxReplicas(parallelism);
 
@@ -175,10 +174,12 @@ public class FunctionsUtilTest {
         List<String> topics = new ArrayList<>();
         topics.add(input);
         v1alpha1FunctionSpecInput.setTopics(topics);
+        v1alpha1FunctionSpecInput.setTypeClassName(serdeClassName);
         v1alpha1FunctionSpec.setInput(v1alpha1FunctionSpecInput);
 
         V1alpha1FunctionSpecOutput v1alpha1FunctionSpecOutput = new V1alpha1FunctionSpecOutput();
         v1alpha1FunctionSpecOutput.setTopic(output);
+        v1alpha1FunctionSpecOutput.setTypeClassName(serdeClassName);
         v1alpha1FunctionSpec.setOutput(v1alpha1FunctionSpecOutput);
 
         V1alpha1FunctionSpecResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecResources();

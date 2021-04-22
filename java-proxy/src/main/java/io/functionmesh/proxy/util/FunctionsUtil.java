@@ -46,6 +46,7 @@ public class FunctionsUtil {
     public final static String memoryKey = "memory";
     public final static String sourceKey = "source";
     public final static String clusterNameKey = "clusterName";
+    public final static String typeClassNameKey = "typeClassName";
 
     public static V1alpha1Function createV1alpha1FunctionFromFunctionConfig(String kind, String group, String version
             , String functionName, String functionPkgUrl, FunctionConfig functionConfig) {
@@ -61,14 +62,16 @@ public class FunctionsUtil {
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());
 
+        V1alpha1FunctionSpecInput v1alpha1FunctionSpecInput = new V1alpha1FunctionSpecInput();
+
         if (functionConfig.getInputSpecs() != null) {
             ConsumerConfig consumerConfig = functionConfig.getInputSpecs().get(sourceKey);
             if (consumerConfig != null && !StringUtils.isBlank(consumerConfig.getSerdeClassName())) {
-                v1alpha1FunctionSpec.setSourceType(consumerConfig.getSerdeClassName());
+                v1alpha1FunctionSpecInput.setTypeClassName(consumerConfig.getSerdeClassName());
             }
         }
         if (!StringUtils.isBlank(functionConfig.getOutputSerdeClassName())) {
-            v1alpha1FunctionSpec.setSinkType(functionConfig.getOutputSerdeClassName());
+            v1alpha1FunctionSpecInput.setTypeClassName(functionConfig.getOutputSerdeClassName());
         }
 
         v1alpha1FunctionSpec.setForwardSourceMessageProperty(functionConfig.getForwardSourceMessageProperty());
@@ -80,7 +83,7 @@ public class FunctionsUtil {
 
         v1alpha1FunctionSpec.setLogTopic(functionConfig.getLogTopic());
 
-        V1alpha1FunctionSpecInput v1alpha1FunctionSpecInput = new V1alpha1FunctionSpecInput();
+
         v1alpha1FunctionSpecInput.setTopics(new ArrayList<>(functionConfig.getInputs()));
         v1alpha1FunctionSpec.setInput(v1alpha1FunctionSpecInput);
 
@@ -147,6 +150,12 @@ public class FunctionsUtil {
             throw new RestException(Response.Status.BAD_REQUEST, "userConfig.clusterName is not provided");
         }
 
+        Object typeClassNameObj = functionConfig.getUserConfig().get(typeClassNameKey);
+        String typeClassName = typeClassNameObj != null ? typeClassNameObj.toString() : "";
+
+        v1alpha1FunctionSpecInput.setTypeClassName(typeClassName);
+        v1alpha1FunctionSpecOutput.setTypeClassName(typeClassName);
+        
         v1alpha1FunctionSpec.setClusterName(clusterName.toString());
         v1alpha1FunctionSpec.setAutoAck(functionConfig.getAutoAck());
 
@@ -170,10 +179,10 @@ public class FunctionsUtil {
 
         Map<String, ConsumerConfig> inputSpecs = new HashMap<>();
         ConsumerConfig sourceVaule = new ConsumerConfig();
-        sourceVaule.setSerdeClassName(v1alpha1FunctionSpec.getSourceType());
+        sourceVaule.setSerdeClassName(v1alpha1FunctionSpec.getInput().getTypeClassName());
         inputSpecs.put(sourceKey, sourceVaule);
         functionConfig.setInputSpecs(inputSpecs);
-        functionConfig.setOutputSerdeClassName(v1alpha1FunctionSpec.getSinkType());
+        functionConfig.setOutputSerdeClassName(v1alpha1FunctionSpec.getInput().getTypeClassName());
 
         functionConfig.setInputs(v1alpha1FunctionSpec.getInput().getTopics());
         functionConfig.setOutput(v1alpha1FunctionSpec.getOutput().getTopic());

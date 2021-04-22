@@ -84,6 +84,7 @@ public class SourcesUtil {
                                                                       InputStream uploadedInputStream,
                                                                       SourceConfig sourceConfig) throws IOException,
             URISyntaxException, ClassNotFoundException {
+        String typeClassName = "";
         V1alpha1Source v1alpha1Source = new V1alpha1Source();
         v1alpha1Source.setKind(kind);
         v1alpha1Source.setApiVersion(String.format("%s/%s", group, version));
@@ -108,8 +109,7 @@ public class SourcesUtil {
         Class<?> sourceClass = narClassLoader.loadClass(sourceClassName);
         Class<?> sourceType = FunctionCommon.getSourceType(sourceClass);
 
-        v1alpha1SourceSpec.setSourceType(sourceType.getName());
-        v1alpha1SourceSpec.setSinkType(sourceType.getName());
+        typeClassName = sourceType.getName();
 
         Integer parallelism = sourceConfig.getParallelism() == null ? 1 : sourceConfig.getParallelism();
         v1alpha1SourceSpec.setReplicas(parallelism);
@@ -117,6 +117,7 @@ public class SourcesUtil {
 
         V1alpha1SourceSpecOutput v1alpha1SourceSpecOutput = new V1alpha1SourceSpecOutput();
         v1alpha1SourceSpecOutput.setTopic(sourceConfig.getTopicName());
+        v1alpha1SourceSpecOutput.setTypeClassName(typeClassName);
         v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
 
         ProducerConfig producerConfig = sourceConfig.getProducerConfig();

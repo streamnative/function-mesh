@@ -263,8 +263,7 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
             v1alpha1SourceList.getItems().stream().forEach((n) -> {
                 ConnectorDefinition connectorDefinition = new ConnectorDefinition();
                 connectorDefinition.setName(n.getSpec().getClassName());
-                connectorDefinition.setSinkClass(n.getSpec().getSinkType());
-                connectorDefinition.setSourceClass(n.getSpec().getSourceType());
+                connectorDefinition.setSourceClass(n.getSpec().getClassName());
 
                 connectorDefinitions.add(connectorDefinition);
             });

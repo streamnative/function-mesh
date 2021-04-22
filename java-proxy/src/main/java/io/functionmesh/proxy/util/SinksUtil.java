@@ -83,6 +83,7 @@ public class SinksUtil {
             InputStream uploadedInputStream,
             SinkConfig sinkConfig)
             throws IOException, URISyntaxException, ClassNotFoundException {
+        String typeClassName = "";
         V1alpha1Sink v1alpha1Sink = new V1alpha1Sink();
         v1alpha1Sink.setKind(kind);
         v1alpha1Sink.setApiVersion(String.format("%s/%s", group, version));
@@ -107,8 +108,7 @@ public class SinksUtil {
         Class<?> sourceType = FunctionCommon.getSourceType(sourceClass);
 
         v1alpha1SinkSpec.setClassName(sourceClassName);
-        v1alpha1SinkSpec.setSourceType(sourceType.getName());
-        v1alpha1SinkSpec.setSinkType(sourceType.getName());
+        typeClassName = sourceType.getName();
 
         Integer parallelism = sinkConfig.getParallelism() == null ? 1 : sinkConfig.getParallelism();
         v1alpha1SinkSpec.setReplicas(parallelism);
@@ -116,6 +116,7 @@ public class SinksUtil {
 
         V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
         v1alpha1SinkSpecInput.setTopics(new ArrayList<>(sinkConfig.getInputs()));
+        v1alpha1SinkSpecInput.setTypeClassName(typeClassName);
         v1alpha1SinkSpec.setInput(v1alpha1SinkSpecInput);
 
         v1alpha1SinkSpec.setSinkConfig(transformedMapValueToString(sinkConfig.getConfigs()));

@@ -120,14 +120,13 @@ public class SinksUtilTest {
 
         V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
         v1alpha1SinkSpec.setClassName(className);
-        v1alpha1SinkSpec.setSourceType(sourceType);
-        v1alpha1SinkSpec.setSinkType(sinkType);
 
         v1alpha1SinkSpec.setReplicas(parallelism);
         v1alpha1SinkSpec.setMaxReplicas(parallelism);
 
         V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
         v1alpha1SinkSpecInput.setTopics(Collections.singletonList(inputTopic));
+        v1alpha1SinkSpecInput.setTypeClassName(sourceType);
         v1alpha1SinkSpec.setInput(v1alpha1SinkSpecInput);
 
         v1alpha1SinkSpec.setSinkConfig(SinksUtil.transformedMapValueToString(configs));
@@ -193,14 +192,13 @@ public class SinksUtilTest {
 
         V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
         v1alpha1SinkSpec.setClassName(className);
-        v1alpha1SinkSpec.setSourceType(sourceType);
-        v1alpha1SinkSpec.setSinkType(sinkType);
 
         v1alpha1SinkSpec.setReplicas(parallelism);
         v1alpha1SinkSpec.setMaxReplicas(parallelism);
 
         V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
         v1alpha1SinkSpecInput.setTopics(Collections.singletonList(inputTopic));
+        v1alpha1SinkSpecInput.setTypeClassName(sourceType);
         v1alpha1SinkSpec.setInput(v1alpha1SinkSpecInput);
 
         v1alpha1SinkSpec.setSinkConfig(SinksUtil.transformedMapValueToString(configs));
