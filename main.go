@@ -73,7 +73,7 @@ func main() {
 
 	// allow function mesh to be disabled and enable it by default
 	// required because of https://github.com/operator-framework/operator-lifecycle-manager/issues/1523
-	if os.Getenv("ENABLE_FUNCTION_MESH_CONTROLLER") == "false" {
+	if os.Getenv("ENABLE_FUNCTION_MESH_CONTROLLER") != "false" {
 		if err = (&controllers.FunctionMeshReconciler{
 			Client: mgr.GetClient(),
 			Log:    ctrl.Log.WithName("controllers").WithName("FunctionMesh"),
