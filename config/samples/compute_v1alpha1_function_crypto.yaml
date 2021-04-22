@@ -13,7 +13,7 @@ spec:
   input:
     topics:
       - persistent://public/default/java-function-crypto-input-topic
-      typeClassName: java.lang.String
+    typeClassName: java.lang.String
     sourceSpecs:
       "persistent://public/default/java-function-crypto-input-topic":
         cryptoConfig:
