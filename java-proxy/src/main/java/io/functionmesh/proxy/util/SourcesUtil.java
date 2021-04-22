@@ -19,16 +19,9 @@
 package io.functionmesh.proxy.util;
 
 import com.google.gson.Gson;
-import io.functionmesh.sources.models.V1alpha1Source;
-import io.functionmesh.sources.models.V1alpha1SourceSpec;
-import io.functionmesh.sources.models.V1alpha1SourceSpecJava;
-import io.functionmesh.sources.models.V1alpha1SourceSpecOutput;
-import io.functionmesh.sources.models.V1alpha1SourceSpecOutputProducerConf;
-import io.functionmesh.sources.models.V1alpha1SourceSpecOutputProducerConfCryptoConfig;
-import io.functionmesh.sources.models.V1alpha1SourceSpecPulsar;
-import io.functionmesh.sources.models.V1alpha1SourceSpecResources;
+import io.functionmesh.proxy.models.CustomRuntimeOptions;
+import io.functionmesh.sources.models.*;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -55,11 +48,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-@Data
-class CustomRuntimeOptions {
-    private String clusterName;
-}
 
 public class SourcesUtil {
     public final static String cpuKey = "cpu";
@@ -195,6 +183,13 @@ public class SourcesUtil {
         }
         v1alpha1SourceSpec.setClusterName(clusterName);
 
+        if (Strings.isNotEmpty(customRuntimeOptions.getTypeClassName()) && Strings.isEmpty(typeClassName)) {
+            typeClassName = customRuntimeOptions.getTypeClassName();
+        }
+
+        v1alpha1SourceSpecOutput.setTypeClassName(typeClassName);
+        v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
+
         v1alpha1Source.setSpec(v1alpha1SourceSpec);
 
         return v1alpha1Source;
@@ -244,8 +239,8 @@ public class SourcesUtil {
         if (sourceSpecResources != null) {
             Resources resources = new Resources();
             Map<String, String> limits = sourceSpecResources.getLimits();
-            resources.setCpu(Double.parseDouble(limits.get(cpuKey).toString()));
-            resources.setRam(Long.parseLong(limits.get(memoryKey).toString()));
+            resources.setCpu(Double.parseDouble(limits.get(cpuKey)));
+            resources.setRam(Long.parseLong(limits.get(memoryKey)));
             sourceConfig.setResources(resources);
         }
 

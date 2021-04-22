@@ -18,6 +18,7 @@
  */
 package io.functionmesh.proxy.testdata;
 
+import io.functionmesh.proxy.models.CustomRuntimeOptions;
 import io.functionmesh.proxy.util.FunctionsUtil;
 import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.FunctionConfig;
@@ -51,7 +52,8 @@ public class Generate {
         resources.setRam(1L);
         functionConfig.setResources(resources);
         Map<String, Object> userConfig = new HashMap<>();
-        userConfig.put(FunctionsUtil.clusterNameKey, String.format("%s-%s", tenant, namespace));
+        userConfig.put(CustomRuntimeOptions.clusterNameKey, String.format("%s-%s", tenant, namespace));
+        userConfig.put(CustomRuntimeOptions.typeClassNameKey, "java.lang.String");
         functionConfig.setUserConfig(userConfig);
         functionConfig.setJar(String.format("%s.jar", functionName));
         return functionConfig;

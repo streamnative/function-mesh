@@ -25,6 +25,7 @@ import io.functionmesh.functions.models.V1alpha1FunctionSpecJava;
 import io.functionmesh.functions.models.V1alpha1FunctionSpecOutput;
 import io.functionmesh.functions.models.V1alpha1FunctionSpecPulsar;
 import io.functionmesh.functions.models.V1alpha1FunctionSpecResources;
+import io.functionmesh.proxy.models.CustomRuntimeOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.FunctionConfig;
@@ -77,8 +78,8 @@ public class FunctionsUtilTest {
         resources.setRam(ram);
         functionConfig.setResources(resources);
         Map<String, Object> userConfig = new HashMap<>();
-        userConfig.put(FunctionsUtil.clusterNameKey, clusterName);
-        userConfig.put(FunctionsUtil.typeClassNameKey, serdeClassName);
+        userConfig.put(CustomRuntimeOptions.clusterNameKey, clusterName);
+        userConfig.put(CustomRuntimeOptions.typeClassNameKey, serdeClassName);
         functionConfig.setUserConfig(userConfig);
         functionConfig.setJar(jar);
 
@@ -227,7 +228,7 @@ public class FunctionsUtilTest {
         resources.setRam(ram);
         expectedFunctionConfig.setResources(resources);
         Map<String, Object> userConfig = new HashMap<>();
-        userConfig.put(FunctionsUtil.clusterNameKey, clusterName);
+        userConfig.put(CustomRuntimeOptions.clusterNameKey, clusterName);
         expectedFunctionConfig.setUserConfig(userConfig);
         expectedFunctionConfig.setJar(jar);
 
