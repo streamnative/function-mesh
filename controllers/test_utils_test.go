@@ -67,15 +67,15 @@ func makeFunctionSample(functionName string) *v1alpha1.Function {
 			ClassName:   "org.apache.pulsar.functions.api.examples.ExclamationFunction",
 			Tenant:      "public",
 			ClusterName: TestClusterName,
-			SourceType:  "java.lang.String",
-			SinkType:    "java.lang.String",
 			Input: v1alpha1.InputConf{
 				Topics: []string{
 					"persistent://public/default/java-function-input-topic",
 				},
+				TypeClassName: "java.lang.String",
 			},
 			Output: v1alpha1.OutputConf{
-				Topic: "persistent://public/default/java-function-output-topic",
+				Topic:         "persistent://public/default/java-function-output-topic",
+				TypeClassName: "java.lang.String",
 			},
 			LogTopic:                     "persistent://public/default/logging-function-logs",
 			Timeout:                      0,
@@ -188,12 +188,11 @@ func makeSinkSample() *v1alpha1.Sink {
 			ClassName:   "org.apache.pulsar.io.elasticsearch.ElasticSearchSink",
 			Tenant:      "public",
 			ClusterName: TestClusterName,
-			SourceType:  "[B",
-			SinkType:    "[B",
 			Input: v1alpha1.InputConf{
 				Topics: []string{
 					"persistent://public/default/input",
 				},
+				TypeClassName: "[B",
 			},
 			SinkConfig: map[string]string{
 				"elasticSearchUrl": "http://quickstart-es-http.default.svc.cluster.local:9200",
@@ -237,10 +236,9 @@ func makeSourceSample() *v1alpha1.Source {
 			ClassName:   "org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource",
 			Tenant:      "public",
 			ClusterName: TestClusterName,
-			SourceType:  "org.apache.pulsar.common.schema.KeyValue",
-			SinkType:    "org.apache.pulsar.common.schema.KeyValue",
 			Output: v1alpha1.OutputConf{
-				Topic: "persistent://public/default/destination",
+				Topic:         "persistent://public/default/destination",
+				TypeClassName: "org.apache.pulsar.common.schema.KeyValue",
 				ProducerConf: &v1alpha1.ProducerConfig{
 					MaxPendingMessages:                 1000,
 					MaxPendingMessagesAcrossPartitions: 50000,

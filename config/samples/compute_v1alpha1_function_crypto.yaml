@@ -5,8 +5,6 @@ metadata:
   namespace: default
 spec:
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
-  sourceType: java.lang.String
-  sinkType: java.lang.String
   forwardSourceMessageProperty: true
   MaxPendingAsyncRequests: 1000
   replicas: 1
@@ -15,6 +13,7 @@ spec:
   input:
     topics:
       - persistent://public/default/java-function-crypto-input-topic
+      typeClassName: java.lang.String
     sourceSpecs:
       "persistent://public/default/java-function-crypto-input-topic":
         cryptoConfig:
@@ -34,6 +33,7 @@ spec:
               asVolume: "/keys/test_ecdsa_pubkey.pem"
   output:
     topic: persistent://public/default/java-function-crypto-output-topic
+    typeClassName: java.lang.String
   resources:
     requests:
       cpu: "0.1"
