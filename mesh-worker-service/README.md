@@ -1,4 +1,4 @@
-## Java Proxy
+## Mesh Worker Service
 
 This is a proxy that is used to forward requests to the k8s.
 
@@ -13,7 +13,7 @@ This is a proxy that is used to forward requests to the k8s.
 Add the following configuration to the `functions_worker.yml` configuration file:
 
 ```$xslt
-functionsWorkerServiceNarPackage: /YOUR-NAR-PATH/java-proxy-1.0-SNAPSHOT.nar
+functionsWorkerServiceNarPackage: /YOUR-NAR-PATH/mesh-worker-service-1.0-SNAPSHOT.nar
 ```
 Replace the `YOUR-NAR-PATH` variable with your real path.
 
