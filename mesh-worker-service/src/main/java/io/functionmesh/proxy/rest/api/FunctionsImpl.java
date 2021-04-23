@@ -19,7 +19,7 @@
 package io.functionmesh.proxy.rest.api;
 
 import io.functionmesh.functions.models.V1alpha1Function;
-import io.functionmesh.proxy.FunctionMeshWorkerService;
+import io.functionmesh.proxy.MeshWorkerService;
 import io.functionmesh.proxy.util.FunctionsUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
@@ -39,9 +39,9 @@ import java.net.URI;
 import java.util.function.Supplier;
 
 @Slf4j
-public class FunctionsImpl extends FunctionMeshComponentImpl implements Functions<FunctionMeshWorkerService> {
+public class FunctionsImpl extends FunctionMeshComponentImpl implements Functions<MeshWorkerService> {
 
-    public FunctionsImpl(Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier) {
+    public FunctionsImpl(Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier) {
         super(functionMeshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.FUNCTION);
     }
 

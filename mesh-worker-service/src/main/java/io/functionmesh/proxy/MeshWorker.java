@@ -43,7 +43,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * This class for test.
  */
 @Slf4j
-public class FunctionMeshProxyWorker {
+public class MeshWorker {
 
     private ZooKeeperClientFactory zkClientFactory = null;
     private final OrderedExecutor orderedExecutor = OrderedExecutor.newBuilder().numThreads(8).name("zk-cache-ordered").build();
@@ -57,9 +57,9 @@ public class FunctionMeshProxyWorker {
     private WorkerServer server;
 
 
-    public FunctionMeshProxyWorker(WorkerConfig workerConfig) {
+    public MeshWorker(WorkerConfig workerConfig) {
         this.workerConfig = workerConfig;
-        this.workerService = new FunctionMeshWorkerService();
+        this.workerService = new MeshWorkerService();
         this.errorNotifier = ErrorNotifier.getDefaultImpl();
     }
 

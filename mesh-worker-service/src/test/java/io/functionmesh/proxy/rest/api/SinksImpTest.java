@@ -18,7 +18,7 @@
  */
 package io.functionmesh.proxy.rest.api;
 
-import io.functionmesh.proxy.FunctionMeshWorkerService;
+import io.functionmesh.proxy.MeshWorkerService;
 import io.functionmesh.proxy.util.SinksUtil;
 import io.functionmesh.sinks.models.V1alpha1Sink;
 import io.kubernetes.client.openapi.ApiClient;
@@ -150,9 +150,9 @@ public class SinksImpTest {
                         + "    \"selector\": \"component=sink,name=sink-sample,namespace=default\"\n"
                         + "  }\n"
                         + "}";
-        FunctionMeshWorkerService functionMeshWorkerService =
-                PowerMockito.mock(FunctionMeshWorkerService.class);
-        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier =
+        MeshWorkerService functionMeshWorkerService =
+                PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier =
                 () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
@@ -373,9 +373,9 @@ public class SinksImpTest {
         sinkConfig.setCustomRuntimeOptions(customRuntimeOptions);
         sinkConfig.setAutoAck(autoAck);
 
-        FunctionMeshWorkerService functionMeshWorkerService =
-                PowerMockito.mock(FunctionMeshWorkerService.class);
-        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier =
+        MeshWorkerService functionMeshWorkerService =
+                PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier =
                 () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
@@ -520,9 +520,9 @@ public class SinksImpTest {
                         + "    \"selector\": \"component=sink,name=sink-sample,namespace=default\"\n"
                         + "  }\n"
                         + "}";
-        FunctionMeshWorkerService functionMeshWorkerService =
-                PowerMockito.mock(FunctionMeshWorkerService.class);
-        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier =
+        MeshWorkerService functionMeshWorkerService =
+                PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier =
                 () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
@@ -640,9 +640,9 @@ public class SinksImpTest {
                         + "    \"selector\": \"component=sink,name=sink-sample,namespace=default\"\n"
                         + "  }\n"
                         + "}";
-        FunctionMeshWorkerService functionMeshWorkerService =
-                PowerMockito.mock(FunctionMeshWorkerService.class);
-        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier =
+        MeshWorkerService functionMeshWorkerService =
+                PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier =
                 () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())

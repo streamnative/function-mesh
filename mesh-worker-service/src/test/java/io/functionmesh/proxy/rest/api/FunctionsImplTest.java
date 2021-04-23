@@ -19,7 +19,7 @@
 package io.functionmesh.proxy.rest.api;
 
 import io.functionmesh.functions.models.V1alpha1Function;
-import io.functionmesh.proxy.FunctionMeshWorkerService;
+import io.functionmesh.proxy.MeshWorkerService;
 import io.functionmesh.proxy.testdata.Generate;
 import io.functionmesh.proxy.util.FunctionsUtil;
 import io.kubernetes.client.openapi.ApiClient;
@@ -135,10 +135,10 @@ public class FunctionsImplTest {
                 "  }\n" +
                 "}";
 
-        FunctionMeshWorkerService functionMeshWorkerService = PowerMockito.mock(FunctionMeshWorkerService.class);
-        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier = new Supplier<FunctionMeshWorkerService>() {
+        MeshWorkerService functionMeshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier = new Supplier<MeshWorkerService>() {
             @Override
-            public FunctionMeshWorkerService get() {
+            public MeshWorkerService get() {
                 return functionMeshWorkerService;
             }
         };
@@ -234,8 +234,8 @@ public class FunctionsImplTest {
                 "    \"sourceType\": \"java.lang.String\"\n" +
                 "  }\n" +
                 "}";
-        FunctionMeshWorkerService functionMeshWorkerService = PowerMockito.mock(FunctionMeshWorkerService.class);
-        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
+        MeshWorkerService functionMeshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
@@ -387,8 +387,8 @@ public class FunctionsImplTest {
         String version = "v1alpha1";
         String kind = "Function";
 
-        FunctionMeshWorkerService functionMeshWorkerService = PowerMockito.mock(FunctionMeshWorkerService.class);
-        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
+        MeshWorkerService functionMeshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
 
@@ -454,8 +454,8 @@ public class FunctionsImplTest {
 
     @Test
     public void deregisterFunctionTest() throws ApiException, IOException {
-        FunctionMeshWorkerService functionMeshWorkerService = PowerMockito.mock(FunctionMeshWorkerService.class);
-        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
+        MeshWorkerService functionMeshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
@@ -546,8 +546,8 @@ public class FunctionsImplTest {
                 "    \"sourceType\": \"java.lang.String\"\n" +
                 "  }\n" +
                 "}";
-        FunctionMeshWorkerService functionMeshWorkerService = PowerMockito.mock(FunctionMeshWorkerService.class);
-        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
+        MeshWorkerService functionMeshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);

@@ -50,15 +50,15 @@ import java.io.IOException;
  */
 @Slf4j
 @Getter
-public class FunctionMeshWorkerService implements WorkerService {
+public class MeshWorkerService implements WorkerService {
 
     private volatile boolean isInitialized = false;
 
     private WorkerConfig workerConfig;
-    private Functions<FunctionMeshWorkerService> functions;
-    private FunctionsV2<FunctionMeshWorkerService> functionsV2;
-    private Sinks<FunctionMeshWorkerService> sinks;
-    private Sources<FunctionMeshWorkerService> sources;
+    private Functions<MeshWorkerService> functions;
+    private FunctionsV2<MeshWorkerService> functionsV2;
+    private Sinks<MeshWorkerService> sinks;
+    private Sources<MeshWorkerService> sources;
     private CoreV1Api coreV1Api;
     private CustomObjectsApi customObjectsApi;
     private ApiClient apiClient;
@@ -66,7 +66,7 @@ public class FunctionMeshWorkerService implements WorkerService {
     private AuthenticationService authenticationService;
     private AuthorizationService authorizationService;
 
-    public FunctionMeshWorkerService() {
+    public MeshWorkerService() {
 
     }
 
@@ -86,9 +86,9 @@ public class FunctionMeshWorkerService implements WorkerService {
     public void init(WorkerConfig workerConfig) throws Exception {
         this.workerConfig = workerConfig;
         this.initKubernetesClient();
-        this.functions = new FunctionsImpl(() -> FunctionMeshWorkerService.this);
-        this.sources = new SourcesImpl(() -> FunctionMeshWorkerService.this);
-        this.sinks = new SinksImpl(() -> FunctionMeshWorkerService.this);
+        this.functions = new FunctionsImpl(() -> MeshWorkerService.this);
+        this.sources = new SourcesImpl(() -> MeshWorkerService.this);
+        this.sinks = new SinksImpl(() -> MeshWorkerService.this);
     }
 
     private void initKubernetesClient() throws IOException {

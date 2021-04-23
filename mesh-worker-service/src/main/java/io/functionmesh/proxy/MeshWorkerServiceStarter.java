@@ -24,7 +24,7 @@ import org.apache.pulsar.functions.worker.WorkerConfig;
 import java.io.File;
 
 @Slf4j
-public class FunctionMeshProxyStarter {
+public class MeshWorkerServiceStarter {
 
     public static void main(String[] args) throws Exception {
 
@@ -32,7 +32,7 @@ public class FunctionMeshProxyStarter {
         File file = new File("src/main/resources/functions_worker.yml");
         System.out.println(file.getAbsolutePath());
         WorkerConfig workerConfig = WorkerConfig.load(file.getAbsolutePath());
-        final FunctionMeshProxyWorker worker = new FunctionMeshProxyWorker(workerConfig);
+        final MeshWorker worker = new MeshWorker(workerConfig);
         try {
             worker.start();
             log.info("Start Function Mesh Proxy successfully");

@@ -19,7 +19,7 @@
 package io.functionmesh.proxy.rest.api;
 
 import io.functionmesh.functions.models.V1alpha1FunctionList;
-import io.functionmesh.proxy.FunctionMeshWorkerService;
+import io.functionmesh.proxy.MeshWorkerService;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Response;
@@ -42,9 +42,9 @@ import java.util.function.Supplier;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 @Slf4j
-public abstract class FunctionMeshComponentImpl implements Component<FunctionMeshWorkerService> {
+public abstract class FunctionMeshComponentImpl implements Component<MeshWorkerService> {
 
-    protected final Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier;
+    protected final Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier;
     protected final Function.FunctionDetails.ComponentType componentType;
 
     final String plural = "functions";
@@ -55,7 +55,7 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
 
     final String kind = "Function";
 
-    public FunctionMeshComponentImpl(Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier,
+    public FunctionMeshComponentImpl(Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier,
                                      Function.FunctionDetails.ComponentType componentType) {
         this.functionMeshWorkerServiceSupplier = functionMeshWorkerServiceSupplier;
         // If you want to support function-mesh, this type needs to be changed
@@ -101,7 +101,7 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
     }
 
     @Override
-    public FunctionMeshWorkerService worker() {
+    public MeshWorkerService worker() {
         try {
             return checkNotNull(functionMeshWorkerServiceSupplier.get());
         } catch (Throwable t) {

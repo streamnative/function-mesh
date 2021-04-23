@@ -18,7 +18,7 @@
  */
 package io.functionmesh.proxy.rest.api;
 
-import io.functionmesh.proxy.FunctionMeshWorkerService;
+import io.functionmesh.proxy.MeshWorkerService;
 import io.functionmesh.proxy.util.SinksUtil;
 import io.functionmesh.sinks.models.V1alpha1Sink;
 import io.functionmesh.sinks.models.V1alpha1SinkStatus;
@@ -46,12 +46,12 @@ import java.util.function.Supplier;
 
 @Slf4j
 public class SinksImpl extends FunctionMeshComponentImpl
-        implements Sinks<FunctionMeshWorkerService> {
+        implements Sinks<MeshWorkerService> {
     private final String kind = "Sink";
 
     private final String plural = "sinks";
 
-    public SinksImpl(Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier) {
+    public SinksImpl(Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier) {
         super(functionMeshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SINK);
     }
 

@@ -43,7 +43,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
  * Function mesh proxy.
  */
 @Slf4j
-public class FunctionMeshProxyHandler extends ProxyServlet {
+public class MeshWorkerServiceHandler extends ProxyServlet {
 
     private static final String FUNCTION_MESH_PATH_PREFIX = "/apis/compute.functionmesh.io/v1alpha1/namespaces";
 
