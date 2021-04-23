@@ -145,12 +145,12 @@ public class SourcesImpTest {
                         + "        \"selector\": \"component=source,name=source-sample,namespace=default\"\n"
                         + "    }\n"
                         + "}";
-        MeshWorkerService functionMeshWorkerService =
+        MeshWorkerService meshWorkerService =
                 PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier =
-                () -> functionMeshWorkerService;
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier =
+                () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
@@ -216,7 +216,7 @@ public class SourcesImpTest {
                         sourceConfig);
 
         PowerMockito.when(
-                functionMeshWorkerService
+                meshWorkerService
                                 .getCustomObjectsApi()
                                 .createNamespacedCustomObjectCall(
                                         group,
@@ -233,11 +233,11 @@ public class SourcesImpTest {
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
         PowerMockito.when(responseBody.string()).thenReturn(testBody);
-        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
-        SourcesImpl sources = spy(new SourcesImpl(functionMeshWorkerServiceSupplier));
+        SourcesImpl sources = spy(new SourcesImpl(meshWorkerServiceSupplier));
         try {
             sources.registerSource(
                     tenant,
@@ -389,12 +389,12 @@ public class SourcesImpTest {
         sourceConfig.setResources(resources);
         sourceConfig.setCustomRuntimeOptions(customRuntimeOptions);
 
-        MeshWorkerService functionMeshWorkerService =
+        MeshWorkerService meshWorkerService =
                 PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier =
-                () -> functionMeshWorkerService;
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier =
+                () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
 
         Call getCall = PowerMockito.mock(Call.class);
@@ -415,12 +415,12 @@ public class SourcesImpTest {
         PowerMockito.when(replaceResponseBody.string()).thenReturn(replaceBody);
 
         ApiClient apiClient = PowerMockito.mock(ApiClient.class);
-        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
         PowerMockito.when(
-                functionMeshWorkerService
+                meshWorkerService
                                 .getCustomObjectsApi()
                                 .getNamespacedCustomObjectCall(
                                         group, version, namespace, plural, componentName, null))
@@ -438,7 +438,7 @@ public class SourcesImpTest {
         v1alpha1Source.getMetadata().setResourceVersion("881033");
 
         PowerMockito.when(
-                functionMeshWorkerService
+                meshWorkerService
                                 .getCustomObjectsApi()
                                 .replaceNamespacedCustomObjectCall(
                                         group,
@@ -452,7 +452,7 @@ public class SourcesImpTest {
                                         null))
                 .thenReturn(getCall);
 
-        SourcesImpl sources = spy(new SourcesImpl(functionMeshWorkerServiceSupplier));
+        SourcesImpl sources = spy(new SourcesImpl(meshWorkerServiceSupplier));
 
         try {
             sources.updateSource(
@@ -548,12 +548,12 @@ public class SourcesImpTest {
                         + "        \"selector\": \"component=source,name=source-sample,namespace=default\"\n"
                         + "    }\n"
                         + "}";
-        MeshWorkerService functionMeshWorkerService =
+        MeshWorkerService meshWorkerService =
                 PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier =
-                () -> functionMeshWorkerService;
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier =
+                () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
@@ -568,7 +568,7 @@ public class SourcesImpTest {
         String componentName = "source-mongodb-sample";
 
         PowerMockito.when(
-                functionMeshWorkerService
+                meshWorkerService
                                 .getCustomObjectsApi()
                                 .getNamespacedCustomObjectCall(
                                         group, version, namespace, plural, componentName, null))
@@ -577,11 +577,11 @@ public class SourcesImpTest {
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
         PowerMockito.when(responseBody.string()).thenReturn(testBody);
-        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
-        SourcesImpl sources = spy(new SourcesImpl(functionMeshWorkerServiceSupplier));
+        SourcesImpl sources = spy(new SourcesImpl(meshWorkerServiceSupplier));
         SourceStatus sourceStatus =
                 sources.getSourceStatus(tenant, namespace, componentName, null, null, null);
 
@@ -677,12 +677,12 @@ public class SourcesImpTest {
                         + "        \"selector\": \"component=source,name=source-sample,namespace=default\"\n"
                         + "    }\n"
                         + "}";
-        MeshWorkerService functionMeshWorkerService =
+        MeshWorkerService meshWorkerService =
                 PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier =
-                () -> functionMeshWorkerService;
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier =
+                () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
@@ -697,7 +697,7 @@ public class SourcesImpTest {
         String componentName = "source-mongodb-sample";
 
         PowerMockito.when(
-                functionMeshWorkerService
+                meshWorkerService
                                 .getCustomObjectsApi()
                                 .getNamespacedCustomObjectCall(
                                         group, version, namespace, plural, componentName, null))
@@ -706,7 +706,7 @@ public class SourcesImpTest {
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
         PowerMockito.when(responseBody.string()).thenReturn(testBody);
-        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
@@ -743,7 +743,7 @@ public class SourcesImpTest {
         expectedSourceConfig.setResources(resources);
         expectedSourceConfig.setCustomRuntimeOptions(customRuntimeOptions);
 
-        SourcesImpl sources = spy(new SourcesImpl(functionMeshWorkerServiceSupplier));
+        SourcesImpl sources = spy(new SourcesImpl(meshWorkerServiceSupplier));
         SourceConfig actualSourceConfig = sources.getSourceInfo(tenant, namespace, componentName);
         Assert.assertEquals(expectedSourceConfig, actualSourceConfig);
     }
@@ -841,12 +841,12 @@ public class SourcesImpTest {
                         + "        \"selfLink\": \"\"\n"
                         + "    }\n"
                         + "}";
-        MeshWorkerService functionMeshWorkerService =
+        MeshWorkerService meshWorkerService =
                 PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier =
-                () -> functionMeshWorkerService;
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier =
+                () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
@@ -858,7 +858,7 @@ public class SourcesImpTest {
         String version = "v1alpha1";
 
         PowerMockito.when(
-                functionMeshWorkerService
+                meshWorkerService
                                 .getCustomObjectsApi()
                                 .listClusterCustomObjectCall(
                                         group, version, plural, null, null, null, null, null, null,
@@ -868,7 +868,7 @@ public class SourcesImpTest {
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
         PowerMockito.when(responseBody.string()).thenReturn(testBody);
-        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
@@ -883,7 +883,7 @@ public class SourcesImpTest {
         connectorDefinition.setName(className);
         expectedList.add(connectorDefinition);
 
-        SourcesImpl sources = spy(new SourcesImpl(functionMeshWorkerServiceSupplier));
+        SourcesImpl sources = spy(new SourcesImpl(meshWorkerServiceSupplier));
         List<ConnectorDefinition> actualList = sources.getSourceList();
 
         Assert.assertEquals(expectedList, actualList);

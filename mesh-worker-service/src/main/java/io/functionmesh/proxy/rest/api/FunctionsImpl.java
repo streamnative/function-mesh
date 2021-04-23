@@ -39,10 +39,10 @@ import java.net.URI;
 import java.util.function.Supplier;
 
 @Slf4j
-public class FunctionsImpl extends FunctionMeshComponentImpl implements Functions<MeshWorkerService> {
+public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWorkerService> {
 
-    public FunctionsImpl(Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier) {
-        super(functionMeshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.FUNCTION);
+    public FunctionsImpl(Supplier<MeshWorkerService> meshWorkerServiceSupplier) {
+        super(meshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.FUNCTION);
     }
 
 

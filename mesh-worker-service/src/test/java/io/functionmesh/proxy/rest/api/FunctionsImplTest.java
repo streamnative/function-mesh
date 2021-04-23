@@ -135,15 +135,15 @@ public class FunctionsImplTest {
                 "  }\n" +
                 "}";
 
-        MeshWorkerService functionMeshWorkerService = PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier = new Supplier<MeshWorkerService>() {
+        MeshWorkerService meshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier = new Supplier<MeshWorkerService>() {
             @Override
             public MeshWorkerService get() {
-                return functionMeshWorkerService;
+                return meshWorkerService;
             }
         };
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
         String tenant = "public";
         String namespace = "default";
         String name = "test";
@@ -154,14 +154,14 @@ public class FunctionsImplTest {
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
         ApiClient apiClient = PowerMockito.mock(ApiClient.class);
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .getNamespacedCustomObjectCall(
                         group, version, namespace, plural, name, null)).thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
         PowerMockito.when(responseBody.string()).thenReturn(testBody);
-        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
         FunctionStatus expectedFunctionStatus = new FunctionStatus();
@@ -177,7 +177,7 @@ public class FunctionsImplTest {
         expectedFunctionInstanceStatus.setStatus(expectedFunctionInstanceStatusData);
         expectedFunctionInstanceStatusList.add(expectedFunctionInstanceStatus);
         expectedFunctionStatus.setInstances(expectedFunctionInstanceStatusList);
-        FunctionsImpl functions = spy(new FunctionsImpl(functionMeshWorkerServiceSupplier));
+        FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
         FunctionStatus functionStatus = functions.getFunctionStatus(
                 tenant, namespace, name, null, null, null);
         String jsonData = json.getGson().toJson(functionStatus);
@@ -234,10 +234,10 @@ public class FunctionsImplTest {
                 "    \"sourceType\": \"java.lang.String\"\n" +
                 "  }\n" +
                 "}";
-        MeshWorkerService functionMeshWorkerService = PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
+        MeshWorkerService meshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier = () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -256,7 +256,7 @@ public class FunctionsImplTest {
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group,
                 version, functionName, null, functionConfig);
 
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .createNamespacedCustomObjectCall(
                         group,
                         version,
@@ -272,10 +272,10 @@ public class FunctionsImplTest {
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
         PowerMockito.when(responseBody.string()).thenReturn(testBody);
-        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
-        FunctionsImpl functions = spy(new FunctionsImpl(functionMeshWorkerServiceSupplier));
+        FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
         try {
             functions.registerFunction(tenant, namespace, functionName, null, null, null, functionConfig, null, null);
         } catch (Exception exception) {
@@ -387,10 +387,10 @@ public class FunctionsImplTest {
         String version = "v1alpha1";
         String kind = "Function";
 
-        MeshWorkerService functionMeshWorkerService = PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
+        MeshWorkerService meshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier = () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
 
         Call getCall = PowerMockito.mock(Call.class);
         Response getResponse = PowerMockito.mock(Response.class);
@@ -410,11 +410,11 @@ public class FunctionsImplTest {
         PowerMockito.when(replaceResponseBody.string()).thenReturn(replaceBody);
 
         ApiClient apiClient = PowerMockito.mock(ApiClient.class);
-        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .getNamespacedCustomObjectCall(
                         group,
                         version,
@@ -429,7 +429,7 @@ public class FunctionsImplTest {
                 version, functionName, null, functionConfig);
         v1alpha1Function.getMetadata().setResourceVersion("24794021");
 
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .replaceNamespacedCustomObjectCall(
                         group,
                         version,
@@ -442,7 +442,7 @@ public class FunctionsImplTest {
                         null
                 )).thenReturn(getCall);
 
-        FunctionsImpl functions = spy(new FunctionsImpl(functionMeshWorkerServiceSupplier));
+        FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
 
         try {
             functions.updateFunction(tenant, namespace, functionName, null, null, null, functionConfig, null, null,
@@ -454,10 +454,10 @@ public class FunctionsImplTest {
 
     @Test
     public void deregisterFunctionTest() throws ApiException, IOException {
-        MeshWorkerService functionMeshWorkerService = PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
+        MeshWorkerService meshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier = () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -470,7 +470,7 @@ public class FunctionsImplTest {
         String plural = "functions";
         String version = "v1alpha1";
 
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .deleteNamespacedCustomObjectCall(
                         group,
                         version,
@@ -488,8 +488,8 @@ public class FunctionsImplTest {
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
         PowerMockito.when(responseBody.string()).thenReturn("{\"Status\": \"Success\"}");
-        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
-        FunctionsImpl functions = spy(new FunctionsImpl(functionMeshWorkerServiceSupplier));
+        PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
+        FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
         try {
             functions.deregisterFunction(tenant, namespace, functionName, null, null);
         } catch (Exception exception) {
@@ -546,10 +546,10 @@ public class FunctionsImplTest {
                 "    \"sourceType\": \"java.lang.String\"\n" +
                 "  }\n" +
                 "}";
-        MeshWorkerService functionMeshWorkerService = PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier = () -> functionMeshWorkerService;
+        MeshWorkerService meshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier = () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -564,7 +564,7 @@ public class FunctionsImplTest {
         String plural = "functions";
         String version = "v1alpha1";
 
-        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi()
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .getNamespacedCustomObjectCall(
                         group,
                         version,
@@ -577,8 +577,8 @@ public class FunctionsImplTest {
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
         PowerMockito.when(responseBody.string()).thenReturn(testBody);
-        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
-        FunctionsImpl functions = spy(new FunctionsImpl(functionMeshWorkerServiceSupplier));
+        PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
+        FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
         FunctionConfig functionConfig = functions.getFunctionInfo(
                 tenant, namespace, functionName, null, null);
 

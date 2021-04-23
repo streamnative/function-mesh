@@ -46,13 +46,13 @@ import java.util.List;
 import java.util.function.Supplier;
 
 @Slf4j
-public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<MeshWorkerService> {
+public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorkerService> {
     private final String kind = "Source";
 
     private final String plural = "sources";
 
-    public SourcesImpl(Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier) {
-        super(functionMeshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SOURCE);
+    public SourcesImpl(Supplier<MeshWorkerService> meshWorkerServiceSupplier) {
+        super(meshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SOURCE);
     }
 
     private void validateRegisterSourceRequestParams(String tenant, String namespace, String sourceName,

@@ -45,14 +45,14 @@ import java.util.List;
 import java.util.function.Supplier;
 
 @Slf4j
-public class SinksImpl extends FunctionMeshComponentImpl
+public class SinksImpl extends MeshComponentImpl
         implements Sinks<MeshWorkerService> {
     private final String kind = "Sink";
 
     private final String plural = "sinks";
 
-    public SinksImpl(Supplier<MeshWorkerService> functionMeshWorkerServiceSupplier) {
-        super(functionMeshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SINK);
+    public SinksImpl(Supplier<MeshWorkerService> meshWorkerServiceSupplier) {
+        super(meshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SINK);
     }
 
     private void validateRegisterSinkRequestParams(
