@@ -19,8 +19,8 @@
 package io.functionmesh.proxy.rest.api;
 
 import io.functionmesh.functions.models.V1alpha1Function;
+import io.functionmesh.proxy.FunctionMeshWorkerService;
 import io.functionmesh.proxy.util.FunctionsUtil;
-import io.functionmesh.proxy.FunctionMeshProxyService;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
@@ -39,9 +39,9 @@ import java.net.URI;
 import java.util.function.Supplier;
 
 @Slf4j
-public class FunctionsImpl extends FunctionMeshComponentImpl implements Functions<FunctionMeshProxyService> {
+public class FunctionsImpl extends FunctionMeshComponentImpl implements Functions<FunctionMeshWorkerService> {
 
-    public FunctionsImpl(Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier) {
+    public FunctionsImpl(Supplier<FunctionMeshWorkerService> functionMeshProxyServiceSupplier) {
         super(functionMeshProxyServiceSupplier, Function.FunctionDetails.ComponentType.FUNCTION);
     }
 

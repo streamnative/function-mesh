@@ -35,11 +35,11 @@ jobs:
           password: ${{ secrets.IMAGE_GITHUB_TOKEN }}
 
       - name: Auto generate crd model
-        run: cd java-proxy && ./tool/generate-crd.sh
+        run: cd mesh-worker-service && ./tool/generate-crd.sh
 
       - name: Format license
-        run: cd java-proxy && mvn license:format
+        run: cd mesh-worker-service && mvn license:format
 
       - name: Run mesh proxy unit test
-        run: cd java-proxy && mvn clean install
+        run: cd mesh-worker-service && mvn clean install
 

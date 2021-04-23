@@ -18,7 +18,7 @@
  */
 package io.functionmesh.proxy.rest.api;
 
-import io.functionmesh.proxy.FunctionMeshProxyService;
+import io.functionmesh.proxy.FunctionMeshWorkerService;
 import io.functionmesh.proxy.util.SinksUtil;
 import io.functionmesh.sinks.models.V1alpha1Sink;
 import io.kubernetes.client.openapi.ApiClient;
@@ -150,12 +150,12 @@ public class SinksImpTest {
                         + "    \"selector\": \"component=sink,name=sink-sample,namespace=default\"\n"
                         + "  }\n"
                         + "}";
-        FunctionMeshProxyService functionMeshProxyService =
-                PowerMockito.mock(FunctionMeshProxyService.class);
-        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier =
-                () -> functionMeshProxyService;
+        FunctionMeshWorkerService functionMeshWorkerService =
+                PowerMockito.mock(FunctionMeshWorkerService.class);
+        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier =
+                () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
+        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
@@ -210,7 +210,7 @@ public class SinksImpTest {
                         kind, group, version, componentName, null, uploadedInputStream, sinkConfig);
 
         PowerMockito.when(
-                        functionMeshProxyService
+                functionMeshWorkerService
                                 .getCustomObjectsApi()
                                 .createNamespacedCustomObjectCall(
                                         group,
@@ -227,11 +227,11 @@ public class SinksImpTest {
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
         PowerMockito.when(responseBody.string()).thenReturn(testBody);
-        PowerMockito.when(functionMeshProxyService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
-        SinksImpl sinks = spy(new SinksImpl(functionMeshProxyServiceSupplier));
+        SinksImpl sinks = spy(new SinksImpl(functionMeshWorkerServiceSupplier));
         try {
             sinks.registerSink(
                     tenant,
@@ -373,12 +373,12 @@ public class SinksImpTest {
         sinkConfig.setCustomRuntimeOptions(customRuntimeOptions);
         sinkConfig.setAutoAck(autoAck);
 
-        FunctionMeshProxyService functionMeshProxyService =
-                PowerMockito.mock(FunctionMeshProxyService.class);
-        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier =
-                () -> functionMeshProxyService;
+        FunctionMeshWorkerService functionMeshWorkerService =
+                PowerMockito.mock(FunctionMeshWorkerService.class);
+        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier =
+                () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
+        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
 
         Call getCall = PowerMockito.mock(Call.class);
@@ -399,12 +399,12 @@ public class SinksImpTest {
         PowerMockito.when(replaceResponseBody.string()).thenReturn(replaceBody);
 
         ApiClient apiClient = PowerMockito.mock(ApiClient.class);
-        PowerMockito.when(functionMeshProxyService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
         PowerMockito.when(
-                        functionMeshProxyService
+                functionMeshWorkerService
                                 .getCustomObjectsApi()
                                 .getNamespacedCustomObjectCall(
                                         group, version, namespace, plural, componentName, null))
@@ -416,7 +416,7 @@ public class SinksImpTest {
         v1alpha1Sink.getMetadata().setResourceVersion("881033");
 
         PowerMockito.when(
-                        functionMeshProxyService
+                functionMeshWorkerService
                                 .getCustomObjectsApi()
                                 .replaceNamespacedCustomObjectCall(
                                         group,
@@ -430,7 +430,7 @@ public class SinksImpTest {
                                         null))
                 .thenReturn(getCall);
 
-        SinksImpl sinks = spy(new SinksImpl(functionMeshProxyServiceSupplier));
+        SinksImpl sinks = spy(new SinksImpl(functionMeshWorkerServiceSupplier));
 
         try {
             sinks.updateSink(
@@ -520,12 +520,12 @@ public class SinksImpTest {
                         + "    \"selector\": \"component=sink,name=sink-sample,namespace=default\"\n"
                         + "  }\n"
                         + "}";
-        FunctionMeshProxyService functionMeshProxyService =
-                PowerMockito.mock(FunctionMeshProxyService.class);
-        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier =
-                () -> functionMeshProxyService;
+        FunctionMeshWorkerService functionMeshWorkerService =
+                PowerMockito.mock(FunctionMeshWorkerService.class);
+        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier =
+                () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
+        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
@@ -538,7 +538,7 @@ public class SinksImpTest {
         String componentName = "sink-sample";
 
         PowerMockito.when(
-                        functionMeshProxyService
+                functionMeshWorkerService
                                 .getCustomObjectsApi()
                                 .getNamespacedCustomObjectCall(
                                         group, version, namespace, plural, componentName, null))
@@ -547,11 +547,11 @@ public class SinksImpTest {
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
         PowerMockito.when(responseBody.string()).thenReturn(testBody);
-        PowerMockito.when(functionMeshProxyService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
-        SinksImpl sinks = spy(new SinksImpl(functionMeshProxyServiceSupplier));
+        SinksImpl sinks = spy(new SinksImpl(functionMeshWorkerServiceSupplier));
         SinkStatus sinkStatus =
                 sinks.getSinkStatus(tenant, namespace, componentName, null, null, null);
 
@@ -640,12 +640,12 @@ public class SinksImpTest {
                         + "    \"selector\": \"component=sink,name=sink-sample,namespace=default\"\n"
                         + "  }\n"
                         + "}";
-        FunctionMeshProxyService functionMeshProxyService =
-                PowerMockito.mock(FunctionMeshProxyService.class);
-        Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier =
-                () -> functionMeshProxyService;
+        FunctionMeshWorkerService functionMeshWorkerService =
+                PowerMockito.mock(FunctionMeshWorkerService.class);
+        Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier =
+                () -> functionMeshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(functionMeshProxyService.getCustomObjectsApi())
+        PowerMockito.when(functionMeshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
@@ -657,7 +657,7 @@ public class SinksImpTest {
         String componentName = "sink-sample";
 
         PowerMockito.when(
-                        functionMeshProxyService
+                functionMeshWorkerService
                                 .getCustomObjectsApi()
                                 .getNamespacedCustomObjectCall(
                                         group, version, namespace, plural, componentName, null))
@@ -666,7 +666,7 @@ public class SinksImpTest {
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
         PowerMockito.when(responseBody.string()).thenReturn(testBody);
-        PowerMockito.when(functionMeshProxyService.getApiClient()).thenReturn(apiClient);
+        PowerMockito.when(functionMeshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
@@ -698,7 +698,7 @@ public class SinksImpTest {
         expectedSinkConfig.setCustomRuntimeOptions(customRuntimeOptions);
         expectedSinkConfig.setAutoAck(autoAck);
 
-        SinksImpl sinks = spy(new SinksImpl(functionMeshProxyServiceSupplier));
+        SinksImpl sinks = spy(new SinksImpl(functionMeshWorkerServiceSupplier));
         SinkConfig actualSinkConfig = sinks.getSinkInfo(tenant, namespace, componentName);
         Assert.assertEquals(expectedSinkConfig, actualSinkConfig);
     }

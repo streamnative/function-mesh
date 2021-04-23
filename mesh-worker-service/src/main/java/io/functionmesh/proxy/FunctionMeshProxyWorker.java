@@ -59,7 +59,7 @@ public class FunctionMeshProxyWorker {
 
     public FunctionMeshProxyWorker(WorkerConfig workerConfig) {
         this.workerConfig = workerConfig;
-        this.workerService = new FunctionMeshProxyService();
+        this.workerService = new FunctionMeshWorkerService();
         this.errorNotifier = ErrorNotifier.getDefaultImpl();
     }
 

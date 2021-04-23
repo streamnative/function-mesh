@@ -18,8 +18,8 @@
  */
 package io.functionmesh.proxy.rest.api;
 
+import io.functionmesh.proxy.FunctionMeshWorkerService;
 import io.functionmesh.proxy.util.SourcesUtil;
-import io.functionmesh.proxy.FunctionMeshProxyService;
 import io.functionmesh.sources.models.V1alpha1Source;
 import io.functionmesh.sources.models.V1alpha1SourceList;
 import io.functionmesh.sources.models.V1alpha1SourceStatus;
@@ -46,12 +46,12 @@ import java.util.List;
 import java.util.function.Supplier;
 
 @Slf4j
-public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<FunctionMeshProxyService> {
+public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<FunctionMeshWorkerService> {
     private final String kind = "Source";
 
     private final String plural = "sources";
 
-    public SourcesImpl(Supplier<FunctionMeshProxyService> functionMeshProxyServiceSupplier) {
+    public SourcesImpl(Supplier<FunctionMeshWorkerService> functionMeshProxyServiceSupplier) {
         super(functionMeshProxyServiceSupplier, Function.FunctionDetails.ComponentType.SOURCE);
     }
 
