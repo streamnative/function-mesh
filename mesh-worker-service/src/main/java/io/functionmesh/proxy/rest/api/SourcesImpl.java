@@ -51,8 +51,8 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
 
     private final String plural = "sources";
 
-    public SourcesImpl(Supplier<FunctionMeshWorkerService> functionMeshProxyServiceSupplier) {
-        super(functionMeshProxyServiceSupplier, Function.FunctionDetails.ComponentType.SOURCE);
+    public SourcesImpl(Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier) {
+        super(functionMeshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SOURCE);
     }
 
     private void validateRegisterSourceRequestParams(String tenant, String namespace, String sourceName,

@@ -41,8 +41,8 @@ import java.util.function.Supplier;
 @Slf4j
 public class FunctionsImpl extends FunctionMeshComponentImpl implements Functions<FunctionMeshWorkerService> {
 
-    public FunctionsImpl(Supplier<FunctionMeshWorkerService> functionMeshProxyServiceSupplier) {
-        super(functionMeshProxyServiceSupplier, Function.FunctionDetails.ComponentType.FUNCTION);
+    public FunctionsImpl(Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier) {
+        super(functionMeshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.FUNCTION);
     }
 
 

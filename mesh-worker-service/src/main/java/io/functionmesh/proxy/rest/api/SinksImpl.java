@@ -51,8 +51,8 @@ public class SinksImpl extends FunctionMeshComponentImpl
 
     private final String plural = "sinks";
 
-    public SinksImpl(Supplier<FunctionMeshWorkerService> functionMeshProxyServiceSupplier) {
-        super(functionMeshProxyServiceSupplier, Function.FunctionDetails.ComponentType.SINK);
+    public SinksImpl(Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier) {
+        super(functionMeshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SINK);
     }
 
     private void validateRegisterSinkRequestParams(

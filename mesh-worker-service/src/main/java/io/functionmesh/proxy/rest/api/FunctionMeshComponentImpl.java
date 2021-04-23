@@ -44,7 +44,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Slf4j
 public abstract class FunctionMeshComponentImpl implements Component<FunctionMeshWorkerService> {
 
-    protected final Supplier<FunctionMeshWorkerService> functionMeshProxyServiceSupplier;
+    protected final Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier;
     protected final Function.FunctionDetails.ComponentType componentType;
 
     final String plural = "functions";
@@ -55,9 +55,9 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
 
     final String kind = "Function";
 
-    public FunctionMeshComponentImpl(Supplier<FunctionMeshWorkerService> functionMeshProxyServiceSupplier,
+    public FunctionMeshComponentImpl(Supplier<FunctionMeshWorkerService> functionMeshWorkerServiceSupplier,
                                      Function.FunctionDetails.ComponentType componentType) {
-        this.functionMeshProxyServiceSupplier = functionMeshProxyServiceSupplier;
+        this.functionMeshWorkerServiceSupplier = functionMeshWorkerServiceSupplier;
         // If you want to support function-mesh, this type needs to be changed
         this.componentType = componentType;
     }
@@ -103,7 +103,7 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
     @Override
     public FunctionMeshWorkerService worker() {
         try {
-            return checkNotNull(functionMeshProxyServiceSupplier.get());
+            return checkNotNull(functionMeshWorkerServiceSupplier.get());
         } catch (Throwable t) {
             log.info("Failed to get worker service", t);
             throw t;
