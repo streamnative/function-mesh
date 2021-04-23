@@ -106,6 +106,30 @@ public class SinksImpl extends FunctionMeshComponentImpl
                             sinkPkgUrl,
                             uploadedInputStream,
                             sinkConfig);
+
+            if (worker().getWorkerConfig().isAuthenticationEnabled()) {
+                Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
+                functionDetailsBuilder.setTenant(tenant);
+                functionDetailsBuilder.setNamespace(namespace);
+                functionDetailsBuilder.setName(sinkName);
+                Function.FunctionDetails functionDetails = functionDetailsBuilder.build();
+                worker().getAuthProvider().ifPresent(functionAuthProvider -> {
+                    if (clientAuthenticationDataHttps != null) {
+                        try {
+                            functionAuthProvider.cacheAuthData(functionDetails, clientAuthenticationDataHttps);
+                            v1alpha1Sink.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
+                                    "auth", sinkConfig.getTenant(), sinkConfig.getNamespace(), sinkName));
+                        } catch (Exception e) {
+                            log.error("Error caching authentication data for {} {}/{}/{}",
+                                    ComponentTypeUtils.toString(componentType), tenant, namespace, sinkName, e);
+
+
+                            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                                    ComponentTypeUtils.toString(componentType), sinkName, e.getMessage()));
+                        }
+                    }
+                });
+            }
             Call call =
                     worker().getCustomObjectsApi()
                             .createNamespacedCustomObjectCall(

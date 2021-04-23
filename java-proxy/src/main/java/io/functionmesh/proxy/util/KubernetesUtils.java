@@ -39,4 +39,8 @@ public class KubernetesUtils {
 		// Use the default namespace
 		return "default";
 	}
+
+	public static String getConfigMapName(String type, String tenant, String namespace, String name) {
+		return "function-mesh-configmap-" + type + "-" + tenant + "-" + namespace + "-" + name ;
+	}
 }

@@ -102,9 +102,9 @@ public class SinksUtil {
             FileUtils.copyInputStreamToFile(uploadedInputStream, file);
         }
         NarClassLoader narClassLoader = FunctionCommon.extractNarClassLoader(file, null);
-        String sourceClassName = ConnectorUtils.getIOSourceClass(narClassLoader);
+        String sourceClassName = ConnectorUtils.getIOSinkClass(narClassLoader);
         Class<?> sourceClass = narClassLoader.loadClass(sourceClassName);
-        Class<?> sourceType = FunctionCommon.getSourceType(sourceClass);
+        Class<?> sourceType = FunctionCommon.getSinkType(sourceClass);
 
         v1alpha1SinkSpec.setClassName(sourceClassName);
         v1alpha1SinkSpec.setSourceType(sourceType.getName());

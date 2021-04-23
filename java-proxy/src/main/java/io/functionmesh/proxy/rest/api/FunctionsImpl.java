@@ -100,6 +100,29 @@ public class FunctionsImpl extends FunctionMeshComponentImpl implements Function
                 functionConfig
         );
         try {
+            if (worker().getWorkerConfig().isAuthenticationEnabled()) {
+                Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
+                functionDetailsBuilder.setTenant(tenant);
+                functionDetailsBuilder.setNamespace(namespace);
+                functionDetailsBuilder.setName(functionName);
+                Function.FunctionDetails functionDetails = functionDetailsBuilder.build();
+                worker().getAuthProvider().ifPresent(functionAuthProvider -> {
+                    if (clientAuthenticationDataHttps != null) {
+                        try {
+                            functionAuthProvider.cacheAuthData(functionDetails, clientAuthenticationDataHttps);
+                            v1alpha1Function.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
+                                    "auth", functionConfig.getTenant(), functionConfig.getNamespace(), functionName));
+                        } catch (Exception e) {
+                            log.error("Error caching authentication data for {} {}/{}/{}",
+                                    ComponentTypeUtils.toString(componentType), tenant, namespace, functionName, e);
+
+
+                            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                                    ComponentTypeUtils.toString(componentType), functionName, e.getMessage()));
+                        }
+                    }
+                });
+            }
             Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(
                     group,
                     version,

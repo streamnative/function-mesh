@@ -200,8 +200,8 @@ public class SinksImpTest {
         PowerMockito.when(FunctionCommon.extractNarClassLoader(narFile, null))
                 .thenReturn(narClassLoader);
         PowerMockito.when(FunctionCommon.createPkgTempFile()).thenReturn(narFile);
-        PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
-        PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
+        PowerMockito.when(ConnectorUtils.getIOSinkClass(narClassLoader)).thenReturn(className);
+        PowerMockito.<Class<?>>when(FunctionCommon.getSinkType(null)).thenReturn(getClass());
 
         SinkConfig sinkConfig = new SinkConfig();
         sinkConfig.setTenant(tenant);
@@ -370,8 +370,8 @@ public class SinksImpTest {
         PowerMockito.when(FunctionCommon.extractNarClassLoader(narFile, null))
                 .thenReturn(narClassLoader);
         PowerMockito.when(FunctionCommon.createPkgTempFile()).thenReturn(narFile);
-        PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
-        PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
+        PowerMockito.when(ConnectorUtils.getIOSinkClass(narClassLoader)).thenReturn(className);
+        PowerMockito.<Class<?>>when(FunctionCommon.getSinkType(null)).thenReturn(getClass());
 
         SinkConfig sinkConfig = new SinkConfig();
         sinkConfig.setTenant(tenant);

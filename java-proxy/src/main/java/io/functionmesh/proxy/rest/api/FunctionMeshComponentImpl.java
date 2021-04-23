@@ -301,14 +301,14 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
 
     }
 
-    public boolean isSuperUser(String clientRole) {
+    public boolean isSuperUser(String clientRole, AuthenticationDataSource authenticationDataSource) {
         if (clientRole != null) {
             try {
                 if ((worker().getWorkerConfig().getSuperUserRoles() != null
                         && worker().getWorkerConfig().getSuperUserRoles().contains(clientRole))) {
                     return true;
                 }
-                return worker().getAuthorizationService().isSuperUser(clientRole, null)
+                return worker().getAuthorizationService().isSuperUser(clientRole, authenticationDataSource)
                         .get(worker().getWorkerConfig().getZooKeeperOperationTimeoutSeconds(), SECONDS);
             } catch (InterruptedException e) {
                 log.warn("Time-out {} sec while checking the role {} is a super user role ",
@@ -327,7 +327,7 @@ public abstract class FunctionMeshComponentImpl implements Component<FunctionMes
                                     AuthenticationDataSource authenticationData) throws PulsarAdminException {
         if (worker().getWorkerConfig().isAuthorizationEnabled()) {
             // skip authorization if client role is super-user
-            if (isSuperUser(clientRole)) {
+            if (isSuperUser(clientRole, authenticationData)) {
                 return true;
             }
 

@@ -338,6 +338,6 @@ public class KubernetesFunctionMeshAuthTokenProvider implements KubernetesFuncti
 	}
 
 	private String getConfigMapName(String tenant, String namespace, String name) {
-		return "function-mesh-configmap-" + tenant + "-" + namespace + "-" + name ;
+		return "function-mesh-configmap-auth-" + tenant + "-" + namespace + "-" + name ;
 	}
 }

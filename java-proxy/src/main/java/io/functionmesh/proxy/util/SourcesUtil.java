@@ -96,6 +96,10 @@ public class SourcesUtil {
         V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
         v1alpha1SourceSpec.setClassName(sourceConfig.getClassName());
 
+        V1alpha1SourceSpecPulsar v1alpha1SourceSpecPulsar = new V1alpha1SourceSpecPulsar();
+        v1alpha1SourceSpecPulsar.setPulsarConfig(sourceName);
+        v1alpha1SourceSpec.setPulsar(v1alpha1SourceSpecPulsar);
+
         File file;
         if (Strings.isNotEmpty(sourcePkgUrl)) {
             file = FunctionCommon.extractFileFromPkgURL(sourcePkgUrl);

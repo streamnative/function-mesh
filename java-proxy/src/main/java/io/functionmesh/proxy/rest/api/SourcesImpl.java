@@ -18,12 +18,12 @@
  */
 package io.functionmesh.proxy.rest.api;
 
-import com.google.protobuf.ByteString;
 import io.functionmesh.proxy.util.KubernetesUtils;
 import io.functionmesh.proxy.util.SourcesUtil;
 import io.functionmesh.proxy.FunctionMeshProxyService;
 import io.functionmesh.sources.models.V1alpha1Source;
 import io.functionmesh.sources.models.V1alpha1SourceList;
+import io.functionmesh.sources.models.V1alpha1SourceSpecPod;
 import io.functionmesh.sources.models.V1alpha1SourceStatus;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
@@ -36,8 +36,9 @@ import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.io.SourceConfig;
 import org.apache.pulsar.common.policies.data.SourceStatus;
 import org.apache.pulsar.common.util.RestException;
-import org.apache.pulsar.functions.auth.FunctionAuthData;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.runtime.RuntimeUtils;
+import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
 import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Sources;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
@@ -47,6 +48,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -101,6 +103,14 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
         try {
             V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
                     sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig);
+            KubernetesRuntimeFactoryConfig factoryConfig = RuntimeUtils.getRuntimeFunctionConfig(
+                    worker().getWorkerConfig().getFunctionRuntimeFactoryConfigs(), KubernetesRuntimeFactoryConfig.class);
+            Map<String, String> customLabels = factoryConfig.getCustomLabels();
+            if (customLabels != null) {
+                V1alpha1SourceSpecPod pod = new V1alpha1SourceSpecPod();
+                pod.setLabels(customLabels);
+                v1alpha1Source.getSpec().setPod(pod);
+            }
             if (worker().getWorkerConfig().isAuthenticationEnabled()) {
                 Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
                 functionDetailsBuilder.setTenant(tenant);
@@ -111,6 +121,8 @@ public class SourcesImpl extends FunctionMeshComponentImpl implements Sources<Fu
                     if (clientAuthenticationDataHttps != null) {
                         try {
                             functionAuthProvider.cacheAuthData(functionDetails, clientAuthenticationDataHttps);
+                            v1alpha1Source.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
+                                    "auth", sourceConfig.getTenant(), sourceConfig.getNamespace(), sourceName));
                         } catch (Exception e) {
                             log.error("Error caching authentication data for {} {}/{}/{}",
                                     ComponentTypeUtils.toString(componentType), tenant, namespace, sourceName, e);
