@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.functionmesh.proxy.util;
+package io.functionmesh.compute.util;
 
 import io.functionmesh.functions.models.V1alpha1Function;
 import io.functionmesh.functions.models.V1alpha1FunctionSpec;

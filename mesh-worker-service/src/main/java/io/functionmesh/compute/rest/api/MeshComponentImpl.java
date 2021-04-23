@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.functionmesh.proxy.rest.api;
+package io.functionmesh.compute.rest.api;
 
 import io.functionmesh.functions.models.V1alpha1FunctionList;
-import io.functionmesh.proxy.MeshWorkerService;
+import io.functionmesh.compute.MeshWorkerService;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Response;

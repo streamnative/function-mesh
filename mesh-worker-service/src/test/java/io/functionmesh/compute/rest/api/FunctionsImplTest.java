@@ -16,12 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.functionmesh.proxy.rest.api;
+package io.functionmesh.compute.rest.api;
 
 import io.functionmesh.functions.models.V1alpha1Function;
-import io.functionmesh.proxy.MeshWorkerService;
-import io.functionmesh.proxy.testdata.Generate;
-import io.functionmesh.proxy.util.FunctionsUtil;
+import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.testdata.Generate;
+import io.functionmesh.compute.util.FunctionsUtil;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;

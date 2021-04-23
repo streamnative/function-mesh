@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.functionmesh.proxy;
+package io.functionmesh.compute;
 
 import org.junit.Assert;
 import org.junit.Test;

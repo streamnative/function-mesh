@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.functionmesh.proxy;
+package io.functionmesh.compute;
 
-import io.functionmesh.proxy.rest.api.FunctionsImpl;
-import io.functionmesh.proxy.rest.api.SinksImpl;
-import io.functionmesh.proxy.rest.api.SourcesImpl;
+import io.functionmesh.compute.rest.api.FunctionsImpl;
+import io.functionmesh.compute.rest.api.SinksImpl;
+import io.functionmesh.compute.rest.api.SourcesImpl;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;

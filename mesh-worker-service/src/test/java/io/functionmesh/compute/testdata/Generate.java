@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.functionmesh.proxy.testdata;
+package io.functionmesh.compute.testdata;
 
-import io.functionmesh.proxy.util.FunctionsUtil;
+import io.functionmesh.compute.util.FunctionsUtil;
 import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.Resources;

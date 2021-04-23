@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.functionmesh.proxy;
+package io.functionmesh.compute;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pulsar.functions.worker.WorkerConfig;

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.functionmesh.proxy.util;
+package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
 import io.functionmesh.sources.models.V1alpha1Source;
