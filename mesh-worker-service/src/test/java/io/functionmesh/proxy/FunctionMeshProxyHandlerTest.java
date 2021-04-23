@@ -33,7 +33,7 @@ import static org.powermock.api.mockito.PowerMockito.spy;
 @PowerMockIgnore({"javax.management.*"})
 public class FunctionMeshProxyHandlerTest {
 
-    private MeshWorkerServiceHandler functionMeshWorkerServiceHandler = spy(new MeshWorkerServiceHandler());
+    private MeshWorkerServiceHandler meshWorkerServiceHandler = spy(new MeshWorkerServiceHandler());
 
     @Test
     public void rewriteTargetTest() {
@@ -41,14 +41,14 @@ public class FunctionMeshProxyHandlerTest {
         String path = "/api/pods";
         HttpServletRequest httpServletRequest = PowerMockito.mock(HttpServletRequest.class);
         PowerMockito.when(httpServletRequest.getRequestURI()).thenReturn(path);
-        Assert.assertNull(functionMeshWorkerServiceHandler.rewriteTarget(httpServletRequest));
+        Assert.assertNull(meshWorkerServiceHandler.rewriteTarget(httpServletRequest));
 
-        PowerMockito.when(functionMeshWorkerServiceHandler
+        PowerMockito.when(meshWorkerServiceHandler
                 .getEnvironment("KUBERNETES_SERVICE_HOST")).thenReturn("localhost");
         path = "/apis/compute.functionmesh.io/v1alpha1/namespaces/default/functionmeshes";
         PowerMockito.when(httpServletRequest.getRequestURI()).thenReturn(path);
         PowerMockito.when(httpServletRequest.getQueryString()).thenReturn("limit=500");
-        String rewriteTarget = functionMeshWorkerServiceHandler.rewriteTarget(httpServletRequest);
+        String rewriteTarget = meshWorkerServiceHandler.rewriteTarget(httpServletRequest);
         String expectedValue = "https://localhost:443" +
                 "/apis/compute.functionmesh.io/v1alpha1/namespaces/default/functionmeshes?limit=500";
         Assert.assertEquals(rewriteTarget, expectedValue);
