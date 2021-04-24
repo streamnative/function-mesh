@@ -19,14 +19,9 @@
 package io.functionmesh.proxy.util;
 
 import com.google.gson.Gson;
-import io.functionmesh.sinks.models.V1alpha1Sink;
-import io.functionmesh.sinks.models.V1alpha1SinkSpec;
-import io.functionmesh.sinks.models.V1alpha1SinkSpecInput;
-import io.functionmesh.sinks.models.V1alpha1SinkSpecJava;
-import io.functionmesh.sinks.models.V1alpha1SinkSpecPulsar;
-import io.functionmesh.sinks.models.V1alpha1SinkSpecResources;
+import io.functionmesh.proxy.models.CustomRuntimeOptions;
+import io.functionmesh.sinks.models.*;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -50,11 +45,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SinksUtil {
-    @Data
-    static class CustomRuntimeOptions {
-        private String clusterName;
-    }
-
     public static final String cpuKey = "cpu";
     public static final String memoryKey = "memory";
 
@@ -83,6 +73,7 @@ public class SinksUtil {
             InputStream uploadedInputStream,
             SinkConfig sinkConfig)
             throws IOException, URISyntaxException, ClassNotFoundException {
+        String typeClassName = "";
         V1alpha1Sink v1alpha1Sink = new V1alpha1Sink();
         v1alpha1Sink.setKind(kind);
         v1alpha1Sink.setApiVersion(String.format("%s/%s", group, version));
@@ -107,8 +98,7 @@ public class SinksUtil {
         Class<?> sourceType = FunctionCommon.getSourceType(sourceClass);
 
         v1alpha1SinkSpec.setClassName(sourceClassName);
-        v1alpha1SinkSpec.setSourceType(sourceType.getName());
-        v1alpha1SinkSpec.setSinkType(sourceType.getName());
+        typeClassName = sourceType.getName();
 
         Integer parallelism = sinkConfig.getParallelism() == null ? 1 : sinkConfig.getParallelism();
         v1alpha1SinkSpec.setReplicas(parallelism);
@@ -116,6 +106,7 @@ public class SinksUtil {
 
         V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
         v1alpha1SinkSpecInput.setTopics(new ArrayList<>(sinkConfig.getInputs()));
+        v1alpha1SinkSpecInput.setTypeClassName(typeClassName);
         v1alpha1SinkSpec.setInput(v1alpha1SinkSpecInput);
 
         v1alpha1SinkSpec.setSinkConfig(transformedMapValueToString(sinkConfig.getConfigs()));
@@ -177,6 +168,13 @@ public class SinksUtil {
         v1alpha1SinkSpec.setClusterName(clusterName);
         v1alpha1SinkSpec.setAutoAck(sinkConfig.getAutoAck());
 
+        if (Strings.isNotEmpty(customRuntimeOptions.getTypeClassName()) && Strings.isEmpty(typeClassName)) {
+            typeClassName = customRuntimeOptions.getTypeClassName();
+        }
+
+        v1alpha1SinkSpecInput.setTypeClassName(typeClassName);
+        v1alpha1SinkSpec.setInput(v1alpha1SinkSpecInput);
+
         v1alpha1Sink.setSpec(v1alpha1SinkSpec);
 
         return v1alpha1Sink;
@@ -204,8 +202,8 @@ public class SinksUtil {
         if (v1alpha1SinkSpecResources != null) {
             Resources resources = new Resources();
             Map<String, String> limits = v1alpha1SinkSpecResources.getLimits();
-            resources.setCpu(Double.parseDouble(limits.get(cpuKey).toString()));
-            resources.setRam(Long.parseLong(limits.get(memoryKey).toString()));
+            resources.setCpu(Double.parseDouble(limits.get(cpuKey)));
+            resources.setRam(Long.parseLong(limits.get(memoryKey)));
             sinkConfig.setResources(resources);
         }
 

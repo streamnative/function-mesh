@@ -33,8 +33,7 @@ type SourceSpec struct {
 	ClassName           string                      `json:"className,omitempty"`
 	Tenant              string                      `json:"tenant,omitempty"`
 	ClusterName         string                      `json:"clusterName,omitempty"`
-	SourceType          string                      `json:"sourceType,omitempty"`
-	SinkType            string                      `json:"sinkType,omitempty"`
+	SourceType          string                      `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
 	Replicas            *int32                      `json:"replicas,omitempty"`
 	MaxReplicas         *int32                      `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
 	Output              OutputConf                  `json:"output,omitempty"`

@@ -59,7 +59,7 @@ curl http://localhost:6750/admin/v3/functions/test/default/functionmesh-sample-e
    --output-serde-classname java.lang.String \
    --cpu 0.1 \
    --ram 1 \
-   --user-config "{"clusterName": "test-pulsar"}"
+   --user-config "{"clusterName": "test-pulsar", "typeClassName": "java.lang.String"}"
 ```
 
 #### updateFunction
@@ -76,7 +76,7 @@ curl http://localhost:6750/admin/v3/functions/test/default/functionmesh-sample-e
    --output-serde-classname java.lang.String \
    --cpu 0.2 \
    --ram 1 \
-   --user-config "{"clusterName": "test-pulsar"}"
+   --user-config "{"clusterName": "test-pulsar", "typeClassName": "java.lang.String"}"
 ```
 
 #### getFunctionInfo

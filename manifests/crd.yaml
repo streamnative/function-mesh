@@ -138,6 +138,8 @@ spec:
                         items:
                           type: string
                         type: array
+                      typeClassName:
+                        type: string
                     type: object
                   java:
                     properties:
@@ -217,6 +219,8 @@ spec:
                       sinkSerdeClassName:
                         type: string
                       topic:
+                        type: string
+                      typeClassName:
                         type: string
                     type: object
                   pod:
@@ -4648,10 +4652,6 @@ spec:
                           type: string
                       type: object
                     type: object
-                  sinkType:
-                    type: string
-                  sourceType:
-                    type: string
                   subscriptionName:
                     type: string
                   subscriptionPosition:
@@ -4800,6 +4800,8 @@ spec:
                         items:
                           type: string
                         type: array
+                      typeClassName:
+                        type: string
                     type: object
                   java:
                     properties:
@@ -9257,8 +9259,6 @@ spec:
                     type: object
                   sinkType:
                     type: string
-                  sourceType:
-                    type: string
                   subscriptionName:
                     type: string
                   subscriptionPosition:
@@ -9404,6 +9404,8 @@ spec:
                       sinkSerdeClassName:
                         type: string
                       topic:
+                        type: string
+                      typeClassName:
                         type: string
                     type: object
                   pod:
@@ -13831,8 +13833,6 @@ spec:
                           type: string
                       type: object
                     type: object
-                  sinkType:
-                    type: string
                   sourceConfig:
                     additionalProperties:
                       type: string
@@ -14082,6 +14082,8 @@ spec:
                   items:
                     type: string
                   type: array
+                typeClassName:
+                  type: string
               type: object
             java:
               properties:
@@ -14160,6 +14162,8 @@ spec:
                 sinkSerdeClassName:
                   type: string
                 topic:
+                  type: string
+                typeClassName:
                   type: string
               type: object
             pod:
@@ -18348,10 +18352,6 @@ spec:
                     type: string
                 type: object
               type: object
-            sinkType:
-              type: string
-            sourceType:
-              type: string
             subscriptionName:
               type: string
             subscriptionPosition:
@@ -18575,6 +18575,8 @@ spec:
                   items:
                     type: string
                   type: array
+                typeClassName:
+                  type: string
               type: object
             java:
               properties:
@@ -22788,8 +22790,6 @@ spec:
               type: object
             sinkType:
               type: string
-            sourceType:
-              type: string
             subscriptionName:
               type: string
             subscriptionPosition:
@@ -23009,6 +23009,8 @@ spec:
                 sinkSerdeClassName:
                   type: string
                 topic:
+                  type: string
+                typeClassName:
                   type: string
               type: object
             pod:
@@ -27193,8 +27195,6 @@ spec:
                     type: string
                 type: object
               type: object
-            sinkType:
-              type: string
             sourceConfig:
               additionalProperties:
                 type: string

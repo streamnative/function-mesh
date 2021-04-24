@@ -19,16 +19,9 @@
 package io.functionmesh.proxy.util;
 
 import com.google.gson.Gson;
-import io.functionmesh.sources.models.V1alpha1Source;
-import io.functionmesh.sources.models.V1alpha1SourceSpec;
-import io.functionmesh.sources.models.V1alpha1SourceSpecJava;
-import io.functionmesh.sources.models.V1alpha1SourceSpecOutput;
-import io.functionmesh.sources.models.V1alpha1SourceSpecOutputProducerConf;
-import io.functionmesh.sources.models.V1alpha1SourceSpecOutputProducerConfCryptoConfig;
-import io.functionmesh.sources.models.V1alpha1SourceSpecPulsar;
-import io.functionmesh.sources.models.V1alpha1SourceSpecResources;
+import io.functionmesh.proxy.models.CustomRuntimeOptions;
+import io.functionmesh.sources.models.*;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import lombok.Data;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -56,11 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Data
-class CustomRuntimeOptions {
-    private String clusterName;
-}
-
 public class SourcesUtil {
     public final static String cpuKey = "cpu";
     public final static String memoryKey = "memory";
@@ -84,6 +72,7 @@ public class SourcesUtil {
                                                                       InputStream uploadedInputStream,
                                                                       SourceConfig sourceConfig) throws IOException,
             URISyntaxException, ClassNotFoundException {
+        String typeClassName = "";
         V1alpha1Source v1alpha1Source = new V1alpha1Source();
         v1alpha1Source.setKind(kind);
         v1alpha1Source.setApiVersion(String.format("%s/%s", group, version));
@@ -108,8 +97,7 @@ public class SourcesUtil {
         Class<?> sourceClass = narClassLoader.loadClass(sourceClassName);
         Class<?> sourceType = FunctionCommon.getSourceType(sourceClass);
 
-        v1alpha1SourceSpec.setSourceType(sourceType.getName());
-        v1alpha1SourceSpec.setSinkType(sourceType.getName());
+        typeClassName = sourceType.getName();
 
         Integer parallelism = sourceConfig.getParallelism() == null ? 1 : sourceConfig.getParallelism();
         v1alpha1SourceSpec.setReplicas(parallelism);
@@ -117,6 +105,7 @@ public class SourcesUtil {
 
         V1alpha1SourceSpecOutput v1alpha1SourceSpecOutput = new V1alpha1SourceSpecOutput();
         v1alpha1SourceSpecOutput.setTopic(sourceConfig.getTopicName());
+        v1alpha1SourceSpecOutput.setTypeClassName(typeClassName);
         v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
 
         ProducerConfig producerConfig = sourceConfig.getProducerConfig();
@@ -194,6 +183,13 @@ public class SourcesUtil {
         }
         v1alpha1SourceSpec.setClusterName(clusterName);
 
+        if (Strings.isNotEmpty(customRuntimeOptions.getTypeClassName()) && Strings.isEmpty(typeClassName)) {
+            typeClassName = customRuntimeOptions.getTypeClassName();
+        }
+
+        v1alpha1SourceSpecOutput.setTypeClassName(typeClassName);
+        v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
+
         v1alpha1Source.setSpec(v1alpha1SourceSpec);
 
         return v1alpha1Source;
@@ -243,8 +239,8 @@ public class SourcesUtil {
         if (sourceSpecResources != null) {
             Resources resources = new Resources();
             Map<String, String> limits = sourceSpecResources.getLimits();
-            resources.setCpu(Double.parseDouble(limits.get(cpuKey).toString()));
-            resources.setRam(Long.parseLong(limits.get(memoryKey).toString()));
+            resources.setCpu(Double.parseDouble(limits.get(cpuKey)));
+            resources.setRam(Long.parseLong(limits.get(memoryKey)));
             sourceConfig.setResources(resources);
         }
 

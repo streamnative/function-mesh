@@ -4,8 +4,6 @@ metadata:
   name: source-sample
 spec:
   className: org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource
-  sourceType: org.apache.pulsar.common.schema.KeyValue
-  sinkType: org.apache.pulsar.common.schema.KeyValue
   replicas: 1
   maxReplicas: 1
   output:
@@ -14,6 +12,7 @@ spec:
       maxPendingMessagesAcrossPartitions: 50000
       useThreadLocalProducers: true
     topic: persistent://public/default/destination
+    typeClassName: org.apache.pulsar.common.schema.KeyValue
   resources:
     limits:
       cpu: "0.2"
