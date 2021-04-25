@@ -70,6 +70,18 @@ var _ = Describe("Function Controller (E2E)", func() {
 	})
 })
 
+var _ = Describe("Function Controller (Batcher)", func() {
+	Context("Function With Batcher Item", func() {
+		configs := makeSamplePulsarConfig()
+		function := makeFunctionSampleWithKeyBasedBatcher()
+
+		createFunctionConfigMap(configs)
+		createFunction(function)
+		deleteFunction(function)
+		deleteFunctionConfigMap(configs)
+	})
+})
+
 func createFunction(function *v1alpha1.Function) {
 	if function.Status.Conditions == nil {
 		function.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)

@@ -5,13 +5,12 @@ metadata:
 spec:
   # Add fields here
   className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
-  sourceType: "[B"
-  sinkType: "[B"
   replicas: 1
   maxReplicas: 1
   input:
     topics:
     - persistent://public/default/input
+    typeClassName: "[B"
   sinkConfig:
     elasticSearchUrl: "http://quickstart-es-http.default.svc.cluster.local:9200"
     indexName: "my_index"
