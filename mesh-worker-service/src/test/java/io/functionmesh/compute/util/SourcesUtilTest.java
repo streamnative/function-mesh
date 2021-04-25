@@ -18,12 +18,12 @@
  */
 package io.functionmesh.compute.util;
 
-import io.functionmesh.sources.models.V1alpha1Source;
-import io.functionmesh.sources.models.V1alpha1SourceSpec;
-import io.functionmesh.sources.models.V1alpha1SourceSpecJava;
-import io.functionmesh.sources.models.V1alpha1SourceSpecOutput;
-import io.functionmesh.sources.models.V1alpha1SourceSpecPulsar;
-import io.functionmesh.sources.models.V1alpha1SourceSpecResources;
+import io.functionmesh.compute.sources.models.V1alpha1Source;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpec;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecJava;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutput;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecResources;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.commons.io.FileUtils;
 import org.apache.pulsar.common.functions.Resources;
@@ -116,12 +116,11 @@ public class SourcesUtilTest {
 
         V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
         v1alpha1SourceSpec.setClassName(className);
-        v1alpha1SourceSpec.setSourceType(sourceType);
-        v1alpha1SourceSpec.setSinkType(sinkType);
         v1alpha1SourceSpec.setSourceConfig(new HashMap<>());
 
         V1alpha1SourceSpecOutput v1alpha1SourceSpecOutput = new V1alpha1SourceSpecOutput();
         v1alpha1SourceSpecOutput.setTopic(topicName);
+        v1alpha1SourceSpecOutput.setTypeClassName(sourceType);
         v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
 
         V1alpha1SourceSpecPulsar v1alpha1SourceSpecPulsar = new V1alpha1SourceSpecPulsar();
@@ -185,12 +184,11 @@ public class SourcesUtilTest {
 
         V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
         v1alpha1SourceSpec.setClassName(className);
-        v1alpha1SourceSpec.setSourceType(sourceType);
-        v1alpha1SourceSpec.setSinkType(sourceType);
         v1alpha1SourceSpec.setSourceConfig(new HashMap<>());
 
         V1alpha1SourceSpecOutput v1alpha1SourceSpecOutput = new V1alpha1SourceSpecOutput();
         v1alpha1SourceSpecOutput.setTopic(topicName);
+        v1alpha1SourceSpecOutput.setTypeClassName(sourceType);
         v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
 
         V1alpha1SourceSpecPulsar v1alpha1SourceSpecPulsar = new V1alpha1SourceSpecPulsar();

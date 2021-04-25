@@ -18,13 +18,14 @@
  */
 package io.functionmesh.compute.util;
 
-import io.functionmesh.functions.models.V1alpha1Function;
-import io.functionmesh.functions.models.V1alpha1FunctionSpec;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecInput;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecJava;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecOutput;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecPulsar;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecResources;
+import io.functionmesh.compute.functions.models.V1alpha1Function;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpec;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecInput;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecJava;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecOutput;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPulsar;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecResources;
+import io.functionmesh.proxy.models.CustomRuntimeOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.FunctionConfig;
@@ -77,7 +78,8 @@ public class FunctionsUtilTest {
         resources.setRam(ram);
         functionConfig.setResources(resources);
         Map<String, Object> userConfig = new HashMap<>();
-        userConfig.put(FunctionsUtil.clusterNameKey, clusterName);
+        userConfig.put(CustomRuntimeOptions.clusterNameKey, clusterName);
+        userConfig.put(CustomRuntimeOptions.typeClassNameKey, serdeClassName);
         functionConfig.setUserConfig(userConfig);
         functionConfig.setJar(jar);
 
@@ -95,8 +97,6 @@ public class FunctionsUtilTest {
 
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(className);
-        v1alpha1FunctionSpec.setSourceType(serdeClassName);
-        v1alpha1FunctionSpec.setSinkType(serdeClassName);
         v1alpha1FunctionSpec.setReplicas(parallelism);
         v1alpha1FunctionSpec.setMaxReplicas(parallelism);
 
@@ -104,10 +104,12 @@ public class FunctionsUtilTest {
         List<String> topics = new ArrayList<>();
         topics.add(input);
         v1alpha1FunctionSpecInput.setTopics(topics);
+        v1alpha1FunctionSpecInput.setTypeClassName(serdeClassName);
         v1alpha1FunctionSpec.setInput(v1alpha1FunctionSpecInput);
 
         V1alpha1FunctionSpecOutput v1alpha1FunctionSpecOutput = new V1alpha1FunctionSpecOutput();
         v1alpha1FunctionSpecOutput.setTopic(output);
+        v1alpha1FunctionSpecOutput.setTypeClassName(serdeClassName);
         v1alpha1FunctionSpec.setOutput(v1alpha1FunctionSpecOutput);
 
         V1alpha1FunctionSpecResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecResources();
@@ -166,8 +168,6 @@ public class FunctionsUtilTest {
 
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(className);
-        v1alpha1FunctionSpec.setSourceType(serdeClassName);
-        v1alpha1FunctionSpec.setSinkType(serdeClassName);
         v1alpha1FunctionSpec.setReplicas(parallelism);
         v1alpha1FunctionSpec.setMaxReplicas(parallelism);
 
@@ -175,10 +175,12 @@ public class FunctionsUtilTest {
         List<String> topics = new ArrayList<>();
         topics.add(input);
         v1alpha1FunctionSpecInput.setTopics(topics);
+        v1alpha1FunctionSpecInput.setTypeClassName(serdeClassName);
         v1alpha1FunctionSpec.setInput(v1alpha1FunctionSpecInput);
 
         V1alpha1FunctionSpecOutput v1alpha1FunctionSpecOutput = new V1alpha1FunctionSpecOutput();
         v1alpha1FunctionSpecOutput.setTopic(output);
+        v1alpha1FunctionSpecOutput.setTypeClassName(serdeClassName);
         v1alpha1FunctionSpec.setOutput(v1alpha1FunctionSpecOutput);
 
         V1alpha1FunctionSpecResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecResources();
@@ -226,7 +228,7 @@ public class FunctionsUtilTest {
         resources.setRam(ram);
         expectedFunctionConfig.setResources(resources);
         Map<String, Object> userConfig = new HashMap<>();
-        userConfig.put(FunctionsUtil.clusterNameKey, clusterName);
+        userConfig.put(CustomRuntimeOptions.clusterNameKey, clusterName);
         expectedFunctionConfig.setUserConfig(userConfig);
         expectedFunctionConfig.setJar(jar);
 

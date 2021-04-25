@@ -20,7 +20,7 @@ package io.functionmesh.compute.rest.api;
 
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.util.SourcesUtil;
-import io.functionmesh.sources.models.V1alpha1Source;
+import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
@@ -874,12 +874,10 @@ public class SourcesImpTest {
 
         String className = "org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource";
         String sourceType = "org.apache.pulsar.common.schema.KeyValue";
-        String sinkType = "org.apache.pulsar.common.schema.KeyValue";
 
         List<ConnectorDefinition> expectedList = new ArrayList<>();
         ConnectorDefinition connectorDefinition = new ConnectorDefinition();
         connectorDefinition.setSourceClass(sourceType);
-        connectorDefinition.setSinkClass(sinkType);
         connectorDefinition.setName(className);
         expectedList.add(connectorDefinition);
 

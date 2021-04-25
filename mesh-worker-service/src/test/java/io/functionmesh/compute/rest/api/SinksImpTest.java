@@ -20,7 +20,7 @@ package io.functionmesh.compute.rest.api;
 
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.util.SinksUtil;
-import io.functionmesh.sinks.models.V1alpha1Sink;
+import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;

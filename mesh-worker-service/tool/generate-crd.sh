@@ -51,7 +51,7 @@ docker run \
   /generate.sh \
   -u $LOCAL_MANIFEST_FUNCTIONS_FILE \
   -n io.functionmesh \
-  -p io.functionmesh.functions \
+  -p io.functionmesh.compute.functions \
   -o "$(pwd)"
 
 # Generate sources crd
@@ -64,7 +64,7 @@ docker run \
   /generate.sh \
   -u $LOCAL_MANIFEST_SOURCES_FILE \
   -n io.functionmesh \
-  -p io.functionmesh.sources \
+  -p io.functionmesh.compute.sources \
   -o "$(pwd)"
 
 # Generate sinks crd
@@ -77,8 +77,8 @@ docker run \
   /generate.sh \
   -u $LOCAL_MANIFEST_SINKS_FILE \
   -n io.functionmesh \
-  -p io.functionmesh.sinks \
+  -p io.functionmesh.compute.sinks \
   -o "$(pwd)"
 #open $GEN_DIR
 
-cp -r $GEN_DIR/src/main/java/io/functionmesh/* $DEST_DIR/src/main/java/io/functionmesh/
+cp -r $GEN_DIR/src/main/java/io/functionmesh/compute/* $DEST_DIR/src/main/java/io/functionmesh/compute/

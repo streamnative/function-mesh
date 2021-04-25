@@ -19,7 +19,7 @@
 package io.functionmesh.compute.rest.api;
 
 import io.functionmesh.compute.util.FunctionsUtil;
-import io.functionmesh.functions.models.V1alpha1Function;
+import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.MeshWorkerService;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;

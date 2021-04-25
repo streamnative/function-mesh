@@ -18,15 +18,8 @@
  */
 package io.functionmesh.compute.util;
 
-import io.functionmesh.functions.models.V1alpha1Function;
-import io.functionmesh.functions.models.V1alpha1FunctionSpec;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecGolang;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecInput;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecJava;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecOutput;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecPulsar;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecPython;
-import io.functionmesh.functions.models.V1alpha1FunctionSpecResources;
+import io.functionmesh.compute.functions.models.*;
+import io.functionmesh.proxy.models.CustomRuntimeOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.common.functions.ConsumerConfig;
@@ -45,7 +38,6 @@ public class FunctionsUtil {
     public final static String cpuKey = "cpu";
     public final static String memoryKey = "memory";
     public final static String sourceKey = "source";
-    public final static String clusterNameKey = "clusterName";
 
     public static V1alpha1Function createV1alpha1FunctionFromFunctionConfig(String kind, String group, String version
             , String functionName, String functionPkgUrl, FunctionConfig functionConfig) {
@@ -61,14 +53,16 @@ public class FunctionsUtil {
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());
 
+        V1alpha1FunctionSpecInput v1alpha1FunctionSpecInput = new V1alpha1FunctionSpecInput();
+
         if (functionConfig.getInputSpecs() != null) {
             ConsumerConfig consumerConfig = functionConfig.getInputSpecs().get(sourceKey);
             if (consumerConfig != null && !StringUtils.isBlank(consumerConfig.getSerdeClassName())) {
-                v1alpha1FunctionSpec.setSourceType(consumerConfig.getSerdeClassName());
+                v1alpha1FunctionSpecInput.setTypeClassName(consumerConfig.getSerdeClassName());
             }
         }
         if (!StringUtils.isBlank(functionConfig.getOutputSerdeClassName())) {
-            v1alpha1FunctionSpec.setSinkType(functionConfig.getOutputSerdeClassName());
+            v1alpha1FunctionSpecInput.setTypeClassName(functionConfig.getOutputSerdeClassName());
         }
 
         v1alpha1FunctionSpec.setForwardSourceMessageProperty(functionConfig.getForwardSourceMessageProperty());
@@ -80,7 +74,7 @@ public class FunctionsUtil {
 
         v1alpha1FunctionSpec.setLogTopic(functionConfig.getLogTopic());
 
-        V1alpha1FunctionSpecInput v1alpha1FunctionSpecInput = new V1alpha1FunctionSpecInput();
+
         v1alpha1FunctionSpecInput.setTopics(new ArrayList<>(functionConfig.getInputs()));
         v1alpha1FunctionSpec.setInput(v1alpha1FunctionSpecInput);
 
@@ -142,10 +136,16 @@ public class FunctionsUtil {
         if (functionConfig.getUserConfig() == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "userConfig is not provided");
         }
-        Object clusterName = functionConfig.getUserConfig().get(clusterNameKey);
+        Object clusterName = functionConfig.getUserConfig().get(CustomRuntimeOptions.clusterNameKey);
         if (clusterName == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "userConfig.clusterName is not provided");
         }
+
+        Object typeClassNameObj = functionConfig.getUserConfig().get(CustomRuntimeOptions.typeClassNameKey);
+        String typeClassName = typeClassNameObj != null ? typeClassNameObj.toString() : "";
+
+        v1alpha1FunctionSpecInput.setTypeClassName(typeClassName);
+        v1alpha1FunctionSpecOutput.setTypeClassName(typeClassName);
 
         v1alpha1FunctionSpec.setClusterName(clusterName.toString());
         v1alpha1FunctionSpec.setAutoAck(functionConfig.getAutoAck());
@@ -170,10 +170,10 @@ public class FunctionsUtil {
 
         Map<String, ConsumerConfig> inputSpecs = new HashMap<>();
         ConsumerConfig sourceVaule = new ConsumerConfig();
-        sourceVaule.setSerdeClassName(v1alpha1FunctionSpec.getSourceType());
+        sourceVaule.setSerdeClassName(v1alpha1FunctionSpec.getInput().getTypeClassName());
         inputSpecs.put(sourceKey, sourceVaule);
         functionConfig.setInputSpecs(inputSpecs);
-        functionConfig.setOutputSerdeClassName(v1alpha1FunctionSpec.getSinkType());
+        functionConfig.setOutputSerdeClassName(v1alpha1FunctionSpec.getInput().getTypeClassName());
 
         functionConfig.setInputs(v1alpha1FunctionSpec.getInput().getTopics());
         functionConfig.setOutput(v1alpha1FunctionSpec.getOutput().getTopic());
@@ -182,12 +182,12 @@ public class FunctionsUtil {
 
         Resources resources = new Resources();
         Map<String, String> functionResource = v1alpha1FunctionSpec.getResources().getLimits();
-        resources.setCpu(Double.parseDouble(functionResource.get(cpuKey).toString()));
-        resources.setRam(Long.parseLong(functionResource.get(memoryKey).toString()));
+        resources.setCpu(Double.parseDouble(functionResource.get(cpuKey)));
+        resources.setRam(Long.parseLong(functionResource.get(memoryKey)));
         functionConfig.setResources(resources);
 
         Map<String, Object> userConfig = new HashMap<>();
-        userConfig.put(clusterNameKey, v1alpha1FunctionSpec.getClusterName());
+        userConfig.put(CustomRuntimeOptions.clusterNameKey, v1alpha1FunctionSpec.getClusterName());
         functionConfig.setUserConfig(userConfig);
 
         if (v1alpha1FunctionSpec.getJava() != null) {

@@ -18,10 +18,10 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.MeshWorkerService;
-import io.functionmesh.sinks.models.V1alpha1Sink;
-import io.functionmesh.sinks.models.V1alpha1SinkStatus;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkStatus;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;

@@ -37,6 +37,6 @@ data/
 **/*.versionsBackup
 
 # ignore all crd file by auto generated
-src/main/java/io/functionmesh/functions/*
-src/main/java/io/functionmesh/sources/*
-src/main/java/io/functionmesh/sinks/*
+src/main/java/io/functionmesh/compute/functions/*
+src/main/java/io/functionmesh/compute/sources/*
+src/main/java/io/functionmesh/compute/sinks/*

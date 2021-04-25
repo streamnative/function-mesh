@@ -18,12 +18,12 @@
  */
 package io.functionmesh.compute.util;
 
-import io.functionmesh.sinks.models.V1alpha1Sink;
-import io.functionmesh.sinks.models.V1alpha1SinkSpec;
-import io.functionmesh.sinks.models.V1alpha1SinkSpecInput;
-import io.functionmesh.sinks.models.V1alpha1SinkSpecJava;
-import io.functionmesh.sinks.models.V1alpha1SinkSpecPulsar;
-import io.functionmesh.sinks.models.V1alpha1SinkSpecResources;
+import io.functionmesh.compute.sinks.models.V1alpha1Sink;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpec;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInput;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPulsar;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecResources;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.commons.io.FileUtils;
 import org.apache.pulsar.common.functions.Resources;
@@ -120,14 +120,13 @@ public class SinksUtilTest {
 
         V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
         v1alpha1SinkSpec.setClassName(className);
-        v1alpha1SinkSpec.setSourceType(sourceType);
-        v1alpha1SinkSpec.setSinkType(sinkType);
 
         v1alpha1SinkSpec.setReplicas(parallelism);
         v1alpha1SinkSpec.setMaxReplicas(parallelism);
 
         V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
         v1alpha1SinkSpecInput.setTopics(Collections.singletonList(inputTopic));
+        v1alpha1SinkSpecInput.setTypeClassName(sourceType);
         v1alpha1SinkSpec.setInput(v1alpha1SinkSpecInput);
 
         v1alpha1SinkSpec.setSinkConfig(SinksUtil.transformedMapValueToString(configs));
@@ -193,14 +192,13 @@ public class SinksUtilTest {
 
         V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
         v1alpha1SinkSpec.setClassName(className);
-        v1alpha1SinkSpec.setSourceType(sourceType);
-        v1alpha1SinkSpec.setSinkType(sinkType);
 
         v1alpha1SinkSpec.setReplicas(parallelism);
         v1alpha1SinkSpec.setMaxReplicas(parallelism);
 
         V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
         v1alpha1SinkSpecInput.setTopics(Collections.singletonList(inputTopic));
+        v1alpha1SinkSpecInput.setTypeClassName(sourceType);
         v1alpha1SinkSpec.setInput(v1alpha1SinkSpecInput);
 
         v1alpha1SinkSpec.setSinkConfig(SinksUtil.transformedMapValueToString(configs));
