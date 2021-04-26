@@ -18,6 +18,8 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import com.google.common.collect.Maps;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.util.SourcesUtil;
@@ -228,7 +230,12 @@ public class SourcesImpTest {
                         null,
                         uploadedInputStream,
                         sourceConfig);
-
+        Map<String, String> customLabels = Maps.newHashMap();
+        customLabels.put("pulsar-tenant", tenant);
+        customLabels.put("pulsar-namespace", namespace);
+        V1alpha1SourceSpecPod pod = new V1alpha1SourceSpecPod();
+        pod.setLabels(customLabels);
+        v1alpha1Source.getSpec().pod(pod);
         PowerMockito.when(
                 meshWorkerService
                                 .getCustomObjectsApi()
@@ -264,7 +271,7 @@ public class SourcesImpTest {
                     null,
                     null);
         } catch (Exception exception) {
-            Assert.fail("No exception, but got error message:" + exception.getMessage());
+            Assert.fail("No exception, but got error message: " + exception.getMessage());
         }
     }
 

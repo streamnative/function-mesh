@@ -18,6 +18,7 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import com.google.common.collect.Maps;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SourcesUtil;
@@ -103,14 +104,15 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         try {
             V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
                     sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig);
-            KubernetesRuntimeFactoryConfig factoryConfig = RuntimeUtils.getRuntimeFunctionConfig(
-                    worker().getWorkerConfig().getFunctionRuntimeFactoryConfigs(), KubernetesRuntimeFactoryConfig.class);
-            Map<String, String> customLabels = factoryConfig.getCustomLabels();
-            if (customLabels != null) {
-                V1alpha1SourceSpecPod pod = new V1alpha1SourceSpecPod();
-                pod.setLabels(customLabels);
-                v1alpha1Source.getSpec().setPod(pod);
+            Map<String, String> customLabels = Maps.newHashMap();
+            customLabels.put(TENANT_LABEL_CLAIM, tenant);
+            customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
+            V1alpha1SourceSpecPod pod = new V1alpha1SourceSpecPod();
+            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+                customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
             }
+            pod.setLabels(customLabels);
+            v1alpha1Source.getSpec().setPod(pod);
             if (worker().getWorkerConfig().isAuthenticationEnabled()) {
                 Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
                 functionDetailsBuilder.setTenant(tenant);
@@ -120,9 +122,11 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                 worker().getAuthProvider().ifPresent(functionAuthProvider -> {
                     if (clientAuthenticationDataHttps != null) {
                         try {
-                            functionAuthProvider.cacheAuthData(functionDetails, clientAuthenticationDataHttps);
+                            String type = "auth";
+                            KubernetesUtils.createConfigMap(type, tenant, namespace, sourceName,
+                                    worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
                             v1alpha1Source.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
-                                    "auth", sourceConfig.getTenant(), sourceConfig.getNamespace(), sourceName));
+                                    type, sourceConfig.getTenant(), sourceConfig.getNamespace(), sourceName));
                         } catch (Exception e) {
                             log.error("Error caching authentication data for {} {}/{}/{}",
                                     ComponentTypeUtils.toString(componentType), tenant, namespace, sourceName, e);
@@ -135,7 +139,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                 });
             }
             Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(
-                    group, version, KubernetesUtils.getNamespace(),
+                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     v1alpha1Source,
                     null,
@@ -144,7 +148,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                     null);
             executeCall(call, V1alpha1Source.class);
         } catch (Exception e) {
-            log.error("register {}/{}/{} source failed, error message: {}", tenant, namespace, sourceConfig, e);
+            log.error("register {}/{}/{} source failed, error message: {}", tenant, namespace, sourceConfig, e.getStackTrace());
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
@@ -210,7 +214,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
                     group,
                     version,
-                    KubernetesUtils.getNamespace(),
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     sourceName,
                     v1alpha1Source,
@@ -241,7 +245,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         SourceStatus sourceStatus = new SourceStatus();
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
-                    group, version, KubernetesUtils.getNamespace(), plural, componentName, null);
+                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                    plural, componentName, null);
             V1alpha1Source v1alpha1Source = executeCall(call, V1alpha1Source.class);
             SourceStatus.SourceInstanceStatus sourceInstanceStatus = new SourceStatus.SourceInstanceStatus();
             SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData =
@@ -288,7 +293,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
-                    KubernetesUtils.getNamespace(),
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     componentName,
                     null

@@ -18,6 +18,8 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import com.google.common.collect.Maps;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
 import io.functionmesh.compute.util.FunctionsUtil;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.MeshWorkerService;
@@ -38,6 +40,7 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Map;
 import java.util.function.Supplier;
 
 @Slf4j
@@ -99,19 +102,29 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 functionPkgUrl,
                 functionConfig
         );
+        Map<String, String> customLabels = Maps.newHashMap();
+        customLabels.put(TENANT_LABEL_CLAIM, tenant);
+        customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
+        V1alpha1FunctionSpecPod pod = new V1alpha1FunctionSpecPod();
+        if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+            customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
+        }
+        pod.setLabels(customLabels);
+        v1alpha1Function.getSpec().setPod(pod);
         try {
             if (worker().getWorkerConfig().isAuthenticationEnabled()) {
                 Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
                 functionDetailsBuilder.setTenant(tenant);
                 functionDetailsBuilder.setNamespace(namespace);
                 functionDetailsBuilder.setName(functionName);
-                Function.FunctionDetails functionDetails = functionDetailsBuilder.build();
                 worker().getAuthProvider().ifPresent(functionAuthProvider -> {
                     if (clientAuthenticationDataHttps != null) {
                         try {
-                            functionAuthProvider.cacheAuthData(functionDetails, clientAuthenticationDataHttps);
+                            String type = "auth";
+                            KubernetesUtils.createConfigMap(type, tenant, namespace, functionName,
+									worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
                             v1alpha1Function.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
-                                    "auth", functionConfig.getTenant(), functionConfig.getNamespace(), functionName));
+                                    type, functionConfig.getTenant(), functionConfig.getNamespace(), functionName));
                         } catch (Exception e) {
                             log.error("Error caching authentication data for {} {}/{}/{}",
                                     ComponentTypeUtils.toString(componentType), tenant, namespace, functionName, e);
@@ -126,7 +139,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(
                     group,
                     version,
-                    KubernetesUtils.getNamespace(),
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     v1alpha1Function,
                     null,
@@ -158,7 +171,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
-                    KubernetesUtils.getNamespace(),
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     functionName,
                     null
@@ -176,7 +189,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
                     group,
                     version,
-                    KubernetesUtils.getNamespace(),
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     functionName,
                     v1alpha1Function,
@@ -209,7 +222,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
                     group,
                     version,
-                    KubernetesUtils.getNamespace(),
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     componentName,
                     null,
@@ -244,7 +257,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
-                    KubernetesUtils.getNamespace(),
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     componentName,
                     null
@@ -285,7 +298,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
         FunctionStatus functionStatus = new FunctionStatus();
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
-                    group, version, KubernetesUtils.getNamespace(), plural, componentName, null);
+                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                    plural, componentName, null);
             V1alpha1Function v1alpha1Function = executeCall(call, V1alpha1Function.class);
             FunctionStatus.FunctionInstanceStatus functionInstanceStatus = new FunctionStatus.FunctionInstanceStatus();
             FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData =

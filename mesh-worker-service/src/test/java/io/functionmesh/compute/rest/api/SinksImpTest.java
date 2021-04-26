@@ -18,7 +18,9 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import com.google.common.collect.Maps;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
@@ -224,6 +226,12 @@ public class SinksImpTest {
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, uploadedInputStream, sinkConfig);
 
+        Map<String, String> customLabels = Maps.newHashMap();
+        customLabels.put("pulsar-tenant", tenant);
+        customLabels.put("pulsar-namespace", namespace);
+        V1alpha1SinkSpecPod pod = new V1alpha1SinkSpecPod();
+        pod.setLabels(customLabels);
+        v1alpha1Sink.getSpec().pod(pod);
         PowerMockito.when(
                 meshWorkerService
                                 .getCustomObjectsApi()

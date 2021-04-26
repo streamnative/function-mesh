@@ -52,8 +52,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @Slf4j
 public abstract class MeshComponentImpl implements Component<MeshWorkerService> {
 
-    protected final Supplier<MeshWorkerService> meshWorkerServiceSupplier;
-    protected final Function.FunctionDetails.ComponentType componentType;
+    private final Supplier<MeshWorkerService> meshWorkerServiceSupplier;
+    final Function.FunctionDetails.ComponentType componentType;
 
     final String plural = "functions";
 
@@ -63,8 +63,12 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
 
     final String kind = "Function";
 
-    public MeshComponentImpl(Supplier<MeshWorkerService> meshWorkerServiceSupplier,
-                             Function.FunctionDetails.ComponentType componentType) {
+    final String TENANT_LABEL_CLAIM = "pulsar-tenant";
+
+    final String NAMESPACE_LABEL_CLAIM = "pulsar-namespace";
+
+    MeshComponentImpl(Supplier<MeshWorkerService> meshWorkerServiceSupplier,
+                      Function.FunctionDetails.ComponentType componentType) {
         this.meshWorkerServiceSupplier = meshWorkerServiceSupplier;
         // If you want to support function-mesh, this type needs to be changed
         this.componentType = componentType;
@@ -220,14 +224,16 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                                       final AuthenticationDataSource clientAuthenticationDataHttps) {
         List<String> result = new LinkedList<>();
         try {
+            String labelSelectors =  String.format(
+                    "%s:%s,%s:%s", TENANT_LABEL_CLAIM, tenant, NAMESPACE_LABEL_CLAIM, namespace);
             Call call = worker().getCustomObjectsApi().listNamespacedCustomObjectCall(
                     group,
                     version,
-                    KubernetesUtils.getNamespace(), plural,
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()), plural,
                     "false",
                     null,
                     null,
-                    null,
+                    labelSelectors,
                     null,
                     null,
                     null,

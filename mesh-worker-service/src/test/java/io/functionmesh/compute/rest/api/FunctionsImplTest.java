@@ -18,8 +18,11 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import com.google.common.collect.Maps;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
 import io.functionmesh.compute.testdata.Generate;
 import io.functionmesh.compute.util.FunctionsUtil;
 import io.functionmesh.compute.util.KubernetesUtils;
@@ -48,6 +51,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.powermock.api.mockito.PowerMockito.spy;
@@ -275,6 +279,12 @@ public class FunctionsImplTest {
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group,
                 version, functionName, null, functionConfig);
 
+        Map<String, String> customLabels = Maps.newHashMap();
+        customLabels.put("pulsar-tenant", tenant);
+        customLabels.put("pulsar-namespace", namespace);
+        V1alpha1FunctionSpecPod pod = new V1alpha1FunctionSpecPod();
+        pod.setLabels(customLabels);
+        v1alpha1Function.getSpec().pod(pod);
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .createNamespacedCustomObjectCall(
                         group,

@@ -18,7 +18,9 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import com.google.common.collect.Maps;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.MeshWorkerService;
@@ -44,6 +46,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 @Slf4j
@@ -107,6 +110,15 @@ public class SinksImpl extends MeshComponentImpl
                             uploadedInputStream,
                             sinkConfig);
 
+            Map<String, String> customLabels = Maps.newHashMap();
+            customLabels.put(TENANT_LABEL_CLAIM, tenant);
+            customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
+            V1alpha1SinkSpecPod pod = new V1alpha1SinkSpecPod();
+            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+                customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
+            }
+            pod.setLabels(customLabels);
+            v1alpha1Sink.getSpec().setPod(pod);
             if (worker().getWorkerConfig().isAuthenticationEnabled()) {
                 Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
                 functionDetailsBuilder.setTenant(tenant);
@@ -116,9 +128,11 @@ public class SinksImpl extends MeshComponentImpl
                 worker().getAuthProvider().ifPresent(functionAuthProvider -> {
                     if (clientAuthenticationDataHttps != null) {
                         try {
-                            functionAuthProvider.cacheAuthData(functionDetails, clientAuthenticationDataHttps);
+                            String type = "auth";
+                            KubernetesUtils.createConfigMap(type, tenant, namespace, sinkName,
+                                    worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
                             v1alpha1Sink.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
-                                    "auth", sinkConfig.getTenant(), sinkConfig.getNamespace(), sinkName));
+                                    type, sinkConfig.getTenant(), sinkConfig.getNamespace(), sinkName));
                         } catch (Exception e) {
                             log.error("Error caching authentication data for {} {}/{}/{}",
                                     ComponentTypeUtils.toString(componentType), tenant, namespace, sinkName, e);
@@ -135,7 +149,7 @@ public class SinksImpl extends MeshComponentImpl
                             .createNamespacedCustomObjectCall(
                                     group,
                                     version,
-                                    KubernetesUtils.getNamespace(),
+                                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                                     plural,
                                     v1alpha1Sink,
                                     null,
@@ -196,7 +210,7 @@ public class SinksImpl extends MeshComponentImpl
                             .replaceNamespacedCustomObjectCall(
                                     group,
                                     version,
-                                    KubernetesUtils.getNamespace(),
+                                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                                     plural,
                                     sinkName,
                                     v1alpha1Sink,
@@ -247,7 +261,8 @@ public class SinksImpl extends MeshComponentImpl
             Call call =
                     worker().getCustomObjectsApi()
                             .getNamespacedCustomObjectCall(
-                                    group, version, KubernetesUtils.getNamespace(), plural, componentName, null);
+                                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                                    plural, componentName, null);
             V1alpha1Sink v1alpha1Sink = executeCall(call, V1alpha1Sink.class);
             SinkStatus.SinkInstanceStatus sinkInstanceStatus = new SinkStatus.SinkInstanceStatus();
             SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData =
@@ -289,7 +304,8 @@ public class SinksImpl extends MeshComponentImpl
             Call call =
                     worker().getCustomObjectsApi()
                             .getNamespacedCustomObjectCall(
-                                    group, version, KubernetesUtils.getNamespace(), plural, componentName, null);
+                                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                                    plural, componentName, null);
 
             V1alpha1Sink v1alpha1Sink = executeCall(call, V1alpha1Sink.class);
             return SinksUtil.createSinkConfigFromV1alpha1Source(
