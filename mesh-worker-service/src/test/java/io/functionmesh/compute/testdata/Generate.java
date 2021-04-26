@@ -19,7 +19,7 @@
 package io.functionmesh.compute.testdata;
 
 import io.functionmesh.compute.util.FunctionsUtil;
-import io.functionmesh.proxy.models.CustomRuntimeOptions;
+import io.functionmesh.compute.models.CustomRuntimeOptions;
 import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.Resources;
