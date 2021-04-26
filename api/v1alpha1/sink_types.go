@@ -33,8 +33,7 @@ type SinkSpec struct {
 	ClassName    string                      `json:"className,omitempty"`
 	ClusterName  string                      `json:"clusterName,omitempty"`
 	Tenant       string                      `json:"tenant,omitempty"`
-	SourceType   string                      `json:"sourceType,omitempty"`
-	SinkType     string                      `json:"sinkType,omitempty"`
+	SinkType     string                      `json:"sinkType,omitempty"` // refer to `--sink-type` as builtin connector
 	Replicas     *int32                      `json:"replicas,omitempty"`
 	MaxReplicas  *int32                      `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
 	Input        InputConf                   `json:"input,omitempty"`

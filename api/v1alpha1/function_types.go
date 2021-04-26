@@ -33,8 +33,6 @@ type FunctionSpec struct {
 	ClassName    string                      `json:"className,omitempty"`
 	Tenant       string                      `json:"tenant,omitempty"`
 	ClusterName  string                      `json:"clusterName,omitempty"`
-	SourceType   string                      `json:"sourceType,omitempty"`
-	SinkType     string                      `json:"sinkType,omitempty"`
 	Replicas     *int32                      `json:"replicas,omitempty"`
 	MaxReplicas  *int32                      `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
 	Input        InputConf                   `json:"input,omitempty"`

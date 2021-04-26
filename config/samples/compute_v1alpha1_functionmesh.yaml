@@ -6,16 +6,16 @@ spec:
   functions:
     - name: ex1
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
-      sourceType: java.lang.String
-      sinkType: java.lang.String
       replicas: 1
       maxReplicas: 1
       logTopic: persistent://public/default/logging-function-log
       input:
         topics:
           - persistent://public/default/functionmesh-input-topic
+        typeClassName: java.lang.String
       output:
         topic: persistent://public/default/mid-topic
+        typeClassName: java.lang.String
       pulsar:
         pulsarConfig: "mesh-test-pulsar"
       java:
@@ -34,16 +34,16 @@ spec:
       clusterName: test-pulsar
     - name: ex2
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
-      sourceType: java.lang.String
-      sinkType: java.lang.String
       replicas: 1
       maxReplicas: 1
       logTopic: persistent://public/default/logging-function-logs
       input:
         topics:
           - persistent://public/default/mid-topic
+        typeClassName: java.lang.String
       output:
         topic: persistent://public/default/functionmesh-output-topic
+        typeClassName: java.lang.String
       pulsar:
         pulsarConfig: "mesh-test-pulsar"
       java:

@@ -111,7 +111,7 @@ func generateFunctionInputSpec(function *v1alpha1.Function) *proto.SourceSpec {
 	return &proto.SourceSpec{
 		ClassName:                    "",
 		Configs:                      "",
-		TypeClassName:                function.Spec.SourceType,
+		TypeClassName:                function.Spec.Input.TypeClassName,
 		SubscriptionType:             proto.SubscriptionType_SHARED,
 		InputSpecs:                   inputSpecs,
 		TimeoutMs:                    uint64(function.Spec.Timeout),
@@ -127,7 +127,7 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 	sinkSpec := &proto.SinkSpec{
 		ClassName:                    "",
 		Configs:                      "",
-		TypeClassName:                function.Spec.SinkType,
+		TypeClassName:                function.Spec.Output.TypeClassName,
 		Topic:                        function.Spec.Output.Topic,
 		ProducerSpec:                 nil,
 		SerDeClassName:               function.Spec.Output.SinkSerdeClassName,
@@ -151,6 +151,7 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 			MaxPendingMessagesAcrossPartitions: function.Spec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions,
 			UseThreadLocalProducers:            function.Spec.Output.ProducerConf.UseThreadLocalProducers,
 			CryptoSpec:                         generateCryptoSpec(function.Spec.Output.ProducerConf.CryptoConfig),
+			BatchBuilder:                       function.Spec.Output.ProducerConf.BatchBuilder,
 		}
 
 		sinkSpec.ProducerSpec = producerConfig
@@ -185,7 +186,7 @@ func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
 	return &proto.SourceSpec{
 		ClassName:     source.Spec.ClassName,
 		Configs:       string(configs), // TODO handle batch source
-		TypeClassName: source.Spec.SourceType,
+		TypeClassName: source.Spec.Output.TypeClassName,
 	}
 }
 
@@ -201,10 +202,11 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 			MaxPendingMessagesAcrossPartitions: source.Spec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions,
 			UseThreadLocalProducers:            source.Spec.Output.ProducerConf.UseThreadLocalProducers,
 			CryptoSpec:                         cryptoSpec,
+			BatchBuilder:                       source.Spec.Output.ProducerConf.BatchBuilder,
 		}
 	}
 	return &proto.SinkSpec{
-		TypeClassName:  source.Spec.SinkType,
+		TypeClassName:  source.Spec.Output.TypeClassName,
 		Topic:          source.Spec.Output.Topic,
 		ProducerSpec:   &producerSpec,
 		SerDeClassName: source.Spec.Output.SinkSerdeClassName,
@@ -237,7 +239,7 @@ func generateSinkInputSpec(sink *v1alpha1.Sink) *proto.SourceSpec {
 	inputSpecs := generateInputSpec(sink.Spec.Input)
 
 	return &proto.SourceSpec{
-		TypeClassName:                sink.Spec.SourceType,
+		TypeClassName:                sink.Spec.Input.TypeClassName,
 		SubscriptionType:             getSubscriptionType(sink.Spec.RetainOrdering, sink.Spec.ProcessingGuarantee),
 		InputSpecs:                   inputSpecs,
 		TimeoutMs:                    uint64(sink.Spec.Timeout),
@@ -261,7 +263,7 @@ func generateSinkOutputSpec(sink *v1alpha1.Sink) *proto.SinkSpec {
 	return &proto.SinkSpec{
 		ClassName:     sink.Spec.ClassName,
 		Configs:       string(configs),
-		TypeClassName: sink.Spec.SinkType,
+		TypeClassName: sink.Spec.Input.TypeClassName,
 	}
 }
 

@@ -76,6 +76,8 @@ spec:
                   type: object
                 producerConf:
                   properties:
+                    batchBuilder:
+                      type: string
                     cryptoConfig:
                       properties:
                         consumerCryptoFailureAction:
@@ -121,6 +123,8 @@ spec:
                 sinkSerdeClassName:
                   type: string
                 topic:
+                  type: string
+                typeClassName:
                   type: string
               type: object
             pod:
@@ -2822,8 +2826,6 @@ spec:
                     type: string
                 type: object
               type: object
-            sinkType:
-              type: string
             sourceConfig:
               additionalProperties:
                 type: string

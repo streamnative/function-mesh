@@ -138,6 +138,8 @@ spec:
                         items:
                           type: string
                         type: array
+                      typeClassName:
+                        type: string
                     type: object
                   java:
                     properties:
@@ -170,6 +172,8 @@ spec:
                         type: object
                       producerConf:
                         properties:
+                          batchBuilder:
+                            type: string
                           cryptoConfig:
                             properties:
                               consumerCryptoFailureAction:
@@ -215,6 +219,8 @@ spec:
                       sinkSerdeClassName:
                         type: string
                       topic:
+                        type: string
+                      typeClassName:
                         type: string
                     type: object
                   pod:
@@ -4646,10 +4652,6 @@ spec:
                           type: string
                       type: object
                     type: object
-                  sinkType:
-                    type: string
-                  sourceType:
-                    type: string
                   subscriptionName:
                     type: string
                   subscriptionPosition:
@@ -4798,6 +4800,8 @@ spec:
                         items:
                           type: string
                         type: array
+                      typeClassName:
+                        type: string
                     type: object
                   java:
                     properties:
@@ -9255,8 +9259,6 @@ spec:
                     type: object
                   sinkType:
                     type: string
-                  sourceType:
-                    type: string
                   subscriptionName:
                     type: string
                   subscriptionPosition:
@@ -9355,6 +9357,8 @@ spec:
                         type: object
                       producerConf:
                         properties:
+                          batchBuilder:
+                            type: string
                           cryptoConfig:
                             properties:
                               consumerCryptoFailureAction:
@@ -9400,6 +9404,8 @@ spec:
                       sinkSerdeClassName:
                         type: string
                       topic:
+                        type: string
+                      typeClassName:
                         type: string
                     type: object
                   pod:
@@ -13827,8 +13833,6 @@ spec:
                           type: string
                       type: object
                     type: object
-                  sinkType:
-                    type: string
                   sourceConfig:
                     additionalProperties:
                       type: string
@@ -13944,9 +13948,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: functions.cloud.streamnative.io
+  name: functions.compute.functionmesh.io
 spec:
-  group: cloud.streamnative.io
+  group: compute.functionmesh.io
   names:
     kind: Function
     listKind: FunctionList
@@ -14078,6 +14082,8 @@ spec:
                   items:
                     type: string
                   type: array
+                typeClassName:
+                  type: string
               type: object
             java:
               properties:
@@ -14109,6 +14115,8 @@ spec:
                   type: object
                 producerConf:
                   properties:
+                    batchBuilder:
+                      type: string
                     cryptoConfig:
                       properties:
                         consumerCryptoFailureAction:
@@ -14154,6 +14162,8 @@ spec:
                 sinkSerdeClassName:
                   type: string
                 topic:
+                  type: string
+                typeClassName:
                   type: string
               type: object
             pod:
@@ -14757,137 +14767,6 @@ spec:
                             type: object
                           type: array
                       type: object
-                    type: array
-                type: object
-              type: array
-          type: object
-        status:
-          description: FunctionMeshStatus defines the observed state of FunctionMesh
-          properties:
-            functionConditions:
-              additionalProperties:
-                description: The `Status` of a given `Condition` and the `Action`
-                  needed to reach the `Status`
-                properties:
-                  action:
-                    type: string
-                  condition:
-                    type: string
-                  status:
-                    type: string
-                type: object
-              type: object
-            sinkConditions:
-              additionalProperties:
-                description: The `Status` of a given `Condition` and the `Action`
-                  needed to reach the `Status`
-                properties:
-                  action:
-                    type: string
-                  condition:
-                    type: string
-                  status:
-                    type: string
-                type: object
-              type: object
-            sourceConditions:
-              additionalProperties:
-                description: The `Status` of a given `Condition` and the `Action`
-                  needed to reach the `Status`
-                properties:
-                  action:
-                    type: string
-                  condition:
-                    type: string
-                  status:
-                    type: string
-                type: object
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "make" to regenerate code after modifying
-                this file'
-              type: object
-          type: object
-      type: object
-  version: v1alpha1
-  versions:
-  - name: v1alpha1
-    served: true
-    storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.3.0
-  creationTimestamp: null
-  name: functions.compute.functionmesh.io
-spec:
-  group: compute.functionmesh.io
-  names:
-    kind: Function
-    listKind: FunctionList
-    plural: functions
-    singular: function
-  scope: Namespaced
-  subresources:
-    scale:
-      labelSelectorPath: .status.selector
-      specReplicasPath: .spec.replicas
-      statusReplicasPath: .status.replicas
-    status: {}
-  validation:
-    openAPIV3Schema:
-      description: Function is the Schema for the functions API
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: FunctionSpec defines the desired state of Function
-          properties:
-            autoAck:
-              type: boolean
-            className:
-              type: string
-            cleanupSubscription:
-              type: boolean
-            clusterName:
-              type: string
-            deadLetterTopic:
-              type: string
-            forwardSourceMessageProperty:
-              type: boolean
-            funcConfig:
-              additionalProperties:
-                type: string
-              type: object
-            golang:
-              properties:
-                go:
-                  type: string
-                goLocation:
-                  type: string
-              type: object
-            input:
-              properties:
-                customSchemaSources:
-                  additionalProperties:
-                    type: string
                   type: object
                 annotations:
                   additionalProperties:
@@ -18473,10 +18352,6 @@ spec:
                     type: string
                 type: object
               type: object
-            sinkType:
-              type: string
-            sourceType:
-              type: string
             subscriptionName:
               type: string
             subscriptionPosition:
@@ -18572,9 +18447,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: sinks.cloud.streamnative.io
+  name: sinks.compute.functionmesh.io
 spec:
-  group: cloud.streamnative.io
+  group: compute.functionmesh.io
   names:
     kind: Sink
     listKind: SinkList
@@ -18700,6 +18575,8 @@ spec:
                   items:
                     type: string
                   type: array
+                typeClassName:
+                  type: string
               type: object
             java:
               properties:
@@ -19324,267 +19201,6 @@ spec:
                             type: object
                           type: array
                       type: object
-                          volumeName:
-                            description: VolumeName is the human-readable name of
-                              the StorageOS volume.  Volume names are only unique
-                              within a namespace.
-                            type: string
-                          volumeNamespace:
-                            description: VolumeNamespace specifies the scope of the
-                              volume within StorageOS.  If no namespace is specified
-                              then the Pod's namespace will be used.  This allows
-                              the Kubernetes name scoping to be mirrored within StorageOS
-                              for tighter integration. Set VolumeName to any name
-                              to override the default behaviour. Set to "default"
-                              if you are not using namespaces within StorageOS. Namespaces
-                              that do not pre-exist within StorageOS will be created.
-                            type: string
-                        type: object
-                      vsphereVolume:
-                        description: VsphereVolume represents a vSphere volume attached
-                          and mounted on kubelets host machine
-                        properties:
-                          fsType:
-                            description: Filesystem type to mount. Must be a filesystem
-                              type supported by the host operating system. Ex. "ext4",
-                              "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
-                            type: string
-                          storagePolicyID:
-                            description: Storage Policy Based Management (SPBM) profile
-                              ID associated with the StoragePolicyName.
-                            type: string
-                          storagePolicyName:
-                            description: Storage Policy Based Management (SPBM) profile
-                              name.
-                            type: string
-                          volumePath:
-                            description: Path that identifies vSphere volume vmdk
-                            type: string
-                        required:
-                        - volumePath
-                        type: object
-                    required:
-                    - name
-                    type: object
-                  type: array
-              type: object
-            processingGuarantee:
-              type: string
-            pulsar:
-              properties:
-                authConfig:
-                  type: string
-                pulsarConfig:
-                  description: The config map need to contain the following fields
-                    webServiceURL brokerServiceURL
-                  type: string
-              type: object
-            python:
-              properties:
-                py:
-                  type: string
-                pyLocation:
-                  type: string
-              type: object
-            replicas:
-              format: int32
-              type: integer
-            resources:
-              description: ResourceRequirements describes the compute resource requirements.
-              properties:
-                limits:
-                  additionalProperties:
-                    anyOf:
-                    - type: integer
-                    - type: string
-                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                    x-kubernetes-int-or-string: true
-                  description: 'Limits describes the maximum amount of compute resources
-                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                  type: object
-                requests:
-                  additionalProperties:
-                    anyOf:
-                    - type: integer
-                    - type: string
-                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                    x-kubernetes-int-or-string: true
-                  description: 'Requests describes the minimum amount of compute resources
-                    required. If Requests is omitted for a container, it defaults
-                    to Limits if that is explicitly specified, otherwise to an implementation-defined
-                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                  type: object
-              type: object
-            retainKeyOrdering:
-              type: boolean
-            retainOrdering:
-              type: boolean
-            runtimeFlags:
-              type: string
-            secretsMap:
-              additionalProperties:
-                properties:
-                  key:
-                    type: string
-                  path:
-                    type: string
-                type: object
-              type: object
-            sinkType:
-              type: string
-            sourceType:
-              type: string
-            subscriptionName:
-              type: string
-            subscriptionPosition:
-              type: string
-            tenant:
-              type: string
-            timeout:
-              format: int32
-              type: integer
-            volumeMounts:
-              items:
-                description: VolumeMount describes a mounting of a Volume within a
-                  container.
-                properties:
-                  mountPath:
-                    description: Path within the container at which the volume should
-                      be mounted.  Must not contain ':'.
-                    type: string
-                  mountPropagation:
-                    description: mountPropagation determines how mounts are propagated
-                      from the host to container and the other way around. When not
-                      set, MountPropagationNone is used. This field is beta in 1.10.
-                    type: string
-                  name:
-                    description: This must match the Name of a Volume.
-                    type: string
-                  readOnly:
-                    description: Mounted read-only if true, read-write otherwise (false
-                      or unspecified). Defaults to false.
-                    type: boolean
-                  subPath:
-                    description: Path within the volume from which the container's
-                      volume should be mounted. Defaults to "" (volume's root).
-                    type: string
-                  subPathExpr:
-                    description: Expanded path within the volume from which the container's
-                      volume should be mounted. Behaves similarly to SubPath but environment
-                      variable references $(VAR_NAME) are expanded using the container's
-                      environment. Defaults to "" (volume's root). SubPathExpr and
-                      SubPath are mutually exclusive.
-                    type: string
-                required:
-                - mountPath
-                - name
-                type: object
-              type: array
-          type: object
-        status:
-          description: FunctionStatus defines the observed state of Function
-          properties:
-            conditions:
-              additionalProperties:
-                description: The `Status` of a given `Condition` and the `Action`
-                  needed to reach the `Status`
-                properties:
-                  action:
-                    type: string
-                  condition:
-                    type: string
-                  status:
-                    type: string
-                type: object
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "make" to regenerate code after modifying
-                this file'
-              type: object
-            replicas:
-              format: int32
-              type: integer
-            selector:
-              type: string
-          required:
-          - conditions
-          - replicas
-          - selector
-          type: object
-      type: object
-  version: v1alpha1
-  versions:
-  - name: v1alpha1
-    served: true
-    storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.3.0
-  creationTimestamp: null
-  name: sinks.compute.functionmesh.io
-spec:
-  group: compute.functionmesh.io
-  names:
-    kind: Sink
-    listKind: SinkList
-    plural: sinks
-    singular: sink
-  scope: Namespaced
-  subresources:
-    scale:
-      labelSelectorPath: .status.selector
-      specReplicasPath: .spec.replicas
-      statusReplicasPath: .status.replicas
-    status: {}
-  validation:
-    openAPIV3Schema:
-      description: Topic is the Schema for the sinks API
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: SinkSpec defines the desired state of Topic
-          properties:
-            autoAck:
-              type: boolean
-            className:
-              type: string
-            cleanupSubscription:
-              type: boolean
-            clusterName:
-              type: string
-            deadLetterTopic:
-              type: string
-            golang:
-              properties:
-                go:
-                  type: string
-                goLocation:
-                  type: string
-              type: object
-            input:
-              properties:
-                customSchemaSources:
-                  additionalProperties:
-                    type: string
                   type: object
                 annotations:
                   additionalProperties:
@@ -23174,8 +22790,6 @@ spec:
               type: object
             sinkType:
               type: string
-            sourceType:
-              type: string
             subscriptionName:
               type: string
             subscriptionPosition:
@@ -23348,6 +22962,8 @@ spec:
                   type: object
                 producerConf:
                   properties:
+                    batchBuilder:
+                      type: string
                     cryptoConfig:
                       properties:
                         consumerCryptoFailureAction:
@@ -23393,6 +23009,8 @@ spec:
                 sinkSerdeClassName:
                   type: string
                 topic:
+                  type: string
+                typeClassName:
                   type: string
               type: object
             pod:
@@ -27577,8 +27195,6 @@ spec:
                     type: string
                 type: object
               type: object
-            sinkType:
-              type: string
             sourceConfig:
               additionalProperties:
                 type: string
