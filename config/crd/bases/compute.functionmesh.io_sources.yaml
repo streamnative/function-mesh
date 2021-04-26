@@ -124,6 +124,8 @@ spec:
                   type: string
                 topic:
                   type: string
+                typeClassName:
+                  type: string
               type: object
             pod:
               properties:
@@ -2824,8 +2826,6 @@ spec:
                     type: string
                 type: object
               type: object
-            sinkType:
-              type: string
             sourceConfig:
               additionalProperties:
                 type: string

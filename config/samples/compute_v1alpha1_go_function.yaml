@@ -4,8 +4,6 @@ metadata:
   name: go-function-sample
   namespace: default
 spec:
-  sourceType: java.lang.String
-  sinkType: java.lang.String
   forwardSourceMessageProperty: true
   MaxPendingAsyncRequests: 1000
   replicas: 1

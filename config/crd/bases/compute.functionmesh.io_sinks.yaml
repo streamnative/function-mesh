@@ -128,6 +128,8 @@ spec:
                   items:
                     type: string
                   type: array
+                typeClassName:
+                  type: string
               type: object
             java:
               properties:
@@ -2856,8 +2858,6 @@ spec:
                 type: string
               type: object
             sinkType:
-              type: string
-            sourceType:
               type: string
             subscriptionName:
               type: string
