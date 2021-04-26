@@ -1,3 +1,0 @@
-name: function-mesh-java-proxy
-description: Function Mesh Java Proxy
-handlerClass: io.functionmesh.proxy.FunctionMeshProxyService

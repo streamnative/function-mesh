@@ -91,21 +91,21 @@ jobs:
           password: ${{ secrets.IMAGE_GITHUB_TOKEN }}
 
       - name: Auto generate crd model 
-        run: cd java-proxy && ./tool/generate-crd.sh
+        run: cd mesh-worker-service && ./tool/generate-crd.sh
 
       - name: Format license
-        run: cd java-proxy && mvn license:format
+        run: cd mesh-worker-service && mvn license:format
 
-      - name: Run mesh proxy unit test
+      - name: Run mesh worker service unit test
         run: |
-          cd java-proxy
+          cd mesh-worker-service
           mvn clean install
 
-      - name: Upload java proxy nar package to release
+      - name: Upload mesh worker service nar package to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: java-proxy/target/java-proxy-${{ github.event.release.tag_name }}.nar
-          asset_name: java-proxy-${{ github.event.release.tag_name }}.nar
+          file: mesh-worker-service/target/mesh-worker-service-${{ github.event.release.tag_name }}.nar
+          asset_name: mesh-worker-service-${{ github.event.release.tag_name }}.nar
           tag: ${{ github.ref }}
           overwrite: true
