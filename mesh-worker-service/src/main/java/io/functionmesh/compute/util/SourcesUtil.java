@@ -27,7 +27,7 @@ import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerCo
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerConfCryptoConfig;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecResources;
-import io.functionmesh.proxy.models.CustomRuntimeOptions;
+import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
