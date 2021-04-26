@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.functionmesh.proxy.models;
+package io.functionmesh.compute.models;
 
 import lombok.Data;
 
