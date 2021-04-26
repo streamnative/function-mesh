@@ -224,8 +224,8 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                                       final AuthenticationDataSource clientAuthenticationDataHttps) {
         List<String> result = new LinkedList<>();
         try {
-            String labelSelectors =  String.format(
-                    "%s:%s,%s:%s", TENANT_LABEL_CLAIM, tenant, NAMESPACE_LABEL_CLAIM, namespace);
+//            String labelSelectors =  String.format(
+//                    "%s:%s,%s:%s", TENANT_LABEL_CLAIM, tenant, NAMESPACE_LABEL_CLAIM, namespace);
             Call call = worker().getCustomObjectsApi().listNamespacedCustomObjectCall(
                     group,
                     version,
@@ -233,7 +233,7 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                     "false",
                     null,
                     null,
-                    labelSelectors,
+                    null,
                     null,
                     null,
                     null,
