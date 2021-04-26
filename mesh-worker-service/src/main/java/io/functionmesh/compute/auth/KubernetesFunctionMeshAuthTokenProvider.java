@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.functionmesh.proxy.auth;
+package io.functionmesh.compute.auth;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.functionmesh.proxy.util.KubernetesUtils;
+import io.functionmesh.compute.util.KubernetesUtils;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -43,7 +43,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.pulsar.broker.authentication.AuthenticationProviderToken.getToken;
 
 @Slf4j
