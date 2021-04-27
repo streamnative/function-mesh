@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,6 +32,8 @@ import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPulsar;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPython;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecResources;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecResources;
+import io.kubernetes.client.custom.Quantity;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.ConsumerConfig;
@@ -202,25 +204,26 @@ public class FunctionsUtil {
         v1alpha1FunctionSpec.setLogTopic(functionConfig.getLogTopic());
 
         V1alpha1FunctionSpecResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecResources();
-        if (functionConfig.getResources() == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "resources is not provided");
-        }
-        Double cpu = functionConfig.getResources().getCpu();
-        if (functionConfig.getResources().getCpu() == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "resources.cpu is not provided");
-        }
-        Long memory = functionConfig.getResources().getRam();
-        if (functionConfig.getResources().getRam() == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "resources.ram is not provided");
-        }
-        String cpuValue = cpu.toString();
-        String memoryValue = memory.toString();
+
+        double cpu = functionConfig.getResources() != null &&
+                functionConfig.getResources().getCpu() != 0 ? functionConfig.getResources().getCpu() : 1;
+        long ramRequest = functionConfig.getResources() != null &&
+                functionConfig.getResources().getRam() != 0 ? functionConfig.getResources().getRam() : 1073741824;
+
         Map<String, String> limits = new HashMap<>();
-        limits.put(cpuKey, cpuValue);
-        limits.put(memoryKey, memoryValue);
+        Map<String, String> requests = new HashMap<>();
+
+        long padding = Math.round(ramRequest * (10.0 / 100.0)); // percentMemoryPadding is 0.1
+        long ramWithPadding = ramRequest + padding;
+
+        limits.put(cpuKey, Quantity.fromString(Double.toString(cpu)).toSuffixedString());
+        limits.put(memoryKey, Quantity.fromString(Long.toString(ramWithPadding)).toSuffixedString());
+
+        requests.put(cpuKey, Quantity.fromString(Double.toString(cpu)).toSuffixedString());
+        requests.put(memoryKey, Quantity.fromString(Long.toString(ramRequest)).toSuffixedString());
 
         v1alpha1FunctionSpecResources.setLimits(limits);
-        v1alpha1FunctionSpecResources.setRequests(limits);
+        v1alpha1FunctionSpecResources.setRequests(requests);
         v1alpha1FunctionSpec.setResources(v1alpha1FunctionSpecResources);
 
         V1alpha1FunctionSpecPulsar v1alpha1FunctionSpecPulsar = new V1alpha1FunctionSpecPulsar();

@@ -23,6 +23,7 @@ import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.Resources;
+import org.apache.pulsar.common.io.SinkConfig;
 
 import java.util.Collections;
 
@@ -54,9 +55,50 @@ public class Generate {
         return functionConfig;
     }
 
-    public static V1alpha1Function CreateV1alpha1Function(String tenant, String namespace, String functionName) {
+    public static SinkConfig CreateSinkConfig(String tenant, String namespace, String functionName) {
+        SinkConfig sinkConfig = new SinkConfig();
+        sinkConfig.setName(functionName);
+        sinkConfig.setTenant(tenant);
+        sinkConfig.setNamespace(namespace);
+        sinkConfig.setClassName("org.apache.pulsar.io.elasticsearch.ElasticSearchSink");
+        sinkConfig.setInputs(Collections.singletonList("persistent://public/default/input"));
+        sinkConfig.setParallelism(1);
+        sinkConfig.setCleanupSubscription(true);
+        Resources resources = new Resources();
+        resources.setCpu(1.0);
+        resources.setRam(102400L);
+        sinkConfig.setResources(resources);
+        CustomRuntimeOptions customRuntimeOptions = new CustomRuntimeOptions();
+        customRuntimeOptions.setClusterName(TEST_CLUSTER_NAME);
+        customRuntimeOptions.setInputTypeClassName("[B");
+        String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
+        sinkConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
+        sinkConfig.setArchive("connectors/pulsar-io-elastic-search-2.7.0-rc-pm-3.nar");
+        sinkConfig.setAutoAck(true);
+        return sinkConfig;
+    }
 
-        return null;
+    public static SinkConfig CreateSinkConfigBuiltin(String tenant, String namespace, String functionName) {
+        SinkConfig sinkConfig = new SinkConfig();
+        sinkConfig.setName(functionName);
+        sinkConfig.setTenant(tenant);
+        sinkConfig.setNamespace(namespace);
+        sinkConfig.setClassName("org.apache.pulsar.io.elasticsearch.ElasticSearchSink");
+        sinkConfig.setInputs(Collections.singletonList("persistent://public/default/input"));
+        sinkConfig.setParallelism(1);
+        sinkConfig.setCleanupSubscription(true);
+        Resources resources = new Resources();
+        resources.setCpu(1.0);
+        resources.setRam(102400L);
+        sinkConfig.setResources(resources);
+        CustomRuntimeOptions customRuntimeOptions = new CustomRuntimeOptions();
+        customRuntimeOptions.setClusterName(TEST_CLUSTER_NAME);
+        customRuntimeOptions.setInputTypeClassName("[B");
+        String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
+        sinkConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
+        sinkConfig.setArchive("builtin://elastic-search");
+        sinkConfig.setAutoAck(true);
+        return sinkConfig;
     }
 
 }

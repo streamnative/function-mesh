@@ -100,6 +100,8 @@ public class SinksUtil {
             location = sinkPkgUrl;
         }
         String archive = sinkConfig.getArchive();
+        SinkConfigUtils.ExtractedSinkDetails extractedSinkDetails =
+                new SinkConfigUtils.ExtractedSinkDetails("", customRuntimeOptions.getInputTypeClassName());
         V1alpha1SinkSpecJava v1alpha1SinkSpecJava = new V1alpha1SinkSpecJava();
         if (connectorsManager != null && archive.startsWith(BUILTIN)) {
             String connectorType = archive.replaceFirst("^builtin://", "");
@@ -108,6 +110,7 @@ public class SinksUtil {
                 v1alpha1SinkSpec.setImage(definition.toFullImageURL());
                 if (definition.getSinkClass() != null && v1alpha1SinkSpec.getClassName() == null) {
                     v1alpha1SinkSpec.setClassName(definition.getSinkClass());
+                    extractedSinkDetails.setSinkClassName(definition.getSinkClass());
                 }
                 v1alpha1SinkSpecJava.setJar(definition.getJar());
                 v1alpha1SinkSpecJava.setJarLocation("");
@@ -117,17 +120,15 @@ public class SinksUtil {
                 throw new RestException(Response.Status.BAD_REQUEST, String.format("connectorType %s is not supported yet", connectorType));
             }
         } else {
-            Path path = Paths.get(sinkConfig.getArchive());
-            String jar = path.getFileName().toString();
-
-            v1alpha1SinkSpecJava.setJar(jar);
+            v1alpha1SinkSpecJava.setJar(sinkConfig.getArchive());
             v1alpha1SinkSpecJava.setJarLocation(location);
             v1alpha1SinkSpec.setJava(v1alpha1SinkSpecJava);
+            extractedSinkDetails.setSinkClassName(sinkConfig.getClassName());
         }
 
         Function.FunctionDetails functionDetails = null;
         try {
-            functionDetails = SinkConfigUtils.convert(sinkConfig, null);
+            functionDetails = SinkConfigUtils.convert(sinkConfig, extractedSinkDetails);
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new RestException(Response.Status.BAD_REQUEST, "functionConfig cannot be parsed into functionDetails");
@@ -187,9 +188,9 @@ public class SinksUtil {
         v1alpha1SinkSpec.setReplicas(functionDetails.getParallelism());
         v1alpha1SinkSpec.setMaxReplicas(functionDetails.getParallelism());
 
-        double cpu = sinkConfig.getResources() == null &&
+        double cpu = sinkConfig.getResources() != null &&
                 sinkConfig.getResources().getCpu() != 0 ? sinkConfig.getResources().getCpu() : 1;
-        long ramRequest = sinkConfig.getResources() == null &&
+        long ramRequest = sinkConfig.getResources() != null &&
                 sinkConfig.getResources().getRam() != 0 ? sinkConfig.getResources().getRam() : 1073741824;
 
         Map<String, String> limits = new HashMap<>();
@@ -198,10 +199,10 @@ public class SinksUtil {
         long padding = Math.round(ramRequest * (10.0 / 100.0)); // percentMemoryPadding is 0.1
         long ramWithPadding = ramRequest + padding;
 
-        limits.put(cpuKey, Quantity.fromString(Double.toString(roundDecimal(cpu, 3))).toSuffixedString());
+        limits.put(cpuKey, Quantity.fromString(Double.toString(cpu)).toSuffixedString());
         limits.put(memoryKey, Quantity.fromString(Long.toString(ramWithPadding)).toSuffixedString());
 
-        requests.put(cpuKey, Quantity.fromString(Double.toString(roundDecimal(cpu, 3))).toSuffixedString());
+        requests.put(cpuKey, Quantity.fromString(Double.toString(cpu)).toSuffixedString());
         requests.put(memoryKey, Quantity.fromString(Long.toString(ramRequest)).toSuffixedString());
 
         V1alpha1SinkSpecResources v1alpha1SinkSpecResources = new V1alpha1SinkSpecResources();
@@ -302,6 +303,7 @@ public class SinksUtil {
         }
 
         sinkConfig.setInputSpecs(consumerConfigMap);
+        sinkConfig.setInputs(consumerConfigMap.keySet());
 
         if (Strings.isNotEmpty(v1alpha1SinkSpec.getSubscriptionName())) {
             sinkConfig.setSourceSubscriptionName(v1alpha1SinkSpec.getSubscriptionName());
@@ -333,9 +335,11 @@ public class SinksUtil {
         // TODO: secretsMap
 
         Resources resources = new Resources();
-        Map<String, String> functionResource = v1alpha1SinkSpec.getResources().getLimits();
-        resources.setCpu(Double.parseDouble(functionResource.get(cpuKey)));
-        resources.setRam(Long.parseLong(functionResource.get(memoryKey)));
+        Map<String, String> sinkResources = v1alpha1SinkSpec.getResources().getRequests();
+        Quantity cpuQuantity = Quantity.fromString(sinkResources.get(cpuKey));
+        Quantity memoryQuantity = Quantity.fromString(sinkResources.get(memoryKey));
+        resources.setCpu(cpuQuantity.getNumber().doubleValue());
+        resources.setRam(memoryQuantity.getNumber().longValue());
         sinkConfig.setResources(resources);
 
         String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);

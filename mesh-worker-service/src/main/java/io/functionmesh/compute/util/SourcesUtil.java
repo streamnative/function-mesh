@@ -371,8 +371,8 @@ public class SourcesUtil {
         v1alpha1SourceSpec.setReplicas(functionDetails.getParallelism());
         v1alpha1SourceSpec.setMaxReplicas(functionDetails.getParallelism());
 
-        double cpu = sourceConfig.getResources() == null && sourceConfig.getResources().getCpu() != 0 ? sourceConfig.getResources().getCpu() : 1;
-        long ramRequest = sourceConfig.getResources() == null && sourceConfig.getResources().getRam() != 0 ? sourceConfig.getResources().getRam() : 1073741824;
+        double cpu = sourceConfig.getResources() != null && sourceConfig.getResources().getCpu() != 0 ? sourceConfig.getResources().getCpu() : 1;
+        long ramRequest = sourceConfig.getResources() != null && sourceConfig.getResources().getRam() != 0 ? sourceConfig.getResources().getRam() : 1073741824;
 
         Map<String, String> limits = new HashMap<>();
         Map<String, String> requests = new HashMap<>();
@@ -380,10 +380,10 @@ public class SourcesUtil {
         long padding = Math.round(ramRequest * (10.0 / 100.0)); // percentMemoryPadding is 0.1
         long ramWithPadding = ramRequest + padding;
 
-        limits.put(cpuKey, Quantity.fromString(Double.toString(roundDecimal(cpu, 3))).toSuffixedString());
+        limits.put(cpuKey, Quantity.fromString(Double.toString(cpu)).toSuffixedString());
         limits.put(memoryKey, Quantity.fromString(Long.toString(ramWithPadding)).toSuffixedString());
 
-        requests.put(cpuKey, Quantity.fromString(Double.toString(roundDecimal(cpu, 3))).toSuffixedString());
+        requests.put(cpuKey, Quantity.fromString(Double.toString(cpu)).toSuffixedString());
         requests.put(memoryKey, Quantity.fromString(Long.toString(ramRequest)).toSuffixedString());
 
         V1alpha1SourceSpecResources v1alpha1SourceSpecResources = new V1alpha1SourceSpecResources();
@@ -464,9 +464,11 @@ public class SourcesUtil {
         // TODO: secretsMap
 
         Resources resources = new Resources();
-        Map<String, String> functionResource = v1alpha1SourceSpec.getResources().getLimits();
-        resources.setCpu(Double.parseDouble(functionResource.get(cpuKey)));
-        resources.setRam(Long.parseLong(functionResource.get(memoryKey)));
+        Map<String, String> sourceResource = v1alpha1SourceSpec.getResources().getLimits();
+        Quantity cpuQuantity = Quantity.fromString(sourceResource.get(cpuKey));
+        Quantity memoryQuantity = Quantity.fromString(sourceResource.get(memoryKey));
+        resources.setCpu(cpuQuantity.getNumber().doubleValue());
+        resources.setRam(memoryQuantity.getNumber().longValue());
         sourceConfig.setResources(resources);
 
         String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
