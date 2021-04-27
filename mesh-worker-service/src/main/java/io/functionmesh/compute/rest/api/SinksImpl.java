@@ -107,7 +107,7 @@ public class SinksImpl extends MeshComponentImpl
             );
             executeCall(call, null);
         } catch (Exception e) {
-            log.error("deregister {}/{}/{} sink failed, error message: {}", tenant, namespace, componentName, e);
+            log.error("deregister {}/{}/{} {} failed, error message: {}", tenant, namespace, componentName, plural, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }

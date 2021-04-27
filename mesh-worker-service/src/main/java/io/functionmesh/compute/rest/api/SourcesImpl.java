@@ -259,7 +259,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             V1alpha1Source v1alpha1Source = executeCall(call, V1alpha1Source.class);
             return SourcesUtil.createSourceConfigFromV1alpha1Source(tenant, namespace, componentName, v1alpha1Source);
         } catch (Exception e) {
-            log.error("get {}/{}/{} function info failed, error message: {}", tenant, namespace, componentName, e);
+            log.error("deregister {}/{}/{} {} failed, error message: {}", tenant, namespace, componentName, plural, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
