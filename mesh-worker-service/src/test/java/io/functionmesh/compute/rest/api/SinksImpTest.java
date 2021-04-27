@@ -19,8 +19,8 @@
 package io.functionmesh.compute.rest.api;
 
 import io.functionmesh.compute.MeshWorkerService;
-import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
+import io.functionmesh.compute.util.SinksUtil;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
@@ -57,11 +57,11 @@ import static org.powermock.api.mockito.PowerMockito.spy;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
-    Response.class,
-    RealResponseBody.class,
-    FunctionCommon.class,
-    ConnectorUtils.class,
-    FileUtils.class
+        Response.class,
+        RealResponseBody.class,
+        FunctionCommon.class,
+        ConnectorUtils.class,
+        FileUtils.class
 })
 @PowerMockIgnore({"javax.management.*"})
 public class SinksImpTest {
@@ -211,17 +211,17 @@ public class SinksImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .createNamespacedCustomObjectCall(
-                                        group,
-                                        version,
-                                        namespace,
-                                        plural,
-                                        v1alpha1Sink,
-                                        null,
-                                        null,
-                                        null,
-                                        null))
+                        .getCustomObjectsApi()
+                        .createNamespacedCustomObjectCall(
+                                group,
+                                version,
+                                namespace,
+                                plural,
+                                v1alpha1Sink,
+                                null,
+                                null,
+                                null,
+                                null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -405,9 +405,9 @@ public class SinksImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(getCall);
 
         V1alpha1Sink v1alpha1Sink =
@@ -417,17 +417,17 @@ public class SinksImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .replaceNamespacedCustomObjectCall(
-                                        group,
-                                        version,
-                                        namespace,
-                                        plural,
-                                        componentName,
-                                        v1alpha1Sink,
-                                        null,
-                                        null,
-                                        null))
+                        .getCustomObjectsApi()
+                        .replaceNamespacedCustomObjectCall(
+                                group,
+                                version,
+                                namespace,
+                                plural,
+                                componentName,
+                                v1alpha1Sink,
+                                null,
+                                null,
+                                null))
                 .thenReturn(getCall);
 
         SinksImpl sinks = spy(new SinksImpl(meshWorkerServiceSupplier));
@@ -539,9 +539,9 @@ public class SinksImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -658,9 +658,9 @@ public class SinksImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);

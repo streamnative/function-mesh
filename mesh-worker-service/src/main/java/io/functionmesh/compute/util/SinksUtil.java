@@ -43,14 +43,11 @@ import org.apache.pulsar.functions.utils.SinkConfigUtils;
 
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.pulsar.common.functions.Utils.BUILTIN;
-import static org.apache.pulsar.functions.utils.FunctionCommon.roundDecimal;
 
 @Slf4j
 public class SinksUtil {

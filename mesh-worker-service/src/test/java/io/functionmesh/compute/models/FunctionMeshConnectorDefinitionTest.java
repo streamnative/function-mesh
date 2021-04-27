@@ -18,6 +18,24 @@
  */
 package io.functionmesh.compute.models;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 public class FunctionMeshConnectorDefinitionTest {
-    
+    @Test
+    public void TestFunctionMeshConnectorDefinition() {
+        FunctionMeshConnectorDefinition functionMeshConnectorDefinition = new FunctionMeshConnectorDefinition();
+        functionMeshConnectorDefinition.setId("pulsar-io-test");
+        functionMeshConnectorDefinition.setName("test");
+        functionMeshConnectorDefinition.setVersion("2.7.0");
+        functionMeshConnectorDefinition.setImageTag("2.7.0");
+        functionMeshConnectorDefinition.setImageRepository("streamnative/pulsar-io-test");
+        Assert.assertEquals(functionMeshConnectorDefinition.getId(), "pulsar-io-test");
+        Assert.assertEquals(functionMeshConnectorDefinition.getName(), "test");
+        Assert.assertEquals(functionMeshConnectorDefinition.getVersion(), "2.7.0");
+        Assert.assertEquals(functionMeshConnectorDefinition.getImageTag(), "2.7.0");
+        Assert.assertEquals(functionMeshConnectorDefinition.getImageRepository(), "streamnative/pulsar-io-test");
+        Assert.assertEquals(functionMeshConnectorDefinition.toFullImageURL(), "docker.io/streamnative/pulsar-io-test:2.7.0");
+        Assert.assertEquals(functionMeshConnectorDefinition.getJar(), "connectors/pulsar-io-test-2.7.0.nar");
+    }
 }

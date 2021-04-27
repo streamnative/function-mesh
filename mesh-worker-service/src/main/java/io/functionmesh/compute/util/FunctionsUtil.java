@@ -32,7 +32,6 @@ import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPulsar;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPython;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecResources;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecResources;
 import io.kubernetes.client.custom.Quantity;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;

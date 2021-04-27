@@ -19,20 +19,11 @@
 package io.functionmesh.compute.util;
 
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
-import io.functionmesh.compute.sinks.models.V1alpha1Sink;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpec;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpec;
-import io.functionmesh.compute.sources.models.V1alpha1SourceSpecJava;
-import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutput;
-import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
-import io.functionmesh.compute.sources.models.V1alpha1SourceSpecResources;
 import io.functionmesh.compute.testdata.Generate;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.commons.io.FileUtils;
-import org.apache.pulsar.common.functions.Resources;
-import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.io.SourceConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.functions.utils.FunctionCommon;
@@ -131,8 +122,8 @@ public class SourcesUtilTest {
 
         V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
                 componentName, null, uploadedInputStream, sourceConfig, null);
-        
-        SourceConfig newSourceConfig = SourcesUtil.createSourceConfigFromV1alpha1Source(tenant, namespace, 
+
+        SourceConfig newSourceConfig = SourcesUtil.createSourceConfigFromV1alpha1Source(tenant, namespace,
                 componentName, v1alpha1Source);
 
         Assert.assertEquals(sourceConfig.getName(), newSourceConfig.getName());

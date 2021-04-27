@@ -19,8 +19,8 @@
 package io.functionmesh.compute.rest.api;
 
 import io.functionmesh.compute.MeshWorkerService;
-import io.functionmesh.compute.util.SourcesUtil;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
+import io.functionmesh.compute.util.SourcesUtil;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
@@ -32,7 +32,6 @@ import okhttp3.internal.http.RealResponseBody;
 import org.apache.commons.io.FileUtils;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
-import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.io.SourceConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.common.policies.data.SourceStatus;
@@ -50,9 +49,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -60,11 +57,11 @@ import static org.powermock.api.mockito.PowerMockito.spy;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
-    Response.class,
-    RealResponseBody.class,
-    FunctionCommon.class,
-    ConnectorUtils.class,
-    FileUtils.class
+        Response.class,
+        RealResponseBody.class,
+        FunctionCommon.class,
+        ConnectorUtils.class,
+        FileUtils.class
 })
 @PowerMockIgnore({"javax.management.*"})
 public class SourcesImpTest {
@@ -217,17 +214,17 @@ public class SourcesImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .createNamespacedCustomObjectCall(
-                                        group,
-                                        version,
-                                        namespace,
-                                        plural,
-                                        v1alpha1Source,
-                                        null,
-                                        null,
-                                        null,
-                                        null))
+                        .getCustomObjectsApi()
+                        .createNamespacedCustomObjectCall(
+                                group,
+                                version,
+                                namespace,
+                                plural,
+                                v1alpha1Source,
+                                null,
+                                null,
+                                null,
+                                null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -421,9 +418,9 @@ public class SourcesImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(getCall);
 
         V1alpha1Source v1alpha1Source =
@@ -439,17 +436,17 @@ public class SourcesImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .replaceNamespacedCustomObjectCall(
-                                        group,
-                                        version,
-                                        namespace,
-                                        plural,
-                                        componentName,
-                                        v1alpha1Source,
-                                        null,
-                                        null,
-                                        null))
+                        .getCustomObjectsApi()
+                        .replaceNamespacedCustomObjectCall(
+                                group,
+                                version,
+                                namespace,
+                                plural,
+                                componentName,
+                                v1alpha1Source,
+                                null,
+                                null,
+                                null))
                 .thenReturn(getCall);
 
         SourcesImpl sources = spy(new SourcesImpl(meshWorkerServiceSupplier));
@@ -569,9 +566,9 @@ public class SourcesImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -590,7 +587,7 @@ public class SourcesImpTest {
                 new SourceStatus.SourceInstanceStatus();
         SourceStatus.SourceInstanceStatus.SourceInstanceStatusData
                 expectedSourceInstanceStatusData =
-                        new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
+                new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
         expectedSourceInstanceStatusData.setRunning(true);
         expectedSourceInstanceStatusData.setWorkerId("test-pulsar");
         expectedSourceInstanceStatus.setStatus(expectedSourceInstanceStatusData);
@@ -698,9 +695,9 @@ public class SourcesImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);

@@ -18,11 +18,10 @@
  */
 package io.functionmesh.compute.rest.api;
 
-import io.functionmesh.compute.util.SourcesUtil;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
-import io.functionmesh.compute.sources.models.V1alpha1SourceList;
 import io.functionmesh.compute.sources.models.V1alpha1SourceStatus;
+import io.functionmesh.compute.util.SourcesUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
