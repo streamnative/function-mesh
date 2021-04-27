@@ -209,6 +209,8 @@ public class SinksUtil {
 
         V1alpha1SinkSpecPulsar v1alpha1SinkSpecPulsar = new V1alpha1SinkSpecPulsar();
         v1alpha1SinkSpecPulsar.setPulsarConfig(CommonUtil.getPulsarClusterConfigMapName(clusterName));
+        // TODO: auth
+        // v1alpha1SinkSpecPulsar.setAuthConfig(CommonUtil.getPulsarClusterAuthConfigMapName(clusterName));
         v1alpha1SinkSpec.setPulsar(v1alpha1SinkSpecPulsar);
 
         v1alpha1SinkSpec.setClusterName(clusterName);

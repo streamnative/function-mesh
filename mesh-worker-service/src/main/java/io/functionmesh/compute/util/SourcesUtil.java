@@ -54,175 +54,12 @@ import static org.apache.pulsar.common.functions.Utils.BUILTIN;
 public class SourcesUtil {
     public final static String cpuKey = "cpu";
     public final static String memoryKey = "memory";
-//
-//    public static V1alpha1Source createV1alpha1SourceFromSourceConfig1(String kind, String group, String version,
-//                                                                      String sourceName, String sourcePkgUrl,
-//                                                                      InputStream uploadedInputStream,
-//                                                                      SourceConfig sourceConfig,
-//                                                                      MeshConnectorsManager connectorsManager) throws IOException,
-//            URISyntaxException, ClassNotFoundException {
-//        String typeClassName = "";
-//        V1alpha1Source v1alpha1Source = new V1alpha1Source();
-//        v1alpha1Source.setKind(kind);
-//        v1alpha1Source.setApiVersion(String.format("%s/%s", group, version));
-//
-//        v1alpha1Source.setMetadata(CommonUtil.makeV1ObjectMeta(sourceConfig.getName(), sourceConfig.getNamespace()));
-//
-//        V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
-//        v1alpha1SourceSpec.setClassName(sourceConfig.getClassName());
-//
-//        File file = null;
-//        if (Strings.isNotEmpty(sourcePkgUrl)) {
-//            file = FunctionCommon.extractFileFromPkgURL(sourcePkgUrl);
-//        } else if (uploadedInputStream != null) {
-//            file = FunctionCommon.createPkgTempFile();
-//            FileUtils.copyInputStreamToFile(uploadedInputStream, file);
-//        }
-//        if (file != null) {
-//            NarClassLoader narClassLoader = FunctionCommon.extractNarClassLoader(file, null);
-//            String sourceClassName = ConnectorUtils.getIOSourceClass(narClassLoader);
-//            Class<?> sourceClass = narClassLoader.loadClass(sourceClassName);
-//            Class<?> sourceType = FunctionCommon.getSourceType(sourceClass);
-//
-//            v1alpha1SourceSpec.setTypeClassName(sourceType.getName());
-//        }
-//
-//        if (sourceConfig.getSchemaType() != null) {
-//            v1alpha1SourceSpec.setTypeClassName(sourceConfig.getSchemaType());
-//        }
-//        typeClassName = sourceType.getName();
-//
-//        Integer parallelism = sourceConfig.getParallelism() == null ? 1 : sourceConfig.getParallelism();
-//        v1alpha1SourceSpec.setReplicas(parallelism);
-//        v1alpha1SourceSpec.setMaxReplicas(parallelism);
-//
-//        V1alpha1SourceSpecOutput v1alpha1SourceSpecOutput = new V1alpha1SourceSpecOutput();
-//        v1alpha1SourceSpecOutput.setTopic(sourceConfig.getTopicName());
-//        v1alpha1SourceSpecOutput.setTypeClassName(typeClassName);
-//        v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
-//
-//        if (sourceConfig.getSerdeClassName() != null) {
-//            v1alpha1SourceSpecOutput.setSinkSerdeClassName(sourceConfig.getSerdeClassName());
-//        }
-//
-//        ProducerConfig producerConfig = sourceConfig.getProducerConfig();
-//        if (producerConfig != null) {
-//            V1alpha1SourceSpecOutputProducerConf v1alpha1SourceSpecOutputProducerConf =
-//                    new V1alpha1SourceSpecOutputProducerConf();
-//            CryptoConfig cryptoConfig = producerConfig.getCryptoConfig();
-//            if (cryptoConfig != null) {
-//                V1alpha1SourceSpecOutputProducerConfCryptoConfig v1alpha1SourceSpecOutputProducerConfCryptoConfig =
-//                        new V1alpha1SourceSpecOutputProducerConfCryptoConfig();
-//                v1alpha1SourceSpecOutputProducerConfCryptoConfig.setConsumerCryptoFailureAction(cryptoConfig.getConsumerCryptoFailureAction().name());
-//                v1alpha1SourceSpecOutputProducerConfCryptoConfig.setProducerCryptoFailureAction(cryptoConfig.getProducerCryptoFailureAction().name());
-//                v1alpha1SourceSpecOutputProducerConfCryptoConfig.setCryptoKeyReaderClassName(cryptoConfig.getCryptoKeyReaderClassName());
-//                v1alpha1SourceSpecOutputProducerConfCryptoConfig.setEncryptionKeys(Arrays.asList(cryptoConfig.getEncryptionKeys().clone()));
-//                Map<String, String> cryptoKeyReaderConfig = transformedMapValueToString(cryptoConfig.getCryptoKeyReaderConfig());
-//                v1alpha1SourceSpecOutputProducerConfCryptoConfig.setCryptoKeyReaderConfig(cryptoKeyReaderConfig);
-//
-//                v1alpha1SourceSpecOutputProducerConf.setCryptoConfig(v1alpha1SourceSpecOutputProducerConfCryptoConfig);
-//            }
-//            v1alpha1SourceSpecOutputProducerConf.setMaxPendingMessages(producerConfig.getMaxPendingMessages());
-//            v1alpha1SourceSpecOutputProducerConf.setMaxPendingMessagesAcrossPartitions(producerConfig.getMaxPendingMessagesAcrossPartitions());
-//            v1alpha1SourceSpecOutputProducerConf.setUseThreadLocalProducers(producerConfig.getUseThreadLocalProducers());
-//        }
-//
-//        double cpu = sourceConfig.getResources() == null && sourceConfig.getResources().getCpu() != 0 ? sourceConfig.getResources().getCpu() : 1;
-//        long ramRequest = sourceConfig.getResources() == null && sourceConfig.getResources().getRam() != 0 ? sourceConfig.getResources().getRam() : 1073741824;
-//
-//        Map<String, String> limits = new HashMap<>();
-//        Map<String, String> requests = new HashMap<>();
-//
-//        long padding = Math.round(ramRequest * (10.0 / 100.0)); // percentMemoryPadding is 0.1
-//        long ramWithPadding = ramRequest + padding;
-//
-//        limits.put(cpuKey, Quantity.fromString(Double.toString(roundDecimal(cpu, 3))).toSuffixedString());
-//        limits.put(memoryKey, Quantity.fromString(Long.toString(ramWithPadding)).toSuffixedString());
-//
-//        requests.put(cpuKey, Quantity.fromString(Double.toString(roundDecimal(cpu, 3))).toSuffixedString());
-//        requests.put(memoryKey, Quantity.fromString(Long.toString(ramRequest)).toSuffixedString());
-//
-//        V1alpha1SourceSpecResources v1alpha1SourceSpecResources = new V1alpha1SourceSpecResources();
-//        v1alpha1SourceSpecResources.setLimits(limits);
-//        v1alpha1SourceSpecResources.setRequests(requests);
-//        v1alpha1SourceSpec.setResources(v1alpha1SourceSpecResources);
-//
-//        v1alpha1SourceSpec.setSourceConfig(transformedMapValueToString(sourceConfig.getConfigs()));
-//
-//        String location = String.format("%s/%s/%s", sourceConfig.getTenant(), sourceConfig.getNamespace(),
-//                sourceConfig.getName());
-//        if (StringUtils.isNotEmpty(sourcePkgUrl)) {
-//            location = sourcePkgUrl;
-//        }
-//        String archive = sourceConfig.getArchive();
-//        V1alpha1SourceSpecJava v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
-//        if (connectorsManager != null && archive.startsWith(BUILTIN)) {
-//            String connectorType = archive.replaceFirst("^builtin://", "");
-//            FunctionMeshConnectorDefinition definition = connectorsManager.getConnectorDefinition(connectorType);
-//            if (definition != null) {
-//                v1alpha1SourceSpec.setImage(definition.toFullImageURL());
-//                if (definition.getSourceClass() != null && v1alpha1SourceSpec.getClassName() == null) {
-//                    v1alpha1SourceSpec.setClassName(definition.getSourceClass());
-//                }
-//                v1alpha1SourceSpecJava.setJar(definition.getJar());
-//                v1alpha1SourceSpecJava.setJarLocation("");
-//                v1alpha1SourceSpec.setJava(v1alpha1SourceSpecJava);
-//            } else {
-//                log.warn("cannot find built-in connector {}", connectorType);
-//                throw new RestException(Response.Status.BAD_REQUEST, String.format("connectorType %s is not supported yet", connectorType));
-//            }
-//        } else {
-//            Path path = Paths.get(sourceConfig.getArchive());
-//            String jar = path.getFileName().toString();
-//
-//            v1alpha1SourceSpecJava.setJar(jar);
-//            v1alpha1SourceSpecJava.setJarLocation(location);
-//            v1alpha1SourceSpec.setJava(v1alpha1SourceSpecJava);
-//        }
-//
-//        String customRuntimeOptionsJSON = sourceConfig.getCustomRuntimeOptions();
-//        if (Strings.isEmpty(customRuntimeOptionsJSON)) {
-//            throw new RestException(Response.Status.BAD_REQUEST, "customRuntimeOptions is not provided");
-//        }
-//
-//        String clusterName = CommonUtil.getCurrentClusterName();
-//        try {
-//            CustomRuntimeOptions customRuntimeOptions = new Gson().fromJson(customRuntimeOptionsJSON,
-//                    CustomRuntimeOptions.class);
-//
-//            if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
-//                clusterName = customRuntimeOptions.getClusterName();
-//            }
-//        } catch (Exception ignored) {
-//        }
-//
-//        if (Strings.isEmpty(clusterName)) {
-//            throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided in customRuntimeOptions");
-//        }
-//
-//        v1alpha1SourceSpec.setClusterName(clusterName);
-//
-//        if (Strings.isNotEmpty(customRuntimeOptions.getTypeClassName()) && Strings.isEmpty(typeClassName)) {
-//            typeClassName = customRuntimeOptions.getTypeClassName();
-//        }
-//
-//        v1alpha1SourceSpecOutput.setTypeClassName(typeClassName);
-//        v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
-//
-//        V1alpha1SourceSpecPulsar pulsar = new V1alpha1SourceSpecPulsar();
-//        pulsar.setPulsarConfig(CommonUtil.getPulsarClusterConfigMapName(clusterName)); // try to reuse the configMap
-//        v1alpha1SourceSpec.setPulsar(pulsar);
-//        v1alpha1Source.setSpec(v1alpha1SourceSpec);
-//
-//        return v1alpha1Source;
-//    }
 
     public static V1alpha1Source createV1alpha1SourceFromSourceConfig(String kind, String group, String version,
                                                                       String sourceName, String sourcePkgUrl,
                                                                       InputStream uploadedInputStream,
                                                                       SourceConfig sourceConfig,
-                                                                      MeshConnectorsManager connectorsManager) throws IOException,
-            URISyntaxException, ClassNotFoundException {
+                                                                      MeshConnectorsManager connectorsManager) {
         V1alpha1Source v1alpha1Source = new V1alpha1Source();
         v1alpha1Source.setKind(kind);
         v1alpha1Source.setApiVersion(String.format("%s/%s", group, version));
@@ -358,6 +195,8 @@ public class SourcesUtil {
 
         V1alpha1SourceSpecPulsar v1alpha1SourceSpecPulsar = new V1alpha1SourceSpecPulsar();
         v1alpha1SourceSpecPulsar.setPulsarConfig(CommonUtil.getPulsarClusterConfigMapName(clusterName));
+        // TODO: auth
+        // v1alpha1SourceSpecPulsar.setAuthConfig(CommonUtil.getPulsarClusterAuthConfigMapName(clusterName));
         v1alpha1SourceSpec.setPulsar(v1alpha1SourceSpecPulsar);
 
         v1alpha1SourceSpec.setClusterName(clusterName);

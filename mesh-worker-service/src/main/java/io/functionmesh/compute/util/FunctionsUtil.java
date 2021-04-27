@@ -227,6 +227,8 @@ public class FunctionsUtil {
 
         V1alpha1FunctionSpecPulsar v1alpha1FunctionSpecPulsar = new V1alpha1FunctionSpecPulsar();
         v1alpha1FunctionSpecPulsar.setPulsarConfig(CommonUtil.getPulsarClusterConfigMapName(clusterName));
+        // TODO: auth
+        // v1alpha1FunctionSpecPulsar.setAuthConfig(CommonUtil.getPulsarClusterAuthConfigMapName(clusterName));
         v1alpha1FunctionSpec.setPulsar(v1alpha1FunctionSpecPulsar);
 
         String location = String.format("%s/%s/%s", functionConfig.getTenant(), functionConfig.getNamespace(),
