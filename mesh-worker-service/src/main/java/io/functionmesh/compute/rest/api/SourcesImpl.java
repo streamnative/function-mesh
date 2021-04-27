@@ -87,29 +87,6 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         }
     }
 
-    @Override
-    public void deregisterFunction(String tenant, String namespace, String componentName, String clientRole, AuthenticationDataHttps clientAuthenticationDataHttps) {
-        try {
-            Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
-                    group,
-                    version,
-                    namespace,
-                    plural,
-                    componentName,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-            );
-            executeCall(call, null);
-        } catch (Exception e) {
-            log.error("deregister {}/{}/{} source failed, error message: {}", tenant, namespace, componentName, e);
-            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
-    }
-
     public void registerSource(final String tenant,
                                final String namespace,
                                final String sourceName,

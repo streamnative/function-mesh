@@ -173,35 +173,6 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
     }
 
     @Override
-    public void deregisterFunction(final String tenant,
-                                   final String namespace,
-                                   final String componentName,
-                                   final String clientRole,
-                                   AuthenticationDataHttps clientAuthenticationDataHttps) {
-        validateDeregisterFunctionRequestParams(tenant, namespace, componentName);
-
-        try {
-            Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
-                    group,
-                    version,
-                    namespace,
-                    plural,
-                    componentName,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-            );
-            executeCall(call, null);
-        } catch (Exception e) {
-            log.error("deregister {}/{}/{} function failed, error message: {}", tenant, namespace, componentName, e);
-            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
-    }
-
-    @Override
     public FunctionConfig getFunctionInfo(final String tenant,
                                           final String namespace,
                                           final String componentName,

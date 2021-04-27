@@ -90,29 +90,6 @@ public class SinksImpl extends MeshComponentImpl
     }
 
     @Override
-    public void deregisterFunction(String tenant, String namespace, String componentName, String clientRole, AuthenticationDataHttps clientAuthenticationDataHttps) {
-        try {
-            Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
-                    group,
-                    version,
-                    namespace,
-                    plural,
-                    componentName,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-            );
-            executeCall(call, null);
-        } catch (Exception e) {
-            log.error("deregister {}/{}/{} {} failed, error message: {}", tenant, namespace, componentName, plural, e);
-            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
-    }
-
-    @Override
     public void registerSink(
             final String tenant,
             final String namespace,
