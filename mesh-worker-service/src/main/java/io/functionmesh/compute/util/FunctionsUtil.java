@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -280,7 +280,7 @@ public class FunctionsUtil {
             throw new RestException(Response.Status.BAD_REQUEST, "Function CRD without Spec defined.");
         }
         functionConfig.setParallelism(v1alpha1FunctionSpec.getReplicas());
-        if(v1alpha1FunctionSpec.getProcessingGuarantee()!=null) {
+        if (v1alpha1FunctionSpec.getProcessingGuarantee() != null) {
             functionConfig.setProcessingGuarantees(
                     CommonUtil.convertProcessingGuarantee(v1alpha1FunctionSpec.getProcessingGuarantee()));
         }
@@ -294,6 +294,10 @@ public class FunctionsUtil {
         }
         if (Strings.isNotEmpty(v1alpha1FunctionSpecInput.getTypeClassName())) {
             customRuntimeOptions.setInputTypeClassName(v1alpha1FunctionSpecInput.getTypeClassName());
+        }
+
+        if (Strings.isNotEmpty(v1alpha1FunctionSpec.getClusterName())) {
+            customRuntimeOptions.setClusterName(v1alpha1FunctionSpec.getClusterName());
         }
 
         if (v1alpha1FunctionSpecInput.getTopics() != null) {
@@ -343,6 +347,7 @@ public class FunctionsUtil {
         }
 
         functionConfig.setInputSpecs(consumerConfigMap);
+        functionConfig.setInputs(consumerConfigMap.keySet());
 
         if (Strings.isNotEmpty(v1alpha1FunctionSpec.getSubscriptionName())) {
             functionConfig.setSubName(v1alpha1FunctionSpec.getSubscriptionName());
@@ -403,10 +408,13 @@ public class FunctionsUtil {
         }
         if (v1alpha1FunctionSpec.getJava() != null) {
             functionConfig.setRuntime(FunctionConfig.Runtime.JAVA);
+            functionConfig.setJar(v1alpha1FunctionSpec.getJava().getJar());
         } else if (v1alpha1FunctionSpec.getPython() != null) {
             functionConfig.setRuntime(FunctionConfig.Runtime.PYTHON);
+            functionConfig.setPy(v1alpha1FunctionSpec.getPython().getPy());
         } else if (v1alpha1FunctionSpec.getGolang() != null) {
             functionConfig.setRuntime(FunctionConfig.Runtime.GO);
+            functionConfig.setGo(v1alpha1FunctionSpec.getGolang().getGo());
         }
         if (v1alpha1FunctionSpec.getMaxMessageRetry() != null) {
             functionConfig.setMaxMessageRetries(v1alpha1FunctionSpec.getMaxMessageRetry());
@@ -428,7 +436,7 @@ public class FunctionsUtil {
         String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
         functionConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
 
-        if(Strings.isNotEmpty(v1alpha1FunctionSpec.getRuntimeFlags())){
+        if (Strings.isNotEmpty(v1alpha1FunctionSpec.getRuntimeFlags())) {
             functionConfig.setRuntimeFlags(v1alpha1FunctionSpec.getRuntimeFlags());
         }
 

@@ -18,45 +18,45 @@
  */
 package io.functionmesh.compute.testdata;
 
-import io.functionmesh.compute.util.FunctionsUtil;
-import io.functionmesh.proxy.models.CustomRuntimeOptions;
-import org.apache.pulsar.common.functions.ConsumerConfig;
+import com.google.gson.Gson;
+import io.functionmesh.compute.functions.models.V1alpha1Function;
+import io.functionmesh.compute.models.CustomRuntimeOptions;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.Resources;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Collections;
 
 public class Generate {
+    public static String TEST_CLUSTER_NAME = "test-pulsar";
+
     public static FunctionConfig CreateJavaFunctionConfig(String tenant, String namespace, String functionName) {
         FunctionConfig functionConfig = new FunctionConfig();
         functionConfig.setName(functionName);
         functionConfig.setTenant(tenant);
         functionConfig.setNamespace(namespace);
-        functionConfig.setClassName(String.format("org.example.functions.%s", functionName.toUpperCase()));
-        Map<String, ConsumerConfig> inputSpecs = new HashMap<>();
-        ConsumerConfig sourceValue = new ConsumerConfig();
-        sourceValue.setSerdeClassName("java.lang.String");
-        inputSpecs.put(FunctionsUtil.sourceKey, sourceValue);
-        functionConfig.setInputSpecs(inputSpecs);
-        functionConfig.setOutputSerdeClassName("java.lang.String");
+        functionConfig.setClassName("org.example.functions.WordCountFunction");
+        functionConfig.setInputs(Collections.singletonList("persistent://public/default/sentences"));
         functionConfig.setParallelism(1);
-        List<String> inputs = new ArrayList<>();
-        inputs.add("persistent://public/default/sentences");
-        functionConfig.setInputs(inputs);
+        functionConfig.setCleanupSubscription(true);
         functionConfig.setOutput("persistent://public/default/count");
         Resources resources = new Resources();
-        resources.setCpu(0.1);
-        resources.setRam(1L);
+        resources.setCpu(1.0);
+        resources.setRam(102400L);
         functionConfig.setResources(resources);
-        Map<String, Object> userConfig = new HashMap<>();
-        userConfig.put(CustomRuntimeOptions.clusterNameKey, String.format("%s-%s", tenant, namespace));
-        userConfig.put(CustomRuntimeOptions.typeClassNameKey, "java.lang.String");
-        functionConfig.setUserConfig(userConfig);
+        CustomRuntimeOptions customRuntimeOptions = new CustomRuntimeOptions();
+        customRuntimeOptions.setClusterName(TEST_CLUSTER_NAME);
+        customRuntimeOptions.setInputTypeClassName("java.lang.String");
+        customRuntimeOptions.setOutputTypeClassName("java.lang.String");
+        String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
+        functionConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
         functionConfig.setJar(String.format("%s.jar", functionName));
+        functionConfig.setAutoAck(true);
         return functionConfig;
+    }
+
+    public static V1alpha1Function CreateV1alpha1Function(String tenant, String namespace, String functionName) {
+
+        return null;
     }
 
 }

@@ -457,6 +457,10 @@ public class SourcesUtil {
             customRuntimeOptions.setOutputTypeClassName(v1alpha1SourceSpec.getOutput().getTypeClassName());
         }
 
+        if (Strings.isNotEmpty(v1alpha1SourceSpec.getClusterName())) {
+            customRuntimeOptions.setClusterName(v1alpha1SourceSpec.getClusterName());
+        }
+
         // TODO: secretsMap
 
         Resources resources = new Resources();

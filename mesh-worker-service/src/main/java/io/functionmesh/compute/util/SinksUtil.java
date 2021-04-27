@@ -251,6 +251,9 @@ public class SinksUtil {
         if (Strings.isNotEmpty(v1alpha1SinkSpecInput.getTypeClassName())) {
             customRuntimeOptions.setInputTypeClassName(v1alpha1SinkSpecInput.getTypeClassName());
         }
+        if (Strings.isNotEmpty(v1alpha1SinkSpec.getClusterName())) {
+            customRuntimeOptions.setClusterName(v1alpha1SinkSpec.getClusterName());
+        }
 
         if (v1alpha1SinkSpecInput.getTopics() != null) {
             for (String topic : v1alpha1SinkSpecInput.getTopics()) {
