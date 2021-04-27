@@ -24,6 +24,7 @@ import io.functionmesh.compute.models.CustomRuntimeOptions;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SinkConfig;
+import org.apache.pulsar.common.io.SourceConfig;
 
 import java.util.Collections;
 
@@ -99,6 +100,48 @@ public class Generate {
         sinkConfig.setArchive("builtin://elastic-search");
         sinkConfig.setAutoAck(true);
         return sinkConfig;
+    }
+
+    public static SourceConfig CreateSourceConfig(String tenant, String namespace, String functionName) {
+        SourceConfig sourceConfig = new SourceConfig();
+        sourceConfig.setName(functionName);
+        sourceConfig.setTenant(tenant);
+        sourceConfig.setNamespace(namespace);
+        sourceConfig.setClassName("org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource");
+        sourceConfig.setTopicName("persistent://public/default/destination");
+        sourceConfig.setParallelism(1);
+        Resources resources = new Resources();
+        resources.setCpu(1.0);
+        resources.setRam(102400L);
+        sourceConfig.setResources(resources);
+        CustomRuntimeOptions customRuntimeOptions = new CustomRuntimeOptions();
+        customRuntimeOptions.setClusterName(TEST_CLUSTER_NAME);
+        customRuntimeOptions.setOutputTypeClassName("org.apache.pulsar.common.schema.KeyValue");
+        String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
+        sourceConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
+        sourceConfig.setArchive("connectors/pulsar-io-debezium-mongodb-2.7.0.nar");
+        return sourceConfig;
+    }
+
+    public static SourceConfig CreateSourceConfigBuiltin(String tenant, String namespace, String functionName) {
+        SourceConfig sourceConfig = new SourceConfig();
+        sourceConfig.setName(functionName);
+        sourceConfig.setTenant(tenant);
+        sourceConfig.setNamespace(namespace);
+        sourceConfig.setClassName("org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource");
+        sourceConfig.setTopicName("persistent://public/default/destination");
+        sourceConfig.setParallelism(1);
+        Resources resources = new Resources();
+        resources.setCpu(1.0);
+        resources.setRam(102400L);
+        sourceConfig.setResources(resources);
+        CustomRuntimeOptions customRuntimeOptions = new CustomRuntimeOptions();
+        customRuntimeOptions.setClusterName(TEST_CLUSTER_NAME);
+        customRuntimeOptions.setOutputTypeClassName("org.apache.pulsar.common.schema.KeyValue");
+        String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
+        sourceConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
+        sourceConfig.setArchive("builtin://debezium-mongodb");
+        return sourceConfig;
     }
 
 }

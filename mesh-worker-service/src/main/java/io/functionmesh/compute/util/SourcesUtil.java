@@ -19,22 +19,8 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
-import io.functionmesh.compute.functions.models.V1alpha1Function;
-import io.functionmesh.compute.functions.models.V1alpha1FunctionSpec;
-import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecGolang;
-import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecInput;
-import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecInputSourceSpecs;
-import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecJava;
-import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecOutput;
-import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecOutputProducerConf;
-import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPulsar;
-import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPython;
-import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecResources;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpec;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInput;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInputCryptoConfig;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInputSourceSpecs;
+import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpec;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecJava;
@@ -43,48 +29,26 @@ import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerCo
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerConfCryptoConfig;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecResources;
-import io.kubernetes.client.custom.Quantity;
-import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import lombok.Data;
+import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.apache.pulsar.client.api.ConsumerCryptoFailureAction;
-import org.apache.pulsar.client.api.ProducerCryptoFailureAction;
-import org.apache.pulsar.common.functions.ConsumerConfig;
-import org.apache.pulsar.common.functions.CryptoConfig;
-import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
-import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.io.SourceConfig;
-import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
-import org.apache.pulsar.functions.utils.FunctionCommon;
-import org.apache.pulsar.functions.utils.FunctionConfigUtils;
 import org.apache.pulsar.functions.utils.SourceConfigUtils;
-import org.apache.pulsar.functions.utils.io.ConnectorUtils;
 
 import javax.ws.rs.core.Response;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.apache.pulsar.common.functions.Utils.BUILTIN;
-import static org.apache.pulsar.functions.utils.FunctionCommon.roundDecimal;
 
 @Slf4j
 public class SourcesUtil {
@@ -297,6 +261,8 @@ public class SourcesUtil {
             location = sourcePkgUrl;
         }
         String archive = sourceConfig.getArchive();
+        SourceConfigUtils.ExtractedSourceDetails extractedSourceDetails =
+                new SourceConfigUtils.ExtractedSourceDetails("", customRuntimeOptions.getInputTypeClassName());
         V1alpha1SourceSpecJava v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
         if (connectorsManager != null && archive.startsWith(BUILTIN)) {
             String connectorType = archive.replaceFirst("^builtin://", "");
@@ -305,6 +271,7 @@ public class SourcesUtil {
                 v1alpha1SourceSpec.setImage(definition.toFullImageURL());
                 if (definition.getSourceClass() != null && v1alpha1SourceSpec.getClassName() == null) {
                     v1alpha1SourceSpec.setClassName(definition.getSourceClass());
+                    extractedSourceDetails.setSourceClassName(definition.getSourceClass());
                 }
                 v1alpha1SourceSpecJava.setJar(definition.getJar());
                 v1alpha1SourceSpecJava.setJarLocation("");
@@ -314,17 +281,15 @@ public class SourcesUtil {
                 throw new RestException(Response.Status.BAD_REQUEST, String.format("connectorType %s is not supported yet", connectorType));
             }
         } else {
-            Path path = Paths.get(sourceConfig.getArchive());
-            String jar = path.getFileName().toString();
-
-            v1alpha1SourceSpecJava.setJar(jar);
+            v1alpha1SourceSpecJava.setJar(sourceConfig.getArchive());
             v1alpha1SourceSpecJava.setJarLocation(location);
             v1alpha1SourceSpec.setJava(v1alpha1SourceSpecJava);
+            extractedSourceDetails.setSourceClassName(sourceConfig.getClassName());
         }
 
         Function.FunctionDetails functionDetails = null;
         try {
-            functionDetails = SourceConfigUtils.convert(sourceConfig, null);
+            functionDetails = SourceConfigUtils.convert(sourceConfig, extractedSourceDetails);
         } catch (IllegalArgumentException ex) {
             ex.printStackTrace();
             throw new RestException(Response.Status.BAD_REQUEST, "functionConfig cannot be parsed into functionDetails");
@@ -400,7 +365,7 @@ public class SourcesUtil {
         v1alpha1Source.setSpec(v1alpha1SourceSpec);
 
         return v1alpha1Source;
-        
+
     }
 
     public static SourceConfig createSourceConfigFromV1alpha1Source(String tenant, String namespace, String sourceName,
@@ -417,7 +382,7 @@ public class SourcesUtil {
             throw new RestException(Response.Status.BAD_REQUEST, "Source CRD without Spec defined.");
         }
         sourceConfig.setParallelism(v1alpha1SourceSpec.getReplicas());
-        if(v1alpha1SourceSpec.getProcessingGuarantee()!=null) {
+        if (v1alpha1SourceSpec.getProcessingGuarantee() != null) {
             sourceConfig.setProcessingGuarantees(
                     CommonUtil.convertProcessingGuarantee(v1alpha1SourceSpec.getProcessingGuarantee()));
         }
@@ -464,7 +429,7 @@ public class SourcesUtil {
         // TODO: secretsMap
 
         Resources resources = new Resources();
-        Map<String, String> sourceResource = v1alpha1SourceSpec.getResources().getLimits();
+        Map<String, String> sourceResource = v1alpha1SourceSpec.getResources().getRequests();
         Quantity cpuQuantity = Quantity.fromString(sourceResource.get(cpuKey));
         Quantity memoryQuantity = Quantity.fromString(sourceResource.get(memoryKey));
         resources.setCpu(cpuQuantity.getNumber().doubleValue());
@@ -474,8 +439,12 @@ public class SourcesUtil {
         String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
         sourceConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
 
-        if(Strings.isNotEmpty(v1alpha1SourceSpec.getRuntimeFlags())){
+        if (Strings.isNotEmpty(v1alpha1SourceSpec.getRuntimeFlags())) {
             sourceConfig.setRuntimeFlags(v1alpha1SourceSpec.getRuntimeFlags());
+        }
+
+        if (v1alpha1SourceSpec.getJava() != null && Strings.isNotEmpty(v1alpha1SourceSpec.getJava().getJar())) {
+            sourceConfig.setArchive(v1alpha1SourceSpec.getJava().getJar());
         }
 
         return sourceConfig;
