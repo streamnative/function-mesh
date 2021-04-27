@@ -362,6 +362,8 @@ public class SourcesUtil {
 
         v1alpha1SourceSpec.setClusterName(clusterName);
 
+        v1alpha1SourceSpec.setSourceConfig(CommonUtil.transformedMapValueToString(sourceConfig.getConfigs()));
+
         v1alpha1Source.setSpec(v1alpha1SourceSpec);
 
         return v1alpha1Source;
@@ -424,6 +426,10 @@ public class SourcesUtil {
 
         if (Strings.isNotEmpty(v1alpha1SourceSpec.getClusterName())) {
             customRuntimeOptions.setClusterName(v1alpha1SourceSpec.getClusterName());
+        }
+
+        if (v1alpha1SourceSpec.getSourceConfig() != null) {
+            sourceConfig.setConfigs(new HashMap<>(v1alpha1SourceSpec.getSourceConfig()));
         }
 
         // TODO: secretsMap

@@ -40,6 +40,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({FunctionCommon.class, ConnectorUtils.class, FileUtils.class})
@@ -63,6 +65,8 @@ public class SinksUtilTest {
         boolean autoAck = true;
         int parallelism = 1;
         String clusterName = "test-pulsar";
+        Map<String, Object> configs = new HashMap<>();
+        configs.put("elasticSearchUrl", "https://testing-es.app");
         File narFile = PowerMockito.mock(File.class);
         PowerMockito.when(narFile.getPath()).thenReturn("");
         FileInputStream uploadedInputStream = PowerMockito.mock(FileInputStream.class);
@@ -95,6 +99,7 @@ public class SinksUtilTest {
         Assert.assertEquals(v1alpha1SinkSpec.getInput().getTypeClassName(), typeClassName);
         Assert.assertEquals(v1alpha1SinkSpec.getJava().getJar(), archive);
         Assert.assertEquals(v1alpha1SinkSpec.getAutoAck(), autoAck);
+        Assert.assertEquals(v1alpha1SinkSpec.getSinkConfig(), configs);
     }
 
     @Test
@@ -156,6 +161,8 @@ public class SinksUtilTest {
         boolean autoAck = true;
         int parallelism = 1;
         String clusterName = "test-pulsar";
+        Map<String, Object> configs = new HashMap<>();
+        configs.put("elasticSearchUrl", "https://testing-es.app");
 
         MeshConnectorsManager connectorsManager = PowerMockito.mock(MeshConnectorsManager.class);
         FunctionMeshConnectorDefinition connectorDefinition = PowerMockito.mock(FunctionMeshConnectorDefinition.class);
@@ -183,5 +190,6 @@ public class SinksUtilTest {
         Assert.assertEquals(v1alpha1SinkSpec.getInput().getTypeClassName(), typeClassName);
         Assert.assertEquals(v1alpha1SinkSpec.getJava().getJar(), archive);
         Assert.assertEquals(v1alpha1SinkSpec.getAutoAck(), autoAck);
+        Assert.assertEquals(v1alpha1SinkSpec.getSinkConfig(), configs);
     }
 }

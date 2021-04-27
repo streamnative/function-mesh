@@ -72,6 +72,9 @@ public class SourcesUtilTest {
         String archive = "connectors/pulsar-io-debezium-mongodb-2.7.0.nar";
         int parallelism = 1;
         String clusterName = "test-pulsar";
+        Map<String, Object> configs = new HashMap<>();
+        String configsName = "test-sourceConfig";
+        configs.put("name", configsName);
         File narFile = PowerMockito.mock(File.class);
         PowerMockito.when(narFile.getPath()).thenReturn("");
         FileInputStream uploadedInputStream = PowerMockito.mock(FileInputStream.class);
@@ -100,6 +103,7 @@ public class SourcesUtilTest {
                 CommonUtil.getPulsarClusterConfigMapName(clusterName));
         Assert.assertEquals(v1alpha1SourceSpec.getOutput().getTypeClassName(), typeClassName);
         Assert.assertEquals(v1alpha1SourceSpec.getJava().getJar(), archive);
+        Assert.assertEquals(v1alpha1SourceSpec.getSourceConfig(), configs);
     }
 
     @Test
@@ -155,6 +159,9 @@ public class SourcesUtilTest {
         String archive = "connectors/pulsar-io-debezium-mongodb-2.7.0.nar";
         int parallelism = 1;
         String clusterName = "test-pulsar";
+        Map<String, Object> configs = new HashMap<>();
+        String configsName = "test-sourceConfig";
+        configs.put("name", configsName);
 
         MeshConnectorsManager connectorsManager = PowerMockito.mock(MeshConnectorsManager.class);
         FunctionMeshConnectorDefinition connectorDefinition = PowerMockito.mock(FunctionMeshConnectorDefinition.class);
@@ -181,5 +188,6 @@ public class SourcesUtilTest {
                 CommonUtil.getPulsarClusterConfigMapName(clusterName));
         Assert.assertEquals(v1alpha1SourceSpec.getOutput().getTypeClassName(), typeClassName);
         Assert.assertEquals(v1alpha1SourceSpec.getJava().getJar(), archive);
+        Assert.assertEquals(v1alpha1SourceSpec.getSourceConfig(), configs);
     }
 }

@@ -27,6 +27,8 @@ import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.io.SourceConfig;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Generate {
     public static String TEST_CLUSTER_NAME = "test-pulsar";
@@ -76,6 +78,9 @@ public class Generate {
         sinkConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
         sinkConfig.setArchive("connectors/pulsar-io-elastic-search-2.7.0-rc-pm-3.nar");
         sinkConfig.setAutoAck(true);
+        Map<String, Object> configs = new HashMap<>();
+        configs.put("elasticSearchUrl", "https://testing-es.app");
+        sinkConfig.setConfigs(configs);
         return sinkConfig;
     }
 
@@ -99,6 +104,9 @@ public class Generate {
         sinkConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
         sinkConfig.setArchive("builtin://elastic-search");
         sinkConfig.setAutoAck(true);
+        Map<String, Object> configs = new HashMap<>();
+        configs.put("elasticSearchUrl", "https://testing-es.app");
+        sinkConfig.setConfigs(configs);
         return sinkConfig;
     }
 
@@ -120,6 +128,10 @@ public class Generate {
         String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
         sourceConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
         sourceConfig.setArchive("connectors/pulsar-io-debezium-mongodb-2.7.0.nar");
+        Map<String, Object> configs = new HashMap<>();
+        String configsName = "test-sourceConfig";
+        configs.put("name", configsName);
+        sourceConfig.setConfigs(configs);
         return sourceConfig;
     }
 
@@ -141,6 +153,10 @@ public class Generate {
         String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
         sourceConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
         sourceConfig.setArchive("builtin://debezium-mongodb");
+        Map<String, Object> configs = new HashMap<>();
+        String configsName = "test-sourceConfig";
+        configs.put("name", configsName);
+        sourceConfig.setConfigs(configs);
         return sourceConfig;
     }
 
