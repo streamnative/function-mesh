@@ -56,6 +56,33 @@ curl http://localhost:6750/admin/v3/functions/test/default/functionmesh-sample-e
    "{"clusterName": "test-pulsar", "inputTypeClassName": "java.lang.String", "outputTypeClassName": "java.lang.String"}"
 ```
 
+##### sink connector
+ ```shell script
+./bin/pulsar-admin --admin-url http://localhost:6750 sinks create \
+   --sink-type data-generator \
+   --classname org.apache.pulsar.io.datagenerator.DataGeneratorPrintSink \
+   --tenant public \
+   --namespace default \
+   --name data-generator-sink \
+   --inputs persistent://public/default/random-data-topic \
+   --auto-ack true \
+   --custom-runtime-options \
+   "{"clusterName": "test-pulsar", "inputTypeClassName": "org.apache.pulsar.io.datagenerator.Person"}"
+```
+
+##### source connector
+ ```shell script
+./bin/pulsar-admin --admin-url http://localhost:6750 sources create \
+   --source-type data-generator \
+   --tenant public \
+   --namespace default \
+   --name data-generator-source \
+   --destination-topic-name persistent://public/default/random-data-topic \
+   --source-config "{"sleepBetweenMessages": "5000"}"
+   --custom-runtime-options \
+   "{"clusterName": "test-pulsar", "outputTypeClassName": "org.apache.pulsar.io.datagenerator.Person"}"
+```
+
 #### updateFunction
  ```shell script
 ./bin/pulsar-admin --admin-url http://localhost:6750 functions update \
