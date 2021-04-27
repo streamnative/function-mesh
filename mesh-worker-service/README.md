@@ -17,11 +17,6 @@ functionsWorkerServiceNarPackage: /YOUR-NAR-PATH/mesh-worker-service-1.0-SNAPSHO
 ```
 Replace the `YOUR-NAR-PATH` variable with your real path.
 
-#### Start pulsar service
-
-```$xslt
-./bin/pulsar standalone -a 127.0.0.1 -nss
-```
 
 ### Configuring the development environment
 

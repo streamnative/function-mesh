@@ -32,6 +32,8 @@ import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecResources;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
+import io.functionmesh.compute.models.CustomRuntimeOptions;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.ConsumerConfig;
