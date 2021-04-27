@@ -134,7 +134,7 @@ public class SinksImpl extends MeshComponentImpl
                             sinkPkgUrl,
                             uploadedInputStream,
                             sinkConfig,
-                            this.functionMeshProxyServiceSupplier.get().getConnectorsManager());
+                            this.meshWorkerServiceSupplier.get().getConnectorsManager());
             Call call =
                     worker().getCustomObjectsApi()
                             .createNamespacedCustomObjectCall(
@@ -189,7 +189,7 @@ public class SinksImpl extends MeshComponentImpl
                             sinkName,
                             sinkPkgUrl,
                             uploadedInputStream,
-                            sinkConfig, this.functionMeshProxyServiceSupplier.get().getConnectorsManager());
+                            sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager());
             v1alpha1Sink
                     .getMetadata()
                     .setResourceVersion(oldRes.getMetadata().getResourceVersion());

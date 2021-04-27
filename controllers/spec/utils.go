@@ -77,14 +77,10 @@ func generateInputSpec(sourceConf v1alpha1.InputConf) map[string]*proto.Consumer
 		}
 	}
 
-	for topicName, conf := range sourceConf.CustomSchemaSources {
-		consumerConf := unmarshalConsumerConfig(conf)
+	for topicName, schemaType := range sourceConf.CustomSchemaSources {
 		inputSpecs[topicName] = &proto.ConsumerSpec{
-			SchemaType:         consumerConf.SchemaType,
+			SchemaType:         schemaType,
 			IsRegexPattern:     false,
-			SchemaProperties:   consumerConf.SchemaProperties,
-			ConsumerProperties: consumerConf.ConsumerProperties,
-			CryptoSpec:         generateCryptoSpec(consumerConf.CryptoConfig),
 		}
 	}
 

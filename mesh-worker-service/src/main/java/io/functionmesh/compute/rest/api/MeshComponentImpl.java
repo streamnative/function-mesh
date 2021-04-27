@@ -284,12 +284,12 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
 
     @Override
     public List<ConnectorDefinition> getListOfConnectors() {
-        return functionMeshProxyServiceSupplier.get().getConnectorsManager().getConnectorDefinitions();
+        return meshWorkerServiceSupplier.get().getConnectorsManager().getConnectorDefinitions();
     }
 
     @Override
     public void reloadConnectors(String clientRole) {
-        functionMeshProxyServiceSupplier.get().getConnectorsManager().reloadConnectors();
+        meshWorkerServiceSupplier.get().getConnectorsManager().reloadConnectors();
     }
 }
 

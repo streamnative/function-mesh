@@ -55,11 +55,10 @@ curl http://localhost:6750/admin/v3/functions/test/default/functionmesh-sample-e
    --name word-count \
    --inputs persistent://public/default/sentences \
    --output persistent://public/default/count \
-   --input-specs "{"source": {"serdeClassName": "java.lang.String"}}" \
-   --output-serde-classname java.lang.String \
    --cpu 0.1 \
    --ram 1 \
-   --user-config "{"clusterName": "test-pulsar", "typeClassName": "java.lang.String"}"
+   --custom-runtime-options \
+   "{"clusterName": "test-pulsar", "inputTypeClassName": "java.lang.String", "outputTypeClassName": "java.lang.String"}"
 ```
 
 #### updateFunction

@@ -125,7 +125,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         try {
             V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
                     sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig,
-                    this.functionMeshProxyServiceSupplier.get().getConnectorsManager());
+                    this.meshWorkerServiceSupplier.get().getConnectorsManager());
             Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(group, version, namespace,
                     plural,
                     v1alpha1Source,
@@ -172,7 +172,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                     sourcePkgUrl,
                     uploadedInputStream,
                     sourceConfig,
-                    this.functionMeshProxyServiceSupplier.get().getConnectorsManager()
+                    this.meshWorkerServiceSupplier.get().getConnectorsManager()
             );
             v1alpha1Source.getMetadata().setResourceVersion(oldRes.getMetadata().getResourceVersion());
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
@@ -276,43 +276,6 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         }
         return retval;
     }
-
-    public List<ConnectorDefinition> getSourceListBak() {
-        List<ConnectorDefinition> connectorDefinitions = new ArrayList<>();
-
-        try {
-            Call call = worker().getCustomObjectsApi().listClusterCustomObjectCall(
-                    group,
-                    version,
-                    plural,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-            );
-
-            V1alpha1SourceList v1alpha1SourceList = executeCall(call, V1alpha1SourceList.class);
-            v1alpha1SourceList.getItems().stream().forEach((n) -> {
-                ConnectorDefinition connectorDefinition = new ConnectorDefinition();
-                connectorDefinition.setName(n.getSpec().getClassName());
-                connectorDefinition.setSinkClass(n.getSpec().getSinkType());
-                connectorDefinition.setSourceClass(n.getSpec().getSourceType());
-
-                connectorDefinitions.add(connectorDefinition);
-            });
-        } catch (Exception e) {
-            log.error("get source list failed, error message: {}", e.getMessage());
-            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
-
-        return connectorDefinitions;
-    }
-
 
     public List<ConfigFieldDefinition> getSourceConfigDefinition(String name) {
         return new ArrayList<>();

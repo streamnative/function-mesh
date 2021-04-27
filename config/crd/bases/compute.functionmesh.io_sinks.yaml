@@ -2868,8 +2868,6 @@ spec:
             timeout:
               format: int32
               type: integer
-            typeClassName:
-              type: string
             volumeMounts:
               items:
                 description: VolumeMount describes a mounting of a Volume within a container.

@@ -18,6 +18,12 @@
  */
 package io.functionmesh.compute.util;
 
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import org.apache.pulsar.common.functions.FunctionConfig;
+
+import java.util.Map;
+import java.util.stream.Collectors;
+
 public class CommonUtil {
     private static final String CLUSTER_NAME_ENV = "clusterName";
 
@@ -41,4 +47,37 @@ public class CommonUtil {
         return ori.toLowerCase().replaceAll("[^a-z0-9-\\.]", "-");
     }
 
+    public static V1ObjectMeta makeV1ObjectMeta(String name, String namespace) {
+        V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
+        v1ObjectMeta.setName(name);
+        v1ObjectMeta.setNamespace(namespace);
+
+        return v1ObjectMeta;
+    }
+
+    public static FunctionConfig.ProcessingGuarantees convertProcessingGuarantee(String processingGuarantees) {
+        switch (processingGuarantees) {
+            case "atleast_once":
+                return FunctionConfig.ProcessingGuarantees.ATLEAST_ONCE;
+            case "atmost_once":
+                return FunctionConfig.ProcessingGuarantees.ATMOST_ONCE;
+            case "effectively_once":
+                return FunctionConfig.ProcessingGuarantees.EFFECTIVELY_ONCE;
+        }
+        return null;
+    }
+
+    public static Map<String, String> transformedMapValueToString(Map<String, Object> map) {
+        if (map == null) {
+            return null;
+        }
+        return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())));
+    }
+
+    public static Map<String, Object> transformedMapValueToObject(Map<String, String> map) {
+        if (map == null) {
+            return null;
+        }
+        return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
 }

@@ -2834,8 +2834,6 @@ spec:
               type: string
             tenant:
               type: string
-            typeClassName:
-              type: string
             volumeMounts:
               items:
                 description: VolumeMount describes a mounting of a Volume within a container.
