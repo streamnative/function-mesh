@@ -79,8 +79,8 @@ func generateInputSpec(sourceConf v1alpha1.InputConf) map[string]*proto.Consumer
 
 	for topicName, schemaType := range sourceConf.CustomSchemaSources {
 		inputSpecs[topicName] = &proto.ConsumerSpec{
-			SchemaType:         schemaType,
-			IsRegexPattern:     false,
+			SchemaType:     schemaType,
+			IsRegexPattern: false,
 		}
 	}
 
