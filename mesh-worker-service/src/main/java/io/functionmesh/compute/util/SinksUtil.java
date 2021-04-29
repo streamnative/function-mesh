@@ -27,6 +27,7 @@ import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPulsar;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecResources;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -49,6 +50,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class SinksUtil {
     public static final String cpuKey = "cpu";
     public static final String memoryKey = "memory";
@@ -85,25 +87,32 @@ public class SinksUtil {
 
         V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
         v1ObjectMeta.setName(sinkConfig.getName());
-        v1ObjectMeta.setNamespace(sinkConfig.getNamespace());
         v1alpha1Sink.setMetadata(v1ObjectMeta);
 
         V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
 
-        File file;
+        File file = null;
         if (Strings.isNotEmpty(sinkPkgUrl)) {
             file = FunctionCommon.extractFileFromPkgURL(sinkPkgUrl);
         } else {
-            file = FunctionCommon.createPkgTempFile();
-            FileUtils.copyInputStreamToFile(uploadedInputStream, file);
+            if (uploadedInputStream != null) {
+                file = FunctionCommon.createPkgTempFile();
+                FileUtils.copyInputStreamToFile(uploadedInputStream, file);
+            }
         }
-        NarClassLoader narClassLoader = FunctionCommon.extractNarClassLoader(file, null);
-        String sourceClassName = ConnectorUtils.getIOSinkClass(narClassLoader);
-        Class<?> sourceClass = narClassLoader.loadClass(sourceClassName);
-        Class<?> sourceType = FunctionCommon.getSinkType(sourceClass);
+        String sourceClassName;
+        if (file != null) {
+            NarClassLoader narClassLoader = FunctionCommon.extractNarClassLoader(file, null);
+            sourceClassName = ConnectorUtils.getIOSinkClass(narClassLoader);
+            Class<?> sourceClass = narClassLoader.loadClass(sourceClassName);
+            Class<?> sourceType = FunctionCommon.getSinkType(sourceClass);
+            typeClassName = sourceType.getName();
+        } else {
+            sourceClassName = sinkConfig.getClassName();
+            typeClassName = "[B";
+        }
 
         v1alpha1SinkSpec.setClassName(sourceClassName);
-        typeClassName = sourceType.getName();
 
         Integer parallelism = sinkConfig.getParallelism() == null ? 1 : sinkConfig.getParallelism();
         v1alpha1SinkSpec.setReplicas(parallelism);
@@ -225,4 +234,5 @@ public class SinksUtil {
 
         return sinkConfig;
     }
+
 }

@@ -42,8 +42,10 @@ import org.apache.pulsar.functions.worker.service.api.Sinks;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,12 +54,14 @@ import java.util.function.Supplier;
 @Slf4j
 public class SinksImpl extends MeshComponentImpl
         implements Sinks<MeshWorkerService> {
-    private final String kind = "Sink";
+    private String kind = "Sink";
 
-    private final String plural = "sinks";
+    private String plural = "sinks";
 
     public SinksImpl(Supplier<MeshWorkerService> meshWorkerServiceSupplier) {
         super(meshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SINK);
+        super.plural = this.plural;
+        super.kind = this.kind;
     }
 
     private void validateRegisterSinkRequestParams(
@@ -99,8 +103,9 @@ public class SinksImpl extends MeshComponentImpl
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         this.validateTenantIsExist(tenant, namespace, sinkName, clientRole);
+        V1alpha1Sink v1alpha1Sink;
         try {
-            V1alpha1Sink v1alpha1Sink =
+            v1alpha1Sink =
                     SinksUtil.createV1alpha1SkinFromSinkConfig(
                             kind,
                             group,
@@ -109,7 +114,17 @@ public class SinksImpl extends MeshComponentImpl
                             sinkPkgUrl,
                             uploadedInputStream,
                             sinkConfig);
-
+            v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
+        } catch (URISyntaxException | IOException | ClassNotFoundException e) {
+            log.error(
+                    "register {}/{}/{} sink failed, error message: {}",
+                    tenant,
+                    namespace,
+                    sinkConfig,
+                    e);
+            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+        try {
             Map<String, String> customLabels = Maps.newHashMap();
             customLabels.put(TENANT_LABEL_CLAIM, tenant);
             customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
@@ -124,7 +139,6 @@ public class SinksImpl extends MeshComponentImpl
                 functionDetailsBuilder.setTenant(tenant);
                 functionDetailsBuilder.setNamespace(namespace);
                 functionDetailsBuilder.setName(sinkName);
-                Function.FunctionDetails functionDetails = functionDetailsBuilder.build();
                 worker().getAuthProvider().ifPresent(functionAuthProvider -> {
                     if (clientAuthenticationDataHttps != null) {
                         try {
@@ -202,6 +216,7 @@ public class SinksImpl extends MeshComponentImpl
                             sinkPkgUrl,
                             uploadedInputStream,
                             sinkConfig);
+            v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             v1alpha1Sink
                     .getMetadata()
                     .setResourceVersion(oldRes.getMetadata().getResourceVersion());
@@ -322,8 +337,25 @@ public class SinksImpl extends MeshComponentImpl
     }
 
     @Override
+    public List<String> listFunctions(final String tenant,
+                                      final String namespace,
+                                      final String clientRole,
+                                      final AuthenticationDataSource clientAuthenticationDataHttps) {
+        return super.listFunctions(tenant, namespace, clientRole, clientAuthenticationDataHttps);
+    }
+
+    @Override
     public List<ConnectorDefinition> getSinkList() {
-        return new ArrayList<>();
+        List<ConnectorDefinition> connectorDefinitions = new ArrayList<>();
+
+        ConnectorDefinition connectorDefinition = new ConnectorDefinition();
+        connectorDefinition.setName("elastic_search");
+        connectorDefinition.setDescription("Writes data into Elastic Search");
+        connectorDefinition.setSinkClass("org.apache.pulsar.io.elasticsearch.ElasticSearchSink");
+        connectorDefinition.setSinkClass("org.apache.pulsar.io.elasticsearch.ElasticSearchConfig");
+        connectorDefinitions.add(connectorDefinition);
+
+        return connectorDefinitions;
     }
 
     @Override

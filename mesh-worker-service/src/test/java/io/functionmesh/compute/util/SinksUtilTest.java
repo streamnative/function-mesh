@@ -115,7 +115,6 @@ public class SinksUtilTest {
 
         V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
         v1ObjectMeta.setName(componentName);
-        v1ObjectMeta.setNamespace(namespace);
         expectedV1alpha1Sink.setMetadata(v1ObjectMeta);
 
         V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();

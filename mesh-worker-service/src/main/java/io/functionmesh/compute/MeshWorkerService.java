@@ -41,6 +41,7 @@ import org.apache.pulsar.functions.auth.FunctionAuthProvider;
 import org.apache.pulsar.functions.auth.KubernetesFunctionAuthProvider;
 import org.apache.pulsar.functions.runtime.RuntimeUtils;
 import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
+import org.apache.pulsar.functions.worker.ConnectorsManager;
 import org.apache.pulsar.functions.worker.ErrorNotifier;
 import org.apache.pulsar.functions.worker.PulsarWorkerService;
 import org.apache.pulsar.functions.worker.WorkerConfig;
@@ -79,6 +80,8 @@ public class MeshWorkerService implements WorkerService {
 
     private AuthenticationService authenticationService;
     private AuthorizationService authorizationService;
+    private ConnectorsManager connectorsManager;
+
 
     private final PulsarWorkerService.PulsarClientCreator clientCreator;
     public MeshWorkerService() {
@@ -146,6 +149,7 @@ public class MeshWorkerService implements WorkerService {
         this.sinks = new SinksImpl(() -> MeshWorkerService.this);
         this.factoryConfig = RuntimeUtils.getRuntimeFunctionConfig(
                 workerConfig.getFunctionRuntimeFactoryConfigs(), KubernetesRuntimeFactoryConfig.class);
+        this.connectorsManager = new ConnectorsManager(workerConfig);
     }
 
     private void initKubernetesClient() throws IOException {

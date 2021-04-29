@@ -55,13 +55,13 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
     private final Supplier<MeshWorkerService> meshWorkerServiceSupplier;
     final Function.FunctionDetails.ComponentType componentType;
 
-    final String plural = "functions";
+    String plural = "functions";
 
     final String group = "compute.functionmesh.io";
 
     final String version = "v1alpha1";
 
-    final String kind = "Function";
+    String kind = "Function";
 
     final String TENANT_LABEL_CLAIM = "pulsar-tenant";
 
@@ -91,6 +91,32 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                                    final String componentName,
                                    final String clientRole,
                                    AuthenticationDataHttps clientAuthenticationDataHttps) {
+        this.validateGetInfoRequestParams(tenant, namespace, componentName, kind);
+
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
+        try {
+            Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
+                    group,
+                    version,
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                    plural,
+                    componentName,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+            );
+            executeCall(call, null);
+        } catch (Exception e) {
+            log.error("deregister {}/{}/{} function failed, error message: {}", tenant, namespace, componentName, e);
+            throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
 
     }
 
@@ -224,8 +250,6 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                                       final AuthenticationDataSource clientAuthenticationDataHttps) {
         List<String> result = new LinkedList<>();
         try {
-//            String labelSelectors =  String.format(
-//                    "%s:%s,%s:%s", TENANT_LABEL_CLAIM, tenant, NAMESPACE_LABEL_CLAIM, namespace);
             Call call = worker().getCustomObjectsApi().listNamespacedCustomObjectCall(
                     group,
                     version,

@@ -38,8 +38,6 @@ import org.apache.pulsar.common.io.SourceConfig;
 import org.apache.pulsar.common.policies.data.SourceStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
-import org.apache.pulsar.functions.runtime.RuntimeUtils;
-import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
 import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Sources;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
@@ -55,12 +53,14 @@ import java.util.function.Supplier;
 
 @Slf4j
 public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorkerService> {
-    private final String kind = "Source";
+    private String kind = "Source";
 
-    private final String plural = "sources";
+    private String plural = "sources";
 
     public SourcesImpl(Supplier<MeshWorkerService> meshWorkerServiceSupplier) {
         super(meshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SOURCE);
+        super.plural = this.plural;
+        super.kind = this.kind;
     }
 
     private void validateRegisterSourceRequestParams(String tenant, String namespace, String sourceName,
@@ -310,36 +310,21 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
     public List<ConnectorDefinition> getSourceList() {
         List<ConnectorDefinition> connectorDefinitions = new ArrayList<>();
 
-        try {
-            Call call = worker().getCustomObjectsApi().listClusterCustomObjectCall(
-                    group,
-                    version,
-                    plural,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-            );
-
-            V1alpha1SourceList v1alpha1SourceList = executeCall(call, V1alpha1SourceList.class);
-            v1alpha1SourceList.getItems().stream().forEach((n) -> {
-                ConnectorDefinition connectorDefinition = new ConnectorDefinition();
-                connectorDefinition.setName(n.getSpec().getClassName());
-                connectorDefinition.setSourceClass(n.getSpec().getSourceType());
-
-                connectorDefinitions.add(connectorDefinition);
-            });
-        } catch (Exception e) {
-            log.error("get source list failed, error message: {}", e.getMessage());
-            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
+        ConnectorDefinition connectorDefinition = new ConnectorDefinition();
+        connectorDefinition.setName("debezium-mongodb");
+        connectorDefinition.setDescription("Debezium MongoDb Source");
+        connectorDefinition.setSourceClass("org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource");
+        connectorDefinitions.add(connectorDefinition);
 
         return connectorDefinitions;
+    }
+
+    @Override
+    public List<String> listFunctions(final String tenant,
+                                      final String namespace,
+                                      final String clientRole,
+                                      final AuthenticationDataSource clientAuthenticationDataHttps) {
+        return super.listFunctions(tenant, namespace, clientRole, clientAuthenticationDataHttps);
     }
 
 
