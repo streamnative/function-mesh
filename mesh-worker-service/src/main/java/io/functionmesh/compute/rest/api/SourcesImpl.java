@@ -18,11 +18,10 @@
  */
 package io.functionmesh.compute.rest.api;
 
-import io.functionmesh.compute.util.SourcesUtil;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
-import io.functionmesh.compute.sources.models.V1alpha1SourceList;
 import io.functionmesh.compute.sources.models.V1alpha1SourceStatus;
+import io.functionmesh.compute.util.SourcesUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
@@ -88,7 +87,6 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         }
     }
 
-
     public void registerSource(final String tenant,
                                final String namespace,
                                final String sourceName,
@@ -102,7 +100,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
 
         try {
             V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
-                    sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig);
+                    sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig,
+                    this.meshWorkerServiceSupplier.get().getConnectorsManager());
             Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(group, version, namespace,
                     plural,
                     v1alpha1Source,
@@ -113,6 +112,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             executeCall(call, V1alpha1Source.class);
         } catch (Exception e) {
             log.error("register {}/{}/{} source failed, error message: {}", tenant, namespace, sourceConfig, e);
+            e.printStackTrace();
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
@@ -147,7 +147,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                     sourceName,
                     sourcePkgUrl,
                     uploadedInputStream,
-                    sourceConfig
+                    sourceConfig,
+                    this.meshWorkerServiceSupplier.get().getConnectorsManager()
             );
             v1alpha1Source.getMetadata().setResourceVersion(oldRes.getMetadata().getResourceVersion());
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
@@ -235,46 +236,22 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             V1alpha1Source v1alpha1Source = executeCall(call, V1alpha1Source.class);
             return SourcesUtil.createSourceConfigFromV1alpha1Source(tenant, namespace, componentName, v1alpha1Source);
         } catch (Exception e) {
-            log.error("get {}/{}/{} function info failed, error message: {}", tenant, namespace, componentName, e);
+            log.error("deregister {}/{}/{} {} failed, error message: {}", tenant, namespace, componentName, plural, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
+    @Override
     public List<ConnectorDefinition> getSourceList() {
-        List<ConnectorDefinition> connectorDefinitions = new ArrayList<>();
-
-        try {
-            Call call = worker().getCustomObjectsApi().listClusterCustomObjectCall(
-                    group,
-                    version,
-                    plural,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-            );
-
-            V1alpha1SourceList v1alpha1SourceList = executeCall(call, V1alpha1SourceList.class);
-            v1alpha1SourceList.getItems().stream().forEach((n) -> {
-                ConnectorDefinition connectorDefinition = new ConnectorDefinition();
-                connectorDefinition.setName(n.getSpec().getClassName());
-                connectorDefinition.setSourceClass(n.getSpec().getSourceType());
-
-                connectorDefinitions.add(connectorDefinition);
-            });
-        } catch (Exception e) {
-            log.error("get source list failed, error message: {}", e.getMessage());
-            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        List<ConnectorDefinition> connectorDefinitions = getListOfConnectors();
+        List<ConnectorDefinition> retval = new ArrayList<>();
+        for (ConnectorDefinition connectorDefinition : connectorDefinitions) {
+            if (!org.apache.commons.lang.StringUtils.isEmpty(connectorDefinition.getSourceClass())) {
+                retval.add(connectorDefinition);
+            }
         }
-
-        return connectorDefinitions;
+        return retval;
     }
-
 
     public List<ConfigFieldDefinition> getSourceConfigDefinition(String name) {
         return new ArrayList<>();
