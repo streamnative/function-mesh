@@ -18,10 +18,10 @@
  */
 package io.functionmesh.compute.rest.api;
 
-import io.functionmesh.compute.sinks.models.V1alpha1Sink;
-import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkStatus;
+import io.functionmesh.compute.util.SinksUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
@@ -110,7 +110,8 @@ public class SinksImpl extends MeshComponentImpl
                             sinkName,
                             sinkPkgUrl,
                             uploadedInputStream,
-                            sinkConfig);
+                            sinkConfig,
+                            this.meshWorkerServiceSupplier.get().getConnectorsManager());
             Call call =
                     worker().getCustomObjectsApi()
                             .createNamespacedCustomObjectCall(
@@ -131,6 +132,7 @@ public class SinksImpl extends MeshComponentImpl
                     namespace,
                     sinkConfig,
                     e);
+            e.printStackTrace();
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
@@ -164,7 +166,7 @@ public class SinksImpl extends MeshComponentImpl
                             sinkName,
                             sinkPkgUrl,
                             uploadedInputStream,
-                            sinkConfig);
+                            sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager());
             v1alpha1Sink
                     .getMetadata()
                     .setResourceVersion(oldRes.getMetadata().getResourceVersion());
@@ -280,7 +282,14 @@ public class SinksImpl extends MeshComponentImpl
 
     @Override
     public List<ConnectorDefinition> getSinkList() {
-        return new ArrayList<>();
+        List<ConnectorDefinition> connectorDefinitions = getListOfConnectors();
+        List<ConnectorDefinition> retval = new ArrayList<>();
+        for (ConnectorDefinition connectorDefinition : connectorDefinitions) {
+            if (!org.apache.commons.lang.StringUtils.isEmpty(connectorDefinition.getSinkClass())) {
+                retval.add(connectorDefinition);
+            }
+        }
+        return retval;
     }
 
     @Override

@@ -18,15 +18,12 @@
  */
 package io.functionmesh.compute.util;
 
+import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpec;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInput;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPulsar;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecResources;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.functionmesh.compute.testdata.Generate;
+import io.functionmesh.compute.worker.MeshConnectorsManager;
 import org.apache.commons.io.FileUtils;
-import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.functions.utils.FunctionCommon;
@@ -43,7 +40,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,16 +60,13 @@ public class SinksUtilTest {
         String componentName = "sink-es-sample";
         String className = "org.apache.pulsar.io.elasticsearch.ElasticSearchSink";
         String inputTopic = "persistent://public/default/input";
-        String sourceType = getClass().getName();
-        String sinkType = sourceType;
+        String typeClassName = "[B";
         String archive = "connectors/pulsar-io-elastic-search-2.7.0-rc-pm-3.nar";
         boolean autoAck = true;
         int parallelism = 1;
-        Double cpu = 0.1;
-        Long ram = 1L;
         String clusterName = "test-pulsar";
-        String customRuntimeOptions = "{\"clusterName\": \"" + clusterName + "\"}";
         Map<String, Object> configs = new HashMap<>();
+        configs.put("elasticSearchUrl", "https://testing-es.app");
         File narFile = PowerMockito.mock(File.class);
         PowerMockito.when(narFile.getPath()).thenReturn("");
         FileInputStream uploadedInputStream = PowerMockito.mock(FileInputStream.class);
@@ -89,167 +82,114 @@ public class SinksUtilTest {
         PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
         PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
 
-        SinkConfig sinkConfig = new SinkConfig();
-        sinkConfig.setTenant(tenant);
-        sinkConfig.setNamespace(namespace);
-        sinkConfig.setName(componentName);
-        sinkConfig.setInputs(Collections.singletonList(inputTopic));
-        sinkConfig.setConfigs(configs);
-        sinkConfig.setArchive(archive);
-        sinkConfig.setParallelism(parallelism);
-        Resources resources = new Resources();
-        resources.setRam(ram);
-        resources.setCpu(cpu);
-        sinkConfig.setResources(resources);
-        sinkConfig.setCustomRuntimeOptions(customRuntimeOptions);
-        sinkConfig.setAutoAck(autoAck);
+        SinkConfig sinkConfig = Generate.CreateSinkConfig(tenant, namespace, componentName);
 
         V1alpha1Sink actualV1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
-                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig);
+                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null);
 
-        V1alpha1Sink expectedV1alpha1Sink = new V1alpha1Sink();
-
-        expectedV1alpha1Sink.setKind(kind);
-        expectedV1alpha1Sink.setApiVersion(String.format("%s/%s", group, version));
-
-        V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
-        v1ObjectMeta.setName(componentName);
-        v1ObjectMeta.setNamespace(namespace);
-        expectedV1alpha1Sink.setMetadata(v1ObjectMeta);
-
-        V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
-        v1alpha1SinkSpec.setClassName(className);
-
-        v1alpha1SinkSpec.setReplicas(parallelism);
-        v1alpha1SinkSpec.setMaxReplicas(parallelism);
-
-        V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
-        v1alpha1SinkSpecInput.setTopics(Collections.singletonList(inputTopic));
-        v1alpha1SinkSpecInput.setTypeClassName(sourceType);
-        v1alpha1SinkSpec.setInput(v1alpha1SinkSpecInput);
-
-        v1alpha1SinkSpec.setSinkConfig(SinksUtil.transformedMapValueToString(configs));
-
-        V1alpha1SinkSpecPulsar v1alpha1SinkSpecPulsar = new V1alpha1SinkSpecPulsar();
-        v1alpha1SinkSpecPulsar.setPulsarConfig(componentName);
-        v1alpha1SinkSpec.setPulsar(v1alpha1SinkSpecPulsar);
-
-        V1alpha1SinkSpecResources v1alpha1SinkSpecResources = new V1alpha1SinkSpecResources();
-        Map<String, String> requestRes = new HashMap<>();
-        String cpuValue = cpu.toString();
-        String memoryValue = ram.toString();
-        requestRes.put(SourcesUtil.cpuKey, cpuValue);
-        requestRes.put(SourcesUtil.memoryKey, memoryValue);
-        v1alpha1SinkSpecResources.setLimits(requestRes);
-        v1alpha1SinkSpecResources.setRequests(requestRes);
-        v1alpha1SinkSpec.setResources(v1alpha1SinkSpecResources);
-
-        String location = String.format("%s/%s/%s", tenant, namespace, componentName);
-
-        V1alpha1SinkSpecJava v1alpha1SinkSpecJava = new V1alpha1SinkSpecJava();
-        v1alpha1SinkSpecJava.setJar(archive.split("/")[1]);
-        v1alpha1SinkSpecJava.setJarLocation(location);
-        v1alpha1SinkSpec.setJava(v1alpha1SinkSpecJava);
-
-        v1alpha1SinkSpec.setClusterName(clusterName);
-
-        v1alpha1SinkSpec.setAutoAck(autoAck);
-
-        expectedV1alpha1Sink.setSpec(v1alpha1SinkSpec);
-
-        Assert.assertEquals(expectedV1alpha1Sink, actualV1alpha1Sink);
+        Assert.assertEquals(actualV1alpha1Sink.getKind(), kind);
+        V1alpha1SinkSpec v1alpha1SinkSpec = actualV1alpha1Sink.getSpec();
+        Assert.assertEquals(v1alpha1SinkSpec.getClassName(), className);
+        Assert.assertEquals(v1alpha1SinkSpec.getCleanupSubscription(), true);
+        Assert.assertEquals(v1alpha1SinkSpec.getReplicas().intValue(), parallelism);
+        Assert.assertEquals(v1alpha1SinkSpec.getInput().getTopics().get(0), inputTopic);
+        Assert.assertEquals(v1alpha1SinkSpec.getPulsar().getPulsarConfig(),
+                CommonUtil.getPulsarClusterConfigMapName(clusterName));
+        Assert.assertEquals(v1alpha1SinkSpec.getInput().getTypeClassName(), typeClassName);
+        Assert.assertEquals(v1alpha1SinkSpec.getJava().getJar(), archive);
+        Assert.assertEquals(v1alpha1SinkSpec.getAutoAck(), autoAck);
+        Assert.assertEquals(v1alpha1SinkSpec.getSinkConfig(), configs);
     }
 
     @Test
-    public void testCreateSinkConfigFromV1alpha1Sink() {
+    public void testCreateSinkConfigFromV1alpha1Sink() throws ClassNotFoundException, IOException {
+        String tenant = "public";
+        String namespace = "default";
+        String componentName = "sink-es-sample";
+        String className = "org.apache.pulsar.io.elasticsearch.ElasticSearchSink";
+
+        File narFile = PowerMockito.mock(File.class);
+        PowerMockito.when(narFile.getPath()).thenReturn("");
+        FileInputStream uploadedInputStream = PowerMockito.mock(FileInputStream.class);
+
+        NarClassLoader narClassLoader = PowerMockito.mock(NarClassLoader.class);
+        PowerMockito.when(narClassLoader.loadClass(className)).thenReturn(null);
+        PowerMockito.mockStatic(FunctionCommon.class);
+        PowerMockito.mockStatic(ConnectorUtils.class);
+        PowerMockito.mockStatic(FileUtils.class);
+        PowerMockito.when(FunctionCommon.extractNarClassLoader(narFile, null))
+                .thenReturn(narClassLoader);
+        PowerMockito.when(FunctionCommon.createPkgTempFile()).thenReturn(narFile);
+        PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
+        PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
+
+        SinkConfig sinkConfig = Generate.CreateSinkConfig(tenant, namespace, componentName);
+
+        V1alpha1Sink actualV1alpha1Sink =
+                SinksUtil.createV1alpha1SkinFromSinkConfig(
+                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null);
+
+        SinkConfig newSinkConfig = SinksUtil.createSinkConfigFromV1alpha1Source(tenant, namespace, componentName, actualV1alpha1Sink);
+
+        Assert.assertEquals(sinkConfig.getName(), newSinkConfig.getName());
+        Assert.assertEquals(sinkConfig.getNamespace(), newSinkConfig.getNamespace());
+        Assert.assertEquals(sinkConfig.getTenant(), newSinkConfig.getTenant());
+        Assert.assertEquals(sinkConfig.getConfigs(), newSinkConfig.getConfigs());
+        Assert.assertEquals(sinkConfig.getArchive(), newSinkConfig.getArchive());
+        Assert.assertEquals(sinkConfig.getResources(), newSinkConfig.getResources());
+        Assert.assertEquals(sinkConfig.getClassName(), newSinkConfig.getClassName());
+        Assert.assertEquals(sinkConfig.getAutoAck(), newSinkConfig.getAutoAck());
+        Assert.assertEquals(sinkConfig.getCustomRuntimeOptions(), newSinkConfig.getCustomRuntimeOptions());
+        Assert.assertArrayEquals(sinkConfig.getInputs().toArray(), newSinkConfig.getInputs().toArray());
+        Assert.assertEquals(sinkConfig.getMaxMessageRetries(), newSinkConfig.getMaxMessageRetries());
+        Assert.assertEquals(sinkConfig.getCleanupSubscription(), newSinkConfig.getCleanupSubscription());
+        Assert.assertEquals(sinkConfig.getParallelism(), newSinkConfig.getParallelism());
+        Assert.assertEquals(sinkConfig.getRuntimeFlags(), newSinkConfig.getRuntimeFlags());
+    }
+
+    @Test
+    public void testCreateV1alpha1SinkFromSinkConfigWithBuiltin()
+            throws ClassNotFoundException, IOException {
         String tenant = "public";
         String namespace = "default";
         String componentName = "sink-es-sample";
         String className = "org.apache.pulsar.io.elasticsearch.ElasticSearchSink";
         String inputTopic = "persistent://public/default/input";
-        String sourceType = getClass().getName();
-        String sinkType = sourceType;
+        String typeClassName = "[B";
         String archive = "connectors/pulsar-io-elastic-search-2.7.0-rc-pm-3.nar";
         boolean autoAck = true;
         int parallelism = 1;
-        Double cpu = 0.1;
-        Long ram = 1L;
         String clusterName = "test-pulsar";
-        String customRuntimeOptions = "{\"clusterName\":\"" + clusterName + "\"}";
         Map<String, Object> configs = new HashMap<>();
-        configs.put("name", "test-config");
+        configs.put("elasticSearchUrl", "https://testing-es.app");
 
-        V1alpha1Sink v1alpha1Sink = new V1alpha1Sink();
+        MeshConnectorsManager connectorsManager = PowerMockito.mock(MeshConnectorsManager.class);
+        FunctionMeshConnectorDefinition connectorDefinition = PowerMockito.mock(FunctionMeshConnectorDefinition.class);
+        PowerMockito.when(connectorDefinition.getId()).thenReturn("elastic-search");
+        PowerMockito.when(connectorDefinition.getVersion()).thenReturn("2.7.0-rc-pm-3");
+        PowerMockito.when(connectorDefinition.getImageTag()).thenReturn("2.7.0-rc-pm-3");
+        PowerMockito.when(connectorDefinition.getImageRepository()).thenReturn("streamnative/pulsar-io-elastic-search");
+        PowerMockito.when(connectorDefinition.getJar()).thenReturn("connectors/pulsar-io-elastic-search-2.7.0-rc-pm-3.nar");
+        PowerMockito.when(connectorsManager.getConnectorDefinition("elastic-search")).thenReturn(connectorDefinition);
 
-        v1alpha1Sink.setKind(kind);
-        v1alpha1Sink.setApiVersion(String.format("%s/%s", group, version));
+        SinkConfig sinkConfig = Generate.CreateSinkConfigBuiltin(tenant, namespace, componentName);
 
-        V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
-        v1ObjectMeta.setName(componentName);
-        v1ObjectMeta.setNamespace(namespace);
-        v1alpha1Sink.setMetadata(v1ObjectMeta);
+        V1alpha1Sink actualV1alpha1Sink =
+                SinksUtil.createV1alpha1SkinFromSinkConfig(
+                        kind, group, version, componentName, null, null, sinkConfig, connectorsManager);
 
-        V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
-        v1alpha1SinkSpec.setClassName(className);
-
-        v1alpha1SinkSpec.setReplicas(parallelism);
-        v1alpha1SinkSpec.setMaxReplicas(parallelism);
-
-        V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
-        v1alpha1SinkSpecInput.setTopics(Collections.singletonList(inputTopic));
-        v1alpha1SinkSpecInput.setTypeClassName(sourceType);
-        v1alpha1SinkSpec.setInput(v1alpha1SinkSpecInput);
-
-        v1alpha1SinkSpec.setSinkConfig(SinksUtil.transformedMapValueToString(configs));
-
-        V1alpha1SinkSpecPulsar v1alpha1SinkSpecPulsar = new V1alpha1SinkSpecPulsar();
-        v1alpha1SinkSpecPulsar.setPulsarConfig(componentName);
-        v1alpha1SinkSpec.setPulsar(v1alpha1SinkSpecPulsar);
-
-        V1alpha1SinkSpecResources v1alpha1SinkSpecResources = new V1alpha1SinkSpecResources();
-        Map<String, String> requestRes = new HashMap<>();
-        String cpuValue = cpu.toString();
-        String memoryValue = ram.toString();
-        requestRes.put(SourcesUtil.cpuKey, cpuValue);
-        requestRes.put(SourcesUtil.memoryKey, memoryValue);
-        v1alpha1SinkSpecResources.setLimits(requestRes);
-        v1alpha1SinkSpecResources.setRequests(requestRes);
-        v1alpha1SinkSpec.setResources(v1alpha1SinkSpecResources);
-
-        String location = String.format("%s/%s/%s", tenant, namespace, componentName);
-
-        V1alpha1SinkSpecJava v1alpha1SinkSpecJava = new V1alpha1SinkSpecJava();
-        v1alpha1SinkSpecJava.setJar(archive.split("/")[1]);
-        v1alpha1SinkSpecJava.setJarLocation(location);
-        v1alpha1SinkSpec.setJava(v1alpha1SinkSpecJava);
-
-        v1alpha1SinkSpec.setClusterName(clusterName);
-
-        v1alpha1SinkSpec.setAutoAck(autoAck);
-
-        v1alpha1Sink.setSpec(v1alpha1SinkSpec);
-
-        SinkConfig actualSinkConfig =
-                SinksUtil.createSinkConfigFromV1alpha1Source(
-                        tenant, namespace, componentName, v1alpha1Sink);
-
-        SinkConfig expectedSinkConfig = new SinkConfig();
-        expectedSinkConfig.setTenant(tenant);
-        expectedSinkConfig.setNamespace(namespace);
-        expectedSinkConfig.setName(componentName);
-        expectedSinkConfig.setClassName(className);
-        expectedSinkConfig.setInputs(Collections.singletonList(inputTopic));
-        expectedSinkConfig.setConfigs(configs);
-        expectedSinkConfig.setArchive(archive.split("/")[1]);
-        expectedSinkConfig.setParallelism(parallelism);
-        Resources resources = new Resources();
-        resources.setRam(ram);
-        resources.setCpu(cpu);
-        expectedSinkConfig.setResources(resources);
-        expectedSinkConfig.setCustomRuntimeOptions(customRuntimeOptions);
-        expectedSinkConfig.setAutoAck(autoAck);
-
-        Assert.assertEquals(expectedSinkConfig, actualSinkConfig);
+        Assert.assertEquals(actualV1alpha1Sink.getKind(), kind);
+        V1alpha1SinkSpec v1alpha1SinkSpec = actualV1alpha1Sink.getSpec();
+        Assert.assertEquals(v1alpha1SinkSpec.getClassName(), className);
+        Assert.assertEquals(v1alpha1SinkSpec.getCleanupSubscription(), true);
+        Assert.assertEquals(v1alpha1SinkSpec.getReplicas().intValue(), parallelism);
+        Assert.assertEquals(v1alpha1SinkSpec.getInput().getTopics().get(0), inputTopic);
+        Assert.assertEquals(v1alpha1SinkSpec.getPulsar().getPulsarConfig(),
+                CommonUtil.getPulsarClusterConfigMapName(clusterName));
+        Assert.assertEquals(v1alpha1SinkSpec.getInput().getTypeClassName(), typeClassName);
+        Assert.assertEquals(v1alpha1SinkSpec.getJava().getJar(), archive);
+        Assert.assertEquals(v1alpha1SinkSpec.getAutoAck(), autoAck);
+        Assert.assertEquals(v1alpha1SinkSpec.getSinkConfig(), configs);
     }
 }

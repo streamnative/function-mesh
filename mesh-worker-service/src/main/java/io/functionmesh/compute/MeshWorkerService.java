@@ -21,6 +21,7 @@ package io.functionmesh.compute;
 import io.functionmesh.compute.rest.api.FunctionsImpl;
 import io.functionmesh.compute.rest.api.SinksImpl;
 import io.functionmesh.compute.rest.api.SourcesImpl;
+import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
@@ -66,6 +67,8 @@ public class MeshWorkerService implements WorkerService {
     private AuthenticationService authenticationService;
     private AuthorizationService authorizationService;
 
+    private MeshConnectorsManager connectorsManager;
+
     public MeshWorkerService() {
 
     }
@@ -77,9 +80,9 @@ public class MeshWorkerService implements WorkerService {
 
     @Override
     public void initInBroker(ServiceConfiguration brokerConfig,
-                           WorkerConfig workerConfig, PulsarResources pulsarResources,
-                           ConfigurationCacheService configurationCacheService,
-                           InternalConfigurationData internalConfigurationData) throws Exception {
+                             WorkerConfig workerConfig, PulsarResources pulsarResources,
+                             ConfigurationCacheService configurationCacheService,
+                             InternalConfigurationData internalConfigurationData) throws Exception {
         this.init(workerConfig);
     }
 
@@ -107,6 +110,7 @@ public class MeshWorkerService implements WorkerService {
                       ErrorNotifier errorNotifier) {
         this.authenticationService = authenticationService;
         this.authorizationService = authorizationService;
+        this.connectorsManager = new MeshConnectorsManager();
     }
 
     public void stop() {

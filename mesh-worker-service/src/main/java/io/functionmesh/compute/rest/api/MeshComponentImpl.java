@@ -29,6 +29,7 @@ import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.FunctionState;
 import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.policies.data.FunctionStats;
+import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.worker.service.api.Component;
 
@@ -79,7 +80,27 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                                    final String componentName,
                                    final String clientRole,
                                    AuthenticationDataHttps clientAuthenticationDataHttps) {
+        validateDeregisterFunctionRequestParams(tenant, namespace, componentName);
 
+        try {
+            Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
+                    group,
+                    version,
+                    namespace,
+                    plural,
+                    componentName,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+            );
+            executeCall(call, null);
+        } catch (Exception e) {
+            log.error("deregister {}/{}/{} {} failed, error message: {}", tenant, namespace, componentName, plural, e);
+            throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
     }
 
     public <T> T executeCall(Call call, Class<T> c) throws Exception {
@@ -284,13 +305,24 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
 
     @Override
     public List<ConnectorDefinition> getListOfConnectors() {
-        // To do
-        return null;
+        return meshWorkerServiceSupplier.get().getConnectorsManager().getConnectorDefinitions();
     }
 
     @Override
     public void reloadConnectors(String clientRole) {
+        meshWorkerServiceSupplier.get().getConnectorsManager().reloadConnectors();
+    }
 
+    private void validateDeregisterFunctionRequestParams(String tenant, String namespace, String functionName) {
+        if (tenant == null) {
+            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Tenant is not provided");
+        }
+        if (namespace == null) {
+            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Namespace is not provided");
+        }
+        if (functionName == null) {
+            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Function name is not provided");
+        }
     }
 }
 

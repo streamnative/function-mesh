@@ -18,15 +18,12 @@
  */
 package io.functionmesh.compute.util;
 
+import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpec;
-import io.functionmesh.compute.sources.models.V1alpha1SourceSpecJava;
-import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutput;
-import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
-import io.functionmesh.compute.sources.models.V1alpha1SourceSpecResources;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.functionmesh.compute.testdata.Generate;
+import io.functionmesh.compute.worker.MeshConnectorsManager;
 import org.apache.commons.io.FileUtils;
-import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SourceConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.functions.utils.FunctionCommon;
@@ -62,15 +59,13 @@ public class SourcesUtilTest {
         String componentName = "source-mongodb-sample";
         String className = "org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource";
         String topicName = "persistent://public/default/destination";
-        String sourceType = getClass().getName();
-        String sinkType = sourceType;
+        String typeClassName = "org.apache.pulsar.common.schema.KeyValue";
         String archive = "connectors/pulsar-io-debezium-mongodb-2.7.0.nar";
         int parallelism = 1;
-        Double cpu = 0.1;
-        Long ram = 1L;
         String clusterName = "test-pulsar";
-        String customRuntimeOptions = "{\"clusterName\": \"" + clusterName + "\"}";
         Map<String, Object> configs = new HashMap<>();
+        String configsName = "test-sourceConfig";
+        configs.put("name", configsName);
         File narFile = PowerMockito.mock(File.class);
         PowerMockito.when(narFile.getPath()).thenReturn("");
         FileInputStream uploadedInputStream = PowerMockito.mock(FileInputStream.class);
@@ -85,161 +80,105 @@ public class SourcesUtilTest {
         PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
         PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
 
-        SourceConfig sourceConfig = new SourceConfig();
-        sourceConfig.setTenant(tenant);
-        sourceConfig.setNamespace(namespace);
-        sourceConfig.setName(componentName);
-        sourceConfig.setClassName(className);
-        sourceConfig.setTopicName(topicName);
-        sourceConfig.setSchemaType(className);
-        sourceConfig.setArchive(archive);
-        sourceConfig.setParallelism(parallelism);
-        sourceConfig.setConfigs(configs);
-        Resources resources = new Resources();
-        resources.setRam(ram);
-        resources.setCpu(cpu);
-        sourceConfig.setResources(resources);
-        sourceConfig.setCustomRuntimeOptions(customRuntimeOptions);
+        SourceConfig sourceConfig = Generate.CreateSourceConfig(tenant, namespace, componentName);
 
         V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
-                componentName, null, uploadedInputStream, sourceConfig);
+                componentName, null, uploadedInputStream, sourceConfig, null);
 
-        V1alpha1Source expectedV1alpha1Source = new V1alpha1Source();
-
-        expectedV1alpha1Source.setKind(kind);
-        expectedV1alpha1Source.setApiVersion(String.format("%s/%s", group, version));
-
-        V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
-        v1ObjectMeta.setName(componentName);
-        v1ObjectMeta.setNamespace(namespace);
-        expectedV1alpha1Source.setMetadata(v1ObjectMeta);
-
-        V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
-        v1alpha1SourceSpec.setClassName(className);
-        v1alpha1SourceSpec.setSourceConfig(new HashMap<>());
-
-        V1alpha1SourceSpecOutput v1alpha1SourceSpecOutput = new V1alpha1SourceSpecOutput();
-        v1alpha1SourceSpecOutput.setTopic(topicName);
-        v1alpha1SourceSpecOutput.setTypeClassName(sourceType);
-        v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
-
-        V1alpha1SourceSpecPulsar v1alpha1SourceSpecPulsar = new V1alpha1SourceSpecPulsar();
-        v1alpha1SourceSpecPulsar.setPulsarConfig(componentName);
-        v1alpha1SourceSpec.setPulsar(v1alpha1SourceSpecPulsar);
-
-        V1alpha1SourceSpecResources v1alpha1SourceSpecResources = new V1alpha1SourceSpecResources();
-        Map<String, String> requestRes = new HashMap<>();
-        String cpuValue = cpu.toString();
-        String memoryValue = ram.toString();
-        requestRes.put(SourcesUtil.cpuKey, cpuValue);
-        requestRes.put(SourcesUtil.memoryKey, memoryValue);
-
-        v1alpha1SourceSpecResources.setLimits(requestRes);
-        v1alpha1SourceSpecResources.setRequests(requestRes);
-        v1alpha1SourceSpec.setResources(v1alpha1SourceSpecResources);
-
-        v1alpha1SourceSpec.setReplicas(parallelism);
-        v1alpha1SourceSpec.setMaxReplicas(parallelism);
-
-        String location = String.format("%s/%s/%s", tenant, namespace, componentName);
-
-        V1alpha1SourceSpecJava v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
-        v1alpha1SourceSpecJava.setJar(archive.split("/")[1]);
-        v1alpha1SourceSpecJava.setJarLocation(location);
-        v1alpha1SourceSpec.setJava(v1alpha1SourceSpecJava);
-
-        v1alpha1SourceSpec.setClusterName(clusterName);
-
-        expectedV1alpha1Source.setSpec(v1alpha1SourceSpec);
-
-        Assert.assertEquals(expectedV1alpha1Source, v1alpha1Source);
+        Assert.assertEquals(v1alpha1Source.getKind(), kind);
+        V1alpha1SourceSpec v1alpha1SourceSpec = v1alpha1Source.getSpec();
+        Assert.assertEquals(v1alpha1SourceSpec.getClassName(), className);
+        Assert.assertEquals(v1alpha1SourceSpec.getReplicas().intValue(), parallelism);
+        Assert.assertEquals(v1alpha1SourceSpec.getOutput().getTopic(), topicName);
+        Assert.assertEquals(v1alpha1SourceSpec.getPulsar().getPulsarConfig(),
+                CommonUtil.getPulsarClusterConfigMapName(clusterName));
+        Assert.assertEquals(v1alpha1SourceSpec.getOutput().getTypeClassName(), typeClassName);
+        Assert.assertEquals(v1alpha1SourceSpec.getJava().getJar(), archive);
+        Assert.assertEquals(v1alpha1SourceSpec.getSourceConfig(), configs);
     }
 
     @Test
-    public void testCreateSourceConfigFromV1alpha1Source() {
+    public void testCreateSourceConfigFromV1alpha1Source() throws ClassNotFoundException, IOException, URISyntaxException {
         String tenant = "public";
         String namespace = "default";
         String componentName = "source-mongodb-sample";
         String className = "org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource";
-        String sourceType = getClass().getName();
+
+        File narFile = PowerMockito.mock(File.class);
+        PowerMockito.when(narFile.getPath()).thenReturn("");
+        FileInputStream uploadedInputStream = PowerMockito.mock(FileInputStream.class);
+
+        NarClassLoader narClassLoader = PowerMockito.mock(NarClassLoader.class);
+        PowerMockito.when(narClassLoader.loadClass(className)).thenReturn(null);
+        PowerMockito.mockStatic(FunctionCommon.class);
+        PowerMockito.mockStatic(ConnectorUtils.class);
+        PowerMockito.mockStatic(FileUtils.class);
+        PowerMockito.when(FunctionCommon.extractNarClassLoader(narFile, null)).thenReturn(narClassLoader);
+        PowerMockito.when(FunctionCommon.createPkgTempFile()).thenReturn(narFile);
+        PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
+        PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
+
+        SourceConfig sourceConfig = Generate.CreateSourceConfig(tenant, namespace, componentName);
+
+        V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
+                componentName, null, uploadedInputStream, sourceConfig, null);
+
+        SourceConfig newSourceConfig = SourcesUtil.createSourceConfigFromV1alpha1Source(tenant, namespace,
+                componentName, v1alpha1Source);
+
+        Assert.assertEquals(sourceConfig.getName(), newSourceConfig.getName());
+        Assert.assertEquals(sourceConfig.getNamespace(), newSourceConfig.getNamespace());
+        Assert.assertEquals(sourceConfig.getTenant(), newSourceConfig.getTenant());
+        Assert.assertEquals(sourceConfig.getConfigs(), newSourceConfig.getConfigs());
+        Assert.assertEquals(sourceConfig.getArchive(), newSourceConfig.getArchive());
+        Assert.assertEquals(sourceConfig.getResources(), newSourceConfig.getResources());
+        Assert.assertEquals(sourceConfig.getClassName(), newSourceConfig.getClassName());
+        Assert.assertEquals(sourceConfig.getCustomRuntimeOptions(), newSourceConfig.getCustomRuntimeOptions());
+        Assert.assertEquals(sourceConfig.getTopicName(), newSourceConfig.getTopicName());
+        Assert.assertEquals(sourceConfig.getParallelism(), newSourceConfig.getParallelism());
+        Assert.assertEquals(sourceConfig.getRuntimeFlags(), newSourceConfig.getRuntimeFlags());
+    }
+
+    @Test
+    public void testCreateV1alpha1SourceFromSinkConfigWithBuiltin() throws IOException, URISyntaxException, ClassNotFoundException {
+        String tenant = "public";
+        String namespace = "default";
+        String componentName = "source-mongodb-sample";
+        String className = "org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource";
         String topicName = "persistent://public/default/destination";
-        String archive = "pulsar-io-debezium-mongodb-2.7.0.nar";
+        String typeClassName = "org.apache.pulsar.common.schema.KeyValue";
+        String archive = "connectors/pulsar-io-debezium-mongodb-2.7.0.nar";
         int parallelism = 1;
-        Double cpu = 0.1;
-        Long ram = 1L;
         String clusterName = "test-pulsar";
-        String customRuntimeOptions = "{\"clusterName\":\"" + clusterName + "\"}";
         Map<String, Object> configs = new HashMap<>();
-        configs.put("name","test-config");
+        String configsName = "test-sourceConfig";
+        configs.put("name", configsName);
 
-        V1alpha1Source v1alpha1Source = new V1alpha1Source();
+        MeshConnectorsManager connectorsManager = PowerMockito.mock(MeshConnectorsManager.class);
+        FunctionMeshConnectorDefinition connectorDefinition = PowerMockito.mock(FunctionMeshConnectorDefinition.class);
+        PowerMockito.when(connectorDefinition.getId()).thenReturn("debezium-mongodb");
+        PowerMockito.when(connectorDefinition.getVersion()).thenReturn("2.7.0");
+        PowerMockito.when(connectorDefinition.getImageTag()).thenReturn("2.7.0");
+        PowerMockito.when(connectorDefinition.getImageRepository()).thenReturn("streamnative/pulsar-io-debezium-mongodb");
+        PowerMockito.when(connectorDefinition.getJar()).thenReturn("connectors/pulsar-io-debezium-mongodb-2.7.0.nar");
+        PowerMockito.when(connectorsManager.getConnectorDefinition("debezium-mongodb"))
+                .thenReturn(connectorDefinition);
 
-        v1alpha1Source.setKind(kind);
-        v1alpha1Source.setApiVersion(String.format("%s/%s", group, version));
+        SourceConfig sourceConfig = Generate.CreateSourceConfigBuiltin(tenant, namespace, componentName);
 
-        V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
-        v1ObjectMeta.setName(componentName);
-        v1ObjectMeta.setNamespace(namespace);
-        v1alpha1Source.setMetadata(v1ObjectMeta);
+        V1alpha1Source v1alpha1Source =
+                SourcesUtil.createV1alpha1SourceFromSourceConfig(
+                        kind, group, version, componentName, null, null, sourceConfig, connectorsManager);
 
-        V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
-        v1alpha1SourceSpec.setClassName(className);
-        v1alpha1SourceSpec.setSourceConfig(new HashMap<>());
-
-        V1alpha1SourceSpecOutput v1alpha1SourceSpecOutput = new V1alpha1SourceSpecOutput();
-        v1alpha1SourceSpecOutput.setTopic(topicName);
-        v1alpha1SourceSpecOutput.setTypeClassName(sourceType);
-        v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
-
-        V1alpha1SourceSpecPulsar v1alpha1SourceSpecPulsar = new V1alpha1SourceSpecPulsar();
-        v1alpha1SourceSpecPulsar.setPulsarConfig(componentName);
-        v1alpha1SourceSpec.setPulsar(v1alpha1SourceSpecPulsar);
-
-        V1alpha1SourceSpecResources v1alpha1SourceSpecResources = new V1alpha1SourceSpecResources();
-        Map<String, String> requestRes = new HashMap<>();
-        String cpuValue = cpu.toString();
-        String memoryValue = ram.toString();
-        requestRes.put(SourcesUtil.cpuKey, cpuValue);
-        requestRes.put(SourcesUtil.memoryKey, memoryValue);
-
-        v1alpha1SourceSpecResources.setLimits(requestRes);
-        v1alpha1SourceSpecResources.setRequests(requestRes);
-        v1alpha1SourceSpec.setResources(v1alpha1SourceSpecResources);
-
-        v1alpha1SourceSpec.setReplicas(parallelism);
-        v1alpha1SourceSpec.setMaxReplicas(parallelism);
-
-        String location = String.format("%s/%s/%s", tenant, namespace, componentName);
-
-        V1alpha1SourceSpecJava v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
-        v1alpha1SourceSpecJava.setJar(archive);
-        v1alpha1SourceSpecJava.setJarLocation(location);
-        v1alpha1SourceSpec.setJava(v1alpha1SourceSpecJava);
-
-        v1alpha1SourceSpec.setSourceConfig(SourcesUtil.transformedMapValueToString(configs));
-
-        v1alpha1SourceSpec.setClusterName(clusterName);
-
-        v1alpha1Source.setSpec(v1alpha1SourceSpec);
-
-        SourceConfig sourceConfig = SourcesUtil.createSourceConfigFromV1alpha1Source(tenant, namespace, componentName
-                , v1alpha1Source);
-
-        SourceConfig expectedSourceConfig = new SourceConfig();
-        expectedSourceConfig.setTenant(tenant);
-        expectedSourceConfig.setNamespace(namespace);
-        expectedSourceConfig.setName(componentName);
-        expectedSourceConfig.setClassName(className);
-        expectedSourceConfig.setTopicName(topicName);
-        expectedSourceConfig.setArchive(archive);
-        expectedSourceConfig.setParallelism(parallelism);
-        expectedSourceConfig.setConfigs(configs);
-        Resources resources = new Resources();
-        resources.setRam(ram);
-        resources.setCpu(cpu);
-        expectedSourceConfig.setResources(resources);
-        expectedSourceConfig.setCustomRuntimeOptions(customRuntimeOptions);
-
-        Assert.assertEquals(expectedSourceConfig, sourceConfig);
+        Assert.assertEquals(v1alpha1Source.getKind(), kind);
+        V1alpha1SourceSpec v1alpha1SourceSpec = v1alpha1Source.getSpec();
+        Assert.assertEquals(v1alpha1SourceSpec.getClassName(), className);
+        Assert.assertEquals(v1alpha1SourceSpec.getReplicas().intValue(), parallelism);
+        Assert.assertEquals(v1alpha1SourceSpec.getOutput().getTopic(), topicName);
+        Assert.assertEquals(v1alpha1SourceSpec.getPulsar().getPulsarConfig(),
+                CommonUtil.getPulsarClusterConfigMapName(clusterName));
+        Assert.assertEquals(v1alpha1SourceSpec.getOutput().getTypeClassName(), typeClassName);
+        Assert.assertEquals(v1alpha1SourceSpec.getJava().getJar(), archive);
+        Assert.assertEquals(v1alpha1SourceSpec.getSourceConfig(), configs);
     }
 }

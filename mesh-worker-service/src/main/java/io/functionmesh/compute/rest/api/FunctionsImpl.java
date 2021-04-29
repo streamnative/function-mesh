@@ -18,9 +18,9 @@
  */
 package io.functionmesh.compute.rest.api;
 
-import io.functionmesh.compute.util.FunctionsUtil;
-import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.functions.models.V1alpha1Function;
+import io.functionmesh.compute.util.FunctionsUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
@@ -168,35 +168,6 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             executeCall(replaceCall, V1alpha1Function.class);
         } catch (Exception e) {
             log.error("update {}/{}/{} function failed, error message: {}", tenant, namespace, functionName, e);
-            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
-    }
-
-    @Override
-    public void deregisterFunction(final String tenant,
-                                   final String namespace,
-                                   final String componentName,
-                                   final String clientRole,
-                                   AuthenticationDataHttps clientAuthenticationDataHttps) {
-        validateDeregisterFunctionRequestParams(tenant, namespace, componentName);
-
-        try {
-            Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
-                    group,
-                    version,
-                    namespace,
-                    plural,
-                    componentName,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-            );
-            executeCall(call, null);
-        } catch (Exception e) {
-            log.error("deregister {}/{}/{} function failed, error message: {}", tenant, namespace, componentName, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
