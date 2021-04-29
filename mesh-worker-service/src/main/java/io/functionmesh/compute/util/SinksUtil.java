@@ -25,7 +25,7 @@ import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInput;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPulsar;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecResources;
-import io.functionmesh.proxy.models.CustomRuntimeOptions;
+import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;

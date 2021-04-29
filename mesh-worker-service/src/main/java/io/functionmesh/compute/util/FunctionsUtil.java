@@ -19,7 +19,7 @@
 package io.functionmesh.compute.util;
 
 import io.functionmesh.compute.functions.models.*;
-import io.functionmesh.proxy.models.CustomRuntimeOptions;
+import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.common.functions.ConsumerConfig;
