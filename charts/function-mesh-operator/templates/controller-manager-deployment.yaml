@@ -38,7 +38,7 @@ spec:
 {{ toYaml .Values.controllerManager.resources | indent 12 }}
         {{- end }}
         command:
-          - /usr/local/bin/function-mesh-controller-manager
+          - /manager
         env:
           - name: NAMESPACE
             valueFrom:

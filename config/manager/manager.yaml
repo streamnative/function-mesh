@@ -12,15 +12,18 @@ metadata:
   namespace: system
   labels:
     control-plane: controller-manager
+    app: function-mesh-operator
 spec:
   selector:
     matchLabels:
       control-plane: controller-manager
+      app: function-mesh-operator
   replicas: 1
   template:
     metadata:
       labels:
         control-plane: controller-manager
+        app: function-mesh-operator
     spec:
       containers:
       - command:
