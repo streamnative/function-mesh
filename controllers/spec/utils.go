@@ -82,8 +82,8 @@ func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 		IsRegexPatternSubscription:  function.Spec.Input.TopicPattern != "",
 		SinkSpecTopic:               function.Spec.Output.Topic,
 		SinkSchemaType:              "", // TODO: map schema type
-		Cpu:                         float64(function.Spec.Resources.Requests.Cpu().Value()),
-		Ram:                         function.Spec.Resources.Requests.Memory().Value(),
+		CPU:                         float64(function.Spec.Resources.Requests.Cpu().Value()),
+		RAM:                         function.Spec.Resources.Requests.Memory().Value(),
 		Disk:                        function.Spec.Resources.Requests.Storage().Value(),
 		MaxMessageRetries:           function.Spec.MaxMessageRetry,
 		DeadLetterTopic:             function.Spec.DeadLetterTopic,

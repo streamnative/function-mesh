@@ -30,7 +30,7 @@ type GoFunctionConf struct {
 	MaxBufTuples     int           `json:"maxBufTuples" yaml:"maxBufTuples"`
 	Port             int           `json:"port" yaml:"port"`
 	ClusterName      string        `json:"clusterName" yaml:"clusterName"`
-	KillAfterIdleMs  time.Duration `json:"killAfterIdleMs" yaml:"killAfterIdleMs"`
+	KillAfterIdle    time.Duration `json:"killAfterIdleMs" yaml:"killAfterIdleMs"`
 	// function details config
 	Tenant               string `json:"tenant" yaml:"tenant"`
 	NameSpace            string `json:"nameSpace" yaml:"nameSpace"`
@@ -55,8 +55,8 @@ type GoFunctionConf struct {
 	SinkSpecTopic  string `json:"sinkSpecsTopic" yaml:"sinkSpecsTopic"`
 	SinkSchemaType string `json:"sinkSchemaType" yaml:"sinkSchemaType"`
 	//resources config
-	Cpu  float64 `json:"cpu" yaml:"cpu"`
-	Ram  int64   `json:"ram" yaml:"ram"`
+	CPU  float64 `json:"cpu" yaml:"cpu"`
+	RAM  int64   `json:"ram" yaml:"ram"`
 	Disk int64   `json:"disk" yaml:"disk"`
 	//retryDetails config
 	MaxMessageRetries           int32  `json:"maxMessageRetries" yaml:"maxMessageRetries"`
