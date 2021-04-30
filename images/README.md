@@ -152,3 +152,7 @@ When you use Function Mesh with self build images, you need to define the execut
 ## Scripts
 
 `build.sh` is a bash script used to build base, Java, Python, and Golang runner locally.
+
+## Samples
+
+`function-samples` have a sample Dockerfile that copy `/pulsar/examples` from `pulsar-all` into `java-runner`, which can be used to test Function Mesh.
