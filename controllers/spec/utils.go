@@ -26,7 +26,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/validation"
 
-	goconf "github.com/apache/pulsar/pulsar-function-go/conf"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
 )
@@ -58,8 +57,8 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 	}
 }
 
-func convertGoFunctionConfs(function *v1alpha1.Function) *goconf.Conf {
-	return &goconf.Conf{
+func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
+	return &GoFunctionConf{
 		FuncID:                      fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
 		PulsarServiceURL:            "${brokerServiceURL}",
 		FuncVersion:                 "0",
