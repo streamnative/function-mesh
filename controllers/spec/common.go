@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
 
@@ -56,6 +55,8 @@ const (
 
 	AnnotationPrometheusScrape = "prometheus.io/scrape"
 	AnnotationPrometheusPort   = "prometheus.io/port"
+
+	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
 )
 
 var GRPCPort = corev1.ContainerPort{
@@ -259,7 +260,7 @@ func getProcessPythonRuntimeArgs(name string, packageName string, clusterName st
 		"python",
 		"/pulsar/instances/python-instance/python_instance_main.py",
 		"--py",
-		fmt.Sprintf("/pulsar/%s", packageName),
+		packageName,
 		"--logging_directory",
 		"logs/functions",
 		"--logging_file",
@@ -317,38 +318,35 @@ func getSharedArgs(details, clusterName string, authProvided bool) []string {
 	return args
 }
 
-func generateGoFunctionDetailsInJSON(function *v1alpha1.Function) string {
-	functionDetails := convertFunctionDetails(function)
-	marshaler := &jsonpb.Marshaler{}
-	json, err := marshaler.MarshalToString(functionDetails)
+func generateGoFunctionConf(function *v1alpha1.Function) string {
+	goFunctionConfs := convertGoFunctionConfs(function)
+	json, err := json.Marshal(goFunctionConfs)
 	if err != nil {
 		// TODO
 		panic(err)
 	}
-	return json
+	ret := string(json)
+	ret = strings.ReplaceAll(ret, "\"instanceID\":0", "\"instanceID\":${"+EnvShardID+"}")
+	return ret
 }
 
 func getProcessGoRuntimeArgs(goExecFilePath string, function *v1alpha1.Function) []string {
-	str := generateGoFunctionDetailsInJSON(function)
-	tmpStr := strings.TrimSuffix(str, "}")
-
-	inputTopic := function.Spec.Input.Topics[0]
-	outputTopic := function.Spec.Output.Topic
-
-	configContent := fmt.Sprintf("%s, \"pulsarServiceURL\": \"pulsar://test-pulsar-broker.default.svc.cluster.local:6650\", "+
-		"\"sourceSpecsTopic\": \"%s\", \"sinkSpecsTopic\": \"%s\"}", tmpStr, inputTopic, outputTopic)
-
-	goPath := fmt.Sprintf("/pulsar/%s", goExecFilePath)
-	conf := fmt.Sprintf("'%s'", configContent)
-
+	str := generateGoFunctionConf(function)
+	str = strings.ReplaceAll(str, "\"", "\\\"")
 	args := []string{
+		fmt.Sprintf("%s=%s", EnvGoFunctionConfigs, str),
+		"&&",
+		fmt.Sprintf("goFunctionConfigs=${%s}", EnvGoFunctionConfigs),
+		"&&",
+		"echo goFunctionConfigs=\"'${goFunctionConfigs}'\"",
+		"&&",
 		"chmod +x",
-		goPath,
+		goExecFilePath,
 		"&&",
 		"exec",
-		goPath,
+		goExecFilePath,
 		"-instance-conf",
-		conf,
+		"${goFunctionConfigs}",
 	}
 
 	return args
