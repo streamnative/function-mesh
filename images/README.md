@@ -155,4 +155,4 @@ When you use Function Mesh with self build images, you need to define the execut
 
 ## Samples
 
-`function-samples` have a sample Dockerfile that copy `/pulsar/examples` from `pulsar-all` into `java-runner`, which can be used to test Function Mesh.
+`function-samples` has a sample `Dockerfile` that copies `/pulsar/examples` from `pulsar-all` into `java-runner`, which can be used to test Function Mesh.
