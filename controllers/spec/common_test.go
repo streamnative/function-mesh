@@ -18,7 +18,10 @@
 package spec
 
 import (
+	"strings"
 	"testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 
@@ -169,4 +172,77 @@ func TestGetSourceRunnerImage(t *testing.T) {
 	}}, Image: "streamnative/pulsar-io-test:2.7.1"}
 	image = getSourceRunnerImage(&spec)
 	assert.Equal(t, image, "streamnative/pulsar-io-test:2.7.1")
+}
+
+func TestMakeGoFunctionCommand(t *testing.T) {
+	function := makeGoFunctionSample(TestFunctionName)
+	commands := MakeGoFunctionCommand("", "/pulsar/go-func", function)
+	assert.Equal(t, commands[0], "sh")
+	assert.Equal(t, commands[1], "-c")
+	assert.True(t, strings.HasPrefix(commands[2], "SHARD_ID=${POD_NAME##*-} && echo shardId=${SHARD_ID}"))
+	innerCommands := strings.Split(commands[2], "&&")
+	assert.Equal(t, innerCommands[0], "SHARD_ID=${POD_NAME##*-} ")
+	assert.Equal(t, innerCommands[1], " echo shardId=${SHARD_ID} ")
+	assert.True(t, strings.HasPrefix(innerCommands[2], " GO_FUNCTION_CONF"))
+	assert.Equal(t, innerCommands[3], " goFunctionConfigs=${GO_FUNCTION_CONF} ")
+	assert.Equal(t, innerCommands[4], " echo goFunctionConfigs=\"'${goFunctionConfigs}'\" ")
+	assert.Equal(t, innerCommands[5], " chmod +x /pulsar/go-func ")
+	assert.Equal(t, innerCommands[6], " exec /pulsar/go-func -instance-conf ${goFunctionConfigs}")
+}
+
+const TestClusterName string = "test-pulsar"
+const TestFunctionName string = "test-function"
+const TestNameSpace string = "default"
+
+func makeSampleObjectMeta(name string) *metav1.ObjectMeta {
+	return &metav1.ObjectMeta{
+		Name:      name,
+		Namespace: TestNameSpace,
+		UID:       "dead-beef", // uid not generate automatically with fake k8s
+	}
+}
+
+func makeGoFunctionSample(functionName string) *v1alpha1.Function {
+	maxPending := int32(1000)
+	replicas := int32(1)
+	maxReplicas := int32(5)
+	trueVal := true
+	return &v1alpha1.Function{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Function",
+			APIVersion: "compute.functionmesh.io/v1alpha1",
+		},
+		ObjectMeta: *makeSampleObjectMeta(functionName),
+		Spec: v1alpha1.FunctionSpec{
+			Name:        functionName,
+			Tenant:      "public",
+			ClusterName: TestClusterName,
+			Input: v1alpha1.InputConf{
+				Topics: []string{
+					"persistent://public/default/go-function-input-topic",
+				},
+			},
+			Output: v1alpha1.OutputConf{
+				Topic: "persistent://public/default/go-function-output-topic",
+			},
+			LogTopic:                     "persistent://public/default/go-function-logs",
+			Timeout:                      0,
+			MaxMessageRetry:              0,
+			ForwardSourceMessageProperty: &trueVal,
+			Replicas:                     &replicas,
+			MaxReplicas:                  &maxReplicas,
+			AutoAck:                      &trueVal,
+			MaxPendingAsyncRequests:      &maxPending,
+			Messaging: v1alpha1.Messaging{
+				Pulsar: &v1alpha1.PulsarMessaging{
+					PulsarConfig: TestClusterName,
+				},
+			},
+			Runtime: v1alpha1.Runtime{
+				Golang: &v1alpha1.GoRuntime{
+					Go: "/pulsar/go-func",
+				},
+			},
+		},
+	}
 }

@@ -19,8 +19,10 @@ package spec
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"k8s.io/apimachinery/pkg/util/validation"
 
@@ -52,6 +54,42 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		Builtin:              "",
 		RetainOrdering:       function.Spec.RetainOrdering,
 		RetainKeyOrdering:    function.Spec.RetainKeyOrdering,
+	}
+}
+
+func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
+	return &GoFunctionConf{
+		FuncID:                      fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
+		PulsarServiceURL:            "${brokerServiceURL}",
+		FuncVersion:                 "0",
+		MaxBufTuples:                100, //TODO
+		Port:                        int(GRPCPort.ContainerPort),
+		ClusterName:                 function.Spec.ClusterName,
+		Tenant:                      function.Spec.Tenant,
+		NameSpace:                   function.Namespace,
+		Name:                        function.Spec.Name,
+		LogTopic:                    function.Spec.LogTopic,
+		ProcessingGuarantees:        int32(convertProcessingGuarantee(function.Spec.ProcessingGuarantee)),
+		SecretsMap:                  marshalSecretsMap(function.Spec.SecretsMap),
+		Runtime:                     int32(proto.FunctionDetails_GO),
+		AutoACK:                     *function.Spec.AutoAck,
+		Parallelism:                 *function.Spec.Replicas,
+		TimeoutMs:                   uint64(function.Spec.Timeout),
+		SubscriptionName:            function.Spec.SubscriptionName,
+		CleanupSubscription:         function.Spec.CleanupSubscription,
+		SourceSpecTopic:             function.Spec.Input.Topics[0],
+		SourceSchemaType:            "", // TODO: map schema type
+		IsRegexPatternSubscription:  function.Spec.Input.TopicPattern != "",
+		SinkSpecTopic:               function.Spec.Output.Topic,
+		SinkSchemaType:              "", // TODO: map schema type
+		CPU:                         float64(function.Spec.Resources.Requests.Cpu().Value()),
+		RAM:                         function.Spec.Resources.Requests.Memory().Value(),
+		Disk:                        function.Spec.Resources.Requests.Storage().Value(),
+		MaxMessageRetries:           function.Spec.MaxMessageRetry,
+		DeadLetterTopic:             function.Spec.DeadLetterTopic,
+		UserConfig:                  getUserConfig(function.Spec.FuncConfig),
+		MetricsPort:                 int(MetricsPort.ContainerPort),
+		ExpectedHealthCheckInterval: -1, // TurnOff BuiltIn HealthCheck to avoid instance exit
 	}
 }
 
