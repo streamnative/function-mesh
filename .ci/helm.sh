@@ -146,7 +146,7 @@ function ci::test_function_runners() {
 
 function ci::verify_go_function() {
     ${KUBECTL} describe pod ${FUNCTION_NAME}
-    ${KUBECTL} logs pod ${FUNCTION_NAME}
+    ${KUBECTL} logs pod ${FUNCTION_NAME} --previous
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" -n 1 persistent://public/default/input-topic
     MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" persistent://public/default/output-topic)
     echo $MESSAGE
