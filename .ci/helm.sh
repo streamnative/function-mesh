@@ -145,7 +145,7 @@ function ci::test_function_runners() {
 
 function ci::verify_go_function() {
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" persistent://public/default/input-topic
-    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" persistent://public/default/input-topic)
+    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" persistent://public/default/output-topic)
     if [[ "$MESSAGE" == *"test-message!"* ]]; then
       return 0
     fi
