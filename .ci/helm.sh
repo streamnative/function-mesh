@@ -142,3 +142,12 @@ function ci::test_function_runners() {
     echo "golang runner test done"
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-1 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-go
 }
+
+function ci::verify_go_function() {
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" persistent://public/default/input-topic
+    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" persistent://public/default/input-topic)
+    if [[ "$MESSAGE" == *"test-message!"* ]]; then
+      return 0
+    fi
+    return 1
+}

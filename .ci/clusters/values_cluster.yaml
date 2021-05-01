@@ -83,7 +83,7 @@ components:
   # functions
   functions: true
   # proxy
-  proxy: false
+  proxy: true
   # toolset
   toolset: true
   # pulsar manager
@@ -118,35 +118,35 @@ monitoring:
 images:
   zookeeper:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.7.0.8
     pullPolicy: IfNotPresent
   bookie:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.7.0.8
     pullPolicy: IfNotPresent
   presto:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.7.0.8
     pullPolicy: IfNotPresent
   autorecovery:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.7.0.8
     pullPolicy: IfNotPresent
   broker:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.7.0.8
     pullPolicy: IfNotPresent
   proxy:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.7.0.8
     pullPolicy: IfNotPresent
   pulsar_detector:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.7.0.8
     pullPolicy: IfNotPresent
   functions:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.7.0.8
     pullPolicy: IfNotPresent
   prometheus:
     repository: prom/prometheus
@@ -418,7 +418,7 @@ zookeeper:
     clientTls: 2281
     follower: 2888
     leaderElection: 3888
-  # nodeSelector:
+    # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
   probe:
     liveness:
@@ -552,14 +552,14 @@ bookkeeper:
     ## Set the resources used for running `bin/bookkeeper shell initnewcluster`
     ##
     resources:
-      # requests:
-        # memory: 4Gi
-        # cpu: 2
+    # requests:
+    # memory: 4Gi
+    # cpu: 2
   replicaCount: 2
   ports:
     http: 8000
     bookie: 3181
-  # nodeSelector:
+    # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
   probe:
     liveness:
@@ -630,11 +630,11 @@ bookkeeper:
       name: ledgers
       size: 5Gi
       local_storage: true
-      # storageClassName: ""
-      ## If the storage class is left undefined when using persistence
-      ## the default storage class for the cluster will be used.
-      ##
-      # storageClass:
+        # storageClassName: ""
+        ## If the storage class is left undefined when using persistence
+        ## the default storage class for the cluster will be used.
+        ##
+        # storageClass:
         # type: pd-ssd
         # fsType: xfs
         # provisioner: kubernetes.io/gce-pd
@@ -644,7 +644,7 @@ bookkeeper:
         # allowedTopologies:
         # mountOptions:
         # extraParameters:
-        #   iopsPerGB: "50"
+      #   iopsPerGB: "50"
   extraInitContainers: {}
   ## Bookkeeper configmap
   ## templates/bookkeeper-configmap.yaml
@@ -708,7 +708,7 @@ autorecovery:
   replicaCount: 1
   ports:
     http: 8000
-  # nodeSelector:
+    # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
   affinity:
     anti_affinity: true
@@ -747,7 +747,7 @@ pulsar_metadata:
     # repository: apachepulsar/pulsar-all
     # tag: 2.5.0
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.7.0.8
     pullPolicy: IfNotPresent
   ## set an existing configuration store
   # configurationStore:
@@ -775,13 +775,13 @@ broker:
   # use a component name that matches your grafana configuration
   # so the metrics are correctly rendered in grafana dashboard
   component: broker
-  replicaCount: 2
+  replicaCount: 3
   ports:
     http: 8080
     https: 8443
     pulsar: 6650
     pulsarssl: 6651
-  # nodeSelector:
+    # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
   probe:
     liveness:
@@ -971,8 +971,8 @@ proxy:
   # so the metrics are correctly rendered in grafana dashboard
   component: proxy
   replicaCount: 2
-  # nodeSelector:
-    # cloud.google.com/gke-nodepool: default-pool
+    # nodeSelector:
+  # cloud.google.com/gke-nodepool: default-pool
   probe:
     liveness:
       enabled: true
@@ -1096,8 +1096,8 @@ toolset:
   component: toolset
   useProxy: true
   replicaCount: 1
-  # nodeSelector:
-    # cloud.google.com/gke-nodepool: default-pool
+    # nodeSelector:
+  # cloud.google.com/gke-nodepool: default-pool
   annotations: {}
   tolerations: []
   gracePeriod: 0
@@ -1149,7 +1149,7 @@ configmapReload:
       #   mountPath: /etc/alerts.d
       #   subPath: ""
       #   configMap: prometheus-alerts
-      #   readOnly: true
+    #   readOnly: true
 
     ## configmap-reload resource requests and limits
     ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
@@ -1185,7 +1185,7 @@ configmapReload:
       #   mountPath: /etc/alerts.d
       #   subPath: ""
       #   configMap: prometheus-alerts
-      #   readOnly: true
+    #   readOnly: true
 
     ## configmap-reload resource requests and limits
     ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
@@ -1198,8 +1198,8 @@ configmapReload:
 prometheus:
   component: prometheus
   replicaCount: 1
-  # nodeSelector:
-    # cloud.google.com/gke-nodepool: default-pool
+    # nodeSelector:
+  # cloud.google.com/gke-nodepool: default-pool
   annotations: {}
   tolerations: []
   gracePeriod: 0
@@ -1228,14 +1228,14 @@ prometheus:
       name: data
       size: 10Gi
       local_storage: true
-      # storageClassName: ""
-      ## If the storage class is left undefined when using persistence
-      ## the default storage class for the cluster will be used.
-      ##
-      # storageClass:
+        # storageClassName: ""
+        ## If the storage class is left undefined when using persistence
+        ## the default storage class for the cluster will be used.
+        ##
+        # storageClass:
         # type: pd-standard
         # fsType: xfs
-        # provisioner: kubernetes.io/gce-pd
+      # provisioner: kubernetes.io/gce-pd
   args:
     ## Prometheus data retention period (default if not specified is 15 days)
     ##
@@ -1272,22 +1272,22 @@ datadog:
     zookeeper:
       enabled: false
       metrics: [
-        "\"_*\""
+          "\"_*\""
       ]
     bookkeeper:
       enabled: false
       metrics: [
-        "\"_*\""
+          "\"_*\""
       ]
     broker:
       enabled: false
       metrics: [
-        "\"_*\""
+          "\"_*\""
       ]
     proxy:
       enabled: false
       metrics: [
-        "\"_*\""
+          "\"_*\""
       ]
 
 ## Monitoring Stack: Grafana
@@ -1296,8 +1296,8 @@ datadog:
 grafana:
   component: grafana
   replicaCount: 1
-  # nodeSelector:
-    # cloud.google.com/gke-nodepool: default-pool
+    # nodeSelector:
+  # cloud.google.com/gke-nodepool: default-pool
   annotations: {}
   tolerations: []
   gracePeriod: 0
@@ -1369,8 +1369,8 @@ alert_manager:
     receivers:
       - name: 'pagerduty-notifications'
         pagerduty_configs:
-        - service_key: "[PAGER DUTRY SERVICE KEY]"
-          send_resolved: true
+          - service_key: "[PAGER DUTRY SERVICE KEY]"
+            send_resolved: true
   # add alert rules below
   rules:
     groups:
@@ -1400,7 +1400,7 @@ pulsar_manager:
       failureThreshold: 30
       initialDelaySeconds: 10
       periodSeconds: 30
-  # nodeSelector:
+    # nodeSelector:
     # cloud.google.com/gke-nodepool: default-pool
   annotations: {}
   tolerations: []
@@ -1416,14 +1416,14 @@ pulsar_manager:
       name: data
       size: 10Gi
       local_storage: true
-      # storageClassName: ""
-      ## If the storage class is left undefined when using persistence
-      ## the default storage class for the cluster will be used.
-      ##
-      # storageClass:
+        # storageClassName: ""
+        ## If the storage class is left undefined when using persistence
+        ## the default storage class for the cluster will be used.
+        ##
+        # storageClass:
         # type: pd-standard
         # fsType: xfs
-        # provisioner: kubernetes.io/gce-pd
+      # provisioner: kubernetes.io/gce-pd
   ## Pulsar manager service
   ## templates/pulsar-manager-service.yaml
   ##
@@ -1488,7 +1488,7 @@ presto:
       requests:
         memory: 4Gi
         cpu: 2
-    # nodeSelector:
+      # nodeSelector:
       # cloud.google.com/gke-nodepool: default-pool
     probe:
       liveness:
@@ -1535,7 +1535,7 @@ presto:
       requests:
         memory: 4Gi
         cpu: 2
-    # nodeSelector:
+      # nodeSelector:
       # cloud.google.com/gke-nodepool: default-pool
     probe:
       liveness:

@@ -28,6 +28,7 @@ FUNCTION=${FUNCTION:-"false"}
 
 source ${PULSAR_HOME}/.ci/helm.sh
 
-# create cluster
 ci::verify_function_mesh $1
-
+if [[ "2" == "go_function" ]]; then
+  ci::verify_go_function $1
+fi
