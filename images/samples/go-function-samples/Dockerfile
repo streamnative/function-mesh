@@ -1,3 +1,4 @@
+ARG PULSAR_IMAGE_TAG
 FROM golang:1.13 as builder
 
 WORKDIR /workspace
@@ -12,8 +13,6 @@ COPY func/exclamationFunc.go exclamationFunc.go
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o exclamationFunc exclamationFunc.go
 
-ARG PULSAR_IMAGE_TAG
-
-FROM streamnative/pulsar-functions-java-runner:${PULSAR_IMAGE_TAG}
+FROM streamnative/pulsar-functions-go-runner:${PULSAR_IMAGE_TAG}
 COPY --from=builder --chown=pulsar:0 /workspace/exclamationFunc /pulsar/examples/go-exclamation-func
 RUN chmod +x /pulsar/examples/go-exclamation-func

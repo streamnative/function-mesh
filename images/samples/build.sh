@@ -30,15 +30,15 @@ CI_TEST=${CI_TEST:-false}
 
 
 echo "build java sample"
-docker build -t ${JAVA_SAMPLE} java-function-samples --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG"
+docker build -t ${JAVA_SAMPLE} images/samples/java-function-samples --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG"
 docker tag ${JAVA_SAMPLE} "${DOCKER_REPO}"/${JAVA_SAMPLE}:"${PULSAR_IMAGE_TAG}"
 
 echo "build python sample"
-docker build -t ${PYTHON_SAMPLE} python-function-samples --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG"
+docker build -t ${PYTHON_SAMPLE} images/samples/python-function-samples --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG"
 docker tag ${PYTHON_SAMPLE} "${DOCKER_REPO}"/${PYTHON_SAMPLE}:"${PULSAR_IMAGE_TAG}"
 
 echo "build go sample"
-docker build -t ${GO_SAMPLE} go-function-samples --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG"
+docker build -t ${GO_SAMPLE} images/samples/go-function-samples --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG"
 docker tag ${GO_SAMPLE} "${DOCKER_REPO}"/${GO_SAMPLE}:"${PULSAR_IMAGE_TAG}"
 
 if [ "$KIND_PUSH" = true ] ; then
