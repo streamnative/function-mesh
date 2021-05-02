@@ -160,10 +160,10 @@ function ci::verify_go_function() {
 
 function ci::verify_java_function() {
     ${KUBECTL} describe pod ${FUNCTION_NAME}
+    sleep 60
     ${KUBECTL} logs ${FUNCTION_NAME}-0
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" -n 1 persistent://public/default/input-java-topic
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/input-java-topic
-    sleep 15
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/output-java-topic
     sleep 15
     ${KUBECTL} logs ${FUNCTION_NAME}-0
