@@ -14,10 +14,11 @@ spec:
   input:
     topics:
     - persistent://public/default/input-java-topic
-    typeClassName: java.lang.String
+    customSchemaSources:
+      persistent://public/default/input-java-topic: java.lang.String
   output:
     topic: persistent://public/default/output-java-topic
-    typeClassName: java.lang.String
+    sinkSchemaType: java.lang.String
   resources:
     requests:
       cpu: "0.1"
