@@ -148,7 +148,9 @@ function ci::verify_go_function() {
     ${KUBECTL} describe pod ${FUNCTION_NAME}
     ${KUBECTL} logs ${FUNCTION_NAME}-0
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" -n 1 persistent://public/default/input-topic
-    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" persistent://public/default/output-topic)
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/input-topic
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/output-topic
+    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest persistent://public/default/output-topic)
     echo $MESSAGE
     if [[ "$MESSAGE" == *"test-message!"* ]]; then
       return 0
