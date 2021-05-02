@@ -54,4 +54,4 @@ jobs:
 
       - name: Verfy Function Mesh
         run: |
-          .ci/verify_function_mesh.sh python-function-sample
+          .ci/verify_function_mesh.sh py-function-sample
