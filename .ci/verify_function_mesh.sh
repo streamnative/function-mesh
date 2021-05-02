@@ -29,6 +29,12 @@ FUNCTION=${FUNCTION:-"false"}
 source ${PULSAR_HOME}/.ci/helm.sh
 
 ci::verify_function_mesh $1
-if [[ "$1" == "go-function-sample" ]]; then
-  ci::verify_go_function $1
-fi
+
+case ${1} in
+  go-function-sample)
+    ci::verify_go_function $1
+    ;;
+  function-sample)
+    ci::verify_java_function $1
+    ;;
+esac
