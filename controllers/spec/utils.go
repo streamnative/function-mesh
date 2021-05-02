@@ -70,7 +70,7 @@ func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 		Name:                        function.Spec.Name,
 		LogTopic:                    function.Spec.LogTopic,
 		ProcessingGuarantees:        int32(convertProcessingGuarantee(function.Spec.ProcessingGuarantee)),
-		SecretsMap:                  marshalSecretsMap(function.Spec.SecretsMap),
+		//SecretsMap:                  marshalSecretsMap(function.Spec.SecretsMap),
 		Runtime:                     int32(proto.FunctionDetails_GO),
 		AutoACK:                     *function.Spec.AutoAck,
 		Parallelism:                 *function.Spec.Replicas,
