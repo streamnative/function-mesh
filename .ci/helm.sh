@@ -166,6 +166,7 @@ function ci::verify_java_function() {
     sleep 15
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/output-java-topic
     sleep 15
+    ${KUBECTL} logs ${FUNCTION_NAME}-0
     MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest persistent://public/default/output-java-topic)
     echo $MESSAGE
     if [[ "$MESSAGE" == *"test-message!"* ]]; then
