@@ -27,7 +27,7 @@ OUTPUT_BIN=${FUNCTION_MESH_HOME}/output/bin
 KIND_BIN=$OUTPUT_BIN/kind
 HELM=${OUTPUT_BIN}/helm
 KUBECTL=${OUTPUT_BIN}/kubectl
-NAMESPACE=pulsar
+NAMESPACE=default
 CLUSTER=sn-platform
 CLUSTER_ID=$(uuidgen | tr "[:upper:]" "[:lower:]")
 
@@ -49,7 +49,7 @@ function ci::install_storage_provisioner() {
     echo "Installing the local storage provisioner ..."
     ${HELM} repo add streamnative https://charts.streamnative.io
     ${HELM} repo update
-    ${HELM} install local-storage-provisioner streamnative/local-storage-provisioner --debug --wait --set namespace=pulsar
+    ${HELM} install local-storage-provisioner streamnative/local-storage-provisioner --debug --wait --set namespace=default
     echo "Successfully installed the local storage provisioner."
 }
 
