@@ -37,4 +37,7 @@ case ${1} in
   function-sample)
     ci::verify_java_function $1
     ;;
+  python-function-sample)
+    ci::verify_python_function $1
+    ;;
 esac

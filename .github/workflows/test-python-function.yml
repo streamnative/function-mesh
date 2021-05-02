@@ -1,4 +1,4 @@
-name: Precommit - Test Go Function Kind
+name: Precommit - Test Python Function Kind
 on:
   pull_request:
     branches:
@@ -49,9 +49,9 @@ jobs:
 
       - name: Test Function kind
         run: |
-          kubectl apply -f .ci/clusters/compute_v1alpha1_go_function.yaml
+          kubectl apply -f .ci/clusters/compute_v1alpha1_python_function.yaml
           kubectl get all
 
       - name: Verfy Function Mesh
         run: |
-          .ci/verify_function_mesh.sh go-function-sample
+          .ci/verify_function_mesh.sh python-function-sample

@@ -177,3 +177,17 @@ function ci::verify_java_function() {
     fi
     return 1
 }
+
+function ci::verify_python_function() {
+    ${KUBECTL} describe pod ${FUNCTION_NAME}
+    ${KUBECTL} logs ${FUNCTION_NAME}-0
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" -n 1 persistent://public/default/input-python-topic
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/input-python-topic
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/output-python-topic
+    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest persistent://public/default/output-python-topic)
+    echo $MESSAGE
+    if [[ "$MESSAGE" == *"test-message!"* ]]; then
+      return 0
+    fi
+    return 1
+}
