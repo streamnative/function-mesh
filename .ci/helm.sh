@@ -93,6 +93,7 @@ function ci::test_pulsar_producer() {
 }
 
 function ci::verify_function_mesh() {
+    FUNCTION_NAME=$1
     WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep ${FUNCTION_NAME} | wc -l)
     while [[ ${WC} -lt 1 ]]; do
       echo ${WC};
@@ -145,26 +146,29 @@ function ci::test_function_runners() {
 }
 
 function ci::verify_go_function() {
+    FUNCTION_NAME=$1
     ${KUBECTL} describe pod ${FUNCTION_NAME}
     ${KUBECTL} logs ${FUNCTION_NAME}-0
-    return ci:verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!"
+    ci:verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 30
 }
 
 function ci::verify_java_function() {
+    FUNCTION_NAME=$1
     ${KUBECTL} describe pod ${FUNCTION_NAME}
     sleep 120
     ${KUBECTL} logs ${FUNCTION_NAME}-0
-    return ci:verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!"
+    ci:verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 30
 }
 
 function ci::verify_python_function() {
+    FUNCTION_NAME=$1
     ${KUBECTL} describe pod ${FUNCTION_NAME}
     ${KUBECTL} logs ${FUNCTION_NAME}-0
-    return ci:verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!"
+    ci:verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 30
 }
 
 function ci::verify_mesh_function() {
-    return ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 120
+    ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 120
 }
 
 function ci:verify_exclamation_function() {
@@ -172,7 +176,7 @@ function ci:verify_exclamation_function() {
   outputtopic=$2
   inputmessage=$3
   outputmessage=$4
-  timesleep=$(5:-30)
+  timesleep=$5
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m ${inputmessage} -n 1 ${inputtopic}
   sleep $timesleep
   MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest ${outputtopic})
