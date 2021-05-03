@@ -1,4 +1,4 @@
-name: Integration :: function-runner-images
+name: Precommit - Integration Tests - function-runner-images
 on:
   pull_request:
     branches:

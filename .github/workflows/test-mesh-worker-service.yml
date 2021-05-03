@@ -1,8 +1,8 @@
-name: Function Mesh Proxy - Unit tests
+name: Precommit - Function Mesh Proxy - Unit tests
 on: [pull_request]
 jobs:
   build:
-    name: Build
+    name: unit-tests
     runs-on: ubuntu-latest
     steps:
       - name: clean disk

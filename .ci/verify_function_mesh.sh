@@ -30,15 +30,15 @@ source ${PULSAR_HOME}/.ci/helm.sh
 
 case ${1} in
   compute_v1alpha1_go_function)
-    ci::verify_function_mesh $1
+    ci::verify_function_mesh go-function-sample
     ci::verify_go_function go-function-sample
     ;;
   compute_v1alpha1_function)
-    ci::verify_function_mesh $1
+    ci::verify_function_mesh function-sample
     ci::verify_java_function function-sample
     ;;
   compute_v1alpha1_py_function)
-    ci::verify_function_mesh $1
+    ci::verify_function_mesh py-function-sample
     ci::verify_python_function py-function-sample
     ;;
   compute_v1alpha1_functionmesh)
