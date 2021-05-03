@@ -1,11 +1,15 @@
-name: Precommit - Test Go Function Kind
+name: Precommit - Test Function Kind
 on:
   pull_request:
     branches:
       - '*'
 jobs:
-  integration-tests:
+
+  integration:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        samples: ["compute_v1alpha1_function", "compute_v1alpha1_go_function", "compute_v1alpha1_py_function"]
     steps:
       - name: clean disk
         run: |
@@ -36,10 +40,10 @@ jobs:
           curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
           chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu && sudo mkdir -p /usr/local/bin/ && sudo cp operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu /usr/local/bin/operator-sdk && rm operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
 
-#      - name: Add CRD, controller or webhooks
-#        run: |
-#          operator-sdk create api --group cloud --version v1alpha1 --kind Function --resource=true --controller=true
-#          operator-sdk create webhook --group compute.functionmesh.io --version v1alpha1 --kind Function --defaulting --programmatic-validation
+      #      - name: Add CRD, controller or webhooks
+      #        run: |
+      #          operator-sdk create api --group compute --version v1alpha1 --kind Function --resource=true --controller=true
+      #          operator-sdk create webhook --group compute.functionmesh.io --version v1alpha1 --kind Function --defaulting --programmatic-validation
 
       - name: Deploy function mesh server
         run: |
@@ -48,10 +52,14 @@ jobs:
           nohup make run &
 
       - name: Test Function kind
+        env:
+          SAMPLE_FILE: ${{ matrix.samples }}
         run: |
-          kubectl apply -f .ci/clusters/compute_v1alpha1_go_function.yaml
+          kubectl apply -f .ci/clusters/${SAMPLE_FILE}.yaml
           kubectl get all
 
       - name: Verfy Function Mesh
+        env:
+          SAMPLE_FILE: ${{ matrix.samples }}
         run: |
-          .ci/verify_function_mesh.sh go-function-sample
+          .ci/verify_function_mesh.sh ${SAMPLE_FILE}

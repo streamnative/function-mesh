@@ -31,13 +31,13 @@ source ${PULSAR_HOME}/.ci/helm.sh
 ci::verify_function_mesh $1
 
 case ${1} in
-  go-function-sample)
-    ci::verify_go_function $1
+  compute_v1alpha1_go_function)
+    ci::verify_go_function go-function-sample
     ;;
-  function-sample)
-    ci::verify_java_function $1
+  compute_v1alpha1_function)
+    ci::verify_java_function function-sample
     ;;
-  py-function-sample)
-    ci::verify_python_function $1
+  compute_v1alpha1_py_function)
+    ci::verify_python_function py-function-sample
     ;;
 esac
