@@ -118,35 +118,35 @@ monitoring:
 images:
   zookeeper:
     repository: streamnative/pulsar-all
-    tag: 2.7.0.8
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   bookie:
     repository: streamnative/pulsar-all
-    tag: 2.7.0.8
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   presto:
     repository: streamnative/pulsar-all
-    tag: 2.7.0.8
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   autorecovery:
     repository: streamnative/pulsar-all
-    tag: 2.7.0.8
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   broker:
     repository: streamnative/pulsar-all
-    tag: 2.7.0.8
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   proxy:
     repository: streamnative/pulsar-all
-    tag: 2.7.0.8
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   pulsar_detector:
     repository: streamnative/pulsar-all
-    tag: 2.7.0.8
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   functions:
     repository: streamnative/pulsar-all
-    tag: 2.7.0.8
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   prometheus:
     repository: prom/prometheus
@@ -747,7 +747,7 @@ pulsar_metadata:
     # repository: apachepulsar/pulsar-all
     # tag: 2.5.0
     repository: streamnative/pulsar-all
-    tag: 2.7.0.8
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   ## set an existing configuration store
   # configurationStore:
