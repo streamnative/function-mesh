@@ -15,11 +15,8 @@ spec:
     topics:
     - persistent://public/default/input-java-topic
     typeClassName: java.lang.String
-    customSchemaSources:
-      persistent://public/default/input-java-topic: java.lang.String
   output:
     topic: persistent://public/default/output-java-topic
-    sinkSchemaType: java.lang.String
     typeClassName: java.lang.String
   resources:
     requests:
