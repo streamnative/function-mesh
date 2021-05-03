@@ -147,46 +147,38 @@ function ci::test_function_runners() {
 function ci::verify_go_function() {
     ${KUBECTL} describe pod ${FUNCTION_NAME}
     ${KUBECTL} logs ${FUNCTION_NAME}-0
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" -n 1 persistent://public/default/input-topic
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/input-topic
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/output-topic
-    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest persistent://public/default/output-topic)
-    echo $MESSAGE
-    if [[ "$MESSAGE" == *"test-message!"* ]]; then
-      return 0
-    fi
-    return 1
+    return ci:verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!"
 }
 
 function ci::verify_java_function() {
     ${KUBECTL} describe pod ${FUNCTION_NAME}
-    sleep 60
+    sleep 120
     ${KUBECTL} logs ${FUNCTION_NAME}-0
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" -n 1 persistent://public/default/input-java-topic
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/input-java-topic
-    sleep 15
-    ${KUBECTL} logs ${FUNCTION_NAME}-0
-    sleep 15
-    ${KUBECTL} logs ${FUNCTION_NAME}-0
-    sleep 15
-    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest persistent://public/default/output-java-topic)
-    echo $MESSAGE
-    if [[ "$MESSAGE" == *"test-message!"* ]]; then
-      return 0
-    fi
-    return 1
+    return ci:verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!"
 }
 
 function ci::verify_python_function() {
     ${KUBECTL} describe pod ${FUNCTION_NAME}
     ${KUBECTL} logs ${FUNCTION_NAME}-0
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" -n 1 persistent://public/default/input-python-topic
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/input-python-topic
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats persistent://public/default/output-python-topic
-    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest persistent://public/default/output-python-topic)
-    echo $MESSAGE
-    if [[ "$MESSAGE" == *"test-message!"* ]]; then
-      return 0
-    fi
-    return 1
+    return ci:verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!"
+}
+
+function ci::verify_mesh_function() {
+    return ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 120
+}
+
+function ci:verify_exclamation_function() {
+  inputtopic=$1
+  outputtopic=$2
+  inputmessage=$3
+  outputmessage=$4
+  timesleep=$(5:-30)
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m ${inputmessage} -n 1 ${inputtopic}
+  sleep $timesleep
+  MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest ${outputtopic})
+  echo $MESSAGE
+  if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
+    return 0
+  fi
+  return 1
 }

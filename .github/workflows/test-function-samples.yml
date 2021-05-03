@@ -7,9 +7,6 @@ jobs:
 
   integration:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        samples: ["compute_v1alpha1_function", "compute_v1alpha1_go_function", "compute_v1alpha1_py_function"]
     steps:
       - name: clean disk
         run: |
@@ -51,15 +48,38 @@ jobs:
           make install
           nohup make run &
 
-      - name: Test Function kind
-        env:
-          SAMPLE_FILE: ${{ matrix.samples }}
+      - name: Test Function kind - Java Function
         run: |
-          kubectl apply -f .ci/clusters/${SAMPLE_FILE}.yaml
+          kubectl apply -f .ci/clusters/compute_v1alpha1_function.yaml
           kubectl get all
 
-      - name: Verfy Function Mesh
-        env:
-          SAMPLE_FILE: ${{ matrix.samples }}
+      - name: Verfy Function kind - Java Function
         run: |
-          .ci/verify_function_mesh.sh ${SAMPLE_FILE}
+          .ci/verify_function_mesh.sh compute_v1alpha1_function
+
+      - name: Test Function kind - Python Function
+        run: |
+          kubectl apply -f .ci/clusters/compute_v1alpha1_py_function.yaml
+          kubectl get all
+
+      - name: Verfy Function kind - Python Function
+        run: |
+          .ci/verify_function_mesh.sh compute_v1alpha1_py_function
+
+      - name: Test Function kind - Go Function
+        run: |
+          kubectl apply -f .ci/clusters/compute_v1alpha1_go_function.yaml
+          kubectl get all
+
+      - name: Verfy Function kind - Go Function
+        run: |
+          .ci/verify_function_mesh.sh compute_v1alpha1_go_function
+
+      - name: Test Mesh kind
+        run: |
+          kubectl apply -f .ci/clusters/compute_v1alpha1_functionmesh.yaml
+          kubectl get all
+
+      - name: Verfy Mesh kind
+        run: |
+          .ci/verify_function_mesh.sh compute_v1alpha1_functionmesh
