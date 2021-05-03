@@ -32,3 +32,4 @@ jobs:
       - name: Verify function runner
         run: |
           .ci/verify_function_runner.sh
+          
