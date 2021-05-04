@@ -813,8 +813,8 @@ broker:
   advertisedPodIP: false
   resources:
     requests:
-      memory: 300Mi
-      cpu: 0.5
+      memory: 100Mi
+      cpu: 0.2
   extraInitContainers: {}
   # Definition of the serviceAccount used to run brokers.
   serviceAccount:
@@ -836,7 +836,7 @@ broker:
   autoRollDeployment: true
   configData:
     PULSAR_MEM: >
-      -Xms64m -Xmx128m -XX:MaxDirectMemorySize=256m
+      -Xms32m -Xmx64m -XX:MaxDirectMemorySize=128m
     PULSAR_GC: >
       -XX:+UseG1GC
       -XX:MaxGCPauseMillis=10
@@ -925,9 +925,9 @@ functions:
     narExtractionDirectory: ""
   functionRuntimeFactoryConfigs:
     functionDockerImages:
-      JAVA: "streamnative/pulsar-functions-java-runner:2.7.0"
-      PYTHON: "streamnative/pulsar-functions-python-runner:2.7.0"
-      GO: "streamnative/pulsar-functions-go-runner:2.7.0"
+      JAVA: "streamnative/pulsar-functions-java-runner:2.7.1"
+      PYTHON: "streamnative/pulsar-functions-python-runner:2.7.1"
+      GO: "streamnative/pulsar-functions-go-runner:2.7.1"
 
 ## Pulsar: pulsar detector
 ## templates/pulsar-detector-statefulset.yaml
@@ -1271,7 +1271,7 @@ prometheus:
 
 datadog:
   component: datadog
-  namespace: default
+  namespace: pulsar
   components:
     zookeeper:
       enabled: false
