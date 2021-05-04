@@ -1,3 +1,3 @@
 name: function-mesh-worker-service
 description: Function Mesh Worker Service
-handlerClass: io.functionmesh.proxy.MeshWorkerService
+handlerClass: io.functionmesh.compute.MeshWorkerService
