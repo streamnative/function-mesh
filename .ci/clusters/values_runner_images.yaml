@@ -1,0 +1,144 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# disabled AntiAffinity
+affinity:
+  anti_affinity: false
+
+images:
+  zookeeper:
+    repository: streamnative/pulsar-all
+    tag: 2.7.1
+    pullPolicy: IfNotPresent
+  bookie:
+    repository: streamnative/pulsar-all
+    tag: 2.7.1
+    pullPolicy: IfNotPresent
+  presto:
+    repository: streamnative/pulsar-all
+    tag: 2.7.1
+    pullPolicy: IfNotPresent
+  autorecovery:
+    repository: streamnative/pulsar-all
+    tag: 2.7.1
+    pullPolicy: IfNotPresent
+  broker:
+    repository: streamnative/pulsar-all
+    tag: 2.7.1
+    pullPolicy: IfNotPresent
+  proxy:
+    repository: streamnative/pulsar-all
+    tag: 2.7.1
+    pullPolicy: IfNotPresent
+  pulsar_detector:
+    repository: streamnative/pulsar-all
+    tag: 2.7.1
+    pullPolicy: IfNotPresent
+  functions:
+    repository: streamnative/pulsar-all
+    tag: 2.7.1
+    pullPolicy: IfNotPresent
+  prometheus:
+    repository: prom/prometheus
+    tag: v2.17.2
+    pullPolicy: IfNotPresent
+  alert_manager:
+    repository: prom/alertmanager
+    tag: v0.20.0
+    pullPolicy: IfNotPresent
+  grafana:
+    repository: streamnative/apache-pulsar-grafana-dashboard-k8s
+    tag: 0.0.11
+    pullPolicy: IfNotPresent
+  pulsar_manager:
+    repository: streamnative/pulsar-manager
+    tag: 0.3.0
+    pullPolicy: IfNotPresent
+    hasCommand: false
+  node_exporter:
+    repository: prom/node-exporter
+    tag: v0.16.0
+    pullPolicy: "IfNotPresent"
+  nginx_ingress_controller:
+    repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
+    tag: 0.26.2
+    pullPolicy: "IfNotPresent"
+
+# disable auto recovery
+components:
+  autorecovery: false
+
+zookeeper:
+  replicaCount: 1
+
+bookkeeper:
+  replicaCount: 1
+
+broker:
+  replicaCount: 1
+  configData:
+    ## Enable `autoSkipNonRecoverableData` since bookkeeper is running
+    ## without persistence
+    autoSkipNonRecoverableData: "true"
+    # storage settings
+    managedLedgerDefaultEnsembleSize: "1"
+    managedLedgerDefaultWriteQuorum: "1"
+    managedLedgerDefaultAckQuorum: "1"
+
+proxy:
+  replicaCount: 1
+
+## Pulsar: Functions Worker
+## templates/function-worker-configmap.yaml
+##
+functions:
+  component: functions-worker
+  enableCustomizerRuntime: false
+  runtimeCustomizerClassName: "org.apache.pulsar.functions.runtime.kubernetes.BasicKubernetesManifestCustomizer"
+  pulsarExtraClasspath: "extraLibs"
+  # Specify the namespace to run pulsar functions
+  jobNamespace: ""
+  # Specify the pulsar root directory
+  pulsarRootDir: ""
+  configData:
+    downloadDirectory: download/pulsar_functions
+    pulsarFunctionsNamespace: public/functions
+    functionMetadataTopicName: metadata
+    clusterCoordinationTopicName: coordinate
+    numHttpServerThreads: 8
+    schedulerClassName: "org.apache.pulsar.functions.worker.scheduler.RoundRobinScheduler"
+    functionAssignmentTopicName: "assignments"
+    failureCheckFreqMs: 30000
+    rescheduleTimeoutMs: 60000
+    initialBrokerReconnectMaxRetries: 60
+    assignmentWriteMaxRetries: 60
+    instanceLivenessCheckFreqMs: 30000
+    # Frequency how often worker performs compaction on function-topics
+    topicCompactionFrequencySec: 1800
+    # kubernetes runtime
+    functionRuntimeFactoryClassName: org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactory
+    # Connectors
+    connectorsDirectory: ./connectors
+    functionsDirectory: ./functions
+    narExtractionDirectory: ""
+  functionRuntimeFactoryConfigs:
+    functionDockerImages:
+      JAVA: "streamnative/pulsar-functions-java-runner:2.7.1"
+      PYTHON: "streamnative/pulsar-functions-python-runner:2.7.1"
+      GO: "streamnative/pulsar-functions-go-runner:2.7.1"

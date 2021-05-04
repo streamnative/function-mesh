@@ -23,7 +23,7 @@ jobs:
 
       - name: Deploy k8s cluster env
         run: |
-          .ci/deploy_pulsar_cluster.sh .ci/clusters/values_custom_runner_images.yaml
+          .ci/deploy_pulsar_cluster.sh .ci/clusters/values_runner_images.yaml
 
       - name: Build runner images
         run: |
