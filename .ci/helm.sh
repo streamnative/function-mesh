@@ -114,9 +114,12 @@ function ci::test_function_runners() {
     ${KUBECTL} get pods -A
     sleep 5
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-java" | wc -l)
-    if [[ ${WC} -ne 1 ]]; then
-      return 1
-    fi
+    while [[ ${WC} -lt 1 ]]; do
+      echo ${WC};
+      sleep 20
+      ${KUBECTL} get pods -n ${NAMESPACE}
+      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-java" | wc -l)
+    done
     echo "java runner test done"
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-java
 
@@ -125,9 +128,12 @@ function ci::test_function_runners() {
     ${KUBECTL} get pods -A
     sleep 5
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-python" | wc -l)
-    if [[ ${WC} -ne 1 ]]; then
-      return 1
-    fi
+    while [[ ${WC} -lt 1 ]]; do
+      echo ${WC};
+      sleep 20
+      ${KUBECTL} get pods -n ${NAMESPACE}
+      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-python" | wc -l)
+    done
     echo "python runner test done"
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-python
 
@@ -138,9 +144,12 @@ function ci::test_function_runners() {
     ${KUBECTL} get pods -A
     sleep 5
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-go" | wc -l)
-    if [[ ${WC} -ne 1 ]]; then
-      return 1
-    fi
+    while [[ ${WC} -lt 1 ]]; do
+      echo ${WC};
+      sleep 20
+      ${KUBECTL} get pods -n ${NAMESPACE}
+      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-go" | wc -l)
+    done
     echo "golang runner test done"
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-1 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-go
 }
