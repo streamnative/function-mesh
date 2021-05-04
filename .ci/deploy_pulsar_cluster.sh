@@ -38,7 +38,7 @@ if [[ "x${SYMMETRIC}" == "xtrue" ]]; then
 fi
 
 echo "create namespace"
-kubectl create namespace pulsar
+kubectl create namespace default
 
 # install storage provisioner
 ci::install_storage_provisioner
