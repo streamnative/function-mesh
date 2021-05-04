@@ -118,6 +118,7 @@ function ci::test_function_runners() {
       echo ${WC};
       sleep 20
       ${KUBECTL} get pods -n ${NAMESPACE}
+      ${KUBECTL} describe pod pf-public-default-test-java-0 
       WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-java" | wc -l)
     done
     echo "java runner test done"
