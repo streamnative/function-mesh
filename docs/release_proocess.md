@@ -14,10 +14,10 @@
 ```
 git clone https://github.com/streamnative/function-mesh
 git checkout -b branch-x.y
-cd java-proxy
+cd mesh-worker-service
 mvn versions:set -DnewVersion=vx.y.z
 git add .
-git commit -m "Update release version for java proxy"
+git commit -m "Update release version for mesh worker service"
 git push origin branch-x.y
 ```
 

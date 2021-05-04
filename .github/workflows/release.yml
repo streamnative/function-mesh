@@ -50,10 +50,10 @@ jobs:
           IMAGE_TAG_BASE: streamnative/function-mesh
           CATALOG_BRANCH_TAG: latest
         run: |
-          make release
-          make docker-push
           # convert vx.y.z to x.y.z because a valid semver is needed in creating the bundle
           VERSION=$(echo $VERSION|cut -c 2-)
+          make release
+          make docker-push
           make docker-build image-push bundle bundle-build bundle-push catalog-build catalog-push
 
       - name: Upload crd.yaml to release
