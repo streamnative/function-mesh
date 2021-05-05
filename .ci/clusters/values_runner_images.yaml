@@ -137,6 +137,10 @@ functions:
     connectorsDirectory: ./connectors
     functionsDirectory: ./functions
     narExtractionDirectory: ""
+  functionInstanceMinResources:
+    cpu: 0.1
+    ram: 104857600
+    disk: 1048576000
   functionRuntimeFactoryConfigs:
     functionDockerImages:
       JAVA: "streamnative/pulsar-functions-java-runner:2.7.1"
