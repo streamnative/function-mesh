@@ -17,6 +17,9 @@
 # under the License.
 #
 
+volumes:
+  persistence: false
+
 # disabled AntiAffinity
 affinity:
   anti_affinity: false
@@ -54,31 +57,6 @@ images:
     repository: streamnative/pulsar-all
     tag: 2.7.1
     pullPolicy: IfNotPresent
-  prometheus:
-    repository: prom/prometheus
-    tag: v2.17.2
-    pullPolicy: IfNotPresent
-  alert_manager:
-    repository: prom/alertmanager
-    tag: v0.20.0
-    pullPolicy: IfNotPresent
-  grafana:
-    repository: streamnative/apache-pulsar-grafana-dashboard-k8s
-    tag: 0.0.11
-    pullPolicy: IfNotPresent
-  pulsar_manager:
-    repository: streamnative/pulsar-manager
-    tag: 0.3.0
-    pullPolicy: IfNotPresent
-    hasCommand: false
-  node_exporter:
-    repository: prom/node-exporter
-    tag: v0.16.0
-    pullPolicy: "IfNotPresent"
-  nginx_ingress_controller:
-    repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
-    tag: 0.26.2
-    pullPolicy: "IfNotPresent"
 
 # disable auto recovery
 components:
@@ -139,6 +117,10 @@ functions:
     narExtractionDirectory: ""
   functionInstanceMinResources:
     cpu: 0.1
+    ram: 10485760
+    disk: 104857600
+  functionInstanceMaxResources:
+    cpu: 0.2
     ram: 104857600
     disk: 1048576000
   functionRuntimeFactoryConfigs:
