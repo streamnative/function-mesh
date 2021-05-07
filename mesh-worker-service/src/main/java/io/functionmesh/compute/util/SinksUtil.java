@@ -28,7 +28,7 @@ import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInputCryptoConfig;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInputSourceSpecs;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPulsar;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecResources;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodResources;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
@@ -204,7 +204,7 @@ public class SinksUtil {
         requests.put(cpuKey, Quantity.fromString(Double.toString(cpu)).toSuffixedString());
         requests.put(memoryKey, Quantity.fromString(Long.toString(ramRequest)).toSuffixedString());
 
-        V1alpha1SinkSpecResources v1alpha1SinkSpecResources = new V1alpha1SinkSpecResources();
+        V1alpha1SinkSpecPodResources v1alpha1SinkSpecResources = new V1alpha1SinkSpecPodResources();
         v1alpha1SinkSpecResources.setLimits(limits);
         v1alpha1SinkSpecResources.setRequests(requests);
         v1alpha1SinkSpec.setResources(v1alpha1SinkSpecResources);
