@@ -28,7 +28,7 @@ import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutput;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerConf;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerConfCryptoConfig;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
-import io.functionmesh.compute.sources.models.V1alpha1SourceSpecResources;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodResources;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
@@ -189,7 +189,7 @@ public class SourcesUtil {
         requests.put(cpuKey, Quantity.fromString(Double.toString(cpu)).toSuffixedString());
         requests.put(memoryKey, Quantity.fromString(Long.toString(ramRequest)).toSuffixedString());
 
-        V1alpha1SourceSpecResources v1alpha1SourceSpecResources = new V1alpha1SourceSpecResources();
+        V1alpha1SourceSpecPodResources v1alpha1SourceSpecResources = new V1alpha1SourceSpecPodResources();
         v1alpha1SourceSpecResources.setLimits(limits);
         v1alpha1SourceSpecResources.setRequests(requests);
         v1alpha1SourceSpec.setResources(v1alpha1SourceSpecResources);

@@ -28,9 +28,9 @@ import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecInputSourceS
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecJava;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecOutput;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecOutputProducerConf;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodResources;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPulsar;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPython;
-import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecResources;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.custom.Quantity;
 import org.apache.commons.lang3.StringUtils;
@@ -202,7 +202,7 @@ public class FunctionsUtil {
 
         v1alpha1FunctionSpec.setLogTopic(functionConfig.getLogTopic());
 
-        V1alpha1FunctionSpecResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecResources();
+        V1alpha1FunctionSpecPodResources v1alpha1FunctionSpecResources = new V1alpha1FunctionSpecPodResources();
 
         double cpu = functionConfig.getResources() != null &&
                 functionConfig.getResources().getCpu() != 0 ? functionConfig.getResources().getCpu() : 1;
