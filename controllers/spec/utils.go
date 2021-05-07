@@ -59,18 +59,18 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 	return &GoFunctionConf{
-		FuncID:                      fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
-		PulsarServiceURL:            "${brokerServiceURL}",
-		FuncVersion:                 "0",
-		MaxBufTuples:                100, //TODO
-		Port:                        int(GRPCPort.ContainerPort),
-		ClusterName:                 function.Spec.ClusterName,
-		Tenant:                      function.Spec.Tenant,
-		NameSpace:                   function.Namespace,
-		Name:                        function.Spec.Name,
-		LogTopic:                    function.Spec.LogTopic,
-		ProcessingGuarantees:        int32(convertProcessingGuarantee(function.Spec.ProcessingGuarantee)),
-		SecretsMap:                  marshalSecretsMap(function.Spec.SecretsMap),
+		FuncID:               fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
+		PulsarServiceURL:     "${brokerServiceURL}",
+		FuncVersion:          "0",
+		MaxBufTuples:         100, //TODO
+		Port:                 int(GRPCPort.ContainerPort),
+		ClusterName:          function.Spec.ClusterName,
+		Tenant:               function.Spec.Tenant,
+		NameSpace:            function.Namespace,
+		Name:                 function.Spec.Name,
+		LogTopic:             function.Spec.LogTopic,
+		ProcessingGuarantees: int32(convertProcessingGuarantee(function.Spec.ProcessingGuarantee)),
+		//SecretsMap:                  marshalSecretsMap(function.Spec.SecretsMap),
 		Runtime:                     int32(proto.FunctionDetails_GO),
 		AutoACK:                     *function.Spec.AutoAck,
 		Parallelism:                 *function.Spec.Replicas,

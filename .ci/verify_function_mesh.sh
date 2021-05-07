@@ -28,6 +28,33 @@ FUNCTION=${FUNCTION:-"false"}
 
 source ${PULSAR_HOME}/.ci/helm.sh
 
-# create cluster
-ci::verify_function_mesh $1
-
+case ${1} in
+  compute_v1alpha1_go_function)
+    ci::verify_function_mesh go-function-sample
+    sleep 60
+    ci::print_function_log go-function-sample
+    ci::verify_go_function go-function-sample
+    ;;
+  compute_v1alpha1_function)
+    ci::verify_function_mesh function-sample
+    sleep 60
+    ci::print_function_log function-sample
+    ci::verify_java_function function-sample
+    ;;
+  compute_v1alpha1_py_function)
+    ci::verify_function_mesh py-function-sample
+    sleep 60
+    ci::print_function_log py-function-sample
+    ci::verify_python_function py-function-sample
+    ;;
+  compute_v1alpha1_functionmesh)
+    ci::verify_function_mesh functionmesh-sample-java-function
+    ci::verify_function_mesh functionmesh-sample-golang-function
+    ci::verify_function_mesh functionmesh-sample-python-function
+    sleep 60
+    ci::print_function_log functionmesh-sample-java-function
+    ci::print_function_log functionmesh-sample-golang-function
+    ci::print_function_log functionmesh-sample-python-function
+    ci::verify_mesh_function
+    ;;
+esac

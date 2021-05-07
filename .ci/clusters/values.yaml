@@ -28,7 +28,7 @@ initialize: true
 # NOTE: Make the default namespace as empty. So it will fallback to use the namespace used for installing the helm
 #       chart. Helm does not position it self as a namespace manager, as namespaces in kubernetes are considered as
 #       a higher control structure that is not part of the application.
-namespace: "pulsar"
+namespace: "default"
 namespaceCreate: false
 
 ###
@@ -118,35 +118,35 @@ monitoring:
 images:
   zookeeper:
     repository: streamnative/pulsar-all
-    tag: 2.6.0-sn-21
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   bookie:
     repository: streamnative/pulsar-all
-    tag: 2.6.0-sn-21
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   presto:
     repository: streamnative/pulsar-all
-    tag: 2.6.0-sn-21
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   autorecovery:
     repository: streamnative/pulsar-all
-    tag: 2.6.0-sn-21
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   broker:
     repository: streamnative/pulsar-all
-    tag: 2.6.0-sn-21
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   proxy:
     repository: streamnative/pulsar-all
-    tag: 2.6.0-sn-21
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   pulsar_detector:
     repository: streamnative/pulsar-all
-    tag: 2.6.0-sn-21
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   functions:
     repository: streamnative/pulsar-all
-    tag: 2.6.0-sn-21
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   prometheus:
     repository: prom/prometheus
@@ -747,7 +747,7 @@ pulsar_metadata:
     # repository: apachepulsar/pulsar-all
     # tag: 2.5.0
     repository: streamnative/pulsar-all
-    tag: 2.6.0-sn-21
+    tag: 2.7.1
     pullPolicy: IfNotPresent
   ## set an existing configuration store
   # configurationStore:

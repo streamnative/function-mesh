@@ -1,23 +1,21 @@
 apiVersion: compute.functionmesh.io/v1alpha1
 kind: Function
 metadata:
-  name: function-sample
+  name: py-function-sample
   namespace: default
 spec:
-  image: streamnative/pulsar-functions-java-sample:2.7.1
-  className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+  image: streamnative/pulsar-functions-python-sample:2.7.1
+  className: exclamation_function.ExclamationFunction
   forwardSourceMessageProperty: true
   MaxPendingAsyncRequests: 1000
   replicas: 1
-  maxReplicas: 5
-  logTopic: persistent://public/default/logging-function-logs
+  maxReplicas: 1
+  logTopic: persistent://public/default/py-function-logs
   input:
     topics:
-    - persistent://public/default/input-java-topic
-    typeClassName: java.lang.String
+    - persistent://public/default/input-python-topic
   output:
-    topic: persistent://public/default/output-java-topic
-    typeClassName: java.lang.String
+    topic: persistent://public/default/output-python-topic
   resources:
     requests:
       cpu: "0.1"
@@ -28,16 +26,16 @@ spec:
   # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
   secretsMap:
     "name":
-        path: "test-secret"
+        path: "test-py-secret"
         key: "username"
     "pwd":
-        path: "test-secret"
+        path: "test-py-secret"
         key: "password"
   pulsar:
-    pulsarConfig: "test-pulsar"
+    pulsarConfig: "test-py-pulsar"
     #authConfig: "test-auth"
-  java:
-    jar: /pulsar/examples/api-examples.jar
+  python:
+    py: /pulsar/examples/python-examples/exclamation_function.py
   # to be delete & use admission hook
   clusterName: test
   autoAck: true
@@ -45,7 +43,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-pulsar
+  name: test-py-pulsar
 data:
   webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
   brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
@@ -68,5 +66,5 @@ data:
   password: MWYyZDFlMmU2N2Rm
 kind: Secret
 metadata:
-  name: test-secret
+  name: test-py-secret
 type: Opaque

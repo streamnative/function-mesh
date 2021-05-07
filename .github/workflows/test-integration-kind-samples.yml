@@ -1,10 +1,11 @@
-name: Precommit - Test Function Kind with Key Based Batcher
+name: Precommit - Integration Tests
 on:
   pull_request:
     branches:
       - '*'
 jobs:
-  lint-test:
+
+  integration:
     runs-on: ubuntu-latest
     steps:
       - name: clean disk
@@ -28,6 +29,7 @@ jobs:
       - name: Build runner images
         run: |
           PULSAR_IMAGE_TAG=2.7.1 PULSAR_IMAGE=apachepulsar/pulsar-all KIND_PUSH=true images/build.sh
+          PULSAR_IMAGE_TAG=2.7.1 KIND_PUSH=true images/samples/build.sh
 
       - name: Install operator-sdk
         run: |
@@ -37,7 +39,7 @@ jobs:
 
       #      - name: Add CRD, controller or webhooks
       #        run: |
-      #          operator-sdk create api --group cloud --version v1alpha1 --kind Function --resource=true --controller=true
+      #          operator-sdk create api --group compute --version v1alpha1 --kind Function --resource=true --controller=true
       #          operator-sdk create webhook --group compute.functionmesh.io --version v1alpha1 --kind Function --defaulting --programmatic-validation
 
       - name: Deploy function mesh server
@@ -46,11 +48,38 @@ jobs:
           make install
           nohup make run &
 
-      - name: Test Function kind
+      - name: Test Function kind - Java Function
         run: |
-          kubectl apply -f config/samples/compute_v1alpha1_function_key_based_batcher.yaml
+          kubectl apply -f .ci/clusters/compute_v1alpha1_function.yaml
           kubectl get all
 
-      - name: Verfy Function Mesh
+      - name: Verfy Function kind - Java Function
         run: |
-          .ci/verify_function_mesh.sh java-function-batcher-sample
+          .ci/verify_function_mesh.sh compute_v1alpha1_function
+
+      - name: Test Function kind - Python Function
+        run: |
+          kubectl apply -f .ci/clusters/compute_v1alpha1_py_function.yaml
+          kubectl get all
+
+      - name: Verfy Function kind - Python Function
+        run: |
+          .ci/verify_function_mesh.sh compute_v1alpha1_py_function
+
+      - name: Test Function kind - Go Function
+        run: |
+          kubectl apply -f .ci/clusters/compute_v1alpha1_go_function.yaml
+          kubectl get all
+
+      - name: Verfy Function kind - Go Function
+        run: |
+          .ci/verify_function_mesh.sh compute_v1alpha1_go_function
+
+      - name: Test Mesh kind
+        run: |
+          kubectl apply -f .ci/clusters/compute_v1alpha1_functionmesh.yaml
+          kubectl get all
+
+      - name: Verfy Mesh kind
+        run: |
+          .ci/verify_function_mesh.sh compute_v1alpha1_functionmesh
