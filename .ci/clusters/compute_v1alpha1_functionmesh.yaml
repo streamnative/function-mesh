@@ -5,7 +5,7 @@ metadata:
 spec:
   functions:
     - name: java-function
-      image: freeznet/function-mesh-sample-function:2.7.1
+      image: streamnative/pulsar-functions-java-sample:2.7.1
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
       replicas: 1
       maxReplicas: 1
@@ -20,7 +20,6 @@ spec:
         pulsarConfig: "mesh-test-pulsar"
       java:
         jar: /pulsar/examples/api-examples.jar
-        jarLocation: ""
       forwardSourceMessageProperty: true
       autoAck: true
       resources:
@@ -32,7 +31,7 @@ spec:
           memory: 1.1G
       clusterName: test
     - name: golang-function
-      image: freeznet/function-mesh-sample-function:2.7.1
+      image: streamnative/pulsar-functions-go-sample:2.7.1
       replicas: 1
       maxReplicas: 1
       input:
@@ -57,7 +56,7 @@ spec:
           memory: 1.1G
       clusterName: test
     - name: python-function
-      image: freeznet/function-mesh-sample-python-function:2.7.1
+      image: streamnative/pulsar-functions-python-sample:2.7.1
       className: exclamation_function.ExclamationFunction
       replicas: 1
       maxReplicas: 1
