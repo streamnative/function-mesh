@@ -181,6 +181,12 @@ function ci::verify_mesh_function() {
     ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 120
 }
 
+function ci::print_function_log() {
+    FUNCTION_NAME=$1
+    ${KUBECTL} describe pod ${FUNCTION_NAME}
+    ${KUBECTL} logs ${FUNCTION_NAME}-0
+}
+
 function ci:verify_exclamation_function() {
   inputtopic=$1
   outputtopic=$2

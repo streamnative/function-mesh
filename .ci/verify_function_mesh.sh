@@ -45,6 +45,10 @@ case ${1} in
     ci::verify_function_mesh functionmesh-sample-java-function
     ci::verify_function_mesh functionmesh-sample-golang-function
     ci::verify_function_mesh functionmesh-sample-python-function
+    sleep 60
+    ci::print_function_log functionmesh-sample-java-function
+    ci::print_function_log functionmesh-sample-golang-function
+    ci::print_function_log functionmesh-sample-python-function
     ci::verify_mesh_function
     ;;
 esac
