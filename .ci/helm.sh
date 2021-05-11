@@ -27,7 +27,7 @@ OUTPUT_BIN=${FUNCTION_MESH_HOME}/output/bin
 KIND_BIN=$OUTPUT_BIN/kind
 HELM=${OUTPUT_BIN}/helm
 KUBECTL=${OUTPUT_BIN}/kubectl
-NAMESPACE=pulsar
+NAMESPACE=default
 CLUSTER=sn-platform
 CLUSTER_ID=$(uuidgen | tr "[:upper:]" "[:lower:]")
 
@@ -49,7 +49,7 @@ function ci::install_storage_provisioner() {
     echo "Installing the local storage provisioner ..."
     ${HELM} repo add streamnative https://charts.streamnative.io
     ${HELM} repo update
-    ${HELM} install local-storage-provisioner streamnative/local-storage-provisioner --debug --wait --set namespace=pulsar
+    ${HELM} install local-storage-provisioner streamnative/local-storage-provisioner --debug --wait --set namespace=default
     echo "Successfully installed the local storage provisioner."
 }
 
@@ -93,6 +93,7 @@ function ci::test_pulsar_producer() {
 }
 
 function ci::verify_function_mesh() {
+    FUNCTION_NAME=$1
     WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep ${FUNCTION_NAME} | wc -l)
     while [[ ${WC} -lt 1 ]]; do
       echo ${WC};
@@ -104,41 +105,100 @@ function ci::verify_function_mesh() {
       fi
       WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep ${FUNCTION_NAME} | wc -l)
     done
+    ${KUBECTL} describe pod ${FUNCTION_NAME}
 }
 
 function ci::test_function_runners() {
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-java --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/test-java-input --jar /pulsar/examples/api-examples.jar
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-java --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/test-java-input --jar /pulsar/examples/api-examples.jar --cpu 0.1
     sleep 15
     ${KUBECTL} get pods -A
     sleep 5
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-java" | wc -l)
-    if [[ ${WC} -ne 1 ]]; then
-      return 1
-    fi
+    while [[ ${WC} -lt 1 ]]; do
+      echo ${WC};
+      sleep 20
+      ${KUBECTL} get pods -n ${NAMESPACE}
+      ${KUBECTL} describe pod pf-public-default-test-java-0 
+      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-java" | wc -l)
+    done
     echo "java runner test done"
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-java
 
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-python --classname exclamation_function.ExclamationFunction --inputs persistent://public/default/test-python-input --py /pulsar/examples/python-examples/exclamation_function.py
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-python --classname exclamation_function.ExclamationFunction --inputs persistent://public/default/test-python-input --py /pulsar/examples/python-examples/exclamation_function.py --cpu 0.1
     sleep 15
     ${KUBECTL} get pods -A
     sleep 5
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-python" | wc -l)
-    if [[ ${WC} -ne 1 ]]; then
-      return 1
-    fi
+    while [[ ${WC} -lt 1 ]]; do
+      echo ${WC};
+      sleep 20
+      ${KUBECTL} get pods -n ${NAMESPACE}
+      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-python" | wc -l)
+    done
     echo "python runner test done"
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-python
 
-    ${KUBECTL} cp "${FUNCTION_MESH_HOME}/.ci/examples/go-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-1:/pulsar/examples"
+    ${KUBECTL} cp "${FUNCTION_MESH_HOME}/.ci/examples/go-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-0:/pulsar/examples"
     sleep 1
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-1 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-go --inputs persistent://public/default/test-go-input --go /pulsar/examples/go-examples/exclamationFunc
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-go --inputs persistent://public/default/test-go-input --go /pulsar/examples/go-examples/exclamationFunc --cpu 0.1
     sleep 15
     ${KUBECTL} get pods -A
     sleep 5
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-go" | wc -l)
-    if [[ ${WC} -ne 1 ]]; then
-      return 1
-    fi
+    while [[ ${WC} -lt 1 ]]; do
+      echo ${WC};
+      sleep 20
+      ${KUBECTL} get pods -n ${NAMESPACE}
+      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-go" | wc -l)
+    done
     echo "golang runner test done"
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-1 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-go
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-go
+}
+
+function ci::verify_go_function() {
+    FUNCTION_NAME=$1
+    ${KUBECTL} describe pod ${FUNCTION_NAME}
+    ${KUBECTL} logs ${FUNCTION_NAME}-0
+    ci:verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 30
+}
+
+function ci::verify_java_function() {
+    FUNCTION_NAME=$1
+    ${KUBECTL} describe pod ${FUNCTION_NAME}
+    sleep 120
+    ${KUBECTL} logs ${FUNCTION_NAME}-0
+    ci:verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 30
+}
+
+function ci::verify_python_function() {
+    FUNCTION_NAME=$1
+    ${KUBECTL} describe pod ${FUNCTION_NAME}
+    ${KUBECTL} logs ${FUNCTION_NAME}-0
+    ci:verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 30
+}
+
+function ci::verify_mesh_function() {
+    ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 120
+}
+
+function ci::print_function_log() {
+    FUNCTION_NAME=$1
+    ${KUBECTL} describe pod ${FUNCTION_NAME}
+    ${KUBECTL} logs ${FUNCTION_NAME}-0
+}
+
+function ci:verify_exclamation_function() {
+  inputtopic=$1
+  outputtopic=$2
+  inputmessage=$3
+  outputmessage=$4
+  timesleep=$5
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m ${inputmessage} -n 1 ${inputtopic}
+  sleep $timesleep
+  MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest ${outputtopic})
+  echo $MESSAGE
+  if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
+    return 0
+  fi
+  return 1
 }

@@ -23,8 +23,10 @@ import lombok.Data;
 @Data
 public class CustomRuntimeOptions {
     public final static String clusterNameKey = "clusterName";
-    public final static String typeClassNameKey = "typeClassName";
+    public final static String inputTypeClassNameKey = "inputTypeClassName";
+    public final static String outputTypeClassNameKey = "outputTypeClassName";
 
     private String clusterName;
-    private String typeClassName;
+    private String inputTypeClassName;
+    private String outputTypeClassName;
 }

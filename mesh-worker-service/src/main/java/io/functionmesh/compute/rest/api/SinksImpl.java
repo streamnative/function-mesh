@@ -24,7 +24,9 @@ import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkStatus;
+import io.functionmesh.compute.util.SinksUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
@@ -104,26 +106,17 @@ public class SinksImpl extends MeshComponentImpl
                 ComponentTypeUtils.toString(componentType));
         this.validateTenantIsExist(tenant, namespace, sinkName, clientRole);
         V1alpha1Sink v1alpha1Sink;
-        try {
-            v1alpha1Sink =
-                    SinksUtil.createV1alpha1SkinFromSinkConfig(
-                            kind,
-                            group,
-                            version,
-                            sinkName,
-                            sinkPkgUrl,
-                            uploadedInputStream,
-                            sinkConfig);
-            v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
-        } catch (URISyntaxException | IOException | ClassNotFoundException e) {
-            log.error(
-                    "register {}/{}/{} sink failed, error message: {}",
-                    tenant,
-                    namespace,
-                    sinkConfig,
-                    e);
-            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
+        v1alpha1Sink =
+                SinksUtil.createV1alpha1SkinFromSinkConfig(
+                        kind,
+                        group,
+                        version,
+                        sinkName,
+                        sinkPkgUrl,
+                        uploadedInputStream,
+                        sinkConfig,
+                        this.meshWorkerServiceSupplier.get().getConnectorsManager());
+        v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
         try {
             Map<String, String> customLabels = Maps.newHashMap();
             customLabels.put(TENANT_LABEL_CLAIM, tenant);
@@ -178,6 +171,7 @@ public class SinksImpl extends MeshComponentImpl
                     namespace,
                     sinkConfig,
                     e);
+            e.printStackTrace();
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
@@ -215,7 +209,7 @@ public class SinksImpl extends MeshComponentImpl
                             sinkName,
                             sinkPkgUrl,
                             uploadedInputStream,
-                            sinkConfig);
+                            sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager());
             v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             v1alpha1Sink
                     .getMetadata()
@@ -346,16 +340,14 @@ public class SinksImpl extends MeshComponentImpl
 
     @Override
     public List<ConnectorDefinition> getSinkList() {
-        List<ConnectorDefinition> connectorDefinitions = new ArrayList<>();
-
-        ConnectorDefinition connectorDefinition = new ConnectorDefinition();
-        connectorDefinition.setName("elastic_search");
-        connectorDefinition.setDescription("Writes data into Elastic Search");
-        connectorDefinition.setSinkClass("org.apache.pulsar.io.elasticsearch.ElasticSearchSink");
-        connectorDefinition.setSinkClass("org.apache.pulsar.io.elasticsearch.ElasticSearchConfig");
-        connectorDefinitions.add(connectorDefinition);
-
-        return connectorDefinitions;
+        List<ConnectorDefinition> connectorDefinitions = getListOfConnectors();
+        List<ConnectorDefinition> retval = new ArrayList<>();
+        for (ConnectorDefinition connectorDefinition : connectorDefinitions) {
+            if (!org.apache.commons.lang.StringUtils.isEmpty(connectorDefinition.getSinkClass())) {
+                retval.add(connectorDefinition);
+            }
+        }
+        return retval;
     }
 
     @Override

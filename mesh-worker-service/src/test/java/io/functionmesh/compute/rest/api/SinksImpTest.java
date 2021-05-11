@@ -64,11 +64,11 @@ import static org.powermock.api.mockito.PowerMockito.spy;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
-    Response.class,
-    RealResponseBody.class,
-    FunctionCommon.class,
-    ConnectorUtils.class,
-    FileUtils.class
+        Response.class,
+        RealResponseBody.class,
+        FunctionCommon.class,
+        ConnectorUtils.class,
+        FileUtils.class
 })
 @PowerMockIgnore({"javax.management.*"})
 public class SinksImpTest {
@@ -79,7 +79,7 @@ public class SinksImpTest {
 
     @Test
     public void testRegisterSink()
-            throws ApiException, IOException, ClassNotFoundException, URISyntaxException, PulsarAdminException {
+            throws ApiException, IOException, ClassNotFoundException, PulsarAdminException {
         // testBody is used to return a V1alpha1Sink JSON and does not care about the content.
         String testBody =
                 "{\n"
@@ -224,7 +224,7 @@ public class SinksImpTest {
 
         V1alpha1Sink v1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
-                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig);
+                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null);
 
         Map<String, String> customLabels = Maps.newHashMap();
         customLabels.put("pulsar-tenant", tenant);
@@ -255,6 +255,7 @@ public class SinksImpTest {
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
         SinksImpl sinks = spy(new SinksImpl(meshWorkerServiceSupplier));
+        System.out.println(KubernetesUtils.getNamespace());
         try {
             sinks.registerSink(
                     tenant,
@@ -432,14 +433,14 @@ public class SinksImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(getCall);
 
         V1alpha1Sink v1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
-                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig);
+                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null);
         v1alpha1Sink.getMetadata().setResourceVersion("881033");
 
         PowerMockito.when(
@@ -570,9 +571,9 @@ public class SinksImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -693,9 +694,9 @@ public class SinksImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -735,6 +736,19 @@ public class SinksImpTest {
 
         SinksImpl sinks = spy(new SinksImpl(meshWorkerServiceSupplier));
         SinkConfig actualSinkConfig = sinks.getSinkInfo(tenant, namespace, componentName);
-        Assert.assertEquals(expectedSinkConfig, actualSinkConfig);
+        Assert.assertEquals(expectedSinkConfig.getName(), actualSinkConfig.getName());
+        Assert.assertEquals(expectedSinkConfig.getNamespace(), actualSinkConfig.getNamespace());
+        Assert.assertEquals(expectedSinkConfig.getTenant(), actualSinkConfig.getTenant());
+        Assert.assertEquals(expectedSinkConfig.getConfigs(), actualSinkConfig.getConfigs());
+        Assert.assertEquals(expectedSinkConfig.getArchive(), actualSinkConfig.getArchive());
+        Assert.assertEquals(expectedSinkConfig.getResources(), actualSinkConfig.getResources());
+        Assert.assertEquals(expectedSinkConfig.getClassName(), actualSinkConfig.getClassName());
+        Assert.assertEquals(expectedSinkConfig.getAutoAck(), actualSinkConfig.getAutoAck());
+        Assert.assertEquals(expectedSinkConfig.getCustomRuntimeOptions(), actualSinkConfig.getCustomRuntimeOptions());
+        Assert.assertArrayEquals(expectedSinkConfig.getInputs().toArray(), actualSinkConfig.getInputs().toArray());
+        Assert.assertEquals(expectedSinkConfig.getMaxMessageRetries(), actualSinkConfig.getMaxMessageRetries());
+        Assert.assertEquals(expectedSinkConfig.getCleanupSubscription(), actualSinkConfig.getCleanupSubscription());
+        Assert.assertEquals(expectedSinkConfig.getParallelism(), actualSinkConfig.getParallelism());
+        Assert.assertEquals(expectedSinkConfig.getRuntimeFlags(), actualSinkConfig.getRuntimeFlags());
     }
 }

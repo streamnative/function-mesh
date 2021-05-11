@@ -20,7 +20,7 @@
 set -e
 
 PULSAR_IMAGE=${PULSAR_IMAGE:-"apachepulsar/pulsar-all"}
-PULSAR_IMAGE_TAG=${PULSAR_IMAGE_TAG:-"2.7.0"}
+PULSAR_IMAGE_TAG=${PULSAR_IMAGE_TAG:-"2.7.1"}
 DOCKER_REPO=${DOCKER_REPO:-"streamnative"}
 RUNNER_BASE="pulsar-functions-runner-base"
 JAVA_RUNNER="pulsar-functions-java-runner"
@@ -43,7 +43,7 @@ docker build -t ${PYTHON_RUNNER} images/pulsar-functions-python-runner --build-a
 docker tag ${PYTHON_RUNNER} "${DOCKER_REPO}"/${PYTHON_RUNNER}:"${RUNNER_TAG}"
 
 echo "build go runner"
-docker build -t ${GO_RUNNER} images/pulsar-functions-go-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG"
+docker build -t ${GO_RUNNER} images/pulsar-functions-go-runner # go runner is almost the same as runner base, so we no need to given build args for go runner
 docker tag ${GO_RUNNER} "${DOCKER_REPO}"/${GO_RUNNER}:"${RUNNER_TAG}"
 
 if [ "$KIND_PUSH" = true ] ; then

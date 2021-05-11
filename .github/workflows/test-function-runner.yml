@@ -1,4 +1,4 @@
-name: Integration :: function-runner-images
+name: Precommit - Integration Tests - function-runner-images
 on:
   pull_request:
     branches:
@@ -23,12 +23,13 @@ jobs:
 
       - name: Deploy k8s cluster env
         run: |
-          .ci/deploy_pulsar_cluster.sh .ci/clusters/values_custom_runner_images.yaml
+          .ci/deploy_pulsar_cluster.sh .ci/clusters/values_runner_images.yaml
 
       - name: Build runner images
         run: |
-          PULSAR_IMAGE_TAG=2.7.0 PULSAR_IMAGE=apachepulsar/pulsar-all KIND_PUSH=true images/build.sh
+          PULSAR_IMAGE_TAG=2.7.1 PULSAR_IMAGE=apachepulsar/pulsar-all KIND_PUSH=true images/build.sh
 
       - name: Verify function runner
         run: |
           .ci/verify_function_runner.sh
+          

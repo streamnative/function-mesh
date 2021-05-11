@@ -22,8 +22,8 @@ import com.google.common.collect.Maps;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.MeshWorkerService;
-import io.functionmesh.compute.util.SourcesUtil;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
+import io.functionmesh.compute.util.SourcesUtil;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
@@ -38,7 +38,6 @@ import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.admin.Tenants;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
-import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.io.SourceConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.common.policies.data.SourceStatus;
@@ -57,9 +56,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -67,11 +64,11 @@ import static org.powermock.api.mockito.PowerMockito.spy;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
-    Response.class,
-    RealResponseBody.class,
-    FunctionCommon.class,
-    ConnectorUtils.class,
-    FileUtils.class
+        Response.class,
+        RealResponseBody.class,
+        FunctionCommon.class,
+        ConnectorUtils.class,
+        FileUtils.class
 })
 @PowerMockIgnore({"javax.management.*"})
 public class SourcesImpTest {
@@ -229,7 +226,8 @@ public class SourcesImpTest {
                         componentName,
                         null,
                         uploadedInputStream,
-                        sourceConfig);
+                        sourceConfig,
+                        null);
         Map<String, String> customLabels = Maps.newHashMap();
         customLabels.put("pulsar-tenant", tenant);
         customLabels.put("pulsar-namespace", namespace);
@@ -277,7 +275,7 @@ public class SourcesImpTest {
 
     @Test
     public void testUpdateSource()
-            throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
+            throws ApiException, IOException, ClassNotFoundException {
         String getBody =
                 "{\n"
                         + "    \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n"
@@ -446,9 +444,9 @@ public class SourcesImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(getCall);
 
         V1alpha1Source v1alpha1Source =
@@ -459,7 +457,7 @@ public class SourcesImpTest {
                         componentName,
                         null,
                         uploadedInputStream,
-                        sourceConfig);
+                        sourceConfig, null);
         v1alpha1Source.getMetadata().setResourceVersion("881033");
 
         PowerMockito.when(
@@ -598,9 +596,9 @@ public class SourcesImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -619,7 +617,7 @@ public class SourcesImpTest {
                 new SourceStatus.SourceInstanceStatus();
         SourceStatus.SourceInstanceStatus.SourceInstanceStatusData
                 expectedSourceInstanceStatusData =
-                        new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
+                new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
         expectedSourceInstanceStatusData.setRunning(true);
         expectedSourceInstanceStatusData.setWorkerId("test-pulsar");
         expectedSourceInstanceStatus.setStatus(expectedSourceInstanceStatusData);
@@ -731,9 +729,9 @@ public class SourcesImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                                .getCustomObjectsApi()
-                                .getNamespacedCustomObjectCall(
-                                        group, version, namespace, plural, componentName, null))
+                        .getCustomObjectsApi()
+                        .getNamespacedCustomObjectCall(
+                                group, version, namespace, plural, componentName, null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -778,6 +776,16 @@ public class SourcesImpTest {
 
         SourcesImpl sources = spy(new SourcesImpl(meshWorkerServiceSupplier));
         SourceConfig actualSourceConfig = sources.getSourceInfo(tenant, namespace, componentName);
-        Assert.assertEquals(expectedSourceConfig, actualSourceConfig);
+        Assert.assertEquals(expectedSourceConfig.getName(), actualSourceConfig.getName());
+        Assert.assertEquals(expectedSourceConfig.getNamespace(), actualSourceConfig.getNamespace());
+        Assert.assertEquals(expectedSourceConfig.getTenant(), actualSourceConfig.getTenant());
+        Assert.assertEquals(expectedSourceConfig.getConfigs(), actualSourceConfig.getConfigs());
+        Assert.assertEquals(expectedSourceConfig.getArchive(), actualSourceConfig.getArchive());
+        Assert.assertEquals(expectedSourceConfig.getResources(), actualSourceConfig.getResources());
+        Assert.assertEquals(expectedSourceConfig.getClassName(), actualSourceConfig.getClassName());
+        Assert.assertEquals(expectedSourceConfig.getCustomRuntimeOptions(), actualSourceConfig.getCustomRuntimeOptions());
+        Assert.assertEquals(expectedSourceConfig.getTopicName(), actualSourceConfig.getTopicName());
+        Assert.assertEquals(expectedSourceConfig.getParallelism(), actualSourceConfig.getParallelism());
+        Assert.assertEquals(expectedSourceConfig.getRuntimeFlags(), actualSourceConfig.getRuntimeFlags());
     }
 }

@@ -52,8 +52,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @Slf4j
 public abstract class MeshComponentImpl implements Component<MeshWorkerService> {
 
-    private final Supplier<MeshWorkerService> meshWorkerServiceSupplier;
-    final Function.FunctionDetails.ComponentType componentType;
+    protected final Supplier<MeshWorkerService> meshWorkerServiceSupplier;
+    protected final Function.FunctionDetails.ComponentType componentType;
 
     String plural = "functions";
 
@@ -118,6 +118,25 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
             throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
 
+        try {
+            Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
+                    group,
+                    version,
+                    namespace,
+                    plural,
+                    componentName,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+            );
+            executeCall(call, null);
+        } catch (Exception e) {
+            log.error("deregister {}/{}/{} {} failed, error message: {}", tenant, namespace, componentName, plural, e);
+            throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
     }
 
     public <T> T executeCall(Call call, Class<T> c) throws Exception {
@@ -322,13 +341,24 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
 
     @Override
     public List<ConnectorDefinition> getListOfConnectors() {
-        // To do
-        return null;
+        return meshWorkerServiceSupplier.get().getConnectorsManager().getConnectorDefinitions();
     }
 
     @Override
     public void reloadConnectors(String clientRole) {
+        meshWorkerServiceSupplier.get().getConnectorsManager().reloadConnectors();
+    }
 
+    private void validateDeregisterFunctionRequestParams(String tenant, String namespace, String functionName) {
+        if (tenant == null) {
+            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Tenant is not provided");
+        }
+        if (namespace == null) {
+            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Namespace is not provided");
+        }
+        if (functionName == null) {
+            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Function name is not provided");
+        }
     }
 
     public boolean isSuperUser(String clientRole, AuthenticationDataSource authenticationDataSource) {

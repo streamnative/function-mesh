@@ -53,14 +53,18 @@ public class KubernetesUtils {
 	private static final String TLS_HOSTNAME_VERIFICATION_ENABLE_CLAIM = "tlsHostnameVerificationEnable";
 
 	public static String getNamespace() {
+		String namespace = null;
 		try {
 			File file = new File(KUBERNETES_NAMESPACE_PATH);
-			return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+			namespace = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
 		} catch (java.io.IOException e) {
 			log.error("Get namespace from kubernetes path {}, message: {}", KUBERNETES_NAMESPACE_PATH, e.getMessage());
 		}
 		// Use the default namespace
-		return "default";
+		if (namespace == null) {
+			return "default";
+		}
+		return namespace;
 	}
 
 	public static String getNamespace(KubernetesRuntimeFactoryConfig kubernetesRuntimeFactoryConfig) {

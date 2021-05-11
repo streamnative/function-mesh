@@ -1,0 +1,92 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: FunctionMesh
+metadata:
+  name: functionmesh-sample
+spec:
+  functions:
+    - name: java-function
+      image: streamnative/pulsar-functions-java-sample:2.7.1
+      className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+      replicas: 1
+      maxReplicas: 1
+      input:
+        topics:
+          - persistent://public/default/functionmesh-input-topic
+        typeClassName: java.lang.String
+      output:
+        topic: persistent://public/default/functionmesh-java-topic
+        typeClassName: java.lang.String
+      pulsar:
+        pulsarConfig: "mesh-test-pulsar"
+      java:
+        jar: /pulsar/examples/api-examples.jar
+      forwardSourceMessageProperty: true
+      autoAck: true
+      resources:
+        requests:
+          cpu: "0.1"
+          memory: 1G
+        limits:
+          cpu: "0.2"
+          memory: 1.1G
+      clusterName: test
+    - name: golang-function
+      image: streamnative/pulsar-functions-go-sample:2.7.1
+      replicas: 1
+      maxReplicas: 1
+      input:
+        topics:
+          - persistent://public/default/functionmesh-java-topic
+        typeClassName: java.lang.String
+      output:
+        topic: persistent://public/default/functionmesh-golang-topic
+        typeClassName: java.lang.String
+      pulsar:
+        pulsarConfig: "mesh-test-pulsar"
+      golang:
+        go: /pulsar/examples/go-exclamation-func
+      forwardSourceMessageProperty: true
+      autoAck: true
+      resources:
+        requests:
+          cpu: "0.1"
+          memory: 1G
+        limits:
+          cpu: "0.2"
+          memory: 1.1G
+      clusterName: test
+    - name: python-function
+      image: streamnative/pulsar-functions-python-sample:2.7.1
+      className: exclamation_function.ExclamationFunction
+      replicas: 1
+      maxReplicas: 1
+      input:
+        topics:
+          - persistent://public/default/functionmesh-golang-topic
+        typeClassName: java.lang.String
+      output:
+        topic: persistent://public/default/functionmesh-python-topic
+        typeClassName: java.lang.String
+      pulsar:
+        pulsarConfig: "mesh-test-pulsar"
+      python:
+        py: /pulsar/examples/python-examples/exclamation_function.py
+      forwardSourceMessageProperty: true
+      autoAck: true
+      resources:
+        requests:
+          cpu: "0.1"
+          memory: 1G
+        limits:
+          cpu: "0.2"
+          memory: 1.1G
+      clusterName: test
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mesh-test-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
+

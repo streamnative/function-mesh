@@ -24,7 +24,6 @@ import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SourcesUtil;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
-import io.functionmesh.compute.sources.models.V1alpha1SourceList;
 import io.functionmesh.compute.sources.models.V1alpha1SourceStatus;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
@@ -84,6 +83,17 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         this.validateRegisterSourceRequestParams(tenant, namespace, sourceName, sourceConfig);
     }
 
+    private void validateGetSourceInfoRequestParams(String tenant, String namespace, String sourceName) {
+        if (tenant == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
+        }
+        if (namespace == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Namespace is not provided");
+        }
+        if (sourceName == null) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Source name is not provided");
+        }
+    }
 
     public void registerSource(final String tenant,
                                final String namespace,
@@ -103,7 +113,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         this.validateTenantIsExist(tenant, namespace, sourceName, clientRole);
         try {
             V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
-                    sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig);
+                    sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig,
+                    this.meshWorkerServiceSupplier.get().getConnectorsManager());
             Map<String, String> customLabels = Maps.newHashMap();
             customLabels.put(TENANT_LABEL_CLAIM, tenant);
             customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
@@ -148,7 +159,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                     null);
             executeCall(call, V1alpha1Source.class);
         } catch (Exception e) {
-            log.error("register {}/{}/{} source failed, error message: {}", tenant, namespace, sourceConfig, e.getStackTrace());
+            log.error("register {}/{}/{} source failed, error message: {}", tenant, namespace, sourceConfig, e);
+            e.printStackTrace();
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
@@ -208,7 +220,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                     sourceName,
                     sourcePkgUrl,
                     uploadedInputStream,
-                    sourceConfig
+                    sourceConfig,
+                    this.meshWorkerServiceSupplier.get().getConnectorsManager()
             );
             v1alpha1Source.getMetadata().setResourceVersion(oldRes.getMetadata().getResourceVersion());
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
@@ -302,31 +315,22 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             V1alpha1Source v1alpha1Source = executeCall(call, V1alpha1Source.class);
             return SourcesUtil.createSourceConfigFromV1alpha1Source(tenant, namespace, componentName, v1alpha1Source);
         } catch (Exception e) {
-            log.error("get {}/{}/{} function info failed, error message: {}", tenant, namespace, componentName, e);
+            log.error("deregister {}/{}/{} {} failed, error message: {}", tenant, namespace, componentName, plural, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
-    public List<ConnectorDefinition> getSourceList() {
-        List<ConnectorDefinition> connectorDefinitions = new ArrayList<>();
-
-        ConnectorDefinition connectorDefinition = new ConnectorDefinition();
-        connectorDefinition.setName("debezium-mongodb");
-        connectorDefinition.setDescription("Debezium MongoDb Source");
-        connectorDefinition.setSourceClass("org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource");
-        connectorDefinitions.add(connectorDefinition);
-
-        return connectorDefinitions;
-    }
-
     @Override
-    public List<String> listFunctions(final String tenant,
-                                      final String namespace,
-                                      final String clientRole,
-                                      final AuthenticationDataSource clientAuthenticationDataHttps) {
-        return super.listFunctions(tenant, namespace, clientRole, clientAuthenticationDataHttps);
+    public List<ConnectorDefinition> getSourceList() {
+        List<ConnectorDefinition> connectorDefinitions = getListOfConnectors();
+        List<ConnectorDefinition> retval = new ArrayList<>();
+        for (ConnectorDefinition connectorDefinition : connectorDefinitions) {
+            if (!org.apache.commons.lang.StringUtils.isEmpty(connectorDefinition.getSourceClass())) {
+                retval.add(connectorDefinition);
+            }
+        }
+        return retval;
     }
-
 
     public List<ConfigFieldDefinition> getSourceConfigDefinition(String name) {
         return new ArrayList<>();

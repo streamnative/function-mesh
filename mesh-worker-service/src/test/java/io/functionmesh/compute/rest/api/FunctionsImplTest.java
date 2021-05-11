@@ -22,7 +22,6 @@ import com.google.common.collect.Maps;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
-import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
 import io.functionmesh.compute.testdata.Generate;
 import io.functionmesh.compute.util.FunctionsUtil;
 import io.functionmesh.compute.util.KubernetesUtils;

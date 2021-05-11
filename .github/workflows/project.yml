@@ -1,8 +1,8 @@
-name: Project Style Check
+name: Precommit - Unit Tests
 on: [pull_request]
 jobs:
   build:
-    name: Build
+    name: unit-tests
     runs-on: ubuntu-latest
     strategy:
       matrix:

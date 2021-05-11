@@ -63,7 +63,10 @@ var _ = BeforeSuite(func(done Done) {
 		}
 	} else {
 		testEnv = &envtest.Environment{
-			CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+			CRDInstallOptions: envtest.CRDInstallOptions{
+				Paths: []string{filepath.Join("..", "config", "crd", "bases")},
+			},
+			AttachControlPlaneOutput: true,
 		}
 	}
 	var err error

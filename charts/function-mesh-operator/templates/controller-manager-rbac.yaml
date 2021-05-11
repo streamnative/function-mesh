@@ -147,7 +147,10 @@ rules:
     - get
 - apiGroups: [""]
   resources: ["secrets"]
-  verbs: ["create", "update", "get", "list", "watch","delete"]
+  verbs: ["create", "update", "get", "list", "watch","delete", "patch"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["create", "update", "get", "list", "watch","delete", "patch"]
 - apiGroups: [""]
   resources: ["persistentvolumeclaims"]
   verbs: ["get", "list", "watch", "create", "update", "delete", "patch"]

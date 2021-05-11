@@ -21,6 +21,7 @@ package io.functionmesh.compute;
 import io.functionmesh.compute.rest.api.FunctionsImpl;
 import io.functionmesh.compute.rest.api.SinksImpl;
 import io.functionmesh.compute.rest.api.SourcesImpl;
+import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
@@ -80,11 +81,11 @@ public class MeshWorkerService implements WorkerService {
 
     private AuthenticationService authenticationService;
     private AuthorizationService authorizationService;
-    private ConnectorsManager connectorsManager;
+    private MeshConnectorsManager connectorsManager;
+    final PulsarWorkerService.PulsarClientCreator clientCreator;
 
-
-    private final PulsarWorkerService.PulsarClientCreator clientCreator;
     public MeshWorkerService() {
+
         this.clientCreator = new PulsarWorkerService.PulsarClientCreator() {
             @Override
             public PulsarAdmin newPulsarAdmin(String pulsarServiceUrl, WorkerConfig workerConfig) {
@@ -127,9 +128,9 @@ public class MeshWorkerService implements WorkerService {
 
     @Override
     public void initInBroker(ServiceConfiguration brokerConfig,
-                           WorkerConfig workerConfig, PulsarResources pulsarResources,
-                           ConfigurationCacheService configurationCacheService,
-                           InternalConfigurationData internalConfigurationData) throws Exception {
+                             WorkerConfig workerConfig, PulsarResources pulsarResources,
+                             ConfigurationCacheService configurationCacheService,
+                             InternalConfigurationData internalConfigurationData) throws Exception {
         this.init(workerConfig);
     }
 
@@ -149,7 +150,6 @@ public class MeshWorkerService implements WorkerService {
         this.sinks = new SinksImpl(() -> MeshWorkerService.this);
         this.factoryConfig = RuntimeUtils.getRuntimeFunctionConfig(
                 workerConfig.getFunctionRuntimeFactoryConfigs(), KubernetesRuntimeFactoryConfig.class);
-        this.connectorsManager = new ConnectorsManager(workerConfig);
     }
 
     private void initKubernetesClient() throws IOException {
@@ -169,6 +169,7 @@ public class MeshWorkerService implements WorkerService {
         this.authenticationService = authenticationService;
         this.authorizationService = authorizationService;
         this.brokerAdmin = clientCreator.newPulsarAdmin(workerConfig.getPulsarWebServiceUrl(), workerConfig);
+        this.connectorsManager = new MeshConnectorsManager();
     }
 
     public void stop() {

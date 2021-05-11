@@ -108,6 +108,9 @@ func TestLicense(t *testing.T) {
 			}
 			fallthrough
 		case ".conf":
+			if strings.Contains(path, "vendor") {
+				return nil
+			}
 			src, err := ioutil.ReadFile(path)
 			if err != nil {
 				return nil
