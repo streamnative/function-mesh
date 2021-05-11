@@ -32,18 +32,22 @@ import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodResources;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
-import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SinkConfig;
+import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.utils.FunctionCommon;
 import org.apache.pulsar.functions.utils.SinkConfigUtils;
+import org.apache.pulsar.functions.utils.io.ConnectorUtils;
 
 import javax.ws.rs.core.Response;
+import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,6 +70,10 @@ public class SinksUtil {
 
         V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
         v1alpha1SinkSpec.setClassName(sinkConfig.getClassName());
+
+        Integer parallelism = sinkConfig.getParallelism() == null ? 1 : sinkConfig.getParallelism();
+        v1alpha1SinkSpec.setReplicas(parallelism);
+        v1alpha1SinkSpec.setMaxReplicas(parallelism);
 
         String customRuntimeOptionsJSON = sinkConfig.getCustomRuntimeOptions();
         CustomRuntimeOptions customRuntimeOptions = null;
