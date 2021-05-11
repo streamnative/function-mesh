@@ -79,8 +79,8 @@ public class SinksUtilTest {
         PowerMockito.when(FunctionCommon.extractNarClassLoader(narFile, null))
                 .thenReturn(narClassLoader);
         PowerMockito.when(FunctionCommon.createPkgTempFile()).thenReturn(narFile);
-        PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
-        PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
+        PowerMockito.when(ConnectorUtils.getIOSinkClass(narClassLoader)).thenReturn(className);
+        PowerMockito.<Class<?>>when(FunctionCommon.getSinkType(null)).thenReturn(getClass());
 
         SinkConfig sinkConfig = Generate.CreateSinkConfig(tenant, namespace, componentName);
 

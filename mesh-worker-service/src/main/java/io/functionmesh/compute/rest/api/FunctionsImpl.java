@@ -18,9 +18,12 @@
  */
 package io.functionmesh.compute.rest.api;
 
-import io.functionmesh.compute.MeshWorkerService;
-import io.functionmesh.compute.functions.models.V1alpha1Function;
+import com.google.common.collect.Maps;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
 import io.functionmesh.compute.util.FunctionsUtil;
+import io.functionmesh.compute.functions.models.V1alpha1Function;
+import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.util.KubernetesUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
@@ -30,12 +33,14 @@ import org.apache.pulsar.common.functions.UpdateOptions;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Functions;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Map;
 import java.util.function.Supplier;
 
 @Slf4j
@@ -67,20 +72,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
         validateRegisterFunctionRequestParams(tenant, namespace, functionName, functionConfig);
     }
 
-    private void validateDeregisterFunctionRequestParams(String tenant, String namespace, String functionName) {
-        if (tenant == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
-        }
-        if (namespace == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Namespace is not provided");
-        }
-        if (functionName == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Function name is not provided");
-        }
-    }
-
     private void validateGetFunctionInfoRequestParams(String tenant, String namespace, String functionName) {
-        validateDeregisterFunctionRequestParams(tenant, namespace, functionName);
+        this.validateGetInfoRequestParams(tenant, namespace, functionName, kind);
     }
 
     @Override
@@ -94,6 +87,12 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                  final String clientRole,
                                  AuthenticationDataHttps clientAuthenticationDataHttps) {
         validateRegisterFunctionRequestParams(tenant, namespace, functionName, functionConfig);
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
+        this.validateTenantIsExist(tenant, namespace, functionName, clientRole);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(
                 kind,
@@ -103,11 +102,44 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 functionPkgUrl,
                 functionConfig
         );
+        Map<String, String> customLabels = Maps.newHashMap();
+        customLabels.put(TENANT_LABEL_CLAIM, tenant);
+        customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
+        V1alpha1FunctionSpecPod pod = new V1alpha1FunctionSpecPod();
+        if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+            customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
+        }
+        pod.setLabels(customLabels);
+        v1alpha1Function.getSpec().setPod(pod);
         try {
+            if (worker().getWorkerConfig().isAuthenticationEnabled()) {
+                Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
+                functionDetailsBuilder.setTenant(tenant);
+                functionDetailsBuilder.setNamespace(namespace);
+                functionDetailsBuilder.setName(functionName);
+                worker().getAuthProvider().ifPresent(functionAuthProvider -> {
+                    if (clientAuthenticationDataHttps != null) {
+                        try {
+                            String type = "auth";
+                            KubernetesUtils.createConfigMap(type, tenant, namespace, functionName,
+									worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                            v1alpha1Function.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
+                                    type, functionConfig.getTenant(), functionConfig.getNamespace(), functionName));
+                        } catch (Exception e) {
+                            log.error("Error caching authentication data for {} {}/{}/{}",
+                                    ComponentTypeUtils.toString(componentType), tenant, namespace, functionName, e);
+
+
+                            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                                    ComponentTypeUtils.toString(componentType), functionName, e.getMessage()));
+                        }
+                    }
+                });
+            }
             Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     v1alpha1Function,
                     null,
@@ -139,7 +171,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     functionName,
                     null
@@ -157,7 +189,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     functionName,
                     v1alpha1Function,
@@ -180,11 +212,17 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                           final AuthenticationDataSource clientAuthenticationDataHttps) {
         validateGetFunctionInfoRequestParams(tenant, namespace, componentName);
 
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
+
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     componentName,
                     null
@@ -217,10 +255,16 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                             final URI uri,
                                             final String clientRole,
                                             final AuthenticationDataSource clientAuthenticationDataHttps) {
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
         FunctionStatus functionStatus = new FunctionStatus();
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
-                    group, version, namespace, plural, componentName, null);
+                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                    plural, componentName, null);
             V1alpha1Function v1alpha1Function = executeCall(call, V1alpha1Function.class);
             FunctionStatus.FunctionInstanceStatus functionInstanceStatus = new FunctionStatus.FunctionInstanceStatus();
             FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData =

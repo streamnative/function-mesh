@@ -18,6 +18,11 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import com.google.common.collect.Maps;
+import io.functionmesh.compute.sinks.models.V1alpha1Sink;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
+import io.functionmesh.compute.util.KubernetesUtils;
+import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkStatus;
@@ -34,25 +39,31 @@ import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.policies.data.SinkStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Sinks;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 @Slf4j
 public class SinksImpl extends MeshComponentImpl
         implements Sinks<MeshWorkerService> {
-    private final String kind = "Sink";
+    private String kind = "Sink";
 
-    private final String plural = "sinks";
+    private String plural = "sinks";
 
     public SinksImpl(Supplier<MeshWorkerService> meshWorkerServiceSupplier) {
         super(meshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SINK);
+        super.plural = this.plural;
+        super.kind = this.kind;
     }
 
     private void validateRegisterSinkRequestParams(
@@ -76,19 +87,6 @@ public class SinksImpl extends MeshComponentImpl
         this.validateRegisterSinkRequestParams(tenant, namespace, sinkName, sinkConfig);
     }
 
-    private void validateGetSinkInfoRequestParams(
-            String tenant, String namespace, String sinkName) {
-        if (tenant == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
-        }
-        if (namespace == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Namespace is not provided");
-        }
-        if (sinkName == null) {
-            throw new RestException(Response.Status.BAD_REQUEST, "Sink name is not provided");
-        }
-    }
-
     @Override
     public void registerSink(
             final String tenant,
@@ -101,23 +99,64 @@ public class SinksImpl extends MeshComponentImpl
             final String clientRole,
             AuthenticationDataHttps clientAuthenticationDataHttps) {
         validateRegisterSinkRequestParams(tenant, namespace, sinkName, sinkConfig);
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
+        this.validateTenantIsExist(tenant, namespace, sinkName, clientRole);
+        V1alpha1Sink v1alpha1Sink;
+        v1alpha1Sink =
+                SinksUtil.createV1alpha1SkinFromSinkConfig(
+                        kind,
+                        group,
+                        version,
+                        sinkName,
+                        sinkPkgUrl,
+                        uploadedInputStream,
+                        sinkConfig,
+                        this.meshWorkerServiceSupplier.get().getConnectorsManager());
+        v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
         try {
-            V1alpha1Sink v1alpha1Sink =
-                    SinksUtil.createV1alpha1SkinFromSinkConfig(
-                            kind,
-                            group,
-                            version,
-                            sinkName,
-                            sinkPkgUrl,
-                            uploadedInputStream,
-                            sinkConfig,
-                            this.meshWorkerServiceSupplier.get().getConnectorsManager());
+            Map<String, String> customLabels = Maps.newHashMap();
+            customLabels.put(TENANT_LABEL_CLAIM, tenant);
+            customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
+            V1alpha1SinkSpecPod pod = new V1alpha1SinkSpecPod();
+            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+                customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
+            }
+            pod.setLabels(customLabels);
+            v1alpha1Sink.getSpec().setPod(pod);
+            if (worker().getWorkerConfig().isAuthenticationEnabled()) {
+                Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
+                functionDetailsBuilder.setTenant(tenant);
+                functionDetailsBuilder.setNamespace(namespace);
+                functionDetailsBuilder.setName(sinkName);
+                worker().getAuthProvider().ifPresent(functionAuthProvider -> {
+                    if (clientAuthenticationDataHttps != null) {
+                        try {
+                            String type = "auth";
+                            KubernetesUtils.createConfigMap(type, tenant, namespace, sinkName,
+                                    worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                            v1alpha1Sink.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
+                                    type, sinkConfig.getTenant(), sinkConfig.getNamespace(), sinkName));
+                        } catch (Exception e) {
+                            log.error("Error caching authentication data for {} {}/{}/{}",
+                                    ComponentTypeUtils.toString(componentType), tenant, namespace, sinkName, e);
+
+
+                            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                                    ComponentTypeUtils.toString(componentType), sinkName, e.getMessage()));
+                        }
+                    }
+                });
+            }
             Call call =
                     worker().getCustomObjectsApi()
                             .createNamespacedCustomObjectCall(
                                     group,
                                     version,
-                                    namespace,
+                                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                                     plural,
                                     v1alpha1Sink,
                                     null,
@@ -150,7 +189,11 @@ public class SinksImpl extends MeshComponentImpl
             AuthenticationDataHttps clientAuthenticationDataHttps,
             UpdateOptions updateOptions) {
         validateUpdateSinkRequestParams(tenant, namespace, sinkName, sinkConfig);
-
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
         try {
             Call getCall =
                     worker().getCustomObjectsApi()
@@ -167,6 +210,7 @@ public class SinksImpl extends MeshComponentImpl
                             sinkPkgUrl,
                             uploadedInputStream,
                             sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager());
+            v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             v1alpha1Sink
                     .getMetadata()
                     .setResourceVersion(oldRes.getMetadata().getResourceVersion());
@@ -175,7 +219,7 @@ public class SinksImpl extends MeshComponentImpl
                             .replaceNamespacedCustomObjectCall(
                                     group,
                                     version,
-                                    namespace,
+                                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                                     plural,
                                     sinkName,
                                     v1alpha1Sink,
@@ -217,11 +261,17 @@ public class SinksImpl extends MeshComponentImpl
             final String clientRole,
             final AuthenticationDataSource clientAuthenticationDataHttps) {
         SinkStatus sinkStatus = new SinkStatus();
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
         try {
             Call call =
                     worker().getCustomObjectsApi()
                             .getNamespacedCustomObjectCall(
-                                    group, version, namespace, plural, componentName, null);
+                                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                                    plural, componentName, null);
             V1alpha1Sink v1alpha1Sink = executeCall(call, V1alpha1Sink.class);
             SinkStatus.SinkInstanceStatus sinkInstanceStatus = new SinkStatus.SinkInstanceStatus();
             SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData =
@@ -258,13 +308,13 @@ public class SinksImpl extends MeshComponentImpl
     @Override
     public SinkConfig getSinkInfo(
             final String tenant, final String namespace, final String componentName) {
-        validateGetSinkInfoRequestParams(tenant, namespace, componentName);
-
+        this.validateGetInfoRequestParams(tenant, namespace, componentName, kind);
         try {
             Call call =
                     worker().getCustomObjectsApi()
                             .getNamespacedCustomObjectCall(
-                                    group, version, namespace, plural, componentName, null);
+                                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                                    plural, componentName, null);
 
             V1alpha1Sink v1alpha1Sink = executeCall(call, V1alpha1Sink.class);
             return SinksUtil.createSinkConfigFromV1alpha1Source(
@@ -278,6 +328,14 @@ public class SinksImpl extends MeshComponentImpl
                     e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
+    }
+
+    @Override
+    public List<String> listFunctions(final String tenant,
+                                      final String namespace,
+                                      final String clientRole,
+                                      final AuthenticationDataSource clientAuthenticationDataHttps) {
+        return super.listFunctions(tenant, namespace, clientRole, clientAuthenticationDataHttps);
     }
 
     @Override
