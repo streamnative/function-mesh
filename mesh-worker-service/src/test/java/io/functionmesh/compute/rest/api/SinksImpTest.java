@@ -18,9 +18,12 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import com.google.common.collect.Maps;
 import io.functionmesh.compute.MeshWorkerService;
-import io.functionmesh.compute.sinks.models.V1alpha1Sink;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
+import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SinksUtil;
+import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
@@ -30,12 +33,16 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.internal.http.RealResponseBody;
 import org.apache.commons.io.FileUtils;
+import org.apache.pulsar.client.admin.PulsarAdmin;
+import org.apache.pulsar.client.admin.PulsarAdminException;
+import org.apache.pulsar.client.admin.Tenants;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.common.policies.data.SinkStatus;
 import org.apache.pulsar.functions.utils.FunctionCommon;
 import org.apache.pulsar.functions.utils.io.ConnectorUtils;
+import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,7 +79,7 @@ public class SinksImpTest {
 
     @Test
     public void testRegisterSink()
-            throws ApiException, IOException, ClassNotFoundException, URISyntaxException {
+            throws ApiException, IOException, ClassNotFoundException, PulsarAdminException {
         // testBody is used to return a V1alpha1Sink JSON and does not care about the content.
         String testBody =
                 "{\n"
@@ -157,6 +164,14 @@ public class SinksImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(meshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        PulsarAdmin pulsarAdmin = PowerMockito.mock(PulsarAdmin.class);
+        PowerMockito.when(meshWorkerService.getBrokerAdmin()).thenReturn(pulsarAdmin);
+        Tenants tenants = PowerMockito.mock(Tenants.class);
+        PowerMockito.when(pulsarAdmin.tenants()).thenReturn(tenants);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -187,8 +202,8 @@ public class SinksImpTest {
         PowerMockito.when(FunctionCommon.extractNarClassLoader(narFile, null))
                 .thenReturn(narClassLoader);
         PowerMockito.when(FunctionCommon.createPkgTempFile()).thenReturn(narFile);
-        PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
-        PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
+        PowerMockito.when(ConnectorUtils.getIOSinkClass(narClassLoader)).thenReturn(className);
+        PowerMockito.<Class<?>>when(FunctionCommon.getSinkType(null)).thenReturn(getClass());
 
         SinkConfig sinkConfig = new SinkConfig();
         sinkConfig.setTenant(tenant);
@@ -205,23 +220,31 @@ public class SinksImpTest {
         sinkConfig.setCustomRuntimeOptions(customRuntimeOptions);
         sinkConfig.setAutoAck(autoAck);
 
+        PowerMockito.when(tenants.getTenantInfo(tenant)).thenReturn(null);
+
         V1alpha1Sink v1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null);
 
+        Map<String, String> customLabels = Maps.newHashMap();
+        customLabels.put("pulsar-tenant", tenant);
+        customLabels.put("pulsar-namespace", namespace);
+        V1alpha1SinkSpecPod pod = new V1alpha1SinkSpecPod();
+        pod.setLabels(customLabels);
+        v1alpha1Sink.getSpec().pod(pod);
         PowerMockito.when(
                 meshWorkerService
-                        .getCustomObjectsApi()
-                        .createNamespacedCustomObjectCall(
-                                group,
-                                version,
-                                namespace,
-                                plural,
-                                v1alpha1Sink,
-                                null,
-                                null,
-                                null,
-                                null))
+                                .getCustomObjectsApi()
+                                .createNamespacedCustomObjectCall(
+                                        group,
+                                        version,
+                                        KubernetesUtils.getNamespace(),
+                                        plural,
+                                        v1alpha1Sink,
+                                        null,
+                                        null,
+                                        null,
+                                        null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -232,6 +255,7 @@ public class SinksImpTest {
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
         SinksImpl sinks = spy(new SinksImpl(meshWorkerServiceSupplier));
+        System.out.println(KubernetesUtils.getNamespace());
         try {
             sinks.registerSink(
                     tenant,
@@ -355,8 +379,8 @@ public class SinksImpTest {
         PowerMockito.when(FunctionCommon.extractNarClassLoader(narFile, null))
                 .thenReturn(narClassLoader);
         PowerMockito.when(FunctionCommon.createPkgTempFile()).thenReturn(narFile);
-        PowerMockito.when(ConnectorUtils.getIOSourceClass(narClassLoader)).thenReturn(className);
-        PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
+        PowerMockito.when(ConnectorUtils.getIOSinkClass(narClassLoader)).thenReturn(className);
+        PowerMockito.<Class<?>>when(FunctionCommon.getSinkType(null)).thenReturn(getClass());
 
         SinkConfig sinkConfig = new SinkConfig();
         sinkConfig.setTenant(tenant);
@@ -380,6 +404,10 @@ public class SinksImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(meshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
 
         Call getCall = PowerMockito.mock(Call.class);
         Response getResponse = PowerMockito.mock(Response.class);
@@ -417,17 +445,17 @@ public class SinksImpTest {
 
         PowerMockito.when(
                 meshWorkerService
-                        .getCustomObjectsApi()
-                        .replaceNamespacedCustomObjectCall(
-                                group,
-                                version,
-                                namespace,
-                                plural,
-                                componentName,
-                                v1alpha1Sink,
-                                null,
-                                null,
-                                null))
+                                .getCustomObjectsApi()
+                                .replaceNamespacedCustomObjectCall(
+                                        group,
+                                        version,
+                                        KubernetesUtils.getNamespace(),
+                                        plural,
+                                        componentName,
+                                        v1alpha1Sink,
+                                        null,
+                                        null,
+                                        null))
                 .thenReturn(getCall);
 
         SinksImpl sinks = spy(new SinksImpl(meshWorkerServiceSupplier));
@@ -527,6 +555,10 @@ public class SinksImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(meshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -647,6 +679,10 @@ public class SinksImpTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(meshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);

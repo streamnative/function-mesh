@@ -28,16 +28,26 @@ import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.util.Config;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationService;
 import org.apache.pulsar.broker.authorization.AuthorizationService;
 import org.apache.pulsar.broker.cache.ConfigurationCacheService;
 import org.apache.pulsar.broker.resources.PulsarResources;
+import org.apache.pulsar.client.admin.PulsarAdmin;
+import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.common.conf.InternalConfigurationData;
 import org.apache.pulsar.common.util.SimpleTextOutputStream;
+import org.apache.pulsar.functions.auth.FunctionAuthProvider;
+import org.apache.pulsar.functions.auth.KubernetesFunctionAuthProvider;
+import org.apache.pulsar.functions.runtime.RuntimeUtils;
+import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
+import org.apache.pulsar.functions.worker.ConnectorsManager;
 import org.apache.pulsar.functions.worker.ErrorNotifier;
+import org.apache.pulsar.functions.worker.PulsarWorkerService;
 import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.apache.pulsar.functions.worker.WorkerService;
+import org.apache.pulsar.functions.worker.WorkerUtils;
 import org.apache.pulsar.functions.worker.service.api.Functions;
 import org.apache.pulsar.functions.worker.service.api.FunctionsV2;
 import org.apache.pulsar.functions.worker.service.api.Sinks;
@@ -45,6 +55,7 @@ import org.apache.pulsar.functions.worker.service.api.Sources;
 import org.apache.pulsar.functions.worker.service.api.Workers;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Function mesh proxy implement.
@@ -56,6 +67,7 @@ public class MeshWorkerService implements WorkerService {
     private volatile boolean isInitialized = false;
 
     private WorkerConfig workerConfig;
+    private boolean authenticationEnabled;
     private Functions<MeshWorkerService> functions;
     private FunctionsV2<MeshWorkerService> functionsV2;
     private Sinks<MeshWorkerService> sinks;
@@ -63,14 +75,50 @@ public class MeshWorkerService implements WorkerService {
     private CoreV1Api coreV1Api;
     private CustomObjectsApi customObjectsApi;
     private ApiClient apiClient;
+    private PulsarAdmin brokerAdmin;
+    private Optional<KubernetesFunctionAuthProvider> authProvider;
+    private KubernetesRuntimeFactoryConfig factoryConfig;
 
     private AuthenticationService authenticationService;
     private AuthorizationService authorizationService;
-
     private MeshConnectorsManager connectorsManager;
+    final PulsarWorkerService.PulsarClientCreator clientCreator;
 
     public MeshWorkerService() {
 
+        this.clientCreator = new PulsarWorkerService.PulsarClientCreator() {
+            @Override
+            public PulsarAdmin newPulsarAdmin(String pulsarServiceUrl, WorkerConfig workerConfig) {
+                // using isBrokerClientAuthenticationEnabled instead of isAuthenticationEnabled in function-worker
+                if (workerConfig.isBrokerClientAuthenticationEnabled()) {
+                    return WorkerUtils.getPulsarAdminClient(
+                            pulsarServiceUrl,
+                            workerConfig.getBrokerClientAuthenticationPlugin(),
+                            workerConfig.getBrokerClientAuthenticationParameters(),
+                            workerConfig.getBrokerClientTrustCertsFilePath(),
+                            workerConfig.isTlsAllowInsecureConnection(),
+                            workerConfig.isTlsEnableHostnameVerification());
+                } else {
+                    return WorkerUtils.getPulsarAdminClient(pulsarServiceUrl);
+                }
+            }
+            @Override
+            public PulsarClient newPulsarClient(String pulsarServiceUrl, WorkerConfig workerConfig) {
+                // using isBrokerClientAuthenticationEnabled instead of isAuthenticationEnabled in function-worker
+                if (workerConfig.isBrokerClientAuthenticationEnabled()) {
+                    return WorkerUtils.getPulsarClient(
+                            pulsarServiceUrl,
+                            workerConfig.getBrokerClientAuthenticationPlugin(),
+                            workerConfig.getBrokerClientAuthenticationParameters(),
+                            workerConfig.isUseTls(),
+                            workerConfig.getBrokerClientTrustCertsFilePath(),
+                            workerConfig.isTlsAllowInsecureConnection(),
+                            workerConfig.isTlsEnableHostnameVerification());
+                } else {
+                    return WorkerUtils.getPulsarClient(pulsarServiceUrl);
+                }
+            }
+        };
     }
 
     @Override
@@ -89,9 +137,19 @@ public class MeshWorkerService implements WorkerService {
     public void init(WorkerConfig workerConfig) throws Exception {
         this.workerConfig = workerConfig;
         this.initKubernetesClient();
+        this.authenticationEnabled = this.workerConfig.isAuthenticationEnabled();
+        if (this.workerConfig.isAuthenticationEnabled() && !StringUtils.isEmpty(this.workerConfig.getFunctionAuthProviderClassName())) {
+            Optional<FunctionAuthProvider> functionAuthProvider = Optional.empty();
+            functionAuthProvider = Optional.of(FunctionAuthProvider.getAuthProvider(workerConfig.getFunctionAuthProviderClassName()));
+            KubernetesFunctionAuthProvider kubernetesFunctionAuthProvider = (KubernetesFunctionAuthProvider) functionAuthProvider.get();
+            kubernetesFunctionAuthProvider.initialize(coreV1Api, null, null);
+            this.authProvider = Optional.of(kubernetesFunctionAuthProvider);
+        }
         this.functions = new FunctionsImpl(() -> MeshWorkerService.this);
         this.sources = new SourcesImpl(() -> MeshWorkerService.this);
         this.sinks = new SinksImpl(() -> MeshWorkerService.this);
+        this.factoryConfig = RuntimeUtils.getRuntimeFunctionConfig(
+                workerConfig.getFunctionRuntimeFactoryConfigs(), KubernetesRuntimeFactoryConfig.class);
     }
 
     private void initKubernetesClient() throws IOException {
@@ -110,11 +168,14 @@ public class MeshWorkerService implements WorkerService {
                       ErrorNotifier errorNotifier) {
         this.authenticationService = authenticationService;
         this.authorizationService = authorizationService;
+        this.brokerAdmin = clientCreator.newPulsarAdmin(workerConfig.getPulsarWebServiceUrl(), workerConfig);
         this.connectorsManager = new MeshConnectorsManager();
     }
 
     public void stop() {
-
+        if (null != getBrokerAdmin()) {
+            getBrokerAdmin().close();
+        }
     }
 
     public boolean isInitialized() {

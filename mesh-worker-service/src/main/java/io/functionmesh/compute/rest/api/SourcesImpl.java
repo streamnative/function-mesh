@@ -18,10 +18,13 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import com.google.common.collect.Maps;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
+import io.functionmesh.compute.util.KubernetesUtils;
+import io.functionmesh.compute.util.SourcesUtil;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceStatus;
-import io.functionmesh.compute.util.SourcesUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
@@ -34,6 +37,7 @@ import org.apache.pulsar.common.io.SourceConfig;
 import org.apache.pulsar.common.policies.data.SourceStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Sources;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
@@ -42,16 +46,20 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @Slf4j
 public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorkerService> {
-    private final String kind = "Source";
+    private String kind = "Source";
 
-    private final String plural = "sources";
+    private String plural = "sources";
 
     public SourcesImpl(Supplier<MeshWorkerService> meshWorkerServiceSupplier) {
         super(meshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SOURCE);
+        super.plural = this.plural;
+        super.kind = this.kind;
     }
 
     private void validateRegisterSourceRequestParams(String tenant, String namespace, String sourceName,
@@ -97,12 +105,52 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                                final String clientRole,
                                AuthenticationDataHttps clientAuthenticationDataHttps) {
         validateRegisterSourceRequestParams(tenant, namespace, sourceName, sourceConfig);
-
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
+        this.validateTenantIsExist(tenant, namespace, sourceName, clientRole);
         try {
             V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
                     sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig,
                     this.meshWorkerServiceSupplier.get().getConnectorsManager());
-            Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(group, version, namespace,
+            Map<String, String> customLabels = Maps.newHashMap();
+            customLabels.put(TENANT_LABEL_CLAIM, tenant);
+            customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
+            V1alpha1SourceSpecPod pod = new V1alpha1SourceSpecPod();
+            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+                customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
+            }
+            pod.setLabels(customLabels);
+            v1alpha1Source.getSpec().setPod(pod);
+            if (worker().getWorkerConfig().isAuthenticationEnabled()) {
+                Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
+                functionDetailsBuilder.setTenant(tenant);
+                functionDetailsBuilder.setNamespace(namespace);
+                functionDetailsBuilder.setName(sourceName);
+                Function.FunctionDetails functionDetails = functionDetailsBuilder.build();
+                worker().getAuthProvider().ifPresent(functionAuthProvider -> {
+                    if (clientAuthenticationDataHttps != null) {
+                        try {
+                            String type = "auth";
+                            KubernetesUtils.createConfigMap(type, tenant, namespace, sourceName,
+                                    worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                            v1alpha1Source.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
+                                    type, sourceConfig.getTenant(), sourceConfig.getNamespace(), sourceName));
+                        } catch (Exception e) {
+                            log.error("Error caching authentication data for {} {}/{}/{}",
+                                    ComponentTypeUtils.toString(componentType), tenant, namespace, sourceName, e);
+
+
+                            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                                    ComponentTypeUtils.toString(componentType), sourceName, e.getMessage()));
+                        }
+                    }
+                });
+            }
+            Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(
+                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     v1alpha1Source,
                     null,
@@ -128,8 +176,33 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                              AuthenticationDataHttps clientAuthenticationDataHttps,
                              UpdateOptions updateOptions) {
         validateUpdateSourceRequestParams(tenant, namespace, sourceName, sourceConfig);
-
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
         try {
+            if (worker().getWorkerConfig().isAuthenticationEnabled()) {
+                Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
+                functionDetailsBuilder.setTenant(tenant);
+                functionDetailsBuilder.setNamespace(namespace);
+                functionDetailsBuilder.setName(sourceName);
+                Function.FunctionDetails functionDetails = functionDetailsBuilder.build();
+                worker().getAuthProvider().ifPresent(functionAuthProvider -> {
+                    if (clientAuthenticationDataHttps != null) {
+                        try {
+                            functionAuthProvider.updateAuthData(functionDetails, Optional.empty(), clientAuthenticationDataHttps);
+                        } catch (Exception e) {
+                            log.error("Error caching authentication data for {} {}/{}/{}",
+                                    ComponentTypeUtils.toString(componentType), tenant, namespace, sourceName, e);
+
+
+                            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                                    ComponentTypeUtils.toString(componentType), sourceName, e.getMessage()));
+                        }
+                    }
+                });
+            }
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
@@ -154,7 +227,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     sourceName,
                     v1alpha1Source,
@@ -177,10 +250,16 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                                         final URI uri,
                                         final String clientRole,
                                         final AuthenticationDataSource clientAuthenticationDataHttps) {
+        this.validatePermission(tenant,
+                namespace,
+                clientRole,
+                clientAuthenticationDataHttps,
+                ComponentTypeUtils.toString(componentType));
         SourceStatus sourceStatus = new SourceStatus();
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
-                    group, version, namespace, plural, componentName, null);
+                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                    plural, componentName, null);
             V1alpha1Source v1alpha1Source = executeCall(call, V1alpha1Source.class);
             SourceStatus.SourceInstanceStatus sourceInstanceStatus = new SourceStatus.SourceInstanceStatus();
             SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData =
@@ -221,13 +300,13 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
     public SourceConfig getSourceInfo(final String tenant,
                                       final String namespace,
                                       final String componentName) {
-        validateGetSourceInfoRequestParams(tenant, namespace, componentName);
+        this.validateGetInfoRequestParams(tenant, namespace, componentName, kind);
 
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     componentName,
                     null
