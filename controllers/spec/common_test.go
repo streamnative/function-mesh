@@ -183,7 +183,7 @@ func TestMakeGoFunctionCommand(t *testing.T) {
 	innerCommands := strings.Split(commands[2], "&&")
 	assert.Equal(t, innerCommands[0], "SHARD_ID=${POD_NAME##*-} ")
 	assert.Equal(t, innerCommands[1], " echo shardId=${SHARD_ID} ")
-	assert.Equal(t, innerCommands[2], " if [ \"$useTls\" = \"true\" ]; then TLS_PARAMETERS=\"--use_tls $useTls --tls_allow_insecure $tlsAllowInsecureConnection --hostname_verification_enabled $tlsHostnameVerificationEnable --tls_trust_cert_path $tlsTrustCertsFilePath\"; else TLS_PARAMETERS=\"--use_tls false\"; fi")
+	assert.Equal(t, innerCommands[2], " if [ \"$useTls\" = \"true\" ]; then TLS_PARAMETERS=\"--use_tls $useTls --tls_allow_insecure $tlsAllowInsecureConnection --hostname_verification_enabled $tlsHostnameVerificationEnable --tls_trust_cert_path $tlsTrustCertsFilePath\"; else TLS_PARAMETERS=\"--use_tls false\"; fi ")
 	assert.True(t, strings.HasPrefix(innerCommands[3], " GO_FUNCTION_CONF"))
 	assert.Equal(t, innerCommands[4], " goFunctionConfigs=${GO_FUNCTION_CONF} ")
 	assert.Equal(t, innerCommands[5], " echo goFunctionConfigs=\"'${goFunctionConfigs}'\" ")
