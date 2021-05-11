@@ -183,11 +183,12 @@ func TestMakeGoFunctionCommand(t *testing.T) {
 	innerCommands := strings.Split(commands[2], "&&")
 	assert.Equal(t, innerCommands[0], "SHARD_ID=${POD_NAME##*-} ")
 	assert.Equal(t, innerCommands[1], " echo shardId=${SHARD_ID} ")
-	assert.True(t, strings.HasPrefix(innerCommands[2], " GO_FUNCTION_CONF"))
-	assert.Equal(t, innerCommands[3], " goFunctionConfigs=${GO_FUNCTION_CONF} ")
-	assert.Equal(t, innerCommands[4], " echo goFunctionConfigs=\"'${goFunctionConfigs}'\" ")
-	assert.Equal(t, innerCommands[5], " chmod +x /pulsar/go-func ")
-	assert.Equal(t, innerCommands[6], " exec /pulsar/go-func -instance-conf ${goFunctionConfigs}")
+	assert.Equal(t, innerCommands[2], " if [ \"$useTls\" = \"true\" ]; then TLS_PARAMETERS=\"--use_tls $useTls --tls_allow_insecure $tlsAllowInsecureConnection --hostname_verification_enabled $tlsHostnameVerificationEnable --tls_trust_cert_path $tlsTrustCertsFilePath\"; else TLS_PARAMETERS=\"--use_tls false\"; fi")
+	assert.True(t, strings.HasPrefix(innerCommands[3], " GO_FUNCTION_CONF"))
+	assert.Equal(t, innerCommands[4], " goFunctionConfigs=${GO_FUNCTION_CONF} ")
+	assert.Equal(t, innerCommands[5], " echo goFunctionConfigs=\"'${goFunctionConfigs}'\" ")
+	assert.Equal(t, innerCommands[6], " chmod +x /pulsar/go-func ")
+	assert.Equal(t, innerCommands[7], " exec /pulsar/go-func -instance-conf ${goFunctionConfigs}")
 }
 
 const TestClusterName string = "test-pulsar"
