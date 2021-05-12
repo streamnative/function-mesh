@@ -231,7 +231,8 @@ func hasPackageNamePrefix(packagesName string) bool {
 }
 
 func setShardIDEnvironmentVariableCommand() string {
-	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
+	tlsCommand := "if [ \"$useTls\" = \"true\" ]; then TLS_PARAMETERS=\"--use_tls $useTls --tls_allow_insecure $tlsAllowInsecureConnection --hostname_verification_enabled $tlsHostnameVerificationEnable --tls_trust_cert_path $tlsTrustCertsFilePath\"; else TLS_PARAMETERS=\"--use_tls false\"; fi"
+	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s} && %s", EnvShardID, EnvShardID, tlsCommand)
 }
 
 func getProcessJavaRuntimeArgs(name string, packageName string, clusterName string, details string, memory string, authProvided bool) []string {
@@ -304,16 +305,10 @@ func getSharedArgs(details, clusterName string, authProvided bool) []string {
 			"--client_auth_plugin",
 			"$clientAuthenticationPlugin",
 			"--client_auth_params",
-			"$clientAuthenticationParameters",
-			"--use_tls",
-			"$useTls",
-			"--tls_allow_insecure",
-			"$tlsAllowInsecureConnection",
-			"--hostname_verification_enabled",
-			"$tlsHostnameVerificationEnable",
-			"--tls_trust_cert_path",
-			"$tlsTrustCertsFilePath"}...)
+			"$clientAuthenticationParameters"}...)
 	}
+
+	args = append(args, []string{"$TLS_PARAMETERS"}...)
 
 	return args
 }
