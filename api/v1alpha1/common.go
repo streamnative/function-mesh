@@ -84,8 +84,9 @@ type Runtime struct {
 }
 
 type JavaRuntime struct {
-	Jar         string `json:"jar,omitempty"`
-	JarLocation string `json:"jarLocation,omitempty"`
+	Jar                  string `json:"jar,omitempty"`
+	JarLocation          string `json:"jarLocation,omitempty"`
+	ExtraDependenciesDir string `json:"extraDependenciesDir,omitempty"`
 }
 
 type PythonRuntime struct {

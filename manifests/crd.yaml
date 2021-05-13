@@ -130,6 +130,8 @@ spec:
                     type: object
                   java:
                     properties:
+                      extraDependenciesDir:
+                        type: string
                       jar:
                         type: string
                       jarLocation:
@@ -2358,6 +2360,8 @@ spec:
                     type: object
                   java:
                     properties:
+                      extraDependenciesDir:
+                        type: string
                       jar:
                         type: string
                       jarLocation:
@@ -4453,6 +4457,8 @@ spec:
                     type: string
                   java:
                     properties:
+                      extraDependenciesDir:
+                        type: string
                       jar:
                         type: string
                       jarLocation:
@@ -6755,6 +6761,8 @@ spec:
               type: object
             java:
               properties:
+                extraDependenciesDir:
+                  type: string
                 jar:
                   type: string
                 jarLocation:
@@ -9047,6 +9055,8 @@ spec:
               type: object
             java:
               properties:
+                extraDependenciesDir:
+                  type: string
                 jar:
                   type: string
                 jarLocation:
@@ -11206,6 +11216,8 @@ spec:
               type: string
             java:
               properties:
+                extraDependenciesDir:
+                  type: string
                 jar:
                   type: string
                 jarLocation:
