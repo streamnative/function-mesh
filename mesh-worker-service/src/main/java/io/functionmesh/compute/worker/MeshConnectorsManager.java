@@ -61,7 +61,7 @@ public class MeshConnectorsManager {
                 results.put(d.getName(), d);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Cannot parse connector definitions", e);
         }
 
         return results;

@@ -129,7 +129,7 @@ public class SourcesUtil {
         try {
             functionDetails = SourceConfigUtils.convert(sourceConfig, extractedSourceDetails);
         } catch (IllegalArgumentException ex) {
-            ex.printStackTrace();
+            log.error("cannot convert SourceConfig to FunctionDetails", ex);
             throw new RestException(Response.Status.BAD_REQUEST, "functionConfig cannot be parsed into functionDetails");
         }
 
