@@ -33,6 +33,7 @@ import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPulsar;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPython;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.custom.Quantity;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.ConsumerConfig;
@@ -50,6 +51,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 public class FunctionsUtil {
     public final static String cpuKey = "cpu";
     public final static String memoryKey = "memory";
@@ -93,7 +95,7 @@ public class FunctionsUtil {
         try {
             functionDetails = FunctionConfigUtils.convert(functionConfig, null);
         } catch (IllegalArgumentException ex) {
-            ex.printStackTrace();
+            log.error("cannot convert FunctionConfig to FunctionDetails", ex);
             throw new RestException(Response.Status.BAD_REQUEST, "functionConfig cannot be parsed into functionDetails");
         }
 

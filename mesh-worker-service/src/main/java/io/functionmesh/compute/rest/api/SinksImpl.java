@@ -171,7 +171,6 @@ public class SinksImpl extends MeshComponentImpl
                     namespace,
                     sinkConfig,
                     e);
-            e.printStackTrace();
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }

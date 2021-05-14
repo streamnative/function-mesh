@@ -137,7 +137,7 @@ public class SinksUtil {
         try {
             functionDetails = SinkConfigUtils.convert(sinkConfig, extractedSinkDetails);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error("cannot convert SinkConfig to FunctionDetails", ex);
             throw new RestException(Response.Status.BAD_REQUEST, "functionConfig cannot be parsed into functionDetails");
         }
 
