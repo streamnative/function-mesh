@@ -21,6 +21,8 @@ package io.functionmesh.compute.rest.api;
 import com.google.common.collect.Maps;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodVolumeMounts;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodVolumes;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.MeshWorkerService;
@@ -105,8 +107,7 @@ public class SinksImpl extends MeshComponentImpl
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         this.validateTenantIsExist(tenant, namespace, sinkName, clientRole);
-        V1alpha1Sink v1alpha1Sink;
-        v1alpha1Sink =
+        V1alpha1Sink v1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind,
                         group,
@@ -116,6 +117,7 @@ public class SinksImpl extends MeshComponentImpl
                         uploadedInputStream,
                         sinkConfig,
                         this.meshWorkerServiceSupplier.get().getConnectorsManager());
+        // override namesapce by configuration
         v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
         try {
             Map<String, String> customLabels = Maps.newHashMap();
@@ -138,6 +140,18 @@ public class SinksImpl extends MeshComponentImpl
                             String type = "auth";
                             KubernetesUtils.createConfigMap(type, tenant, namespace, sinkName,
                                     worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                            Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
+                                    .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
+                            Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
+                            if (volumes != null) {
+                                List<V1alpha1SinkSpecPodVolumes> volumesList = (List<V1alpha1SinkSpecPodVolumes>) volumes;
+                                v1alpha1Sink.getSpec().getPod().setVolumes(volumesList);
+                            }
+                            Object volumeMounts = functionsWorkerServiceCustomConfigs.get("volumeMounts");
+                            if (volumeMounts != null) {
+                                List<V1alpha1SinkSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1SinkSpecPodVolumeMounts>) volumeMounts;
+                                v1alpha1Sink.getSpec().setVolumeMounts(volumeMountsList);
+                            }
                             v1alpha1Sink.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
                                     type, sinkConfig.getTenant(), sinkConfig.getNamespace(), sinkName));
                         } catch (Exception e) {

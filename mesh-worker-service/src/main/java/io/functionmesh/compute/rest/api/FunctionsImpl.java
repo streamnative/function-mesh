@@ -102,6 +102,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 functionPkgUrl,
                 functionConfig
         );
+        // override namespace by configuration file
+        v1alpha1Function.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
         Map<String, String> customLabels = Maps.newHashMap();
         customLabels.put(TENANT_LABEL_CLAIM, tenant);
         customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
@@ -299,7 +301,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                              final InputStream uploadedInputStream,
                                              final boolean delete,
                                              URI uri,
-                                             final String clientRole) {
+                                             final String clientRole,
+                                             final AuthenticationDataSource clientAuthenticationDataHttps) {
 
     }
 }

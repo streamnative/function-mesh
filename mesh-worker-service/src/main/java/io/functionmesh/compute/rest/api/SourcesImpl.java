@@ -19,7 +19,10 @@
 package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodVolumeMounts;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodVolumes;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SourcesUtil;
 import io.functionmesh.compute.MeshWorkerService;
@@ -112,9 +115,18 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                 ComponentTypeUtils.toString(componentType));
         this.validateTenantIsExist(tenant, namespace, sourceName, clientRole);
         try {
-            V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
-                    sourceName, sourcePkgUrl, uploadedInputStream, sourceConfig,
-                    this.meshWorkerServiceSupplier.get().getConnectorsManager());
+            V1alpha1Source v1alpha1Source = SourcesUtil
+                    .createV1alpha1SourceFromSourceConfig(
+                            kind,
+                            group,
+                            version,
+                            sourceName,
+                            sourcePkgUrl,
+                            uploadedInputStream,
+                            sourceConfig,
+                            this.meshWorkerServiceSupplier.get().getConnectorsManager());
+            // override namesapce by configuration
+            v1alpha1Source.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             Map<String, String> customLabels = Maps.newHashMap();
             customLabels.put(TENANT_LABEL_CLAIM, tenant);
             customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
@@ -135,7 +147,20 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                         try {
                             String type = "auth";
                             KubernetesUtils.createConfigMap(type, tenant, namespace, sourceName,
-                                    worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                                worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                            Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
+                                    .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
+                            Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
+                            if (volumes != null) {
+                                List<V1alpha1SourceSpecPodVolumes> volumesList = (List<V1alpha1SourceSpecPodVolumes>) volumes;
+                                v1alpha1Source.getSpec().getPod().setVolumes(volumesList);
+                            }
+                            Object volumeMounts = functionsWorkerServiceCustomConfigs.get("volumeMounts");
+                            if (volumeMounts != null) {
+                                List<V1alpha1SourceSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1SourceSpecPodVolumeMounts>) volumeMounts;
+                                v1alpha1Source.getSpec().setVolumeMounts(volumeMountsList);
+                            }
+                            v1alpha1Source.getSpec().getPod().getVolumes();
                             v1alpha1Source.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
                                     type, sourceConfig.getTenant(), sourceConfig.getNamespace(), sourceName));
                         } catch (Exception e) {
