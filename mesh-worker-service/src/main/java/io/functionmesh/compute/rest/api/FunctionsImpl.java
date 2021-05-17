@@ -323,7 +323,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                     v1alpha1Function.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
                             type, functionConfig.getTenant(), functionConfig.getNamespace(), functionName));
                 } catch (Exception e) {
-                    log.error("Error caching authentication data for {} {}/{}/{}",
+                    log.error("Error create or update authentication data for {} {}/{}/{}",
                             ComponentTypeUtils.toString(componentType), tenant, namespace, functionName, e);
 
 

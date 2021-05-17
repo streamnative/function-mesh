@@ -337,7 +337,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                     v1alpha1Source.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
                             type, sourceConfig.getTenant(), sourceConfig.getNamespace(), sourceName));
                 } catch (Exception e) {
-                    log.error("Error creating authentication data for {} {}/{}/{}",
+                    log.error("Error create or update authentication data for {} {}/{}/{}",
                             ComponentTypeUtils.toString(componentType), tenant, namespace, sourceName, e);
 
 

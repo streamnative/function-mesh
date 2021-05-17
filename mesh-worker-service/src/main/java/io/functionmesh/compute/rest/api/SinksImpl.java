@@ -367,7 +367,7 @@ public class SinksImpl extends MeshComponentImpl
 
                     v1alpha1Sink.getSpec().getPulsar().setAuthConfig(configMapName);
                 } catch (Exception e) {
-                    log.error("Error caching authentication data for {} {}/{}/{}",
+                    log.error("Error create or update authentication data for {} {}/{}/{}",
                             ComponentTypeUtils.toString(componentType), tenant, namespace, sinkName, e);
 
 
