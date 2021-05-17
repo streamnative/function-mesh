@@ -122,7 +122,7 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
             Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     componentName,
                     null,
