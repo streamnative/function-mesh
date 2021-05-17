@@ -26,9 +26,7 @@ import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodVolumes;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.MeshWorkerService;
-import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkStatus;
-import io.functionmesh.compute.util.SinksUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
@@ -44,12 +42,9 @@ import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Sinks;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -129,42 +124,7 @@ public class SinksImpl extends MeshComponentImpl
             }
             pod.setLabels(customLabels);
             v1alpha1Sink.getSpec().setPod(pod);
-            if (worker().getWorkerConfig().isAuthenticationEnabled()) {
-                Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
-                functionDetailsBuilder.setTenant(tenant);
-                functionDetailsBuilder.setNamespace(namespace);
-                functionDetailsBuilder.setName(sinkName);
-                worker().getAuthProvider().ifPresent(functionAuthProvider -> {
-                    if (clientAuthenticationDataHttps != null) {
-                        try {
-                            String type = "auth";
-                            KubernetesUtils.createConfigMap(type, tenant, namespace, sinkName,
-                                    worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
-                            Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
-                                    .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-                            Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
-                            if (volumes != null) {
-                                List<V1alpha1SinkSpecPodVolumes> volumesList = (List<V1alpha1SinkSpecPodVolumes>) volumes;
-                                v1alpha1Sink.getSpec().getPod().setVolumes(volumesList);
-                            }
-                            Object volumeMounts = functionsWorkerServiceCustomConfigs.get("volumeMounts");
-                            if (volumeMounts != null) {
-                                List<V1alpha1SinkSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1SinkSpecPodVolumeMounts>) volumeMounts;
-                                v1alpha1Sink.getSpec().setVolumeMounts(volumeMountsList);
-                            }
-                            v1alpha1Sink.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
-                                    type, sinkConfig.getTenant(), sinkConfig.getNamespace(), sinkName));
-                        } catch (Exception e) {
-                            log.error("Error caching authentication data for {} {}/{}/{}",
-                                    ComponentTypeUtils.toString(componentType), tenant, namespace, sinkName, e);
-
-
-                            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
-                                    ComponentTypeUtils.toString(componentType), sinkName, e.getMessage()));
-                        }
-                    }
-                });
-            }
+            this.upsertSink(tenant, namespace, sinkName, sinkConfig, v1alpha1Sink, clientAuthenticationDataHttps);
             Call call =
                     worker().getCustomObjectsApi()
                             .createNamespacedCustomObjectCall(
@@ -223,6 +183,7 @@ public class SinksImpl extends MeshComponentImpl
                             sinkPkgUrl,
                             uploadedInputStream,
                             sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager());
+            this.upsertSink(tenant, namespace, sinkName, sinkConfig, v1alpha1Sink, clientAuthenticationDataHttps);
             v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             v1alpha1Sink
                     .getMetadata()
@@ -366,5 +327,54 @@ public class SinksImpl extends MeshComponentImpl
     @Override
     public List<ConfigFieldDefinition> getSinkConfigDefinition(String name) {
         return new ArrayList<>();
+    }
+
+    private void upsertSink(final String tenant,
+                            final String namespace,
+                            final String sinkName,
+                            final SinkConfig sinkConfig,
+                            V1alpha1Sink v1alpha1Sink,
+                            AuthenticationDataHttps clientAuthenticationDataHttps) {
+        if (worker().getWorkerConfig().isAuthenticationEnabled()) {
+            if (clientAuthenticationDataHttps != null) {
+                try {
+                    Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
+                            .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
+                    Object authConfigMapName = functionsWorkerServiceCustomConfigs.get("authConfigMap");
+                    String type = "auth";
+                    String configMapName = KubernetesUtils.getConfigMapName(
+                            type, sinkConfig.getTenant(), sinkConfig.getNamespace(), sinkName);
+                    if (authConfigMapName != null) {
+                        configMapName = (String) authConfigMapName;
+                    }
+                    KubernetesUtils.upsertConfigMap(
+                            tenant,
+                            namespace,
+                            sinkName,
+                            worker().getWorkerConfig(), worker().getCoreV1Api(),
+                            worker().getFactoryConfig(),
+                            configMapName);
+                    Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
+                    if (volumes != null) {
+                        List<V1alpha1SinkSpecPodVolumes> volumesList = (List<V1alpha1SinkSpecPodVolumes>) volumes;
+                        v1alpha1Sink.getSpec().getPod().setVolumes(volumesList);
+                    }
+                    Object volumeMounts = functionsWorkerServiceCustomConfigs.get("volumeMounts");
+                    if (volumeMounts != null) {
+                        List<V1alpha1SinkSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1SinkSpecPodVolumeMounts>) volumeMounts;
+                        v1alpha1Sink.getSpec().setVolumeMounts(volumeMountsList);
+                    }
+
+                    v1alpha1Sink.getSpec().getPulsar().setAuthConfig(configMapName);
+                } catch (Exception e) {
+                    log.error("Error caching authentication data for {} {}/{}/{}",
+                            ComponentTypeUtils.toString(componentType), tenant, namespace, sinkName, e);
+
+
+                    throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                            ComponentTypeUtils.toString(componentType), sinkName, e.getMessage()));
+                }
+            }
+        }
     }
 }

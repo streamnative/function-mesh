@@ -28,7 +28,6 @@ import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.util.Config;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.broker.authentication.AuthenticationService;
 import org.apache.pulsar.broker.authorization.AuthorizationService;
@@ -38,11 +37,8 @@ import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.common.conf.InternalConfigurationData;
 import org.apache.pulsar.common.util.SimpleTextOutputStream;
-import org.apache.pulsar.functions.auth.FunctionAuthProvider;
-import org.apache.pulsar.functions.auth.KubernetesFunctionAuthProvider;
 import org.apache.pulsar.functions.runtime.RuntimeUtils;
 import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
-import org.apache.pulsar.functions.worker.ConnectorsManager;
 import org.apache.pulsar.functions.worker.ErrorNotifier;
 import org.apache.pulsar.functions.worker.PulsarWorkerService;
 import org.apache.pulsar.functions.worker.WorkerConfig;
@@ -76,7 +72,6 @@ public class MeshWorkerService implements WorkerService {
     private CustomObjectsApi customObjectsApi;
     private ApiClient apiClient;
     private PulsarAdmin brokerAdmin;
-    private Optional<KubernetesFunctionAuthProvider> authProvider;
     private KubernetesRuntimeFactoryConfig factoryConfig;
 
     private AuthenticationService authenticationService;
@@ -138,13 +133,6 @@ public class MeshWorkerService implements WorkerService {
         this.workerConfig = workerConfig;
         this.initKubernetesClient();
         this.authenticationEnabled = this.workerConfig.isAuthenticationEnabled();
-        if (this.workerConfig.isAuthenticationEnabled() && !StringUtils.isEmpty(this.workerConfig.getFunctionAuthProviderClassName())) {
-            Optional<FunctionAuthProvider> functionAuthProvider = Optional.empty();
-            functionAuthProvider = Optional.of(FunctionAuthProvider.getAuthProvider(workerConfig.getFunctionAuthProviderClassName()));
-            KubernetesFunctionAuthProvider kubernetesFunctionAuthProvider = (KubernetesFunctionAuthProvider) functionAuthProvider.get();
-            kubernetesFunctionAuthProvider.initialize(coreV1Api, null, null);
-            this.authProvider = Optional.of(kubernetesFunctionAuthProvider);
-        }
         this.functions = new FunctionsImpl(() -> MeshWorkerService.this);
         this.sources = new SourcesImpl(() -> MeshWorkerService.this);
         this.sinks = new SinksImpl(() -> MeshWorkerService.this);

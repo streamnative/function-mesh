@@ -20,6 +20,8 @@ package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumeMounts;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumes;
 import io.functionmesh.compute.util.FunctionsUtil;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.MeshWorkerService;
@@ -36,10 +38,10 @@ import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Functions;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -114,30 +116,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
         pod.setLabels(customLabels);
         v1alpha1Function.getSpec().setPod(pod);
         try {
-            if (worker().getWorkerConfig().isAuthenticationEnabled()) {
-                Function.FunctionDetails.Builder functionDetailsBuilder = Function.FunctionDetails.newBuilder();
-                functionDetailsBuilder.setTenant(tenant);
-                functionDetailsBuilder.setNamespace(namespace);
-                functionDetailsBuilder.setName(functionName);
-                worker().getAuthProvider().ifPresent(functionAuthProvider -> {
-                    if (clientAuthenticationDataHttps != null) {
-                        try {
-                            String type = "auth";
-                            KubernetesUtils.createConfigMap(type, tenant, namespace, functionName,
-									worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
-                            v1alpha1Function.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
-                                    type, functionConfig.getTenant(), functionConfig.getNamespace(), functionName));
-                        } catch (Exception e) {
-                            log.error("Error caching authentication data for {} {}/{}/{}",
-                                    ComponentTypeUtils.toString(componentType), tenant, namespace, functionName, e);
-
-
-                            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
-                                    ComponentTypeUtils.toString(componentType), functionName, e.getMessage()));
-                        }
-                    }
-                });
-            }
+            this.upsertFunction(tenant, namespace, functionName, functionConfig, v1alpha1Function, clientAuthenticationDataHttps);
             Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(
                     group,
                     version,
@@ -188,6 +167,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                     functionConfig
             );
             v1alpha1Function.getMetadata().setResourceVersion(oldFn.getMetadata().getResourceVersion());
+            this.upsertFunction(tenant, namespace, functionName, functionConfig, v1alpha1Function, clientAuthenticationDataHttps);
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
                     group,
                     version,
@@ -304,5 +284,53 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                              final String clientRole,
                                              final AuthenticationDataSource clientAuthenticationDataHttps) {
 
+    }
+
+    private void upsertFunction(final String tenant,
+                                final String namespace,
+                                final String functionName,
+                                final FunctionConfig functionConfig,
+                                V1alpha1Function v1alpha1Function,
+                                AuthenticationDataHttps clientAuthenticationDataHttps) {
+        if (worker().getWorkerConfig().isAuthenticationEnabled()) {
+            if (clientAuthenticationDataHttps != null) {
+                try {
+                    Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
+                            .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
+                    String type = "auth";
+                    Object authConfigMapName = functionsWorkerServiceCustomConfigs.get("authConfigMap");
+                    String configMapName = KubernetesUtils.getConfigMapName(
+                            type, functionConfig.getTenant(), functionConfig.getNamespace(), functionName);
+                    if (authConfigMapName != null) {
+                        configMapName = (String) authConfigMapName;
+                    }
+                    KubernetesUtils.upsertConfigMap(
+                            tenant, namespace, functionName,
+                            worker().getWorkerConfig(),
+                            worker().getCoreV1Api(),
+                            worker().getFactoryConfig(),
+                            configMapName);
+                    Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
+                    if (volumes != null) {
+                        List<V1alpha1FunctionSpecPodVolumes> volumesList = (List<V1alpha1FunctionSpecPodVolumes>) volumes;
+                        v1alpha1Function.getSpec().getPod().setVolumes(volumesList);
+                    }
+                    Object volumeMounts = functionsWorkerServiceCustomConfigs.get("volumeMounts");
+                    if (volumeMounts != null) {
+                        List<V1alpha1FunctionSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1FunctionSpecPodVolumeMounts>) volumeMounts;
+                        v1alpha1Function.getSpec().setVolumeMounts(volumeMountsList);
+                    }
+                    v1alpha1Function.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
+                            type, functionConfig.getTenant(), functionConfig.getNamespace(), functionName));
+                } catch (Exception e) {
+                    log.error("Error caching authentication data for {} {}/{}/{}",
+                            ComponentTypeUtils.toString(componentType), tenant, namespace, functionName, e);
+
+
+                    throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                            ComponentTypeUtils.toString(componentType), functionName, e.getMessage()));
+                }
+            }
+        }
     }
 }

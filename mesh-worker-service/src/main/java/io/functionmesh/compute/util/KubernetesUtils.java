@@ -28,13 +28,11 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
 import org.apache.pulsar.functions.utils.Actions;
 import org.apache.pulsar.functions.worker.WorkerConfig;
-
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 
 @Slf4j
@@ -93,35 +91,45 @@ public class KubernetesUtils {
 		return valueMap;
 	}
 
-	public static String createConfigMap(
-			String type,
+	public static String upsertConfigMap(
 			String tenant,
 			String namespace,
 			String name,
 			WorkerConfig workerConfig,
 			CoreV1Api coreV1Api,
-			KubernetesRuntimeFactoryConfig factoryConfig) throws ApiException, InterruptedException {
-
-		String configMapName = getConfigMapName(type, tenant, namespace, name);
+			KubernetesRuntimeFactoryConfig factoryConfig,
+			String authConfigMapName) throws InterruptedException {
 		StringBuilder sb = new StringBuilder();
 		Actions.Action createAuthConfigMap = Actions.Action.builder()
-				.actionName(String.format("Creating authentication config map for function %s/%s/%s", tenant, namespace, name))
+				.actionName(String.format(
+						"Creating authentication config map for function %s/%s/%s", tenant, namespace, name))
 				.numRetries(NUM_RETRIES)
 				.sleepBetweenInvocationsMs(SLEEP_BETWEEN_RETRIES_MS)
 				.supplier(() -> {
 					String id =  RandomStringUtils.random(5, true, true).toLowerCase();
 					V1ConfigMap v1ConfigMap = new V1ConfigMap()
-							.metadata(new V1ObjectMeta().name(configMapName))
+							.metadata(new V1ObjectMeta().name(authConfigMapName))
 							.data(buildConfigMap(workerConfig));
 					try {
-						coreV1Api.createNamespacedConfigMap(KubernetesUtils.getNamespace(factoryConfig), v1ConfigMap, null, null, null);
+						coreV1Api.createNamespacedConfigMap(
+								KubernetesUtils.getNamespace(factoryConfig),
+								v1ConfigMap, null, null, null);
 					} catch (ApiException e) {
 						// already exists
 						if (e.getCode() == HTTP_CONFLICT) {
-							return Actions.ActionResult.builder()
-									.errorMsg(String.format("ConfigMap %s already present", id))
-									.success(false)
-									.build();
+							try {
+								coreV1Api.replaceNamespacedConfigMap(
+										authConfigMapName,
+										KubernetesUtils.getNamespace(factoryConfig),
+										v1ConfigMap, null, null, null);
+								return Actions.ActionResult.builder().success(true).build();
+							} catch (ApiException e1) {
+								String errorMsg = e.getResponseBody() != null ? e.getResponseBody() : e.getMessage();
+								return Actions.ActionResult.builder()
+										.success(false)
+										.errorMsg(errorMsg)
+										.build();
+							}
 						}
 
 						String errorMsg = e.getResponseBody() != null ? e.getResponseBody() : e.getMessage();
@@ -144,7 +152,10 @@ public class KubernetesUtils {
 				.run();
 
 		if (!success.get()) {
-			throw new RuntimeException(String.format("Failed to create authentication configmap for function %s/%s/%s", tenant, namespace, name));
+			throw new RuntimeException(
+					String.format(
+							"Failed to create authentication configmap for function %s/%s/%s",
+							tenant, namespace, name));
 		}
 
 		return sb.toString();
