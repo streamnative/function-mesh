@@ -28,6 +28,7 @@ import io.functionmesh.compute.util.KubernetesUtils;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import okhttp3.Call;
 import okhttp3.Response;
@@ -526,6 +527,22 @@ public class FunctionsImplTest {
         PowerMockito.when(responseBody.string()).thenReturn("{\"Status\": \"Success\"}");
         PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
+
+        CoreV1Api coreV1Api = PowerMockito.mock(CoreV1Api.class);
+        PowerMockito.when(meshWorkerService.getCoreV1Api()).thenReturn(coreV1Api);
+        Call deleteConfigMapCall = PowerMockito.mock(Call.class);
+        PowerMockito.when(coreV1Api.deleteNamespacedConfigMapCall(
+                KubernetesUtils.getConfigMapName("auth", tenant, namespace, functionName),
+                namespace,
+                null,
+                null,
+                30,
+                false,
+                null,
+                null,
+                null
+                )).thenReturn(deleteConfigMapCall);
+        PowerMockito.when(deleteConfigMapCall.execute()).thenReturn(response);
         try {
             functions.deregisterFunction(tenant, namespace, functionName, null, null);
         } catch (Exception exception) {

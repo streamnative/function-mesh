@@ -113,28 +113,22 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                     null
             );
             executeCall(call, null);
-        } catch (Exception e) {
-            log.error("deregister {}/{}/{} function failed, error message: {}", tenant, namespace, componentName, e);
-            throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
-        }
 
-        try {
-            Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
-                    group,
-                    version,
-                    namespace,
-                    plural,
-                    componentName,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-            );
+            call = worker().getCoreV1Api()
+                    .deleteNamespacedConfigMapCall(
+                            KubernetesUtils.getConfigMapName("auth", tenant, namespace, componentName),
+                            KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                            null,
+                            null,
+                            30,
+                            false,
+                            null,
+                            null,
+                            null
+                    );
             executeCall(call, null);
         } catch (Exception e) {
-            log.error("deregister {}/{}/{} {} failed, error message: {}", tenant, namespace, componentName, plural, e);
+            log.error("deregister {}/{}/{} {} failed", tenant, namespace, componentName, plural, e);
             throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
