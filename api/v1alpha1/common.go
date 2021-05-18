@@ -212,8 +212,8 @@ const (
 
 func validResourceRequirement(requirements corev1.ResourceRequirements) bool {
 	return validResource(requirements.Requests) && validResource(requirements.Limits) &&
-		requirements.Requests.Memory().Cmp(*requirements.Limits.Memory()) < 0 &&
-		requirements.Requests.Cpu().Cmp(*requirements.Limits.Cpu()) < 0
+		requirements.Requests.Memory().Cmp(*requirements.Limits.Memory()) <= 0 &&
+		requirements.Requests.Cpu().Cmp(*requirements.Limits.Cpu()) <= 0
 }
 
 func validResource(resources corev1.ResourceList) bool {
