@@ -36,7 +36,7 @@ public class CommonUtil {
     }
 
     public static String getPulsarClusterConfigMapName(String cluster) {
-        return toValidResourceName(String.format("%s-pulsar-config-map", cluster)); // Need to manage the configMap for each Pulsar Cluster
+        return toValidResourceName(String.format("%s-function-mesh-config", cluster)); // Need to manage the configMap for each Pulsar Cluster
     }
 
     public static String getPulsarClusterAuthConfigMapName(String cluster) {
