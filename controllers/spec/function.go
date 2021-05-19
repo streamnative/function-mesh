@@ -98,23 +98,25 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 }
 
 func makeFunctionCommand(function *v1alpha1.Function) []string {
-	if function.Spec.Java != nil {
-		if function.Spec.Java.Jar != "" {
-			return MakeJavaFunctionCommand(function.Spec.Java.JarLocation, function.Spec.Java.Jar,
-				function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
-				function.Spec.Resources.Requests.Memory().String(), function.Spec.Pulsar.AuthConfig != "")
-		}
+	spec := function.Spec
 
-	} else if function.Spec.Golang != nil {
-		if function.Spec.Golang.Go != "" {
-			return MakeGoFunctionCommand(function.Spec.Golang.GoLocation, function.Spec.Golang.Go,
-				function)
+	if spec.Java != nil {
+		if spec.Java.Jar != "" {
+			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
+				spec.Resources.Requests.Memory().String(), spec.Java.ExtraDependenciesDir,
+				spec.Pulsar.AuthConfig != "")
 		}
-	} else if function.Spec.Python != nil {
-		if function.Spec.Python.Py != "" {
-			return MakePythonFunctionCommand(function.Spec.Python.PyLocation, function.Spec.Python.Py,
-				function.Spec.Name, function.Spec.ClusterName, generateFunctionDetailsInJSON(function),
-				function.Spec.Pulsar.AuthConfig != "")
+	} else if spec.Python != nil {
+		if spec.Python.Py != "" {
+			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
+				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
+				spec.Pulsar.AuthConfig != "")
+		}
+	} else if spec.Golang != nil {
+		if spec.Golang.Go != "" {
+			return MakeGoFunctionCommand(spec.Golang.GoLocation, spec.Golang.Go,
+				function)
 		}
 	}
 

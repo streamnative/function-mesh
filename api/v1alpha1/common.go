@@ -84,8 +84,9 @@ type Runtime struct {
 }
 
 type JavaRuntime struct {
-	Jar         string `json:"jar,omitempty"`
-	JarLocation string `json:"jarLocation,omitempty"`
+	Jar                  string `json:"jar,omitempty"`
+	JarLocation          string `json:"jarLocation,omitempty"`
+	ExtraDependenciesDir string `json:"extraDependenciesDir,omitempty"`
 }
 
 type PythonRuntime struct {
@@ -212,8 +213,8 @@ const (
 
 func validResourceRequirement(requirements corev1.ResourceRequirements) bool {
 	return validResource(requirements.Requests) && validResource(requirements.Limits) &&
-		requirements.Requests.Memory().Cmp(*requirements.Limits.Memory()) < 0 &&
-		requirements.Requests.Cpu().Cmp(*requirements.Limits.Cpu()) < 0
+		requirements.Requests.Memory().Cmp(*requirements.Limits.Memory()) <= 0 &&
+		requirements.Requests.Cpu().Cmp(*requirements.Limits.Cpu()) <= 0
 }
 
 func validResource(resources corev1.ResourceList) bool {

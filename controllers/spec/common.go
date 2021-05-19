@@ -161,9 +161,9 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	}
 }
 
-func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory string, authProvided bool) []string {
+func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory, extraDependenciesDir string, authProvided bool) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
-		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, details, memory, authProvided), " ")
+		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, details, memory, extraDependenciesDir, authProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
@@ -235,12 +235,16 @@ func setShardIDEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s} && %s", EnvShardID, EnvShardID, tlsCommand)
 }
 
-func getProcessJavaRuntimeArgs(name string, packageName string, clusterName string, details string, memory string, authProvided bool) []string {
+func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, extraDependenciesDir string, authProvided bool) []string {
+	classPath := "/pulsar/instances/java-instance.jar"
+	if extraDependenciesDir != "" {
+		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
+	}
 	args := []string{
 		"exec",
 		"java",
 		"-cp",
-		"/pulsar/instances/java-instance.jar",
+		classPath,
 		fmt.Sprintf("-D%s=%s", FunctionsInstanceClasspath, "/pulsar/lib/*"),
 		"-Dlog4j.configurationFile=kubernetes_instance_log4j2.xml", // todo
 		"-Dpulsar.function.log.dir=logs/functions",
@@ -255,7 +259,7 @@ func getProcessJavaRuntimeArgs(name string, packageName string, clusterName stri
 	return args
 }
 
-func getProcessPythonRuntimeArgs(name string, packageName string, clusterName string, details string, authProvided bool) []string {
+func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string, authProvided bool) []string {
 	args := []string{
 		"exec",
 		"python",

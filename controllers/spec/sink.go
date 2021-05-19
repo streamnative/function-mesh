@@ -90,10 +90,11 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
 }
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
-	return MakeJavaFunctionCommand(sink.Spec.Java.JarLocation, sink.Spec.Java.Jar,
-		sink.Spec.Name, sink.Spec.ClusterName, generateSinkDetailsInJSON(sink),
-		sink.Spec.Resources.Requests.Memory().ToDec().String(),
-		sink.Spec.Pulsar.AuthConfig != "")
+	spec := sink.Spec
+	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+		spec.Name, spec.ClusterName, generateSinkDetailsInJSON(sink),
+		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir,
+		spec.Pulsar.AuthConfig != "")
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {

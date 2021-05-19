@@ -133,6 +133,8 @@ spec:
               type: object
             java:
               properties:
+                extraDependenciesDir:
+                  type: string
                 jar:
                   type: string
                 jarLocation:
