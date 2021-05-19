@@ -67,7 +67,7 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		Env:             generateContainerEnv(source.Spec.SecretsMap),
 		Resources:       source.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
-		EnvFrom:         generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthConfig),
+		EnvFrom:         generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret, source.Spec.Pulsar.TLSSecret),
 		VolumeMounts:    makeSourceVolumeMounts(source),
 	}
 }
@@ -94,7 +94,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName, generateSourceDetailsInJSON(source),
 		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir,
-		spec.Pulsar.AuthConfig != "")
+		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "")
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {

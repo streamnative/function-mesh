@@ -31,7 +31,6 @@ spec:
         key: "password"
   pulsar:
     pulsarConfig: "test-go-pulsar"
-    #authConfig: "test-auth"
   golang:
     go: go_func_all
     goLocation: public/default/nlu-test-go-function
@@ -48,18 +47,6 @@ metadata:
 data:
     webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
     brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
-#---
-#apiVersion: v1
-#kind: ConfigMap
-#metadata:
-#  name: test-auth
-#data:
-#  clientAuthenticationPlugin: "abc"
-#  clientAuthenticationParameters: "xyz"
-#  tlsTrustCertsFilePath: "uvw"
-#  useTls: "true"
-#  tlsAllowInsecureConnection: "false"
-#  tlsHostnameVerificationEnable: "true"
 ---
 apiVersion: v1
 data:

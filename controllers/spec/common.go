@@ -161,9 +161,11 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	}
 }
 
-func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory, extraDependenciesDir string, authProvided bool) []string {
+func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory, extraDependenciesDir string,
+	authProvided, tlsProvided bool) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
-		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, details, memory, extraDependenciesDir, authProvided), " ")
+		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, details,
+			memory, extraDependenciesDir, authProvided, tlsProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
@@ -172,9 +174,11 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, detai
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details string, authProvided bool) []string {
+func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details string,
+	authProvided, tlsProvided bool) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
-		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName, details, authProvided), " ")
+		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
+			details, authProvided, tlsProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
@@ -231,11 +235,10 @@ func hasPackageNamePrefix(packagesName string) bool {
 }
 
 func setShardIDEnvironmentVariableCommand() string {
-	tlsCommand := "if [ \"$useTls\" = \"true\" ]; then TLS_PARAMETERS=\"--use_tls $useTls --tls_allow_insecure $tlsAllowInsecureConnection --hostname_verification_enabled $tlsHostnameVerificationEnable --tls_trust_cert_path $tlsTrustCertsFilePath\"; else TLS_PARAMETERS=\"--use_tls false\"; fi"
-	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s} && %s", EnvShardID, EnvShardID, tlsCommand)
+	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
-func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, extraDependenciesDir string, authProvided bool) []string {
+func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, extraDependenciesDir string, authProvided, tlsProvided bool) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
@@ -254,12 +257,12 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, 
 		"--jar",
 		packageName,
 	}
-	sharedArgs := getSharedArgs(details, clusterName, authProvided)
+	sharedArgs := getSharedArgs(details, clusterName, authProvided, tlsProvided)
 	args = append(args, sharedArgs...)
 	return args
 }
 
-func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string, authProvided bool) []string {
+func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string, authProvided, tlsProvided bool) []string {
 	args := []string{
 		"exec",
 		"python",
@@ -274,13 +277,13 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string,
 		"/pulsar/conf/functions-logging/console_logging_config.ini",
 		// TODO: Maybe we don't need installUserCodeDependencies, dependency_repository, and pythonExtraDependencyRepository
 	}
-	sharedArgs := getSharedArgs(details, clusterName, authProvided)
+	sharedArgs := getSharedArgs(details, clusterName, authProvided, tlsProvided)
 	args = append(args, sharedArgs...)
 	return args
 }
 
 // This method is suitable for Java and Python runtime, not include Go runtime.
-func getSharedArgs(details, clusterName string, authProvided bool) []string {
+func getSharedArgs(details, clusterName string, authProvided bool, tlsProvided bool) []string {
 	args := []string{
 		"--instance_id",
 		"${" + EnvShardID + "}",
@@ -312,7 +315,23 @@ func getSharedArgs(details, clusterName string, authProvided bool) []string {
 			"$clientAuthenticationParameters"}...)
 	}
 
-	args = append(args, []string{"$TLS_PARAMETERS"}...)
+	if tlsProvided {
+		args = append(args, []string{
+			"--use_tls",
+			"true",
+			"--tls_allow_insecure",
+			"$tlsAllowInsecureConnection",
+			"--hostname_verification_enabled",
+			"$tlsHostnameVerificationEnable",
+			"--tls_trust_cert_path",
+			"$tlsTrustCertsFilePath",
+		}...)
+	} else {
+		args = append(args, []string{
+			"--use_tls",
+			"false",
+		}...)
+	}
 
 	return args
 }
@@ -418,17 +437,25 @@ func generateContainerEnv(secrets map[string]v1alpha1.SecretRef) []corev1.EnvVar
 	return vars
 }
 
-func generateContainerEnvFrom(messagingConfig string, authConfig string) []corev1.EnvFromSource {
+func generateContainerEnvFrom(messagingConfig string, authSecret string, tlsSecret string) []corev1.EnvFromSource {
 	envs := []corev1.EnvFromSource{{
 		ConfigMapRef: &corev1.ConfigMapEnvSource{
 			LocalObjectReference: corev1.LocalObjectReference{Name: messagingConfig},
 		},
 	}}
 
-	if authConfig != "" {
+	if authSecret != "" {
 		envs = append(envs, corev1.EnvFromSource{
-			ConfigMapRef: &corev1.ConfigMapEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{Name: authConfig},
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{Name: authSecret},
+			},
+		})
+	}
+
+	if tlsSecret != "" {
+		envs = append(envs, corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{Name: tlsSecret},
 			},
 		})
 	}

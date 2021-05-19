@@ -32,7 +32,6 @@ spec:
         key: "password"
   pulsar:
     pulsarConfig: "test-py-pulsar"
-    #authConfig: "test-auth"
   python:
     py: exclamation_function.py
     pyLocation: public/default/nlu-test-py-function
@@ -49,18 +48,6 @@ metadata:
 data:
     webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
     brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
-#---
-#apiVersion: v1
-#kind: ConfigMap
-#metadata:
-#  name: test-auth
-#data:
-#  clientAuthenticationPlugin: "abc"
-#  clientAuthenticationParameters: "xyz"
-#  tlsTrustCertsFilePath: "uvw"
-#  useTls: "true"
-#  tlsAllowInsecureConnection: "false"
-#  tlsHostnameVerificationEnable: "true"
 ---
 apiVersion: v1
 data:
