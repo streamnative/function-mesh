@@ -49,6 +49,8 @@ spec:
               type: string
             java:
               properties:
+                extraDependenciesDir:
+                  type: string
                 jar:
                   type: string
                 jarLocation:

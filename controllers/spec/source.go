@@ -90,10 +90,11 @@ func makeSourceVolumeMounts(source *v1alpha1.Source) []corev1.VolumeMount {
 }
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
-	return MakeJavaFunctionCommand(source.Spec.Java.JarLocation, source.Spec.Java.Jar,
-		source.Spec.Name, source.Spec.ClusterName, generateSourceDetailsInJSON(source),
-		source.Spec.Resources.Requests.Memory().ToDec().String(),
-		source.Spec.Pulsar.AuthConfig != "")
+	spec := source.Spec
+	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+		spec.Name, spec.ClusterName, generateSourceDetailsInJSON(source),
+		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir,
+		spec.Pulsar.AuthConfig != "")
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {
