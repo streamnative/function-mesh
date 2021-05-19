@@ -172,7 +172,6 @@ public class SourcesUtil {
         }
 
         v1alpha1SourceSpec.setReplicas(functionDetails.getParallelism());
-        v1alpha1SourceSpec.setMaxReplicas(functionDetails.getParallelism());
 
         double cpu = sourceConfig.getResources() != null && sourceConfig.getResources().getCpu() != 0 ? sourceConfig.getResources().getCpu() : 1;
         long ramRequest = sourceConfig.getResources() != null && sourceConfig.getResources().getRam() != 0 ? sourceConfig.getResources().getRam() : 1073741824;

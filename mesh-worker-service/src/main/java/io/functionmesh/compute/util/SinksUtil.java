@@ -73,7 +73,6 @@ public class SinksUtil {
 
         Integer parallelism = sinkConfig.getParallelism() == null ? 1 : sinkConfig.getParallelism();
         v1alpha1SinkSpec.setReplicas(parallelism);
-        v1alpha1SinkSpec.setMaxReplicas(parallelism);
 
         String customRuntimeOptionsJSON = sinkConfig.getCustomRuntimeOptions();
         CustomRuntimeOptions customRuntimeOptions = null;
