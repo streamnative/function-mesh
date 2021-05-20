@@ -34,6 +34,7 @@ import okhttp3.Call;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.internal.http.RealResponseBody;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.admin.Tenants;
@@ -487,6 +488,55 @@ public class FunctionsImplTest {
 
     @Test
     public void deregisterFunctionTest() throws ApiException, IOException {
+
+        String testBody = "{\n" +
+                "  \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n" +
+                "  \"kind\": \"Function\",\n" +
+                "  \"metadata\": {\n" +
+                "    \"creationTimestamp\": \"2021-01-19T13:19:17Z\",\n" +
+                "    \"generation\": 2,\n" +
+                "    \"name\": \"word-count\",\n" +
+                "    \"namespace\": \"default\",\n" +
+                "    \"resourceVersion\": \"24794021\",\n" +
+                "    \"selfLink\": \"/apis/compute.functionmesh.io/v1alpha1/namespaces/default/functions/word-count\",\n" +
+                "    \"uid\": \"b9e3ada1-b945-4d70-901c-00d7c7a7b0af\"\n" +
+                "  },\n" +
+                "  \"spec\": {\n" +
+                "    \"className\": \"org.example.functions.WordCountFunction\",\n" +
+                "    \"clusterName\": \"test-pulsar\",\n" +
+                "    \"forwardSourceMessageProperty\": true,\n" +
+                "    \"input\": {\n" +
+                "      \"topics\": [\n" +
+                "        \"persistent://public/default/sentences\"\n" +
+                "      ]\n" +
+                "    },\n" +
+                "    \"java\": {\n" +
+                "      \"jar\": \"word-count.jar\",\n" +
+                "      \"jarLocation\": \"public/default/word-count\"\n" +
+                "    },\n" +
+                "    \"maxReplicas\": 1,\n" +
+                "    \"output\": {\n" +
+                "      \"topic\": \"persistent://public/default/count\"\n" +
+                "    },\n" +
+                "    \"pulsar\": {\n" +
+                "      \"pulsarConfig\": \"test-pulsar\"\n" +
+                "    },\n" +
+                "    \"replicas\": 1,\n" +
+                "    \"resources\": {\n" +
+                "      \"limits\": {\n" +
+                "        \"cpu\": \"0.1\",\n" +
+                "        \"memory\": \"1024\"\n" +
+                "      },\n" +
+                "      \"requests\": {\n" +
+                "        \"cpu\": \"0.1\",\n" +
+                "        \"memory\": \"1024\"\n" +
+                "      }\n" +
+                "    },\n" +
+                "    \"sinkType\": \"java.lang.String\",\n" +
+                "    \"sourceType\": \"java.lang.String\"\n" +
+                "  }\n" +
+                "}";
+
         MeshWorkerService meshWorkerService = PowerMockito.mock(MeshWorkerService.class);
         Supplier<MeshWorkerService> meshWorkerServiceSupplier = () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
@@ -507,6 +557,20 @@ public class FunctionsImplTest {
         String plural = "functions";
         String version = "v1alpha1";
 
+        Response functionInfoResponse = PowerMockito.mock(Response.class);
+        Call functionInfoCall = PowerMockito.mock(Call.class);
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()
+                .getNamespacedCustomObjectCall(
+                        group,
+                        version,
+                        namespace,
+                        plural,
+                        functionName,
+                        null)).thenReturn(functionInfoCall);
+        PowerMockito.when(functionInfoCall.execute()).thenReturn(functionInfoResponse);
+        PowerMockito.when(functionInfoResponse.isSuccessful()).thenReturn(true);
+        PowerMockito.when(functionInfoResponse.body()).thenReturn(responseBody);
+
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .deleteNamespacedCustomObjectCall(
                         group,
@@ -524,15 +588,22 @@ public class FunctionsImplTest {
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
-        PowerMockito.when(responseBody.string()).thenReturn("{\"Status\": \"Success\"}");
+        PowerMockito.when(responseBody.string()).thenReturn(testBody);
         PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
-        FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
+        JSON json = new JSON();
+        PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
         CoreV1Api coreV1Api = PowerMockito.mock(CoreV1Api.class);
         PowerMockito.when(meshWorkerService.getCoreV1Api()).thenReturn(coreV1Api);
-        Call deleteConfigMapCall = PowerMockito.mock(Call.class);
-        PowerMockito.when(coreV1Api.deleteNamespacedConfigMapCall(
-                KubernetesUtils.getConfigMapName("auth", tenant, namespace, functionName),
+        Call deleteAuthSecretCall = PowerMockito.mock(Call.class);
+        PowerMockito.when(coreV1Api.deleteNamespacedSecretCall(
+                KubernetesUtils.getUniqueSecretName(
+                        "function",
+                        "auth",
+                        DigestUtils.sha256Hex(
+                                KubernetesUtils.getSecretName(
+                                        "test-pulsar",
+                                        tenant, namespace, "word-count"))),
                 namespace,
                 null,
                 null,
@@ -541,8 +612,28 @@ public class FunctionsImplTest {
                 null,
                 null,
                 null
-                )).thenReturn(deleteConfigMapCall);
-        PowerMockito.when(deleteConfigMapCall.execute()).thenReturn(response);
+                )).thenReturn(deleteAuthSecretCall);
+        PowerMockito.when(deleteAuthSecretCall.execute()).thenReturn(response);
+        Call deleteTlsSecretCall = PowerMockito.mock(Call.class);
+        PowerMockito.when(coreV1Api.deleteNamespacedSecretCall(
+                KubernetesUtils.getUniqueSecretName(
+                        "function",
+                        "tls",
+                        DigestUtils.sha256Hex(
+                                KubernetesUtils.getSecretName(
+                                        "test-pulsar",
+                                        tenant, namespace, "word-count"))),
+                namespace,
+                null,
+                null,
+                30,
+                false,
+                null,
+                null,
+                null
+        )).thenReturn(deleteTlsSecretCall);
+        PowerMockito.when(deleteTlsSecretCall.execute()).thenReturn(response);
+        FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
         try {
             functions.deregisterFunction(tenant, namespace, functionName, null, null);
         } catch (Exception exception) {

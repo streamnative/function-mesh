@@ -120,17 +120,22 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 worker().getAuthProvider().ifPresent(functionAuthProvider -> {
                     if (clientAuthenticationDataHttps != null) {
                         try {
-                            String type = "auth";
-                            KubernetesUtils.createConfigMap(type, tenant, namespace, functionName,
-									worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
-                            v1alpha1Function.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
-                                    type, functionConfig.getTenant(), functionConfig.getNamespace(), functionName));
+                            String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
+                                    v1alpha1Function.getSpec().getClusterName(), tenant, namespace, functionName,
+                                    worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                            v1alpha1Function.getSpec().getPulsar().setAuthSecret(authSecretName);
+                            String tlsSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "tls",
+                                    v1alpha1Function.getSpec().getClusterName(), tenant, namespace, functionName,
+                                    worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                            v1alpha1Function.getSpec().getPulsar().setTlsSecret(tlsSecretName);
                         } catch (Exception e) {
                             log.error("Error caching authentication data for {} {}/{}/{}",
                                     ComponentTypeUtils.toString(componentType), tenant, namespace, functionName, e);
 
 
-                            throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                            throw new RestException(
+                                    Response.Status.INTERNAL_SERVER_ERROR,
+                                    String.format("Error caching authentication data for %s %s:- %s",
                                     ComponentTypeUtils.toString(componentType), functionName, e.getMessage()));
                         }
                     }

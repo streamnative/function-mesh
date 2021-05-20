@@ -18,12 +18,14 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionList;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.util.KubernetesUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Response;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.client.admin.PulsarAdminException;
@@ -63,9 +65,13 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
 
     String kind = "Function";
 
+    final String CLUSTER_LABEL_CLAIM = "pulsar-cluster";
+
     final String TENANT_LABEL_CLAIM = "pulsar-tenant";
 
     final String NAMESPACE_LABEL_CLAIM = "pulsar-namespace";
+
+    final String COMPONENT_LABEL_CLAIM = "pulsar-component";
 
     MeshComponentImpl(Supplier<MeshWorkerService> meshWorkerServiceSupplier,
                       Function.FunctionDetails.ComponentType componentType) {
@@ -99,7 +105,13 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         try {
-            Call call = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
+            Call functionInfoCall =
+                    worker().getCustomObjectsApi()
+                            .getNamespacedCustomObjectCall(
+                                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                                    plural, componentName, null);
+            V1alpha1Function v1alpha1Function = executeCall(functionInfoCall, V1alpha1Function.class);
+            Call deleteObjectCall = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
                     group,
                     version,
                     KubernetesUtils.getNamespace(worker().getFactoryConfig()),
@@ -112,11 +124,17 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                     null,
                     null
             );
-            executeCall(call, null);
+            executeCall(deleteObjectCall, null);
 
-            call = worker().getCoreV1Api()
-                    .deleteNamespacedConfigMapCall(
-                            KubernetesUtils.getConfigMapName("auth", tenant, namespace, componentName),
+            Call deleteAuthSecretCall = worker().getCoreV1Api()
+                    .deleteNamespacedSecretCall(
+                            KubernetesUtils.getUniqueSecretName(
+                                    kind.toLowerCase(),
+                                    "auth",
+                                    DigestUtils.sha256Hex(
+                                            KubernetesUtils.getSecretName(
+                                                    v1alpha1Function.getSpec().getClusterName(),
+                                                    tenant, namespace, componentName))),
                             KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                             null,
                             null,
@@ -126,7 +144,26 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                             null,
                             null
                     );
-            executeCall(call, null);
+            executeCall(deleteAuthSecretCall, null);
+            Call deleteTlsSecretCall = worker().getCoreV1Api()
+                    .deleteNamespacedSecretCall(
+                            KubernetesUtils.getUniqueSecretName(
+                                    kind.toLowerCase(),
+                                    "tls",
+                                    DigestUtils.sha256Hex(
+                                            KubernetesUtils.getSecretName(
+                                                    v1alpha1Function.getSpec().getClusterName(),
+                                                    tenant, namespace, componentName))),
+                            KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                            null,
+                            null,
+                            30,
+                            false,
+                            null,
+                            null,
+                            null
+                    );
+            executeCall(deleteTlsSecretCall, null);
         } catch (Exception e) {
             log.error("deregister {}/{}/{} {} failed", tenant, namespace, componentName, plural, e);
             throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -341,18 +378,6 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
     @Override
     public void reloadConnectors(String clientRole) {
         meshWorkerServiceSupplier.get().getConnectorsManager().reloadConnectors();
-    }
-
-    private void validateDeregisterFunctionRequestParams(String tenant, String namespace, String functionName) {
-        if (tenant == null) {
-            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Tenant is not provided");
-        }
-        if (namespace == null) {
-            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Namespace is not provided");
-        }
-        if (functionName == null) {
-            throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Function name is not provided");
-        }
     }
 
     public boolean isSuperUser(String clientRole, AuthenticationDataSource authenticationDataSource) {

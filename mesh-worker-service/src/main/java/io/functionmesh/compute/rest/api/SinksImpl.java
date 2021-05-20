@@ -24,9 +24,7 @@ import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.MeshWorkerService;
-import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkStatus;
-import io.functionmesh.compute.util.SinksUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
@@ -44,10 +42,8 @@ import org.apache.pulsar.functions.worker.service.api.Sinks;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -119,8 +115,10 @@ public class SinksImpl extends MeshComponentImpl
         v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
         try {
             Map<String, String> customLabels = Maps.newHashMap();
+            customLabels.put(CLUSTER_LABEL_CLAIM, v1alpha1Sink.getSpec().getClusterName());
             customLabels.put(TENANT_LABEL_CLAIM, tenant);
             customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
+            customLabels.put(COMPONENT_LABEL_CLAIM, sinkName);
             V1alpha1SinkSpecPod pod = new V1alpha1SinkSpecPod();
             if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
                 customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
@@ -135,11 +133,14 @@ public class SinksImpl extends MeshComponentImpl
                 worker().getAuthProvider().ifPresent(functionAuthProvider -> {
                     if (clientAuthenticationDataHttps != null) {
                         try {
-                            String type = "auth";
-                            KubernetesUtils.createConfigMap(type, tenant, namespace, sinkName,
+                            String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
+                                    v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
                                     worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
-                            v1alpha1Sink.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
-                                    type, sinkConfig.getTenant(), sinkConfig.getNamespace(), sinkName));
+                            v1alpha1Sink.getSpec().getPulsar().setAuthSecret(authSecretName);
+                            String tlsSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "tls",
+                                    v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
+                                    worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                            v1alpha1Sink.getSpec().getPulsar().setTlsSecret(tlsSecretName);
                         } catch (Exception e) {
                             log.error("Error caching authentication data for {} {}/{}/{}",
                                     ComponentTypeUtils.toString(componentType), tenant, namespace, sinkName, e);
@@ -165,6 +166,7 @@ public class SinksImpl extends MeshComponentImpl
                                     null);
             executeCall(call, V1alpha1Sink.class);
         } catch (Exception e) {
+            e.printStackTrace();
             log.error(
                     "register {}/{}/{} sink failed, error message: {}",
                     tenant,
@@ -316,7 +318,7 @@ public class SinksImpl extends MeshComponentImpl
                                     plural, componentName, null);
 
             V1alpha1Sink v1alpha1Sink = executeCall(call, V1alpha1Sink.class);
-            return SinksUtil.createSinkConfigFromV1alpha1Source(
+            return SinksUtil.createSinkConfigFromV1alpha1Sink(
                     tenant, namespace, componentName, v1alpha1Sink);
         } catch (Exception e) {
             log.error(
