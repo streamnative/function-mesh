@@ -130,7 +130,7 @@ public class SinksUtilTest {
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null);
 
-        SinkConfig newSinkConfig = SinksUtil.createSinkConfigFromV1alpha1Source(tenant, namespace, componentName, actualV1alpha1Sink);
+        SinkConfig newSinkConfig = SinksUtil.createSinkConfigFromV1alpha1Sink(tenant, namespace, componentName, actualV1alpha1Sink);
 
         Assert.assertEquals(sinkConfig.getName(), newSinkConfig.getName());
         Assert.assertEquals(sinkConfig.getNamespace(), newSinkConfig.getNamespace());

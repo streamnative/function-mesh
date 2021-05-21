@@ -2192,9 +2192,11 @@ spec:
                     type: string
                   pulsar:
                     properties:
-                      authConfig:
+                      authSecret:
                         type: string
                       pulsarConfig:
+                        type: string
+                      tlsSecret:
                         type: string
                     type: object
                   python:
@@ -4363,9 +4365,11 @@ spec:
                     type: string
                   pulsar:
                     properties:
-                      authConfig:
+                      authSecret:
                         type: string
                       pulsarConfig:
+                        type: string
+                      tlsSecret:
                         type: string
                     type: object
                   python:
@@ -6513,9 +6517,11 @@ spec:
                     type: string
                   pulsar:
                     properties:
-                      authConfig:
+                      authSecret:
                         type: string
                       pulsarConfig:
+                        type: string
+                      tlsSecret:
                         type: string
                     type: object
                   python:

@@ -229,8 +229,10 @@ public class SourcesImpTest {
                         sourceConfig,
                         null);
         Map<String, String> customLabels = Maps.newHashMap();
+        customLabels.put("pulsar-cluster", clusterName);
         customLabels.put("pulsar-tenant", tenant);
         customLabels.put("pulsar-namespace", namespace);
+        customLabels.put("pulsar-component", componentName);
         V1alpha1SourceSpecPod pod = new V1alpha1SourceSpecPod();
         pod.setLabels(customLabels);
         v1alpha1Source.getSpec().pod(pod);
