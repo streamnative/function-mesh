@@ -51,11 +51,6 @@ func (r *Sink) Default() {
 		r.Spec.Replicas = &zeroVal
 	}
 
-	if r.Spec.MaxReplicas == nil {
-		zeroVal := int32(0)
-		r.Spec.MaxReplicas = &zeroVal
-	}
-
 	if r.Spec.AutoAck == nil {
 		trueVal := true
 		r.Spec.AutoAck = &trueVal

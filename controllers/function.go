@@ -165,7 +165,7 @@ func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, req ctrl.
 
 func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, req ctrl.Request,
 	function *v1alpha1.Function) error {
-	if *function.Spec.MaxReplicas == 0 {
+	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		return nil
 	}
@@ -202,7 +202,7 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, req ctrl.Re
 
 func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, req ctrl.Request,
 	function *v1alpha1.Function) error {
-	if *function.Spec.MaxReplicas == 0 {
+	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		return nil
 	}
