@@ -20,6 +20,7 @@ package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodVolumeMounts;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodVolumes;
@@ -344,6 +345,11 @@ public class SinksImpl extends MeshComponentImpl
                     Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
                             .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
                     Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
+                    if (functionsWorkerServiceCustomConfigs.get("extraDependenciesDir") != null) {
+                        V1alpha1SinkSpecJava v1alpha1SinkSpecJava = new V1alpha1SinkSpecJava();
+                        v1alpha1SinkSpecJava.setExtraDependenciesDir((String)functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
+                        v1alpha1Sink.getSpec().setJava(v1alpha1SinkSpecJava);
+                    }
                     if (volumes != null) {
                         List<V1alpha1SinkSpecPodVolumes> volumesList = (List<V1alpha1SinkSpecPodVolumes>) volumes;
                         v1alpha1Sink.getSpec().getPod().setVolumes(volumesList);
@@ -356,11 +362,13 @@ public class SinksImpl extends MeshComponentImpl
                     String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
                             v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
                             worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
-                    v1alpha1Sink.getSpec().getPulsar().setAuthSecret(authSecretName);
-                    String tlsSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "tls",
-                            v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
-                            worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
-                    v1alpha1Sink.getSpec().getPulsar().setTlsSecret(tlsSecretName);
+                    if (worker().getWorkerConfig().getTlsEnabled()) {
+                        v1alpha1Sink.getSpec().getPulsar().setAuthSecret(authSecretName);
+                        String tlsSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "tls",
+                                v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
+                                worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                        v1alpha1Sink.getSpec().getPulsar().setTlsSecret(tlsSecretName);
+                    }
                 } catch (Exception e) {
                     log.error("Error create or update auth or tls secret data for {} {}/{}/{}",
                             ComponentTypeUtils.toString(componentType), tenant, namespace, sinkName, e);

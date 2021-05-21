@@ -90,10 +90,12 @@ public class KubernetesUtils {
 
 	private static Map<String, byte[]> buildTlsConfigMap(WorkerConfig workerConfig) {
 		Map<String, byte[]> valueMap = new HashMap<>();
-		valueMap.put(TLS_TRUST_CERTS_FILE_PATH_CLAIM, workerConfig.getTlsCertificateFilePath().getBytes());
-		valueMap.put(USE_TLS_CLAIM, String.valueOf(workerConfig.getTlsEnabled()).getBytes());
-		valueMap.put(TLS_ALLOW_INSECURE_CONNECTION_CLAIM, String.valueOf(workerConfig.isTlsAllowInsecureConnection()).getBytes());
-		valueMap.put(TLS_HOSTNAME_VERIFICATION_ENABLE_CLAIM, String.valueOf(workerConfig.isTlsEnableHostnameVerification()).getBytes());
+		if (workerConfig.getTlsEnabled()) {
+			valueMap.put(TLS_TRUST_CERTS_FILE_PATH_CLAIM, workerConfig.getTlsCertificateFilePath().getBytes());
+			valueMap.put(USE_TLS_CLAIM, String.valueOf(workerConfig.getTlsEnabled()).getBytes());
+			valueMap.put(TLS_ALLOW_INSECURE_CONNECTION_CLAIM, String.valueOf(workerConfig.isTlsAllowInsecureConnection()).getBytes());
+			valueMap.put(TLS_HOSTNAME_VERIFICATION_ENABLE_CLAIM, String.valueOf(workerConfig.isTlsEnableHostnameVerification()).getBytes());
+		}
 		return valueMap;
 	}
 
@@ -176,7 +178,7 @@ public class KubernetesUtils {
 				.run();
 
 		if (!success.get()) {
-			throw new RuntimeException(String.format("Failed to create authentication secret for %s %s-%s/%s/%s",
+			throw new RuntimeException(String.format("Failed to create secret for %s %s-%s/%s/%s",
 					type, cluster, tenant, namespace, name));
 		}
 
