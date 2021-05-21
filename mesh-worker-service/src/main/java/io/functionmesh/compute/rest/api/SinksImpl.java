@@ -359,11 +359,14 @@ public class SinksImpl extends MeshComponentImpl
                         List<V1alpha1SinkSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1SinkSpecPodVolumeMounts>) volumeMounts;
                         v1alpha1Sink.getSpec().setVolumeMounts(volumeMountsList);
                     }
-                    String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
-                            v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
-                            worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
-                    if (worker().getWorkerConfig().getTlsEnabled()) {
+                    if (worker().getWorkerConfig().getBrokerClientAuthenticationPlugin() != null
+                            && worker().getWorkerConfig().getBrokerClientAuthenticationParameters() != null) {
+                        String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
+                                v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
+                                worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
                         v1alpha1Sink.getSpec().getPulsar().setAuthSecret(authSecretName);
+                    }
+                    if (worker().getWorkerConfig().getTlsEnabled()) {
                         String tlsSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "tls",
                                 v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
                                 worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());

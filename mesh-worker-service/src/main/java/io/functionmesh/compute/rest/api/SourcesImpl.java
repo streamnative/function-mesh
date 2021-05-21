@@ -330,10 +330,13 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                         List<V1alpha1SourceSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1SourceSpecPodVolumeMounts>) volumeMounts;
                         v1alpha1Source.getSpec().setVolumeMounts(volumeMountsList);
                     }
-                    String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
-                            v1alpha1Source.getSpec().getClusterName(), tenant, namespace, sourceName,
-                            worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
-                    v1alpha1Source.getSpec().getPulsar().setAuthSecret(authSecretName);
+                    if (worker().getWorkerConfig().getBrokerClientAuthenticationPlugin() != null
+                            && worker().getWorkerConfig().getBrokerClientAuthenticationParameters() != null) {
+                        String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
+                                v1alpha1Source.getSpec().getClusterName(), tenant, namespace, sourceName,
+                                worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                        v1alpha1Source.getSpec().getPulsar().setAuthSecret(authSecretName);
+                    }
                     if (worker().getWorkerConfig().getTlsEnabled()) {
                         String tlsSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "tls",
                                 v1alpha1Source.getSpec().getClusterName(), tenant, namespace, sourceName,
