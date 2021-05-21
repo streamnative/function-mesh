@@ -57,6 +57,12 @@ public class FunctionMeshConnectorDefinition extends ConnectorDefinition {
      */
     private String imageTag;
 
+    /**
+     * Type name of the connector or function
+     * If not set, the default value '[B' will be used
+     */
+    private String typeClassName;
+
     public String toFullImageURL() {
         return String.format("%s%s:%s", imageRegistry != null ? imageRegistry : DEFAULT_REGISTRY,
                 imageRepository, imageTag != null ? imageTag : version);

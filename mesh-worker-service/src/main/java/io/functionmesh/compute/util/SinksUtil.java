@@ -158,6 +158,22 @@ public class SinksUtil {
 
         if (Strings.isNotEmpty(customRuntimeOptions.getInputTypeClassName())) {
             v1alpha1SinkSpecInput.setTypeClassName(customRuntimeOptions.getInputTypeClassName());
+        } else {
+            if (connectorsManager == null) {
+                v1alpha1SinkSpecInput.setTypeClassName("[B");
+            } else {
+                FunctionMeshConnectorDefinition functionMeshConnectorDefinition =
+                        connectorsManager.getConnectorDefinition(sinkConfig.getArchive());
+                if (functionMeshConnectorDefinition == null) {
+                    v1alpha1SinkSpecInput.setTypeClassName("[B");
+                } else {
+                    if (functionMeshConnectorDefinition.getTypeClassName() == null) {
+                        v1alpha1SinkSpecInput.setTypeClassName("[B");
+                    } else {
+                        v1alpha1SinkSpecInput.setTypeClassName(functionMeshConnectorDefinition.getTypeClassName());
+                    }
+                }
+            }
         }
 
         v1alpha1SinkSpecInput.setTopics(new ArrayList<>(sinkConfig.getInputs()));
