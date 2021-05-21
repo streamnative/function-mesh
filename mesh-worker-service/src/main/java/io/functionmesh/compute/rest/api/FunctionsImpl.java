@@ -322,7 +322,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
 
 
                     throw new RestException(Response.Status.INTERNAL_SERVER_ERROR,
-                            String.format("Error ccreate or update auth or tls secret for %s %s:- %s",
+                            String.format("Error create or update auth or tls secret for %s %s:- %s",
                             ComponentTypeUtils.toString(componentType), functionName, e.getMessage()));
                 }
             }
