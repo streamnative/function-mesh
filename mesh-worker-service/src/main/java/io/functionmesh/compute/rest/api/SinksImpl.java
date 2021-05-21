@@ -359,8 +359,8 @@ public class SinksImpl extends MeshComponentImpl
                         List<V1alpha1SinkSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1SinkSpecPodVolumeMounts>) volumeMounts;
                         v1alpha1Sink.getSpec().setVolumeMounts(volumeMountsList);
                     }
-                    if (worker().getWorkerConfig().getBrokerClientAuthenticationPlugin() != null
-                            && worker().getWorkerConfig().getBrokerClientAuthenticationParameters() != null) {
+                    if (!StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationPlugin())
+                            && !StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationParameters())) {
                         String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
                                 v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
                                 worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());

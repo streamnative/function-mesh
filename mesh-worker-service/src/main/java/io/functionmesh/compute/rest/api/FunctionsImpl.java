@@ -29,6 +29,7 @@ import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.util.KubernetesUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
+import org.apache.commons.lang.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.functions.FunctionConfig;
@@ -315,8 +316,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                 (String)functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
                         v1alpha1Function.getSpec().setJava(v1alpha1FunctionSpecJava);
                     }
-                    if (worker().getWorkerConfig().getBrokerClientAuthenticationPlugin() != null
-                            && worker().getWorkerConfig().getBrokerClientAuthenticationParameters() != null) {
+                    if (!StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationPlugin())
+                            && !StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationParameters())) {
                         String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
                                 v1alpha1Function.getSpec().getClusterName(), tenant, namespace, functionName,
                                 worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
