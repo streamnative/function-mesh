@@ -254,4 +254,3 @@ functionsWorkerServiceCustomConfigs:
         secret:
           defaultMode: 420
           secretName: pulsarcluster-data
-  authConfigMap: function-mesh-configmap-auth-testd-data
