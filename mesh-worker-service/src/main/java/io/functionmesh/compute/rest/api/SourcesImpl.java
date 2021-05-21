@@ -332,11 +332,12 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                             worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
                     v1alpha1Source.getSpec().getPulsar().setTlsSecret(tlsSecretName);
                 } catch (Exception e) {
-                    log.error("Error create or update authentication data for {} {}/{}/{}",
+                    log.error("Error create or update auth or tls secret for {} {}/{}/{}",
                             ComponentTypeUtils.toString(componentType), tenant, namespace, sourceName, e);
 
 
-                    throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                    throw new RestException(Response.Status.INTERNAL_SERVER_ERROR,
+                            String.format("Error create or update auth or tls secret %s %s:- %s",
                             ComponentTypeUtils.toString(componentType), sourceName, e.getMessage()));
                 }
             }
