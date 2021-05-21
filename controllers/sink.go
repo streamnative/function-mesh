@@ -161,7 +161,7 @@ func (r *SinkReconciler) ApplySinkService(ctx context.Context, req ctrl.Request,
 }
 
 func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, sink *v1alpha1.Sink) error {
-	if *sink.Spec.MaxReplicas == 0 {
+	if sink.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		return nil
 	}
@@ -197,7 +197,7 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, s
 }
 
 func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, req ctrl.Request, sink *v1alpha1.Sink) error {
-	if *sink.Spec.MaxReplicas == 0 {
+	if sink.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		return nil
 	}
