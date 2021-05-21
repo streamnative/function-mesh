@@ -116,8 +116,10 @@ public class SinksImpl extends MeshComponentImpl
         v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
         try {
             Map<String, String> customLabels = Maps.newHashMap();
+            customLabels.put(CLUSTER_LABEL_CLAIM, v1alpha1Sink.getSpec().getClusterName());
             customLabels.put(TENANT_LABEL_CLAIM, tenant);
             customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
+            customLabels.put(COMPONENT_LABEL_CLAIM, sinkName);
             V1alpha1SinkSpecPod pod = new V1alpha1SinkSpecPod();
             if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
                 customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
@@ -139,6 +141,7 @@ public class SinksImpl extends MeshComponentImpl
                                     null);
             executeCall(call, V1alpha1Sink.class);
         } catch (Exception e) {
+            e.printStackTrace();
             log.error(
                     "register {}/{}/{} sink failed, error message: {}",
                     tenant,
@@ -291,7 +294,7 @@ public class SinksImpl extends MeshComponentImpl
                                     plural, componentName, null);
 
             V1alpha1Sink v1alpha1Sink = executeCall(call, V1alpha1Sink.class);
-            return SinksUtil.createSinkConfigFromV1alpha1Source(
+            return SinksUtil.createSinkConfigFromV1alpha1Sink(
                     tenant, namespace, componentName, v1alpha1Sink);
         } catch (Exception e) {
             log.error(
@@ -340,20 +343,6 @@ public class SinksImpl extends MeshComponentImpl
                 try {
                     Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
                             .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-                    Object authConfigMapName = functionsWorkerServiceCustomConfigs.get("authConfigMap");
-                    String type = "auth";
-                    String configMapName = KubernetesUtils.getConfigMapName(
-                            type, sinkConfig.getTenant(), sinkConfig.getNamespace(), sinkName);
-                    if (authConfigMapName != null) {
-                        configMapName = (String) authConfigMapName;
-                    }
-                    KubernetesUtils.upsertConfigMap(
-                            tenant,
-                            namespace,
-                            sinkName,
-                            worker().getWorkerConfig(), worker().getCoreV1Api(),
-                            worker().getFactoryConfig(),
-                            configMapName);
                     Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
                     if (volumes != null) {
                         List<V1alpha1SinkSpecPodVolumes> volumesList = (List<V1alpha1SinkSpecPodVolumes>) volumes;
@@ -364,8 +353,14 @@ public class SinksImpl extends MeshComponentImpl
                         List<V1alpha1SinkSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1SinkSpecPodVolumeMounts>) volumeMounts;
                         v1alpha1Sink.getSpec().setVolumeMounts(volumeMountsList);
                     }
-
-                    v1alpha1Sink.getSpec().getPulsar().setAuthConfig(configMapName);
+                    String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
+                            v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
+                            worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                    v1alpha1Sink.getSpec().getPulsar().setAuthSecret(authSecretName);
+                    String tlsSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "tls",
+                            v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
+                            worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                    v1alpha1Sink.getSpec().getPulsar().setTlsSecret(tlsSecretName);
                 } catch (Exception e) {
                     log.error("Error create or update authentication data for {} {}/{}/{}",
                             ComponentTypeUtils.toString(componentType), tenant, namespace, sinkName, e);

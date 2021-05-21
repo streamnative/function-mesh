@@ -31,7 +31,18 @@ type PulsarMessaging struct {
 	// webServiceURL
 	// brokerServiceURL
 	PulsarConfig string `json:"pulsarConfig,omitempty"`
-	AuthConfig   string `json:"authConfig,omitempty"`
+
+	// The auth secret should contain the following fields
+	// clientAuthenticationPlugin
+	// clientAuthenticationParameters
+	AuthSecret string `json:"authSecret,omitempty"`
+
+	// The TLS secret should contain the following fields
+	// use_tls
+	// tls_allow_insecure
+	// hostname_verification_enabled
+	// tls_trust_cert_path
+	TLSSecret string `json:"tlsSecret,omitempty"`
 }
 
 type PodPolicy struct {

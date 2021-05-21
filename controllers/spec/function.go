@@ -83,7 +83,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		Env:             generateContainerEnv(function.Spec.SecretsMap),
 		Resources:       function.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
-		EnvFrom:         generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthConfig),
+		EnvFrom:         generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret, function.Spec.Pulsar.TLSSecret),
 		VolumeMounts:    makeFunctionVolumeMounts(function),
 	}
 }
@@ -105,13 +105,13 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
 				spec.Resources.Requests.Memory().String(), spec.Java.ExtraDependenciesDir,
-				spec.Pulsar.AuthConfig != "")
+				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "")
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
 				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
-				spec.Pulsar.AuthConfig != "")
+				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "")
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {

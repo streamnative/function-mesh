@@ -51,7 +51,6 @@ spec:
       key: "password"
   pulsar:
     pulsarConfig: "test-pulsar"
-    #authConfig: "test-auth"
   java:
     jar: pulsar-functions-api-examples.jar
     jarLocation: public/default/nlu-test-java-function
@@ -66,18 +65,6 @@ metadata:
 data:
   webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
   brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
-#---
-#apiVersion: v1
-#kind: ConfigMap
-#metadata:
-#  name: test-auth
-#data:
-#  clientAuthenticationPlugin: "abc"
-#  clientAuthenticationParameters: "xyz"
-#  tlsTrustCertsFilePath: "uvw"
-#  useTls: "true"
-#  tlsAllowInsecureConnection: "false"
-#  tlsHostnameVerificationEnable: "true"
 ---
 apiVersion: v1
 data:

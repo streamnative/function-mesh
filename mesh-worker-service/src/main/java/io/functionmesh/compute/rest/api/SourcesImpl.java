@@ -125,8 +125,10 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             // override namesapce by configuration
             v1alpha1Source.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             Map<String, String> customLabels = Maps.newHashMap();
+            customLabels.put(CLUSTER_LABEL_CLAIM, v1alpha1Source.getSpec().getClusterName());
             customLabels.put(TENANT_LABEL_CLAIM, tenant);
             customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
+            customLabels.put(COMPONENT_LABEL_CLAIM, sourceName);
             V1alpha1SourceSpecPod pod = new V1alpha1SourceSpecPod();
             if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
                 customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
@@ -279,7 +281,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             V1alpha1Source v1alpha1Source = executeCall(call, V1alpha1Source.class);
             return SourcesUtil.createSourceConfigFromV1alpha1Source(tenant, namespace, componentName, v1alpha1Source);
         } catch (Exception e) {
-            log.error("deregister {}/{}/{} {} failed, error message: {}", tenant, namespace, componentName, plural, e);
+            log.error("Get source info {}/{}/{} {} failed, error message: {}", tenant, namespace, componentName, plural, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
@@ -311,19 +313,6 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                 try {
                     Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
                             .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-                    String type = "auth";
-                    Object authConfigMapName = functionsWorkerServiceCustomConfigs.get("authConfigMap");
-                    String configMapName = KubernetesUtils.getConfigMapName(
-                            type, sourceConfig.getTenant(), sourceConfig.getNamespace(), sourceName);
-                    if (authConfigMapName != null) {
-                        configMapName = (String) authConfigMapName;
-                    }
-                    KubernetesUtils.upsertConfigMap(
-                            tenant, namespace, sourceName,
-                            worker().getWorkerConfig(),
-                            worker().getCoreV1Api(),
-                            worker().getFactoryConfig(),
-                            configMapName);
                     Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
                     if (volumes != null) {
                         List<V1alpha1SourceSpecPodVolumes> volumesList = (List<V1alpha1SourceSpecPodVolumes>) volumes;
@@ -334,8 +323,14 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                         List<V1alpha1SourceSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1SourceSpecPodVolumeMounts>) volumeMounts;
                         v1alpha1Source.getSpec().setVolumeMounts(volumeMountsList);
                     }
-                    v1alpha1Source.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
-                            type, sourceConfig.getTenant(), sourceConfig.getNamespace(), sourceName));
+                    String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
+                            v1alpha1Source.getSpec().getClusterName(), tenant, namespace, sourceName,
+                            worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                    v1alpha1Source.getSpec().getPulsar().setAuthSecret(authSecretName);
+                    String tlsSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "tls",
+                            v1alpha1Source.getSpec().getClusterName(), tenant, namespace, sourceName,
+                            worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                    v1alpha1Source.getSpec().getPulsar().setTlsSecret(tlsSecretName);
                 } catch (Exception e) {
                     log.error("Error create or update authentication data for {} {}/{}/{}",
                             ComponentTypeUtils.toString(componentType), tenant, namespace, sourceName, e);

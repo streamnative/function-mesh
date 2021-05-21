@@ -295,21 +295,9 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
         if (worker().getWorkerConfig().isAuthenticationEnabled()) {
             if (clientAuthenticationDataHttps != null) {
                 try {
+
                     Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
                             .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-                    String type = "auth";
-                    Object authConfigMapName = functionsWorkerServiceCustomConfigs.get("authConfigMap");
-                    String configMapName = KubernetesUtils.getConfigMapName(
-                            type, functionConfig.getTenant(), functionConfig.getNamespace(), functionName);
-                    if (authConfigMapName != null) {
-                        configMapName = (String) authConfigMapName;
-                    }
-                    KubernetesUtils.upsertConfigMap(
-                            tenant, namespace, functionName,
-                            worker().getWorkerConfig(),
-                            worker().getCoreV1Api(),
-                            worker().getFactoryConfig(),
-                            configMapName);
                     Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
                     if (volumes != null) {
                         List<V1alpha1FunctionSpecPodVolumes> volumesList = (List<V1alpha1FunctionSpecPodVolumes>) volumes;
@@ -320,14 +308,21 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                         List<V1alpha1FunctionSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1FunctionSpecPodVolumeMounts>) volumeMounts;
                         v1alpha1Function.getSpec().setVolumeMounts(volumeMountsList);
                     }
-                    v1alpha1Function.getSpec().getPulsar().setAuthConfig(KubernetesUtils.getConfigMapName(
-                            type, functionConfig.getTenant(), functionConfig.getNamespace(), functionName));
+                    String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
+                            v1alpha1Function.getSpec().getClusterName(), tenant, namespace, functionName,
+                            worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                    v1alpha1Function.getSpec().getPulsar().setAuthSecret(authSecretName);
+                    String tlsSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "tls",
+                            v1alpha1Function.getSpec().getClusterName(), tenant, namespace, functionName,
+                            worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                    v1alpha1Function.getSpec().getPulsar().setTlsSecret(tlsSecretName);
                 } catch (Exception e) {
                     log.error("Error create or update authentication data for {} {}/{}/{}",
                             ComponentTypeUtils.toString(componentType), tenant, namespace, functionName, e);
 
 
-                    throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, String.format("Error caching authentication data for %s %s:- %s",
+                    throw new RestException(Response.Status.INTERNAL_SERVER_ERROR,
+                            String.format("Error caching authentication data for %s %s:- %s",
                             ComponentTypeUtils.toString(componentType), functionName, e.getMessage()));
                 }
             }

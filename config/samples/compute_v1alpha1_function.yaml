@@ -34,7 +34,8 @@ spec:
         key: "password"
   pulsar:
     pulsarConfig: "test-pulsar"
-    #authConfig: "test-auth"
+    authSecret: "test-auth"
+    tlsSecret: "test-tls"
   volumeMounts:
     - mountPath: /cache
       name: cache-volume
@@ -73,6 +74,23 @@ metadata:
 data:
     webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
     brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test-auth
+stringData:
+  clientAuthenticationPlugin: admin
+  clientAuthenticationParameters: t0p-Secret
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test-tls
+stringData:
+  tlsTrustCertsFilePath: "uvw"
+  tlsAllowInsecureConnection: "false"
+  tlsHostnameVerificationEnable: "true"
 #---
 #apiVersion: v1
 #kind: ConfigMap
