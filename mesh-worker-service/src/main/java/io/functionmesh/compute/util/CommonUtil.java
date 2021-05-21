@@ -20,7 +20,6 @@ package io.functionmesh.compute.util;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.pulsar.common.functions.FunctionConfig;
-
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -80,4 +79,5 @@ public class CommonUtil {
         }
         return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
+
 }

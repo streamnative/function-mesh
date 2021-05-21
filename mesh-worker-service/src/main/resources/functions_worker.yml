@@ -242,3 +242,15 @@ functionsDirectory: ./functions
 
 # Should connector config be validated during during submission
 validateConnectorConfig: false
+
+functionsWorkerServiceCustomConfigs:
+  volumeMounts:
+    - mountPath: /mnt/secrets
+      name: secret-pulsarcluster-data
+      readOnly: true
+  volumes:
+    volumes:
+      - name: secret-pulsarcluster-data
+        secret:
+          defaultMode: 420
+          secretName: pulsarcluster-data

@@ -29,13 +29,11 @@ import org.apache.commons.io.FileUtils;
 import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
 import org.apache.pulsar.functions.utils.Actions;
 import org.apache.pulsar.functions.worker.WorkerConfig;
-
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 
 @Slf4j

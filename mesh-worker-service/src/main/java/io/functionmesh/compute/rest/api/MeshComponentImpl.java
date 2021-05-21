@@ -348,7 +348,8 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
     @Override
     public void uploadFunction(final InputStream uploadedInputStream,
                                final String path,
-                               String clientRole) {
+                               String clientRole,
+                               final AuthenticationDataSource clientAuthenticationDataHttps) {
 
     }
 
@@ -376,7 +377,7 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
     }
 
     @Override
-    public void reloadConnectors(String clientRole) {
+    public void reloadConnectors(String clientRole, final AuthenticationDataSource clientAuthenticationDataHttps) {
         meshWorkerServiceSupplier.get().getConnectorsManager().reloadConnectors();
     }
 
