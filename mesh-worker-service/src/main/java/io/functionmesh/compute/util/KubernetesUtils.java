@@ -176,7 +176,7 @@ public class KubernetesUtils {
 				.run();
 
 		if (!success.get()) {
-			throw new RuntimeException(String.format("Failed to create authentication secret for %s %s-%s/%s/%s",
+			throw new RuntimeException(String.format("Failed to create secret for %s %s-%s/%s/%s",
 					type, cluster, tenant, namespace, name));
 		}
 

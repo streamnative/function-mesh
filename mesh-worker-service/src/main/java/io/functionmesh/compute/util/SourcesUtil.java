@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.apache.pulsar.common.functions.FunctionDefinition;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SourceConfig;
@@ -163,6 +164,22 @@ public class SourcesUtil {
 
         if (Strings.isNotEmpty(customRuntimeOptions.getOutputTypeClassName())) {
             v1alpha1SourceSpecOutput.setTypeClassName(customRuntimeOptions.getOutputTypeClassName());
+        } else {
+            if (connectorsManager == null) {
+                v1alpha1SourceSpecOutput.setTypeClassName("[B");
+            } else {
+                FunctionMeshConnectorDefinition functionMeshConnectorDefinition =
+                        connectorsManager.getConnectorDefinition(sourceConfig.getArchive());
+                if (functionMeshConnectorDefinition == null) {
+                    v1alpha1SourceSpecOutput.setTypeClassName("[B");
+                } else {
+                    if (functionMeshConnectorDefinition.getTypeClassName() == null) {
+                        v1alpha1SourceSpecOutput.setTypeClassName("[B");
+                    } else {
+                        v1alpha1SourceSpecOutput.setTypeClassName(functionMeshConnectorDefinition.getTypeClassName());
+                    }
+                }
+            }
         }
 
         v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
@@ -172,7 +189,6 @@ public class SourcesUtil {
         }
 
         v1alpha1SourceSpec.setReplicas(functionDetails.getParallelism());
-        v1alpha1SourceSpec.setMaxReplicas(functionDetails.getParallelism());
 
         double cpu = sourceConfig.getResources() != null && sourceConfig.getResources().getCpu() != 0 ? sourceConfig.getResources().getCpu() : 1;
         long ramRequest = sourceConfig.getResources() != null && sourceConfig.getResources().getRam() != 0 ? sourceConfig.getResources().getRam() : 1073741824;

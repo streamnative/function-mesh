@@ -19,6 +19,7 @@
 package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecJava;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumeMounts;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumes;
@@ -28,6 +29,7 @@ import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.util.KubernetesUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
+import org.apache.commons.lang.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.functions.FunctionConfig;
@@ -308,14 +310,25 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                         List<V1alpha1FunctionSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1FunctionSpecPodVolumeMounts>) volumeMounts;
                         v1alpha1Function.getSpec().setVolumeMounts(volumeMountsList);
                     }
-                    String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
-                            v1alpha1Function.getSpec().getClusterName(), tenant, namespace, functionName,
-                            worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
-                    v1alpha1Function.getSpec().getPulsar().setAuthSecret(authSecretName);
-                    String tlsSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "tls",
-                            v1alpha1Function.getSpec().getClusterName(), tenant, namespace, functionName,
-                            worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
-                    v1alpha1Function.getSpec().getPulsar().setTlsSecret(tlsSecretName);
+                    if (functionsWorkerServiceCustomConfigs.get("extraDependenciesDir") != null) {
+                        V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
+                        v1alpha1FunctionSpecJava.setExtraDependenciesDir(
+                                (String)functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
+                        v1alpha1Function.getSpec().setJava(v1alpha1FunctionSpecJava);
+                    }
+                    if (!StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationPlugin())
+                            && !StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationParameters())) {
+                        String authSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "auth",
+                                v1alpha1Function.getSpec().getClusterName(), tenant, namespace, functionName,
+                                worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                        v1alpha1Function.getSpec().getPulsar().setAuthSecret(authSecretName);
+                    }
+                    if (worker().getWorkerConfig().getTlsEnabled()) {
+                        String tlsSecretName = KubernetesUtils.upsertSecret(kind.toLowerCase(), "tls",
+                                v1alpha1Function.getSpec().getClusterName(), tenant, namespace, functionName,
+                                worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
+                        v1alpha1Function.getSpec().getPulsar().setTlsSecret(tlsSecretName);
+                    }
                 } catch (Exception e) {
                     log.error("Error create or update auth or tls secret for {} {}/{}/{}",
                             ComponentTypeUtils.toString(componentType), tenant, namespace, functionName, e);
