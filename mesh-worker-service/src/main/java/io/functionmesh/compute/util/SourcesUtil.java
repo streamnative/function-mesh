@@ -168,8 +168,9 @@ public class SourcesUtil {
             if (connectorsManager == null) {
                 v1alpha1SourceSpecOutput.setTypeClassName("[B");
             } else {
+                String connectorType = archive.replaceFirst("^builtin://", "");
                 FunctionMeshConnectorDefinition functionMeshConnectorDefinition =
-                        connectorsManager.getConnectorDefinition(sourceConfig.getArchive());
+                        connectorsManager.getConnectorDefinition(connectorType);
                 if (functionMeshConnectorDefinition == null) {
                     v1alpha1SourceSpecOutput.setTypeClassName("[B");
                 } else {
