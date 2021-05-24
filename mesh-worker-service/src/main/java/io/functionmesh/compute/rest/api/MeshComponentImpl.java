@@ -21,11 +21,14 @@ package io.functionmesh.compute.rest.api;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionList;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.sinks.models.V1alpha1Sink;
+import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.util.KubernetesUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Response;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.client.admin.PulsarAdminException;
@@ -105,12 +108,22 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         try {
-            Call functionInfoCall =
+            Call componentCall =
                     worker().getCustomObjectsApi()
                             .getNamespacedCustomObjectCall(
                                     group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                                     plural, componentName, null);
-            V1alpha1Function v1alpha1Function = executeCall(functionInfoCall, V1alpha1Function.class);
+            String clusterName;
+            if ("Source".equals(kind)) {
+                V1alpha1Source v1alpha1Source = executeCall(componentCall, V1alpha1Source.class);
+                clusterName = v1alpha1Source.getSpec().getClusterName();
+            } else if ("Sink".equals(kind)) {
+                V1alpha1Sink v1alpha1Sink = executeCall(componentCall, V1alpha1Sink.class);
+                clusterName = v1alpha1Sink.getSpec().getClusterName();
+            } else {
+                V1alpha1Function v1alpha1Function = executeCall(componentCall, V1alpha1Function.class);
+                clusterName = v1alpha1Function.getSpec().getClusterName();
+            }
             Call deleteObjectCall = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
                     group,
                     version,
@@ -126,44 +139,47 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
             );
             executeCall(deleteObjectCall, null);
 
-            Call deleteAuthSecretCall = worker().getCoreV1Api()
-                    .deleteNamespacedSecretCall(
-                            KubernetesUtils.getUniqueSecretName(
-                                    kind.toLowerCase(),
-                                    "auth",
-                                    DigestUtils.sha256Hex(
-                                            KubernetesUtils.getSecretName(
-                                                    v1alpha1Function.getSpec().getClusterName(),
-                                                    tenant, namespace, componentName))),
-                            KubernetesUtils.getNamespace(worker().getFactoryConfig()),
-                            null,
-                            null,
-                            30,
-                            false,
-                            null,
-                            null,
-                            null
-                    );
-            executeCall(deleteAuthSecretCall, null);
-            Call deleteTlsSecretCall = worker().getCoreV1Api()
-                    .deleteNamespacedSecretCall(
-                            KubernetesUtils.getUniqueSecretName(
-                                    kind.toLowerCase(),
-                                    "tls",
-                                    DigestUtils.sha256Hex(
-                                            KubernetesUtils.getSecretName(
-                                                    v1alpha1Function.getSpec().getClusterName(),
-                                                    tenant, namespace, componentName))),
-                            KubernetesUtils.getNamespace(worker().getFactoryConfig()),
-                            null,
-                            null,
-                            30,
-                            false,
-                            null,
-                            null,
-                            null
-                    );
-            executeCall(deleteTlsSecretCall, null);
+            if (!StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationPlugin())
+                    && !StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationParameters())) {
+                Call deleteAuthSecretCall = worker().getCoreV1Api()
+                        .deleteNamespacedSecretCall(
+                                KubernetesUtils.getUniqueSecretName(
+                                        kind.toLowerCase(),
+                                        "auth",
+                                        DigestUtils.sha256Hex(
+                                                KubernetesUtils.getSecretName(
+                                                        clusterName, tenant, namespace, componentName))),
+                                KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                                null,
+                                null,
+                                30,
+                                false,
+                                null,
+                                null,
+                                null
+                        );
+                executeCall(deleteAuthSecretCall, null);
+            }
+            if (worker().getWorkerConfig().getTlsEnabled()) {
+                Call deleteTlsSecretCall = worker().getCoreV1Api()
+                        .deleteNamespacedSecretCall(
+                                KubernetesUtils.getUniqueSecretName(
+                                        kind.toLowerCase(),
+                                        "tls",
+                                        DigestUtils.sha256Hex(
+                                                KubernetesUtils.getSecretName(
+                                                        clusterName, tenant, namespace, componentName))),
+                                KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                                null,
+                                null,
+                                30,
+                                false,
+                                null,
+                                null,
+                                null
+                        );
+                executeCall(deleteTlsSecretCall, null);
+            }
         } catch (Exception e) {
             log.error("deregister {}/{}/{} {} failed", tenant, namespace, componentName, plural, e);
             throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
