@@ -346,8 +346,14 @@ public class SinksImpl extends MeshComponentImpl
                             .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
                     Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
                     if (functionsWorkerServiceCustomConfigs.get("extraDependenciesDir") != null) {
-                        V1alpha1SinkSpecJava v1alpha1SinkSpecJava = new V1alpha1SinkSpecJava();
-                        v1alpha1SinkSpecJava.setExtraDependenciesDir((String)functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
+                        V1alpha1SinkSpecJava v1alpha1SinkSpecJava;
+                        if (v1alpha1Sink.getSpec() != null && v1alpha1Sink.getSpec().getJava() != null) {
+                            v1alpha1SinkSpecJava = v1alpha1Sink.getSpec().getJava();
+                        } else {
+                            v1alpha1SinkSpecJava = new V1alpha1SinkSpecJava();
+                        }
+                        v1alpha1SinkSpecJava.setExtraDependenciesDir(
+                                (String)functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
                         v1alpha1Sink.getSpec().setJava(v1alpha1SinkSpecJava);
                     }
                     if (volumes != null) {
