@@ -54,7 +54,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
 
 
     private void validateRegisterFunctionRequestParams(String tenant, String namespace, String functionName,
-                                                       FunctionConfig functionConfig) {
+                                                       FunctionConfig functionConfig, boolean uploadedJar) {
         if (tenant == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
         }
@@ -67,15 +67,24 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
         if (functionConfig == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Function config is not provided");
         }
+        if (uploadedJar && !(Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("uploadEnabled")) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
+        }
     }
 
     private void validateUpdateFunctionRequestParams(String tenant, String namespace, String functionName,
-                                                     FunctionConfig functionConfig) {
-        validateRegisterFunctionRequestParams(tenant, namespace, functionName, functionConfig);
+                                                     FunctionConfig functionConfig, boolean uploadedJar) {
+        validateRegisterFunctionRequestParams(tenant, namespace, functionName, functionConfig, uploadedJar);
     }
 
     private void validateGetFunctionInfoRequestParams(String tenant, String namespace, String functionName) {
         this.validateGetInfoRequestParams(tenant, namespace, functionName, kind);
+    }
+
+    private void validateFunctionEnabled() {
+        if (!(Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("functionEnabled")) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Function API is disabled");
+        }
     }
 
     @Override
@@ -88,7 +97,9 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                  final FunctionConfig functionConfig,
                                  final String clientRole,
                                  AuthenticationDataHttps clientAuthenticationDataHttps) {
-        validateRegisterFunctionRequestParams(tenant, namespace, functionName, functionConfig);
+        validateFunctionEnabled();
+
+        validateRegisterFunctionRequestParams(tenant, namespace, functionName, functionConfig, uploadedInputStream != null);
         this.validatePermission(tenant,
                 namespace,
                 clientRole,
@@ -146,7 +157,9 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                final String clientRole,
                                AuthenticationDataHttps clientAuthenticationDataHttps,
                                UpdateOptions updateOptions) {
-        validateUpdateFunctionRequestParams(tenant, namespace, functionName, functionConfig);
+        validateFunctionEnabled();
+
+        validateUpdateFunctionRequestParams(tenant, namespace, functionName, functionConfig, uploadedInputStream != null);
 
         try {
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
@@ -192,6 +205,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                           final String componentName,
                                           final String clientRole,
                                           final AuthenticationDataSource clientAuthenticationDataHttps) {
+        validateFunctionEnabled();
         validateGetFunctionInfoRequestParams(tenant, namespace, componentName);
 
         this.validatePermission(tenant,
@@ -227,7 +241,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                                                                                       final String clientRole,
                                                                                                       final AuthenticationDataSource clientAuthenticationDataHttps) {
 
-        return null;
+        throw new RestException(Response.Status.BAD_REQUEST, "Unsupported Operation");
     }
 
     @Override
@@ -283,7 +297,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                              URI uri,
                                              final String clientRole,
                                              final AuthenticationDataSource clientAuthenticationDataHttps) {
-
+        throw new RestException(Response.Status.BAD_REQUEST, "Unsupported Operation");
     }
 
     private void upsertFunction(final String tenant,

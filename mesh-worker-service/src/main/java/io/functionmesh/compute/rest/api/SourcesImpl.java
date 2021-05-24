@@ -62,8 +62,14 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         super.kind = this.kind;
     }
 
+    private void validateSourceEnabled() {
+        if (!(Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("sourceEnabled")) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Source API is disabled");
+        }
+    }
+
     private void validateRegisterSourceRequestParams(String tenant, String namespace, String sourceName,
-                                                     SourceConfig sourceConfig) {
+                                                     SourceConfig sourceConfig, boolean jarUploaded) {
         if (tenant == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
         }
@@ -76,11 +82,14 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         if (sourceConfig == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Source config is not provided");
         }
+        if (jarUploaded && ! (Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("uploadEnabled")) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
+        }
     }
 
     private void validateUpdateSourceRequestParams(String tenant, String namespace, String sourceName,
-                                                   SourceConfig sourceConfig) {
-        this.validateRegisterSourceRequestParams(tenant, namespace, sourceName, sourceConfig);
+                                                   SourceConfig sourceConfig, boolean jarUploaded) {
+        this.validateRegisterSourceRequestParams(tenant, namespace, sourceName, sourceConfig, jarUploaded);
     }
 
     private void validateGetSourceInfoRequestParams(String tenant, String namespace, String sourceName) {
@@ -104,7 +113,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                                final SourceConfig sourceConfig,
                                final String clientRole,
                                AuthenticationDataHttps clientAuthenticationDataHttps) {
-        validateRegisterSourceRequestParams(tenant, namespace, sourceName, sourceConfig);
+        validateSourceEnabled();
+        validateRegisterSourceRequestParams(tenant, namespace, sourceName, sourceConfig, uploadedInputStream != null);
         this.validatePermission(tenant,
                 namespace,
                 clientRole,
@@ -161,7 +171,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                              final String clientRole,
                              AuthenticationDataHttps clientAuthenticationDataHttps,
                              UpdateOptions updateOptions) {
-        validateUpdateSourceRequestParams(tenant, namespace, sourceName, sourceConfig);
+        validateSourceEnabled();
+        validateUpdateSourceRequestParams(tenant, namespace, sourceName, sourceConfig, uploadedInputStream != null);
         this.validatePermission(tenant,
                 namespace,
                 clientRole,
@@ -216,6 +227,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                                         final URI uri,
                                         final String clientRole,
                                         final AuthenticationDataSource clientAuthenticationDataHttps) {
+        validateSourceEnabled();
         this.validatePermission(tenant,
                 namespace,
                 clientRole,
@@ -258,6 +270,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                                                                                               final URI uri,
                                                                                               final String clientRole,
                                                                                               final AuthenticationDataSource clientAuthenticationDataHttps) {
+        validateSourceEnabled();
         SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData =
                 new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
         return sourceInstanceStatusData;
@@ -266,6 +279,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
     public SourceConfig getSourceInfo(final String tenant,
                                       final String namespace,
                                       final String componentName) {
+        validateSourceEnabled();
         this.validateGetInfoRequestParams(tenant, namespace, componentName, kind);
 
         try {
@@ -288,6 +302,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
 
     @Override
     public List<ConnectorDefinition> getSourceList() {
+        validateSourceEnabled();
         List<ConnectorDefinition> connectorDefinitions = getListOfConnectors();
         List<ConnectorDefinition> retval = new ArrayList<>();
         for (ConnectorDefinition connectorDefinition : connectorDefinitions) {
@@ -299,6 +314,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
     }
 
     public List<ConfigFieldDefinition> getSourceConfigDefinition(String name) {
+        validateSourceEnabled();
         return new ArrayList<>();
     }
 
