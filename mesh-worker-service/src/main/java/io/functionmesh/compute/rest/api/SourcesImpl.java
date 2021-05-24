@@ -320,7 +320,12 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                         v1alpha1Source.getSpec().getPod().setVolumes(volumesList);
                     }
                     if (functionsWorkerServiceCustomConfigs.get("extraDependenciesDir") != null) {
-                        V1alpha1SourceSpecJava v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
+                        V1alpha1SourceSpecJava v1alpha1SourceSpecJava;
+                        if (v1alpha1Source.getSpec() != null && v1alpha1Source.getSpec().getJava() != null) {
+                            v1alpha1SourceSpecJava = v1alpha1Source.getSpec().getJava();
+                        } else {
+                            v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
+                        }
                         v1alpha1SourceSpecJava.setExtraDependenciesDir(
                                 (String)functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
                         v1alpha1Source.getSpec().setJava(v1alpha1SourceSpecJava);

@@ -311,7 +311,12 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                         v1alpha1Function.getSpec().setVolumeMounts(volumeMountsList);
                     }
                     if (functionsWorkerServiceCustomConfigs.get("extraDependenciesDir") != null) {
-                        V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
+                        V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava;
+                        if (v1alpha1Function.getSpec() != null && v1alpha1Function.getSpec().getJava() != null) {
+                            v1alpha1FunctionSpecJava = v1alpha1Function.getSpec().getJava();
+                        } else {
+                            v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
+                        }
                         v1alpha1FunctionSpecJava.setExtraDependenciesDir(
                                 (String)functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
                         v1alpha1Function.getSpec().setJava(v1alpha1FunctionSpecJava);
