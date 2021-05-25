@@ -34,6 +34,7 @@ import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.FunctionState;
+import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.policies.data.FunctionStats;
@@ -518,6 +519,19 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
         } catch (PulsarAdminException e) {
             log.error("{}/{}/{} Issues getting tenant data", tenant, namespace, name, e);
             throw new RestException(javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    void validateResources(Resources componentResources, Resources minResource, Resources maxResource) {
+        if (componentResources != null) {
+            if (minResource != null && (componentResources.getCpu() < minResource.getCpu()
+                    || componentResources.getRam() < minResource.getRam())) {
+                throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Resource is less than minimum requirement");
+            }
+            if (maxResource != null && (componentResources.getCpu() > maxResource.getCpu()
+                    || componentResources.getRam() > maxResource.getRam())) {
+                throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Resource is larger than max requirement");
+            }
         }
     }
 }
