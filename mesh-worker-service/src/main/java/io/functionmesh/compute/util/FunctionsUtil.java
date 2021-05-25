@@ -200,7 +200,6 @@ public class FunctionsUtil {
         v1alpha1FunctionSpec.setMaxPendingAsyncRequests(functionConfig.getMaxPendingAsyncRequests());
 
         v1alpha1FunctionSpec.setReplicas(functionDetails.getParallelism());
-        v1alpha1FunctionSpec.setMaxReplicas(functionDetails.getParallelism());
 
         v1alpha1FunctionSpec.setLogTopic(functionConfig.getLogTopic());
 
