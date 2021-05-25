@@ -270,7 +270,7 @@ public class SinksImpTest {
                     null,
                     null);
         } catch (Exception exception) {
-            Assert.fail("No exception, but got error message:" + exception.getMessage());
+            Assert.fail("Got exception: " + exception);
         }
     }
 
@@ -475,7 +475,7 @@ public class SinksImpTest {
                     null,
                     null);
         } catch (Exception exception) {
-            Assert.fail("Expected no exception to be thrown but got" + exception.getMessage());
+            Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
     }
 
