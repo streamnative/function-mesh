@@ -67,7 +67,7 @@ public class SinksImpl extends MeshComponentImpl
     private void validateSinkEnabled() {
         Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
         if (customConfig != null) {
-            Boolean sinkEnabled = (Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("sinkEnabled");
+            Boolean sinkEnabled = (Boolean) customConfig.get("sinkEnabled");
             if (sinkEnabled != null && !sinkEnabled) {
                 throw new RestException(Response.Status.BAD_REQUEST, "Sink API is disabled");
             }
@@ -88,7 +88,7 @@ public class SinksImpl extends MeshComponentImpl
         if (sinkConfig == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Sink config is not provided");
         }
-        Map<String, Object> customConfig = worker().getWorkerConfig().getRuntimeCustomizerConfig();
+        Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
         if (jarUploaded &&  customConfig != null && customConfig.get("uploadEnabled") != null &&
                 ! (Boolean) customConfig.get("uploadEnabled") ) {
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");

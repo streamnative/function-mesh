@@ -66,7 +66,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
     private void validateSourceEnabled() {
         Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
         if (customConfig != null) {
-            Boolean sourceEnabled = (Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("sourceEnabled");
+            Boolean sourceEnabled = (Boolean) customConfig.get("sourceEnabled");
             if (sourceEnabled != null && !sourceEnabled) {
                 throw new RestException(Response.Status.BAD_REQUEST, "Source API is disabled");
             }
@@ -87,7 +87,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         if (sourceConfig == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Source config is not provided");
         }
-        Map<String, Object> customConfig = worker().getWorkerConfig().getRuntimeCustomizerConfig();
+        Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
         if (jarUploaded &&  customConfig != null && customConfig.get("uploadEnabled") != null &&
                 ! (Boolean) customConfig.get("uploadEnabled") ) {
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");

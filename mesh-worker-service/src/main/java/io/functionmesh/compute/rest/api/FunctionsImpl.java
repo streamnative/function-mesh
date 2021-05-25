@@ -69,7 +69,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
         if (functionConfig == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Function config is not provided");
         }
-        Map<String, Object> customConfig = worker().getWorkerConfig().getRuntimeCustomizerConfig();
+        Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
         if (jarUploaded &&  customConfig != null && customConfig.get("uploadEnabled") != null &&
                 ! (Boolean) customConfig.get("uploadEnabled") ) {
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
@@ -88,7 +88,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
     private void validateFunctionEnabled() {
         Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
         if (customConfig != null) {
-            Boolean functionEnabled = (Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("functionEnabled");
+            Boolean functionEnabled = (Boolean) customConfig.get("functionEnabled");
             if (functionEnabled != null && !functionEnabled) {
                 throw new RestException(Response.Status.BAD_REQUEST, "Function API is disabled");
             }
