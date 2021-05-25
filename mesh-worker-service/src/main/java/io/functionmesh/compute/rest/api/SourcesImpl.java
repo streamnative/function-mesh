@@ -33,6 +33,7 @@ import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
+import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.functions.UpdateOptions;
 import org.apache.pulsar.common.io.ConfigFieldDefinition;
 import org.apache.pulsar.common.io.ConnectorDefinition;
@@ -92,6 +93,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                 ! (Boolean) customConfig.get("uploadEnabled") ) {
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
         }
+        this.validateResources(sourceConfig.getResources(), worker().getWorkerConfig().getFunctionInstanceMinResources(),
+                worker().getWorkerConfig().getFunctionInstanceMinResources());
     }
 
     private void validateUpdateSourceRequestParams(String tenant, String namespace, String sourceName,
