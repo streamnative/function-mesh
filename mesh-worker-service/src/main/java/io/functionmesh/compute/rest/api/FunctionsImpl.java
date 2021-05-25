@@ -82,7 +82,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
     }
 
     private void validateFunctionEnabled() {
-        if (!(Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("functionEnabled")) {
+        Boolean functionEnabled = (Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("functionEnabled");
+        if (functionEnabled != null && !functionEnabled) {
             throw new RestException(Response.Status.BAD_REQUEST, "Function API is disabled");
         }
     }

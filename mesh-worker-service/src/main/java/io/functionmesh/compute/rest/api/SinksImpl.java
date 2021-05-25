@@ -64,7 +64,8 @@ public class SinksImpl extends MeshComponentImpl
     }
 
     private void validateSinkEnabled() {
-        if (! (Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("sinkEnabled")) {
+        Boolean sinkEnabled = (Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("sinkEnabled");
+        if (sinkEnabled != null && !sinkEnabled) {
             throw new RestException(Response.Status.BAD_REQUEST, "Sink API is disabled");
         }
     }

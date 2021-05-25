@@ -63,7 +63,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
     }
 
     private void validateSourceEnabled() {
-        if (!(Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("sourceEnabled")) {
+        Boolean sourceEnabled = (Boolean) worker().getWorkerConfig().getRuntimeCustomizerConfig().get("sourceEnabled");
+        if (sourceEnabled != null && !sourceEnabled) {
             throw new RestException(Response.Status.BAD_REQUEST, "Source API is disabled");
         }
     }
