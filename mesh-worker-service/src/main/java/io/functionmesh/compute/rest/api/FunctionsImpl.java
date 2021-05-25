@@ -33,6 +33,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.functions.FunctionConfig;
+import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.functions.UpdateOptions;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
 import org.apache.pulsar.common.util.RestException;
@@ -69,6 +70,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
         if (functionConfig == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Function config is not provided");
         }
+        this.validateResources(functionConfig.getResources(), worker().getWorkerConfig().getFunctionInstanceMinResources(),
+                worker().getWorkerConfig().getFunctionInstanceMinResources());
     }
 
     private void validateUpdateFunctionRequestParams(String tenant, String namespace, String functionName,
