@@ -112,7 +112,7 @@ public class KubernetesUtils {
 			CoreV1Api coreV1Api,
 			KubernetesRuntimeFactoryConfig factoryConfig) throws ApiException, InterruptedException {
 
-		String combinationName = getSecretName(type, tenant, namespace, name);
+		String combinationName = getSecretName(cluster, tenant, namespace, name);
 		String hashcode = DigestUtils.sha256Hex(combinationName);
 		String secretName = getUniqueSecretName(component, type, hashcode);
 		Map<String, byte[]> data = Maps.newHashMap();
@@ -176,7 +176,7 @@ public class KubernetesUtils {
 				.run();
 
 		if (!success.get()) {
-			throw new RuntimeException(String.format("Failed to create authentication secret for %s %s-%s/%s/%s",
+			throw new RuntimeException(String.format("Failed to create secret for %s %s-%s/%s/%s",
 					type, cluster, tenant, namespace, name));
 		}
 
