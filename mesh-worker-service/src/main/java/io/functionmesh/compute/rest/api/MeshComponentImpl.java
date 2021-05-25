@@ -526,11 +526,15 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
         if (componentResources != null) {
             if (minResource != null && (componentResources.getCpu() < minResource.getCpu()
                     || componentResources.getRam() < minResource.getRam())) {
-                throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Resource is less than minimum requirement");
+                throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST,
+                        String.format("Resource is less than minimum requirement, requested [%s], min [%s]",
+                                componentResources, minResource));
             }
             if (maxResource != null && (componentResources.getCpu() > maxResource.getCpu()
                     || componentResources.getRam() > maxResource.getRam())) {
-                throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Resource is larger than max requirement");
+                throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST,
+                        String.format("Resource is larger than max requirement, requested [%s], max [%s]",
+                                componentResources, maxResource));
             }
         }
     }
