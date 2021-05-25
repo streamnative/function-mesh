@@ -271,7 +271,7 @@ public class SourcesImpTest {
                     null,
                     null);
         } catch (Exception exception) {
-            Assert.fail("No exception, but got error message: " + exception.getMessage());
+            Assert.fail("No exception, but got exception: " + exception);
         }
     }
 
@@ -492,7 +492,7 @@ public class SourcesImpTest {
                     null,
                     null);
         } catch (Exception exception) {
-            Assert.fail("Expected no exception to be thrown but got " + exception.getMessage());
+            Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
     }
 

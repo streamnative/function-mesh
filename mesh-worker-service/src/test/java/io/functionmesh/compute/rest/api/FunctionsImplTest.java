@@ -309,7 +309,7 @@ public class FunctionsImplTest {
         try {
             functions.registerFunction(tenant, namespace, functionName, null, null, null, functionConfig, null, null);
         } catch (Exception exception) {
-            Assert.fail("Expected no exception to be thrown but got" + exception.getMessage());
+            Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
     }
 
@@ -482,7 +482,7 @@ public class FunctionsImplTest {
             functions.updateFunction(tenant, namespace, functionName, null, null, null, functionConfig, null, null,
                     null);
         } catch (Exception exception) {
-            Assert.fail("Expected no exception to be thrown but got" + exception.getMessage());
+            Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
     }
 
@@ -637,7 +637,7 @@ public class FunctionsImplTest {
         try {
             functions.deregisterFunction(tenant, namespace, functionName, null, null);
         } catch (Exception exception) {
-            Assert.fail("Expected no exception to be thrown but got" + exception.getMessage());
+            Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
     }
 
