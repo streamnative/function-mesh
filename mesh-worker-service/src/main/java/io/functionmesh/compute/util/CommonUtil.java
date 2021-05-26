@@ -19,6 +19,8 @@
 package io.functionmesh.compute.util;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
+import java.util.Collections;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,10 +48,28 @@ public class CommonUtil {
         return ori.toLowerCase().replaceAll("[^a-z0-9-\\.]", "-");
     }
 
-    public static V1ObjectMeta makeV1ObjectMeta(String name, String namespace) {
+    public static V1OwnerReference getOwnerReferenceFromCustomConfigs(Map<String, Object> customConfigs) {
+        if (customConfigs == null) {
+            return null;
+        }
+        Map<String, Object> ownerRef = (Map<String, Object>) customConfigs.get("ownerReference");
+        if (ownerRef == null) {
+            return null;
+        }
+        return new V1OwnerReference()
+                .apiVersion(String.valueOf(ownerRef.get("apiVersion")))
+                .kind(String.valueOf(ownerRef.get("kind")))
+                .name(String.valueOf(ownerRef.get("name")))
+                .uid(String.valueOf(ownerRef.get("uid")));
+    }
+
+    public static V1ObjectMeta makeV1ObjectMeta(String name, String namespace, V1OwnerReference ownerReference) {
         V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
         v1ObjectMeta.setName(name);
         v1ObjectMeta.setNamespace(namespace);
+        if (ownerReference != null) {
+            v1ObjectMeta.setOwnerReferences(Collections.singletonList(ownerReference));
+        }
 
         return v1ObjectMeta;
     }

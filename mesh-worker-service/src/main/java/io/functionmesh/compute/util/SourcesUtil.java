@@ -61,11 +61,13 @@ public class SourcesUtil {
                                                                       String sourceName, String sourcePkgUrl,
                                                                       InputStream uploadedInputStream,
                                                                       SourceConfig sourceConfig,
-                                                                      MeshConnectorsManager connectorsManager) {
+                                                                      MeshConnectorsManager connectorsManager,
+                                                                      Map<String, Object> customConfigs) {
         V1alpha1Source v1alpha1Source = new V1alpha1Source();
         v1alpha1Source.setKind(kind);
         v1alpha1Source.setApiVersion(String.format("%s/%s", group, version));
-        v1alpha1Source.setMetadata(CommonUtil.makeV1ObjectMeta(sourceConfig.getName(), sourceConfig.getNamespace()));
+        v1alpha1Source.setMetadata(CommonUtil.makeV1ObjectMeta(sourceConfig.getName(), sourceConfig.getNamespace(),
+                CommonUtil.getOwnerReferenceFromCustomConfigs(customConfigs)));
 
         V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
         v1alpha1SourceSpec.setClassName(sourceConfig.getClassName());

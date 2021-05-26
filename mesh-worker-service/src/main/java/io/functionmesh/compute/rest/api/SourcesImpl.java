@@ -141,7 +141,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                             sourcePkgUrl,
                             uploadedInputStream,
                             sourceConfig,
-                            this.meshWorkerServiceSupplier.get().getConnectorsManager());
+                            this.meshWorkerServiceSupplier.get().getConnectorsManager(),
+                            worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs());
             // override namesapce by configuration
             v1alpha1Source.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             Map<String, String> customLabels = Maps.newHashMap();
@@ -207,7 +208,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                     sourcePkgUrl,
                     uploadedInputStream,
                     sourceConfig,
-                    this.meshWorkerServiceSupplier.get().getConnectorsManager()
+                    this.meshWorkerServiceSupplier.get().getConnectorsManager(),
+                    worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs()
             );
             v1alpha1Source.getMetadata().setResourceVersion(oldRes.getMetadata().getResourceVersion());
             this.upsertSource(tenant, namespace, sourceName, sourceConfig, v1alpha1Source, clientAuthenticationDataHttps);

@@ -56,11 +56,13 @@ public class SinksUtil {
 
     public static V1alpha1Sink createV1alpha1SkinFromSinkConfig(String kind, String group, String version
             , String sinkName, String sinkPkgUrl, InputStream uploadedInputStream, SinkConfig sinkConfig,
-                                                                MeshConnectorsManager connectorsManager) {
+                                                                MeshConnectorsManager connectorsManager,
+                                                                Map<String, Object> customConfigs) {
         V1alpha1Sink v1alpha1Sink = new V1alpha1Sink();
         v1alpha1Sink.setKind(kind);
         v1alpha1Sink.setApiVersion(String.format("%s/%s", group, version));
-        v1alpha1Sink.setMetadata(CommonUtil.makeV1ObjectMeta(sinkConfig.getName(), sinkConfig.getNamespace()));
+        v1alpha1Sink.setMetadata(CommonUtil.makeV1ObjectMeta(sinkConfig.getName(), sinkConfig.getNamespace(),
+                CommonUtil.getOwnerReferenceFromCustomConfigs(customConfigs)));
 
         V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
         v1alpha1SinkSpec.setClassName(sinkConfig.getClassName());

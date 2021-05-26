@@ -58,11 +58,12 @@ public class FunctionsUtil {
     public final static String sourceKey = "source";
 
     public static V1alpha1Function createV1alpha1FunctionFromFunctionConfig(String kind, String group, String version
-            , String functionName, String functionPkgUrl, FunctionConfig functionConfig) {
+            , String functionName, String functionPkgUrl, FunctionConfig functionConfig, Map<String, Object> customConfigs) {
         V1alpha1Function v1alpha1Function = new V1alpha1Function();
         v1alpha1Function.setKind(kind);
         v1alpha1Function.setApiVersion(String.format("%s/%s", group, version));
-        v1alpha1Function.setMetadata(CommonUtil.makeV1ObjectMeta(functionConfig.getName(), functionConfig.getNamespace()));
+        v1alpha1Function.setMetadata(CommonUtil.makeV1ObjectMeta(functionConfig.getName(), functionConfig.getNamespace(),
+                CommonUtil.getOwnerReferenceFromCustomConfigs(customConfigs)));
 
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());
