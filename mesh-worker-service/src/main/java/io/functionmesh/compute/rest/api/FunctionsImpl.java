@@ -76,7 +76,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
         }
         this.validateResources(functionConfig.getResources(), worker().getWorkerConfig().getFunctionInstanceMinResources(),
-                worker().getWorkerConfig().getFunctionInstanceMinResources());
+                worker().getWorkerConfig().getFunctionInstanceMaxResources());
     }
 
     private void validateUpdateFunctionRequestParams(String tenant, String namespace, String functionName,

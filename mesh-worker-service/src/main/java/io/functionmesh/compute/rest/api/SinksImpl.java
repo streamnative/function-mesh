@@ -96,7 +96,7 @@ public class SinksImpl extends MeshComponentImpl
         }
         Resources sinkResources = sinkConfig.getResources();
         this.validateResources(sinkConfig.getResources(), worker().getWorkerConfig().getFunctionInstanceMinResources(),
-                worker().getWorkerConfig().getFunctionInstanceMinResources());
+                worker().getWorkerConfig().getFunctionInstanceMaxResources());
     }
 
     private void validateUpdateSinkRequestParams(
