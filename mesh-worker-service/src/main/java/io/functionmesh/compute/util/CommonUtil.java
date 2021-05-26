@@ -59,7 +59,7 @@ public class CommonUtil {
 
     private static String createObjectName(String cluster, String tenant, String namespace, String functionName) {
         final String convertedJobName = toValidPodName(functionName);
-        // use of customRuntimeOptions 'jobName' may cause naming collisions,
+        // use of functionName may cause naming collisions,
         // add a short hash here to avoid it
         final String hashName = String.format("%s-%s-%s-%s", cluster, tenant, namespace, functionName);
         final String shortHash = DigestUtils.sha1Hex(hashName).toLowerCase().substring(0, 8);
