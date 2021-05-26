@@ -45,7 +45,7 @@ func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
 
 func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
-		Name:      source.Name,
+		Name:      makeJobName(source.Spec.ClusterName, source.Spec.Tenant, source.Namespace, source.Name),
 		Namespace: source.Namespace,
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(source, source.GroupVersionKind()),

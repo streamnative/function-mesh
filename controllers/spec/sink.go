@@ -45,7 +45,7 @@ func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 
 func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
-		Name:      sink.Name,
+		Name:      makeJobName(sink.Spec.ClusterName, sink.Spec.Tenant, sink.Namespace, sink.Name),
 		Namespace: sink.Namespace,
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(sink, sink.GroupVersionKind()),

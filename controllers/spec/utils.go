@@ -18,6 +18,8 @@
 package spec
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -357,4 +359,12 @@ func sanitizeVolumeName(name string) string {
 		name = name[0:validation.DNS1123LabelMaxLength]
 	}
 	return strings.Trim(name, "-")
+}
+
+func makeJobName(cluster, tenant, namespace, name string) string {
+	hashName := fmt.Sprintf("%s-%s-%s-%s", cluster, tenant, namespace, name)
+	hash := sha1.New()
+	hash.Write([]byte(hashName))
+	shortHash := hex.EncodeToString(hash.Sum(nil))[:8]
+	return fmt.Sprintf("%s-%s", name, shortHash)
 }
