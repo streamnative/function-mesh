@@ -19,6 +19,7 @@
 package io.functionmesh.compute.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import io.kubernetes.client.openapi.models.V1OwnerReference;
@@ -43,7 +44,7 @@ public class WorkerConfigTest {
         assertEquals("PulsarBroker", ownerRef.getKind());
         assertEquals("test", ownerRef.getName());
         assertEquals("4627a402-35f2-40ac-b3fc-1bae5a2bd626", ownerRef.getUid());
-        assertTrue(ownerRef.getBlockOwnerDeletion());
-        assertTrue(ownerRef.getController());
+        assertNull(ownerRef.getBlockOwnerDeletion());
+        assertNull(ownerRef.getController());
     }
 }
