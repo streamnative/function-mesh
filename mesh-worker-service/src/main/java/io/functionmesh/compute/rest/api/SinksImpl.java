@@ -198,7 +198,8 @@ public class SinksImpl extends MeshComponentImpl
             Call getCall =
                     worker().getCustomObjectsApi()
                             .getNamespacedCustomObjectCall(
-                                    group, version, namespace, plural, sinkName, null);
+                                    group, version,
+                                    KubernetesUtils.getNamespace(worker().getFactoryConfig()), plural, sinkName, null);
             V1alpha1Sink oldRes = executeCall(getCall, V1alpha1Sink.class);
 
             V1alpha1Sink v1alpha1Sink =

@@ -194,7 +194,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
-                    namespace,
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
                     sourceName,
                     null
