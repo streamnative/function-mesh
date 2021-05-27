@@ -19,15 +19,18 @@
 package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodVolumeMounts;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodVolumes;
+import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkStatus;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
@@ -123,6 +126,11 @@ public class SinksImpl extends MeshComponentImpl
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         this.validateTenantIsExist(tenant, namespace, sinkName, clientRole);
+        String cluster = null;
+        if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+            Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
+            cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
+        }
         V1alpha1Sink v1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind,
@@ -133,7 +141,7 @@ public class SinksImpl extends MeshComponentImpl
                         uploadedInputStream,
                         sinkConfig,
                         this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                        worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs());
+                        worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(), cluster);
         // override namesapce by configuration
         v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
         try {
@@ -194,14 +202,12 @@ public class SinksImpl extends MeshComponentImpl
                 clientRole,
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
+        String cluster = null;
+        if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+            Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
+            cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
+        }
         try {
-            Call getCall =
-                    worker().getCustomObjectsApi()
-                            .getNamespacedCustomObjectCall(
-                                    group, version,
-                                    KubernetesUtils.getNamespace(worker().getFactoryConfig()), plural, sinkName, null);
-            V1alpha1Sink oldRes = executeCall(getCall, V1alpha1Sink.class);
-
             V1alpha1Sink v1alpha1Sink =
                     SinksUtil.createV1alpha1SkinFromSinkConfig(
                             kind,
@@ -211,32 +217,33 @@ public class SinksImpl extends MeshComponentImpl
                             sinkPkgUrl,
                             uploadedInputStream,
                             sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                            worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs());
-            Map<String, String> customLabels = Maps.newHashMap();
-            customLabels.put(CLUSTER_LABEL_CLAIM, v1alpha1Sink.getSpec().getClusterName());
-            customLabels.put(TENANT_LABEL_CLAIM, tenant);
-            customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
-            customLabels.put(COMPONENT_LABEL_CLAIM, sinkName);
-            V1alpha1SinkSpecPod pod = new V1alpha1SinkSpecPod();
-            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
-                customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
+                            worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(), cluster);
+            CustomObjectsApi customObjectsApi = worker().getCustomObjectsApi();
+            Call getCall =
+                    customObjectsApi.getNamespacedCustomObjectCall(
+                                    group, version,
+                                    KubernetesUtils.getNamespace(worker().getFactoryConfig()), plural,
+                                    v1alpha1Sink.getMetadata().getName(), null);
+            V1alpha1Sink oldRes = executeCall(getCall, V1alpha1Sink.class);
+            if (oldRes.getMetadata() == null || oldRes.getMetadata().getLabels() == null) {
+                throw new RestException(Response.Status.NOT_FOUND, "This sink resource was not found");
             }
-            pod.setLabels(customLabels);
-            v1alpha1Sink.getMetadata().setLabels(customLabels);
+            Map<String, String> labels = oldRes.getMetadata().getLabels();
+            V1alpha1SinkSpecPod pod = new V1alpha1SinkSpecPod();
+            pod.setLabels(labels);
+            v1alpha1Sink.getMetadata().setLabels(labels);
             v1alpha1Sink.getSpec().setPod(pod);
             this.upsertSink(tenant, namespace, sinkName, sinkConfig, v1alpha1Sink, clientAuthenticationDataHttps);
             v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             v1alpha1Sink
                     .getMetadata()
                     .setResourceVersion(oldRes.getMetadata().getResourceVersion());
-            Call replaceCall =
-                    worker().getCustomObjectsApi()
-                            .replaceNamespacedCustomObjectCall(
+            Call replaceCall = customObjectsApi.replaceNamespacedCustomObjectCall(
                                     group,
                                     version,
                                     KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                                     plural,
-                                    sinkName,
+                                    v1alpha1Sink.getMetadata().getName(),
                                     v1alpha1Sink,
                                     null,
                                     null,

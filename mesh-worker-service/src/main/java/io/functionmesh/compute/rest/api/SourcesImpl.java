@@ -131,6 +131,11 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         this.validateTenantIsExist(tenant, namespace, sourceName, clientRole);
+        String cluster = null;
+        if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+            Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
+            cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
+        }
         try {
             V1alpha1Source v1alpha1Source = SourcesUtil
                     .createV1alpha1SourceFromSourceConfig(
@@ -142,7 +147,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                             uploadedInputStream,
                             sourceConfig,
                             this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                            worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs());
+                            worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(), cluster);
             // override namesapce by configuration
             v1alpha1Source.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             Map<String, String> customLabels = Maps.newHashMap();
@@ -191,40 +196,38 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         try {
+            String cluster = null;
+            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+                Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
+                cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
+            }
+            V1alpha1Source v1alpha1Source = SourcesUtil
+                    .createV1alpha1SourceFromSourceConfig(
+                            kind,
+                            group,
+                            version,
+                            sourceName,
+                            sourcePkgUrl,
+                            uploadedInputStream,
+                            sourceConfig,
+                            this.meshWorkerServiceSupplier.get().getConnectorsManager(),
+                            worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(), cluster);
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
                     KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
-                    sourceName,
+                    v1alpha1Source.getMetadata().getName(),
                     null
             );
             V1alpha1Source oldRes = executeCall(getCall, V1alpha1Source.class);
 
-            V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(
-                    kind,
-                    group,
-                    version,
-                    sourceName,
-                    sourcePkgUrl,
-                    uploadedInputStream,
-                    sourceConfig,
-                    this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                    worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs()
-            );
-            v1alpha1Source.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
-            Map<String, String> customLabels = Maps.newHashMap();
-            customLabels.put(CLUSTER_LABEL_CLAIM, v1alpha1Source.getSpec().getClusterName());
-            customLabels.put(TENANT_LABEL_CLAIM, tenant);
-            customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
-            customLabels.put(COMPONENT_LABEL_CLAIM, sourceName);
             V1alpha1SourceSpecPod pod = new V1alpha1SourceSpecPod();
-            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
-                customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
-            }
-            pod.setLabels(customLabels);
-            v1alpha1Source.getMetadata().setLabels(customLabels);
+            Map<String, String> labels = oldRes.getMetadata().getLabels();
+            pod.setLabels(labels);
+            v1alpha1Source.getMetadata().setLabels(labels);
             v1alpha1Source.getSpec().setPod(pod);
+            v1alpha1Source.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             v1alpha1Source.getMetadata().setResourceVersion(oldRes.getMetadata().getResourceVersion());
             this.upsertSource(tenant, namespace, sourceName, sourceConfig, v1alpha1Source, clientAuthenticationDataHttps);
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
@@ -232,7 +235,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                     version,
                     KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
-                    sourceName,
+                    v1alpha1Source.getMetadata().getName(),
                     v1alpha1Source,
                     null,
                     null,

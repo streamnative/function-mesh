@@ -118,6 +118,11 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 ComponentTypeUtils.toString(componentType));
         this.validateTenantIsExist(tenant, namespace, functionName, clientRole);
 
+        String cluster = null;
+        if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+            Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
+            cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
+        }
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(
                 kind,
                 group,
@@ -125,7 +130,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 functionName,
                 functionPkgUrl,
                 functionConfig,
-                worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs()
+                worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(),
+                cluster
         );
         // override namespace by configuration file
         v1alpha1Function.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
@@ -177,15 +183,11 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
         validateUpdateFunctionRequestParams(tenant, namespace, functionName, functionConfig, uploadedInputStream != null);
 
         try {
-            Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
-                    group,
-                    version,
-                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
-                    plural,
-                    functionName,
-                    null
-            );
-            V1alpha1Function oldFn = executeCall(getCall, V1alpha1Function.class);
+            String cluster = null;
+            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+                Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
+                cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
+            }
             V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(
                     kind,
                     group,
@@ -193,18 +195,22 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                     functionName,
                     functionPkgUrl,
                     functionConfig,
-                    worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs()
+                    worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(),
+                    cluster
             );
+            Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
+                    group,
+                    version,
+                    KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                    plural,
+                    v1alpha1Function.getMetadata().getName(),
+                    null
+            );
+            V1alpha1Function oldFn = executeCall(getCall, V1alpha1Function.class);
+
             v1alpha1Function.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
-            Map<String, String> customLabels = Maps.newHashMap();
-            customLabels.put(CLUSTER_LABEL_CLAIM, v1alpha1Function.getSpec().getClusterName());
-            customLabels.put(TENANT_LABEL_CLAIM, tenant);
-            customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
-            customLabels.put(COMPONENT_LABEL_CLAIM, functionName);
+            Map<String, String> customLabels = oldFn.getMetadata().getLabels();
             V1alpha1FunctionSpecPod pod = new V1alpha1FunctionSpecPod();
-            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
-                customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
-            }
             pod.setLabels(customLabels);
             v1alpha1Function.getSpec().setPod(pod);
             v1alpha1Function.getMetadata().setLabels(customLabels);
@@ -215,7 +221,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                     version,
                     KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
-                    functionName,
+                    v1alpha1Function.getMetadata().getName(),
                     v1alpha1Function,
                     null,
                     null,

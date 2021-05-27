@@ -46,7 +46,7 @@ public class FunctionsUtilTest {
         FunctionConfig functionConfig = Generate.CreateJavaFunctionConfig(tenant, namespace, functionName);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group, version,
-                functionName, null, functionConfig, Collections.emptyMap());
+                functionName, null, functionConfig, Collections.emptyMap(), null);
 
         Assert.assertEquals(v1alpha1Function.getKind(), kind);
 
@@ -76,7 +76,7 @@ public class FunctionsUtilTest {
         FunctionConfig functionConfig = Generate.CreateJavaFunctionConfig(tenant, namespace, functionName);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group, version,
-                functionName, null, functionConfig, Collections.emptyMap());
+                functionName, null, functionConfig, Collections.emptyMap(), null);
 
         FunctionConfig newFunctionConfig = FunctionsUtil.createFunctionConfigFromV1alpha1Function(tenant, namespace,
                 functionName, v1alpha1Function);

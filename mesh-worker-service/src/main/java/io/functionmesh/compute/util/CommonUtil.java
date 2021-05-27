@@ -76,7 +76,7 @@ public class CommonUtil {
         return v1ObjectMeta;
     }
 
-    private static String createObjectName(String cluster, String tenant, String namespace, String functionName) {
+    public static String createObjectName(String cluster, String tenant, String namespace, String functionName) {
         final String convertedJobName = toValidPodName(functionName);
         // use of functionName may cause naming collisions,
         // add a short hash here to avoid it
