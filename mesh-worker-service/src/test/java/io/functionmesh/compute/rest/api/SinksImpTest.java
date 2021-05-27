@@ -234,6 +234,7 @@ public class SinksImpTest {
         V1alpha1SinkSpecPod pod = new V1alpha1SinkSpecPod();
         pod.setLabels(customLabels);
         v1alpha1Sink.getSpec().pod(pod);
+        v1alpha1Sink.getMetadata().setLabels(customLabels);
         PowerMockito.when(
                 meshWorkerService
                                 .getCustomObjectsApi()

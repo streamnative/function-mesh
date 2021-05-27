@@ -236,6 +236,7 @@ public class SourcesImpTest {
         V1alpha1SourceSpecPod pod = new V1alpha1SourceSpecPod();
         pod.setLabels(customLabels);
         v1alpha1Source.getSpec().pod(pod);
+        v1alpha1Source.getMetadata().setLabels(customLabels);
         PowerMockito.when(
                 meshWorkerService
                                 .getCustomObjectsApi()

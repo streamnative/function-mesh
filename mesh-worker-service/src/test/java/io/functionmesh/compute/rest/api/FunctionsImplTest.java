@@ -280,12 +280,16 @@ public class FunctionsImplTest {
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group,
                 version, functionName, null, functionConfig);
 
+        String clusterName = "test-pulsar";
         Map<String, String> customLabels = Maps.newHashMap();
+        customLabels.put("pulsar-cluster", clusterName);
         customLabels.put("pulsar-tenant", tenant);
         customLabels.put("pulsar-namespace", namespace);
+        customLabels.put("pulsar-component", functionName);
         V1alpha1FunctionSpecPod pod = new V1alpha1FunctionSpecPod();
         pod.setLabels(customLabels);
         v1alpha1Function.getSpec().pod(pod);
+        v1alpha1Function.getMetadata().setLabels(customLabels);
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .createNamespacedCustomObjectCall(
                         group,
@@ -307,9 +311,18 @@ public class FunctionsImplTest {
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
         FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
         try {
-            functions.registerFunction(tenant, namespace, functionName, null, null, null, functionConfig, null, null);
+            functions.registerFunction(
+                    tenant,
+                    namespace,
+                    functionName,
+                    null,
+                    null,
+                    null,
+                    functionConfig,
+                    null,
+                    null);
         } catch (Exception exception) {
-            Assert.fail("Expected no exception to be thrown but got" + exception.getMessage());
+            Assert.fail("Expected no exception to be thrown but got " + exception.getMessage());
         }
     }
 

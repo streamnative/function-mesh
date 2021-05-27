@@ -135,6 +135,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                 customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
             }
             pod.setLabels(customLabels);
+            v1alpha1Source.getMetadata().setLabels(customLabels);
             v1alpha1Source.getSpec().setPod(pod);
             this.upsertSource(tenant, namespace, sourceName, sourceConfig, v1alpha1Source, clientAuthenticationDataHttps);
             Call call = worker().getCustomObjectsApi().createNamespacedCustomObjectCall(

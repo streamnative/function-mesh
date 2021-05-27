@@ -126,6 +126,7 @@ public class SinksImpl extends MeshComponentImpl
                 customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
             }
             pod.setLabels(customLabels);
+            v1alpha1Sink.getMetadata().setLabels(customLabels);
             v1alpha1Sink.getSpec().setPod(pod);
             this.upsertSink(tenant, namespace, sinkName, sinkConfig, v1alpha1Sink, clientAuthenticationDataHttps);
             Call call =
