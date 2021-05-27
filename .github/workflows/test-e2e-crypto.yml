@@ -51,6 +51,6 @@ jobs:
           kubectl apply -f config/samples/compute_v1alpha1_function_crypto.yaml
           kubectl get all
 
-      - name: Verfy Function Mesh
+      - name: Verify Function Mesh
         run: |
           .ci/verify_function_mesh.sh function-crypto-sample

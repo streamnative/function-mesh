@@ -46,7 +46,7 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
 		Namespace: source.Namespace,
-		Name:      source.Name,
+		Name:      spec.MakeSourceObjectMeta(source).Name,
 	}, statefulSet)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -126,7 +126,8 @@ func (r *SourceReconciler) ObserveSourceService(ctx context.Context, req ctrl.Re
 	}
 
 	svc := &corev1.Service{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace, Name: source.Name}, svc)
+	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
+		Name: spec.MakeSourceObjectMeta(source).Name}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			r.Log.Info("service is not created...", "Name", source.Name)
@@ -183,7 +184,8 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Reques
 	}
 
 	hpa := &autov1.HorizontalPodAutoscaler{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace, Name: source.Name}, hpa)
+	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
+		Name: spec.MakeSourceObjectMeta(source).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			r.Log.Info("hpa is not created for source...", "name", source.Name)
