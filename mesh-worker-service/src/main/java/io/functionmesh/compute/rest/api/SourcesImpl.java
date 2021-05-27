@@ -34,7 +34,6 @@ import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
-import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.functions.UpdateOptions;
 import org.apache.pulsar.common.io.ConfigFieldDefinition;
 import org.apache.pulsar.common.io.ConnectorDefinition;
@@ -132,11 +131,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         this.validateTenantIsExist(tenant, namespace, sourceName, clientRole);
-        String cluster = null;
-        if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
-            Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
-            cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
-        }
+        String cluster = worker().getWorkerConfig().getPulsarFunctionsCluster();
         V1alpha1Source v1alpha1Source = SourcesUtil
                 .createV1alpha1SourceFromSourceConfig(
                         kind,
@@ -198,11 +193,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         try {
-            String cluster = null;
-            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
-                Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
-                cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
-            }
+            String cluster = worker().getWorkerConfig().getPulsarFunctionsCluster();
             V1alpha1Source v1alpha1Source = SourcesUtil
                     .createV1alpha1SourceFromSourceConfig(
                             kind,

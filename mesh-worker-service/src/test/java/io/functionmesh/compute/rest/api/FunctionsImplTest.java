@@ -174,11 +174,7 @@ public class FunctionsImplTest {
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
         ApiClient apiClient = PowerMockito.mock(ApiClient.class);
 
-        KubernetesRuntimeFactoryConfig functionRuntimeFactoryConfigs = PowerMockito.mock(KubernetesRuntimeFactoryConfig.class);
-        PowerMockito.when(meshWorkerService.getFactoryConfig()).thenReturn(functionRuntimeFactoryConfigs);
-        Map<String, String> labels = Maps.newHashMap();
-        labels.put("pulsar-cluster", "test-pulsar");
-        PowerMockito.when(functionRuntimeFactoryConfigs.getCustomLabels()).thenReturn(labels);
+        PowerMockito.when(workerConfig.getPulsarFunctionsCluster()).thenReturn("test-pulsar");
 
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .getNamespacedCustomObjectCall(
@@ -584,11 +580,7 @@ public class FunctionsImplTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
-        KubernetesRuntimeFactoryConfig functionRuntimeFactoryConfigs = PowerMockito.mock(KubernetesRuntimeFactoryConfig.class);
-        PowerMockito.when(meshWorkerService.getFactoryConfig()).thenReturn(functionRuntimeFactoryConfigs);
-        Map<String, String> labels = Maps.newHashMap();
-        labels.put("pulsar-cluster", "test-pulsar");
-        PowerMockito.when(functionRuntimeFactoryConfigs.getCustomLabels()).thenReturn(labels);
+        PowerMockito.when(workerConfig.getPulsarFunctionsCluster()).thenReturn("test-pulsar");
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -742,11 +734,7 @@ public class FunctionsImplTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
-        KubernetesRuntimeFactoryConfig functionRuntimeFactoryConfigs = PowerMockito.mock(KubernetesRuntimeFactoryConfig.class);
-        PowerMockito.when(meshWorkerService.getFactoryConfig()).thenReturn(functionRuntimeFactoryConfigs);
-        Map<String, String> labels = Maps.newHashMap();
-        labels.put("pulsar-cluster", "test-pulsar");
-        PowerMockito.when(functionRuntimeFactoryConfigs.getCustomLabels()).thenReturn(labels);
+        PowerMockito.when(workerConfig.getPulsarFunctionsCluster()).thenReturn("test-pulsar");
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);

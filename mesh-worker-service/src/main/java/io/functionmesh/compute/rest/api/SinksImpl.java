@@ -19,7 +19,6 @@
 package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
-import com.google.gson.Gson;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
@@ -126,11 +125,7 @@ public class SinksImpl extends MeshComponentImpl
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         this.validateTenantIsExist(tenant, namespace, sinkName, clientRole);
-        String cluster = null;
-        if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
-            Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
-            cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
-        }
+        String cluster = worker().getWorkerConfig().getPulsarFunctionsCluster();
         V1alpha1Sink v1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind,
@@ -202,11 +197,7 @@ public class SinksImpl extends MeshComponentImpl
                 clientRole,
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
-        String cluster = null;
-        if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
-            Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
-            cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
-        }
+        String cluster = worker().getWorkerConfig().getPulsarFunctionsCluster();
         try {
             V1alpha1Sink v1alpha1Sink =
                     SinksUtil.createV1alpha1SkinFromSinkConfig(

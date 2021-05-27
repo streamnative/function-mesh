@@ -119,11 +119,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 ComponentTypeUtils.toString(componentType));
         this.validateTenantIsExist(tenant, namespace, functionName, clientRole);
 
-        String cluster = null;
-        if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
-            Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
-            cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
-        }
+        String cluster = worker().getWorkerConfig().getPulsarFunctionsCluster();
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(
                 kind,
                 group,
@@ -184,11 +180,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
         validateUpdateFunctionRequestParams(tenant, namespace, functionName, functionConfig, uploadedInputStream != null);
 
         try {
-            String cluster = null;
-            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
-                Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
-                cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
-            }
+            String cluster = worker().getWorkerConfig().getPulsarFunctionsCluster();
             V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(
                     kind,
                     group,

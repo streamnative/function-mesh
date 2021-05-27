@@ -112,14 +112,7 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         try {
-            String clusterName = null;
-            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
-                Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
-                clusterName = customLabels.get(CLUSTER_LABEL_CLAIM);
-            }
-            if (clusterName == null) {
-                throw new RestException(javax.ws.rs.core.Response.Status.BAD_REQUEST, "Please set cluster name");
-            }
+            String clusterName = worker().getWorkerConfig().getPulsarFunctionsCluster();
             String hashName = CommonUtil.createObjectName(clusterName, tenant, namespace, componentName);
             Call deleteObjectCall = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
                     group,
@@ -314,21 +307,12 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
         List<String> result = new LinkedList<>();
         try {
             String labelSelector;
-            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
-                Map<String, String> customLabels = worker().getFactoryConfig().getCustomLabels();
-                String cluster = customLabels.get(CLUSTER_LABEL_CLAIM);
-                labelSelector = String.format(
-                        "%s=%s,%s=%s,%s=%s",
-                        CLUSTER_LABEL_CLAIM, cluster,
-                        TENANT_LABEL_CLAIM, tenant,
-                        NAMESPACE_LABEL_CLAIM, namespace);
-            } else {
-                labelSelector = String.format(
-                        "%s=%s,%s=%s",
-                        TENANT_LABEL_CLAIM, tenant,
-                        NAMESPACE_LABEL_CLAIM, namespace);
-            }
-
+            String cluster = worker().getWorkerConfig().getPulsarFunctionsCluster();
+            labelSelector = String.format(
+                    "%s=%s,%s=%s,%s=%s",
+                    CLUSTER_LABEL_CLAIM, cluster,
+                    TENANT_LABEL_CLAIM, tenant,
+                    NAMESPACE_LABEL_CLAIM, namespace);
             Call call = worker().getCustomObjectsApi().listNamespacedCustomObjectCall(
                     group,
                     version,
