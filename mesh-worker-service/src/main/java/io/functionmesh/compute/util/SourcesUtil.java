@@ -70,15 +70,14 @@ public class SourcesUtil {
                     Response.Status.BAD_REQUEST, "customRuntimeOptions is not provided");
         }
         String clusterName = CommonUtil.getCurrentClusterName();
+        try {
+            customRuntimeOptions =
+                    new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
+        } catch (Exception ignored) {
+            throw new RestException(
+                    Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
+        }
         if (cluster == null) {
-            try {
-                customRuntimeOptions =
-                        new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
-            } catch (Exception ignored) {
-                throw new RestException(
-                        Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
-            }
-
             if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
                 clusterName = customRuntimeOptions.getClusterName();
             }

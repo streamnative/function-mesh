@@ -77,12 +77,11 @@ public class SinksUtil {
             if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
                 clusterName = customRuntimeOptions.getClusterName();
             }
-
-            if (Strings.isEmpty(clusterName)) {
-                throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
-            }
         } else {
             clusterName = cluster;
+        }
+        if (Strings.isEmpty(clusterName)) {
+            throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
         }
 
 

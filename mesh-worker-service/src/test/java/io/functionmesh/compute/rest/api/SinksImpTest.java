@@ -21,6 +21,7 @@ package io.functionmesh.compute.rest.api;
 import com.google.common.collect.Maps;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
+import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
@@ -40,6 +41,7 @@ import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.common.policies.data.SinkStatus;
+import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
 import org.apache.pulsar.functions.utils.FunctionCommon;
 import org.apache.pulsar.functions.utils.io.ConnectorUtils;
 import org.apache.pulsar.functions.worker.WorkerConfig;
@@ -564,6 +566,12 @@ public class SinksImpTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+
+        KubernetesRuntimeFactoryConfig functionRuntimeFactoryConfigs = PowerMockito.mock(KubernetesRuntimeFactoryConfig.class);
+        PowerMockito.when(meshWorkerService.getFactoryConfig()).thenReturn(functionRuntimeFactoryConfigs);
+        Map<String, String> labels = Maps.newHashMap();
+        labels.put("pulsar-cluster", "test-pulsar");
+        PowerMockito.when(functionRuntimeFactoryConfigs.getCustomLabels()).thenReturn(labels);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -578,7 +586,8 @@ public class SinksImpTest {
                 meshWorkerService
                         .getCustomObjectsApi()
                         .getNamespacedCustomObjectCall(
-                                group, version, namespace, plural, componentName, null))
+                                group, version, namespace, plural,
+                                CommonUtil.createObjectName("test-pulsar", tenant, namespace, componentName), null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -688,6 +697,12 @@ public class SinksImpTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+
+        KubernetesRuntimeFactoryConfig functionRuntimeFactoryConfigs = PowerMockito.mock(KubernetesRuntimeFactoryConfig.class);
+        PowerMockito.when(meshWorkerService.getFactoryConfig()).thenReturn(functionRuntimeFactoryConfigs);
+        Map<String, String> labels = Maps.newHashMap();
+        labels.put("pulsar-cluster", "test-pulsar");
+        PowerMockito.when(functionRuntimeFactoryConfigs.getCustomLabels()).thenReturn(labels);
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -701,7 +716,8 @@ public class SinksImpTest {
                 meshWorkerService
                         .getCustomObjectsApi()
                         .getNamespacedCustomObjectCall(
-                                group, version, namespace, plural, componentName, null))
+                                group, version, namespace, plural,
+                                CommonUtil.createObjectName("test-pulsar", tenant, namespace, componentName), null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);

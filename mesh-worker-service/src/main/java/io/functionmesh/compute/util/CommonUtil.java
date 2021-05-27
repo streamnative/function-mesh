@@ -18,11 +18,15 @@
  */
 package io.functionmesh.compute.util;
 
+import io.functionmesh.compute.MeshWorkerService;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import java.util.Collections;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.pulsar.common.functions.FunctionConfig;
+import org.apache.pulsar.common.util.RestException;
+
+import javax.ws.rs.core.Response;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -83,6 +87,18 @@ public class CommonUtil {
         final String hashName = String.format("%s-%s-%s-%s", cluster, tenant, namespace, functionName);
         final String shortHash = DigestUtils.sha1Hex(hashName).toLowerCase().substring(0, 8);
         return convertedJobName + "-" + shortHash;
+    }
+
+    public static String generateObjectName(MeshWorkerService meshWorkerService,
+                                            String tenant,
+                                            String namespace,
+                                            String componentName) {
+        if (meshWorkerService.getFactoryConfig() != null && meshWorkerService.getFactoryConfig().getCustomLabels() != null) {
+            Map<String, String> customLabels = meshWorkerService.getFactoryConfig().getCustomLabels();
+            String cluster = customLabels.get("pulsar-cluster");
+            return createObjectName(cluster, tenant, namespace, componentName);
+        }
+        throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
     }
 
     private static String toValidPodName(String ori) {

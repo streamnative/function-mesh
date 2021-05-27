@@ -23,6 +23,7 @@ import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecJava;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumeMounts;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumes;
+import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.FunctionsUtil;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.MeshWorkerService;
@@ -249,13 +250,14 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
 
+        String hashName = CommonUtil.generateObjectName(worker(), tenant, namespace, componentName);
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
                     KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
-                    componentName,
+                    hashName,
                     null
             );
             V1alpha1Function v1alpha1Function = executeCall(call, V1alpha1Function.class);
@@ -292,10 +294,11 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         FunctionStatus functionStatus = new FunctionStatus();
+        String hashName = CommonUtil.generateObjectName(worker(), tenant, namespace, componentName);
         try {
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
-                    plural, componentName, null);
+                    plural, hashName, null);
             V1alpha1Function v1alpha1Function = executeCall(call, V1alpha1Function.class);
             FunctionStatus.FunctionInstanceStatus functionInstanceStatus = new FunctionStatus.FunctionInstanceStatus();
             FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData =

@@ -291,11 +291,12 @@ public class SinksImpl extends MeshComponentImpl
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         try {
+            String hashName = CommonUtil.generateObjectName(worker(), tenant, namespace, componentName);
             Call call =
                     worker().getCustomObjectsApi()
                             .getNamespacedCustomObjectCall(
                                     group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
-                                    plural, componentName, null);
+                                    plural, hashName, null);
             V1alpha1Sink v1alpha1Sink = executeCall(call, V1alpha1Sink.class);
             SinkStatus.SinkInstanceStatus sinkInstanceStatus = new SinkStatus.SinkInstanceStatus();
             SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData =
@@ -335,11 +336,12 @@ public class SinksImpl extends MeshComponentImpl
         validateSinkEnabled();
         this.validateGetInfoRequestParams(tenant, namespace, componentName, kind);
         try {
+            String hashName = CommonUtil.generateObjectName(worker(), tenant, namespace, componentName);
             Call call =
                     worker().getCustomObjectsApi()
                             .getNamespacedCustomObjectCall(
                                     group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
-                                    plural, componentName, null);
+                                    plural, hashName, null);
 
             V1alpha1Sink v1alpha1Sink = executeCall(call, V1alpha1Sink.class);
             return SinksUtil.createSinkConfigFromV1alpha1Sink(
