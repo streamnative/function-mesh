@@ -18,11 +18,13 @@
  */
 package io.functionmesh.compute.rest.api;
 
+import com.google.common.collect.Maps;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionList;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
+import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.KubernetesUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
@@ -49,6 +51,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
@@ -109,28 +112,14 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         try {
-            Call componentCall =
-                    worker().getCustomObjectsApi()
-                            .getNamespacedCustomObjectCall(
-                                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
-                                    plural, componentName, null);
-            String clusterName;
-            if ("Source".equals(kind)) {
-                V1alpha1Source v1alpha1Source = executeCall(componentCall, V1alpha1Source.class);
-                clusterName = v1alpha1Source.getSpec().getClusterName();
-            } else if ("Sink".equals(kind)) {
-                V1alpha1Sink v1alpha1Sink = executeCall(componentCall, V1alpha1Sink.class);
-                clusterName = v1alpha1Sink.getSpec().getClusterName();
-            } else {
-                V1alpha1Function v1alpha1Function = executeCall(componentCall, V1alpha1Function.class);
-                clusterName = v1alpha1Function.getSpec().getClusterName();
-            }
+            String clusterName = worker().getWorkerConfig().getPulsarFunctionsCluster();
+            String hashName = CommonUtil.createObjectName(clusterName, tenant, namespace, componentName);
             Call deleteObjectCall = worker().getCustomObjectsApi().deleteNamespacedCustomObjectCall(
                     group,
                     version,
                     KubernetesUtils.getNamespace(worker().getFactoryConfig()),
                     plural,
-                    componentName,
+                    hashName,
                     null,
                     null,
                     null,
@@ -317,6 +306,13 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                                       final AuthenticationDataSource clientAuthenticationDataHttps) {
         List<String> result = new LinkedList<>();
         try {
+            String labelSelector;
+            String cluster = worker().getWorkerConfig().getPulsarFunctionsCluster();
+            labelSelector = String.format(
+                    "%s=%s,%s=%s,%s=%s",
+                    CLUSTER_LABEL_CLAIM, cluster,
+                    TENANT_LABEL_CLAIM, tenant,
+                    NAMESPACE_LABEL_CLAIM, namespace);
             Call call = worker().getCustomObjectsApi().listNamespacedCustomObjectCall(
                     group,
                     version,
@@ -324,7 +320,7 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                     "false",
                     null,
                     null,
-                    null,
+                    labelSelector,
                     null,
                     null,
                     null,
@@ -332,7 +328,7 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                     null);
 
             V1alpha1FunctionList list = executeCall(call, V1alpha1FunctionList.class);
-            list.getItems().forEach(n -> result.add(n.getMetadata().getName()));
+            list.getItems().forEach(n -> result.add(n.getMetadata().getLabels().get(COMPONENT_LABEL_CLAIM)));
         } catch (Exception e) {
             log.error("failed to fetch functions list from namespace {}, error message: {}", namespace, e.getMessage());
         }

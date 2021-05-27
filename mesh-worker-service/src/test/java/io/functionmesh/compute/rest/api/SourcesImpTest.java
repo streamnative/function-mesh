@@ -20,6 +20,7 @@ package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
+import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
@@ -61,6 +62,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
 import static org.powermock.api.mockito.PowerMockito.spy;
 
 @RunWith(PowerMockRunner.class)
@@ -229,7 +232,7 @@ public class SourcesImpTest {
                         uploadedInputStream,
                         sourceConfig,
                         null,
-                        Collections.emptyMap());
+                        Collections.emptyMap(), null);
         Map<String, String> customLabels = Maps.newHashMap();
         customLabels.put("pulsar-cluster", clusterName);
         customLabels.put("pulsar-tenant", tenant);
@@ -238,6 +241,7 @@ public class SourcesImpTest {
         V1alpha1SourceSpecPod pod = new V1alpha1SourceSpecPod();
         pod.setLabels(customLabels);
         v1alpha1Source.getSpec().pod(pod);
+        v1alpha1Source.getMetadata().setLabels(customLabels);
         PowerMockito.when(
                 meshWorkerService
                                 .getCustomObjectsApi()
@@ -285,6 +289,12 @@ public class SourcesImpTest {
                         + "    \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n"
                         + "    \"kind\": \"Source\",\n"
                         + "    \"metadata\": {\n"
+                        + "          \"labels\": {\n"
+                        + "                     \"pulsar-namespace\": \"default\",\n"
+                        + "                     \"pulsar-tenant\": \"public\",\n"
+                        + "                     \"pulsar-component\": \"source-mongodb-sample\",\n"
+                        + "                     \"pulsar-cluster\": \"test-source\""
+                        + "            },\n"
                         + "        \"resourceVersion\": \"881033\""
                         + "    }\n"
                         + "}";
@@ -299,7 +309,7 @@ public class SourcesImpTest {
                         + "        },\n"
                         + "        \"creationTimestamp\": \"2020-11-27T07:07:57Z\",\n"
                         + "        \"generation\": 1,\n"
-                        + "        \"name\": \"source-sample\",\n"
+                        + "        \"name\": \"source-mongodb-sample-d1dc115a\",\n"
                         + "        \"namespace\": \"default\",\n"
                         + "        \"resourceVersion\": \"881034\",\n"
                         + "        \"selfLink\": \"/apis/compute.functionmesh.io/v1alpha1/namespaces/default/sources/source-sample\",\n"
@@ -450,35 +460,23 @@ public class SourcesImpTest {
                 meshWorkerService
                         .getCustomObjectsApi()
                         .getNamespacedCustomObjectCall(
-                                group, version, namespace, plural, componentName, null))
+                                group, version, namespace, plural, "source-mongodb-sample-d1dc115a", null))
                 .thenReturn(getCall);
-
-        V1alpha1Source v1alpha1Source =
-                SourcesUtil.createV1alpha1SourceFromSourceConfig(
-                        kind,
-                        group,
-                        version,
-                        componentName,
-                        null,
-                        uploadedInputStream,
-                        sourceConfig, null,
-                        Collections.emptyMap());
-        v1alpha1Source.getMetadata().setResourceVersion("881033");
 
         PowerMockito.when(
                 meshWorkerService
                                 .getCustomObjectsApi()
                                 .replaceNamespacedCustomObjectCall(
-                                        group,
-                                        version,
-                                        KubernetesUtils.getNamespace(),
-                                        plural,
-                                        componentName,
-                                        v1alpha1Source,
-                                        null,
-                                        null,
-                                        null))
-                .thenReturn(getCall);
+                                        anyString(),
+                                        anyString(),
+                                        anyString(),
+                                        anyString(),
+                                        anyString(),
+                                        anyObject(),
+                                        anyObject(),
+                                        anyObject(),
+                                        anyObject()))
+                .thenReturn(replaceCall);
 
         SourcesImpl sources = spy(new SourcesImpl(meshWorkerServiceSupplier));
 
@@ -587,6 +585,7 @@ public class SourcesImpTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.getPulsarFunctionsCluster()).thenReturn("test-pulsar");
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -603,7 +602,9 @@ public class SourcesImpTest {
                 meshWorkerService
                         .getCustomObjectsApi()
                         .getNamespacedCustomObjectCall(
-                                group, version, namespace, plural, componentName, null))
+                                group, version, namespace, plural,
+                                CommonUtil.createObjectName("test-pulsar", tenant, namespace, componentName),
+                                null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -720,6 +721,7 @@ public class SourcesImpTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.getPulsarFunctionsCluster()).thenReturn("test-pulsar");
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -736,7 +738,8 @@ public class SourcesImpTest {
                 meshWorkerService
                         .getCustomObjectsApi()
                         .getNamespacedCustomObjectCall(
-                                group, version, namespace, plural, componentName, null))
+                                group, version, namespace, plural,
+                                CommonUtil.createObjectName("test-pulsar", tenant, namespace, componentName), null))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);

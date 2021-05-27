@@ -23,6 +23,7 @@ import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
 import io.functionmesh.compute.testdata.Generate;
+import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.FunctionsUtil;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.kubernetes.client.openapi.ApiClient;
@@ -41,6 +42,7 @@ import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.admin.Tenants;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
+import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
 import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,6 +58,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
 import static org.powermock.api.mockito.PowerMockito.spy;
 
 @RunWith(PowerMockRunner.class)
@@ -169,9 +173,14 @@ public class FunctionsImplTest {
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
         ApiClient apiClient = PowerMockito.mock(ApiClient.class);
+
+        PowerMockito.when(workerConfig.getPulsarFunctionsCluster()).thenReturn("test-pulsar");
+
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .getNamespacedCustomObjectCall(
-                        group, version, namespace, plural, name, null)).thenReturn(call);
+                        group, version, namespace, plural,
+                        CommonUtil.createObjectName("test-pulsar", tenant, namespace, name),
+                        null)).thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
         PowerMockito.when(response.body()).thenReturn(responseBody);
@@ -279,14 +288,18 @@ public class FunctionsImplTest {
         PowerMockito.when(tenants.getTenantInfo(tenant)).thenReturn(null);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group,
-                version, functionName, null, functionConfig, Collections.emptyMap());
+                version, functionName, null, functionConfig, Collections.emptyMap(), null);
 
+        String clusterName = "test-pulsar";
         Map<String, String> customLabels = Maps.newHashMap();
+        customLabels.put("pulsar-cluster", clusterName);
         customLabels.put("pulsar-tenant", tenant);
         customLabels.put("pulsar-namespace", namespace);
+        customLabels.put("pulsar-component", functionName);
         V1alpha1FunctionSpecPod pod = new V1alpha1FunctionSpecPod();
         pod.setLabels(customLabels);
         v1alpha1Function.getSpec().pod(pod);
+        v1alpha1Function.getMetadata().setLabels(customLabels);
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .createNamespacedCustomObjectCall(
                         group,
@@ -308,7 +321,16 @@ public class FunctionsImplTest {
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
         FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
         try {
-            functions.registerFunction(tenant, namespace, functionName, null, null, null, functionConfig, null, null);
+            functions.registerFunction(
+                    tenant,
+                    namespace,
+                    functionName,
+                    null,
+                    null,
+                    null,
+                    functionConfig,
+                    null,
+                    null);
         } catch (Exception exception) {
             Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
@@ -320,6 +342,12 @@ public class FunctionsImplTest {
                 "  \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n" +
                 "  \"kind\": \"Function\",\n" +
                 "  \"metadata\": {\n" +
+                "          \"labels\": {\n" +
+                "                     \"pulsar-namespace\": \"default\",\n" +
+                "                     \"pulsar-tenant\": \"public\",\n" +
+                "                     \"pulsar-component\": \"word-count\",\n" +
+                "                     \"pulsar-cluster\": \"test-pulsar\"" +
+                "            },\n" +
                 "    \"creationTimestamp\": \"2021-01-19T13:19:17Z\",\n" +
                 "    \"generation\": 2,\n" +
                 "    \"name\": \"word-count\",\n" +
@@ -369,7 +397,7 @@ public class FunctionsImplTest {
                 "  \"metadata\": {\n" +
                 "    \"creationTimestamp\": \"2021-01-19T13:19:17Z\",\n" +
                 "    \"generation\": 2,\n" +
-                "    \"name\": \"word-count\",\n" +
+                "    \"name\": \"word-count-640ae9e6\",\n" +
                 "    \"namespace\": \"default\",\n" +
                 "    \"resourceVersion\": \"27794021\",\n" +
                 "    \"selfLink\": \"/apis/compute.functionmesh.io/v1alpha1/namespaces/default/functions/word-count\",\n" +
@@ -455,32 +483,38 @@ public class FunctionsImplTest {
                         version,
                         namespace,
                         plural,
-                        functionName,
+                        "word-count-640ae9e6",
                         null
                 )).thenReturn(getCall);
 
         FunctionConfig functionConfig = Generate.CreateJavaFunctionConfig(tenant, namespace, functionName);
-        V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group,
-                version, functionName, null, functionConfig, Collections.emptyMap());
-        v1alpha1Function.getMetadata().setResourceVersion("24794021");
 
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .replaceNamespacedCustomObjectCall(
-                        group,
-                        version,
-                        namespace,
-                        plural,
-                        functionName,
-                        v1alpha1Function,
-                        null,
-                        null,
-                        null
+                        anyString(),
+                        anyString(),
+                        anyString(),
+                        anyString(),
+                        anyString(),
+                        anyObject(),
+                        anyString(),
+                        anyString(),
+                        anyObject()
                 )).thenReturn(getCall);
 
         FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
 
         try {
-            functions.updateFunction(tenant, namespace, functionName, null, null, null, functionConfig, null, null,
+            functions.updateFunction(
+                    tenant,
+                    namespace,
+                    functionName,
+                    null,
+                    null,
+                    null,
+                    functionConfig,
+                    null,
+                    null,
                     null);
         } catch (Exception exception) {
             Assert.fail("Expected no exception to be thrown but got exception: " + exception);
@@ -546,6 +580,7 @@ public class FunctionsImplTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.getPulsarFunctionsCluster()).thenReturn("test-pulsar");
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -578,7 +613,7 @@ public class FunctionsImplTest {
                         version,
                         namespace,
                         plural,
-                        functionName,
+                        "word-count-640ae9e6",
                         null,
                         null,
                         null,
@@ -699,6 +734,7 @@ public class FunctionsImplTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.getPulsarFunctionsCluster()).thenReturn("test-pulsar");
         Call call = PowerMockito.mock(Call.class);
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
@@ -719,7 +755,7 @@ public class FunctionsImplTest {
                         version,
                         namespace,
                         plural,
-                        functionName,
+                        CommonUtil.createObjectName("test-pulsar", tenant, namespace, functionName),
                         null
                 )).thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);

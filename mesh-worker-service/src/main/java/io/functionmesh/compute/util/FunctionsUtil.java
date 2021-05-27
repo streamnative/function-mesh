@@ -59,7 +59,7 @@ public class FunctionsUtil {
 
     public static V1alpha1Function createV1alpha1FunctionFromFunctionConfig(String kind, String group, String version
             , String functionName, String functionPkgUrl, FunctionConfig functionConfig
-            , Map<String, Object> customConfigs) {
+            , Map<String, Object> customConfigs, String cluster) {
         String customRuntimeOptionsJSON = functionConfig.getCustomRuntimeOptions();
         CustomRuntimeOptions customRuntimeOptions = null;
         if (Strings.isEmpty(customRuntimeOptionsJSON)) {
@@ -68,16 +68,20 @@ public class FunctionsUtil {
         }
 
         String clusterName = CommonUtil.getCurrentClusterName();
-        try {
-            customRuntimeOptions =
-                    new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
-        } catch (Exception ignored) {
-            throw new RestException(
-                    Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
-        }
+        if (cluster == null) {
+            try {
+                customRuntimeOptions =
+                        new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
+            } catch (Exception ignored) {
+                throw new RestException(
+                        Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
+            }
 
-        if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
-            clusterName = customRuntimeOptions.getClusterName();
+            if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
+                clusterName = customRuntimeOptions.getClusterName();
+            }
+        } else {
+            clusterName = cluster;
         }
 
         if (Strings.isEmpty(clusterName)) {

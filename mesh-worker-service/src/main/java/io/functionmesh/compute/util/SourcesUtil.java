@@ -62,14 +62,13 @@ public class SourcesUtil {
                                                                       InputStream uploadedInputStream,
                                                                       SourceConfig sourceConfig,
                                                                       MeshConnectorsManager connectorsManager,
-                                                                      Map<String, Object> customConfigs) {
+                                                                      Map<String, Object> customConfigs, String cluster) {
         String customRuntimeOptionsJSON = sourceConfig.getCustomRuntimeOptions();
         CustomRuntimeOptions customRuntimeOptions = null;
         if (Strings.isEmpty(customRuntimeOptionsJSON)) {
             throw new RestException(
                     Response.Status.BAD_REQUEST, "customRuntimeOptions is not provided");
         }
-
         String clusterName = CommonUtil.getCurrentClusterName();
         try {
             customRuntimeOptions =
@@ -78,9 +77,12 @@ public class SourcesUtil {
             throw new RestException(
                     Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
         }
-
-        if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
-            clusterName = customRuntimeOptions.getClusterName();
+        if (cluster == null) {
+            if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
+                clusterName = customRuntimeOptions.getClusterName();
+            }
+        } else {
+            clusterName = cluster;
         }
 
         if (Strings.isEmpty(clusterName)) {

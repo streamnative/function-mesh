@@ -18,6 +18,7 @@
  */
 package io.functionmesh.compute.util;
 
+import io.functionmesh.compute.MeshWorkerService;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import java.util.Collections;
@@ -76,13 +77,21 @@ public class CommonUtil {
         return v1ObjectMeta;
     }
 
-    private static String createObjectName(String cluster, String tenant, String namespace, String functionName) {
+    public static String createObjectName(String cluster, String tenant, String namespace, String functionName) {
         final String convertedJobName = toValidPodName(functionName);
         // use of functionName may cause naming collisions,
         // add a short hash here to avoid it
         final String hashName = String.format("%s-%s-%s-%s", cluster, tenant, namespace, functionName);
         final String shortHash = DigestUtils.sha1Hex(hashName).toLowerCase().substring(0, 8);
         return convertedJobName + "-" + shortHash;
+    }
+
+    public static String generateObjectName(MeshWorkerService meshWorkerService,
+                                            String tenant,
+                                            String namespace,
+                                            String componentName) {
+        String pulsarCluster = meshWorkerService.getWorkerConfig().getPulsarFunctionsCluster();
+        return createObjectName(pulsarCluster, tenant, namespace, componentName);
     }
 
     private static String toValidPodName(String ori) {

@@ -57,7 +57,7 @@ public class SinksUtil {
     public static V1alpha1Sink createV1alpha1SkinFromSinkConfig(String kind, String group, String version
             , String sinkName, String sinkPkgUrl, InputStream uploadedInputStream, SinkConfig sinkConfig,
                                                                 MeshConnectorsManager connectorsManager,
-                                                                Map<String, Object> customConfigs) {
+                                                                Map<String, Object> customConfigs, String cluster) {
         String customRuntimeOptionsJSON = sinkConfig.getCustomRuntimeOptions();
         CustomRuntimeOptions customRuntimeOptions = null;
         if (Strings.isEmpty(customRuntimeOptionsJSON)) {
@@ -73,14 +73,17 @@ public class SinksUtil {
             throw new RestException(
                     Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
         }
-
-        if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
-            clusterName = customRuntimeOptions.getClusterName();
+        if (cluster == null) {
+            if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
+                clusterName = customRuntimeOptions.getClusterName();
+            }
+        } else {
+            clusterName = cluster;
         }
-
         if (Strings.isEmpty(clusterName)) {
             throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
         }
+
 
         String location =
                 String.format(
@@ -116,7 +119,6 @@ public class SinksUtil {
 
         Integer parallelism = sinkConfig.getParallelism() == null ? 1 : sinkConfig.getParallelism();
         v1alpha1SinkSpec.setReplicas(parallelism);
-        v1alpha1SinkSpec.setMaxReplicas(parallelism);
 
         V1alpha1SinkSpecJava v1alpha1SinkSpecJava = new V1alpha1SinkSpecJava();
         if (connectorsManager != null && archive.startsWith(BUILTIN)) {
