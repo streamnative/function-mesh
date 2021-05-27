@@ -45,7 +45,7 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
 		Namespace: sink.Namespace,
-		Name:      sink.Name,
+		Name:      spec.MakeSinkObjectMeta(sink).Name,
 	}, statefulSet)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -124,7 +124,8 @@ func (r *SinkReconciler) ObserveSinkService(ctx context.Context, req ctrl.Reques
 	}
 
 	svc := &corev1.Service{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace, Name: sink.Name}, svc)
+	err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace,
+		Name: spec.MakeSinkObjectMeta(sink).Name}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			r.Log.Info("service is not created...", "Name", sink.Name)
@@ -181,7 +182,8 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, s
 	}
 
 	hpa := &autov1.HorizontalPodAutoscaler{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace, Name: sink.Name}, hpa)
+	err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace,
+		Name: spec.MakeSinkObjectMeta(sink).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			r.Log.Info("hpa is not created for sink...", "name", sink.Name)

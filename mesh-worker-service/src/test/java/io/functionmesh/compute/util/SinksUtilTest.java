@@ -23,6 +23,7 @@ import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpec;
 import io.functionmesh.compute.testdata.Generate;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
+import java.util.Collections;
 import org.apache.commons.io.FileUtils;
 import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
@@ -86,7 +87,8 @@ public class SinksUtilTest {
 
         V1alpha1Sink actualV1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
-                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null);
+                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null,
+                        Collections.emptyMap());
 
         Assert.assertEquals(actualV1alpha1Sink.getKind(), kind);
         V1alpha1SinkSpec v1alpha1SinkSpec = actualV1alpha1Sink.getSpec();
@@ -128,7 +130,8 @@ public class SinksUtilTest {
 
         V1alpha1Sink actualV1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
-                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null);
+                        kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null,
+                        Collections.emptyMap());
 
         SinkConfig newSinkConfig = SinksUtil.createSinkConfigFromV1alpha1Sink(tenant, namespace, componentName, actualV1alpha1Sink);
 
@@ -177,7 +180,8 @@ public class SinksUtilTest {
 
         V1alpha1Sink actualV1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
-                        kind, group, version, componentName, null, null, sinkConfig, connectorsManager);
+                        kind, group, version, componentName, null, null, sinkConfig, connectorsManager,
+                        Collections.emptyMap());
 
         Assert.assertEquals(actualV1alpha1Sink.getKind(), kind);
         V1alpha1SinkSpec v1alpha1SinkSpec = actualV1alpha1Sink.getSpec();

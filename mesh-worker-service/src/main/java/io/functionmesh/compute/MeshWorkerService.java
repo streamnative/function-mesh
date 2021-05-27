@@ -51,7 +51,6 @@ import org.apache.pulsar.functions.worker.service.api.Sources;
 import org.apache.pulsar.functions.worker.service.api.Workers;
 
 import java.io.IOException;
-import java.util.Optional;
 
 /**
  * Function mesh proxy implement.

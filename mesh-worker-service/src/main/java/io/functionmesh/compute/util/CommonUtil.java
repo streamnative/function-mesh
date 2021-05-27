@@ -19,6 +19,9 @@
 package io.functionmesh.compute.util;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
+import java.util.Collections;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,12 +49,44 @@ public class CommonUtil {
         return ori.toLowerCase().replaceAll("[^a-z0-9-\\.]", "-");
     }
 
-    public static V1ObjectMeta makeV1ObjectMeta(String name, String namespace) {
+    public static V1OwnerReference getOwnerReferenceFromCustomConfigs(Map<String, Object> customConfigs) {
+        if (customConfigs == null) {
+            return null;
+        }
+        Map<String, Object> ownerRef = (Map<String, Object>) customConfigs.get("ownerReference");
+        if (ownerRef == null) {
+            return null;
+        }
+        return new V1OwnerReference()
+                .apiVersion(String.valueOf(ownerRef.get("apiVersion")))
+                .kind(String.valueOf(ownerRef.get("kind")))
+                .name(String.valueOf(ownerRef.get("name")))
+                .uid(String.valueOf(ownerRef.get("uid")));
+    }
+
+    public static V1ObjectMeta makeV1ObjectMeta(String name, String k8sNamespace, String pulsarNamespace, String tenant,
+                                                String cluster, V1OwnerReference ownerReference) {
         V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
-        v1ObjectMeta.setName(name);
-        v1ObjectMeta.setNamespace(namespace);
+        v1ObjectMeta.setName(createObjectName(cluster, tenant, pulsarNamespace, name));
+        v1ObjectMeta.setNamespace(k8sNamespace);
+        if (ownerReference != null) {
+            v1ObjectMeta.setOwnerReferences(Collections.singletonList(ownerReference));
+        }
 
         return v1ObjectMeta;
+    }
+
+    private static String createObjectName(String cluster, String tenant, String namespace, String functionName) {
+        final String convertedJobName = toValidPodName(functionName);
+        // use of functionName may cause naming collisions,
+        // add a short hash here to avoid it
+        final String hashName = String.format("%s-%s-%s-%s", cluster, tenant, namespace, functionName);
+        final String shortHash = DigestUtils.sha1Hex(hashName).toLowerCase().substring(0, 8);
+        return convertedJobName + "-" + shortHash;
+    }
+
+    private static String toValidPodName(String ori) {
+        return ori.toLowerCase().replaceAll("[^a-z0-9-\\.]", "-");
     }
 
     public static FunctionConfig.ProcessingGuarantees convertProcessingGuarantee(String processingGuarantees) {

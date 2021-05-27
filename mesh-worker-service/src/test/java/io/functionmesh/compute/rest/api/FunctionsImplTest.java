@@ -30,6 +30,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import java.util.Collections;
 import okhttp3.Call;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
@@ -278,7 +279,7 @@ public class FunctionsImplTest {
         PowerMockito.when(tenants.getTenantInfo(tenant)).thenReturn(null);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group,
-                version, functionName, null, functionConfig);
+                version, functionName, null, functionConfig, Collections.emptyMap());
 
         String clusterName = "test-pulsar";
         Map<String, String> customLabels = Maps.newHashMap();
@@ -322,7 +323,7 @@ public class FunctionsImplTest {
                     null,
                     null);
         } catch (Exception exception) {
-            Assert.fail("Expected no exception to be thrown but got " + exception.getMessage());
+            Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
     }
 
@@ -473,7 +474,7 @@ public class FunctionsImplTest {
 
         FunctionConfig functionConfig = Generate.CreateJavaFunctionConfig(tenant, namespace, functionName);
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group,
-                version, functionName, null, functionConfig);
+                version, functionName, null, functionConfig, Collections.emptyMap());
         v1alpha1Function.getMetadata().setResourceVersion("24794021");
 
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()
@@ -495,7 +496,7 @@ public class FunctionsImplTest {
             functions.updateFunction(tenant, namespace, functionName, null, null, null, functionConfig, null, null,
                     null);
         } catch (Exception exception) {
-            Assert.fail("Expected no exception to be thrown but got" + exception.getMessage());
+            Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
     }
 
@@ -650,7 +651,7 @@ public class FunctionsImplTest {
         try {
             functions.deregisterFunction(tenant, namespace, functionName, null, null);
         } catch (Exception exception) {
-            Assert.fail("Expected no exception to be thrown but got" + exception.getMessage());
+            Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
     }
 
