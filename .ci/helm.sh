@@ -94,18 +94,18 @@ function ci::test_pulsar_producer() {
 
 function ci::verify_function_mesh() {
     FUNCTION_NAME=$1
-    WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep ${FUNCTION_NAME} | wc -l)
+    WC=$(${KUBECTL} get pods -lname=${FUNCTION_NAME} --field-selector=status.phase=Running | wc -l)
     while [[ ${WC} -lt 1 ]]; do
       echo ${WC};
       sleep 15
       ${KUBECTL} get pods -A
-      WC=$(${KUBECTL} get pods -A | grep ${FUNCTION_NAME} | wc -l)
+      WC=$(${KUBECTL} get pods -lname=${FUNCTION_NAME} | wc -l)
       if [[ ${WC} -gt 1 ]]; then
-        ${KUBECTL} describe pod ${FUNCTION_NAME}
+        ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
       fi
-      WC=$(${KUBECTL} get pods -A --field-selector=status.phase=Running | grep ${FUNCTION_NAME} | wc -l)
+      WC=$(${KUBECTL} get pods -lname=${FUNCTION_NAME} --field-selector=status.phase=Running | wc -l)
     done
-    ${KUBECTL} describe pod ${FUNCTION_NAME}
+    ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
 }
 
 function ci::test_function_runners() {
@@ -157,23 +157,23 @@ function ci::test_function_runners() {
 
 function ci::verify_go_function() {
     FUNCTION_NAME=$1
-    ${KUBECTL} describe pod ${FUNCTION_NAME}
-    ${KUBECTL} logs ${FUNCTION_NAME}-0
+    ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
+    ${KUBECTL} logs -lname=${FUNCTION_NAME}  --all-containers=true
     ci:verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 30
 }
 
 function ci::verify_java_function() {
     FUNCTION_NAME=$1
-    ${KUBECTL} describe pod ${FUNCTION_NAME}
+    ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
     sleep 120
-    ${KUBECTL} logs ${FUNCTION_NAME}-0
+    ${KUBECTL} logs -lname=${FUNCTION_NAME}  --all-containers=true
     ci:verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 30
 }
 
 function ci::verify_python_function() {
     FUNCTION_NAME=$1
-    ${KUBECTL} describe pod ${FUNCTION_NAME}
-    ${KUBECTL} logs ${FUNCTION_NAME}-0
+    ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
+    ${KUBECTL} logs -lname=${FUNCTION_NAME}  --all-containers=true
     ci:verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 30
 }
 
@@ -183,8 +183,8 @@ function ci::verify_mesh_function() {
 
 function ci::print_function_log() {
     FUNCTION_NAME=$1
-    ${KUBECTL} describe pod ${FUNCTION_NAME}
-    ${KUBECTL} logs ${FUNCTION_NAME}-0
+    ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
+    ${KUBECTL} logs -lname=${FUNCTION_NAME}  --all-containers=true
 }
 
 function ci:verify_exclamation_function() {

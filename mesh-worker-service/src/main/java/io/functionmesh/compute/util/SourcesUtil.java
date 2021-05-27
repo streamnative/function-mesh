@@ -62,14 +62,6 @@ public class SourcesUtil {
                                                                       InputStream uploadedInputStream,
                                                                       SourceConfig sourceConfig,
                                                                       MeshConnectorsManager connectorsManager) {
-        V1alpha1Source v1alpha1Source = new V1alpha1Source();
-        v1alpha1Source.setKind(kind);
-        v1alpha1Source.setApiVersion(String.format("%s/%s", group, version));
-        v1alpha1Source.setMetadata(CommonUtil.makeV1ObjectMeta(sourceConfig.getName(), sourceConfig.getNamespace()));
-
-        V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
-        v1alpha1SourceSpec.setClassName(sourceConfig.getClassName());
-
         String customRuntimeOptionsJSON = sourceConfig.getCustomRuntimeOptions();
         CustomRuntimeOptions customRuntimeOptions = null;
         if (Strings.isEmpty(customRuntimeOptionsJSON)) {
@@ -102,6 +94,27 @@ public class SourcesUtil {
         String archive = sourceConfig.getArchive();
         SourceConfigUtils.ExtractedSourceDetails extractedSourceDetails =
                 new SourceConfigUtils.ExtractedSourceDetails("", customRuntimeOptions.getInputTypeClassName());
+
+        Function.FunctionDetails functionDetails = null;
+        try {
+            functionDetails = SourceConfigUtils.convert(sourceConfig, extractedSourceDetails);
+        } catch (IllegalArgumentException ex) {
+            log.error("cannot convert SourceConfig to FunctionDetails", ex);
+            throw new RestException(Response.Status.BAD_REQUEST, "functionConfig cannot be parsed into functionDetails");
+        }
+
+        V1alpha1Source v1alpha1Source = new V1alpha1Source();
+        v1alpha1Source.setKind(kind);
+        v1alpha1Source.setApiVersion(String.format("%s/%s", group, version));
+        v1alpha1Source.setMetadata(CommonUtil.makeV1ObjectMeta(sourceConfig.getName(),
+                sourceConfig.getNamespace(),
+                functionDetails.getNamespace(),
+                functionDetails.getTenant(),
+                clusterName));
+
+        V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
+        v1alpha1SourceSpec.setClassName(sourceConfig.getClassName());
+
         V1alpha1SourceSpecJava v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
         if (connectorsManager != null && archive.startsWith(BUILTIN)) {
             String connectorType = archive.replaceFirst("^builtin://", "");
@@ -124,14 +137,6 @@ public class SourcesUtil {
             v1alpha1SourceSpecJava.setJarLocation(location);
             v1alpha1SourceSpec.setJava(v1alpha1SourceSpecJava);
             extractedSourceDetails.setSourceClassName(sourceConfig.getClassName());
-        }
-
-        Function.FunctionDetails functionDetails = null;
-        try {
-            functionDetails = SourceConfigUtils.convert(sourceConfig, extractedSourceDetails);
-        } catch (IllegalArgumentException ex) {
-            log.error("cannot convert SourceConfig to FunctionDetails", ex);
-            throw new RestException(Response.Status.BAD_REQUEST, "functionConfig cannot be parsed into functionDetails");
         }
 
         V1alpha1SourceSpecOutput v1alpha1SourceSpecOutput = new V1alpha1SourceSpecOutput();

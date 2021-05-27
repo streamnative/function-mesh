@@ -358,3 +358,7 @@ func sanitizeVolumeName(name string) string {
 	}
 	return strings.Trim(name, "-")
 }
+
+func makeJobName(name, suffix string) string {
+	return fmt.Sprintf("%s-%s", name, suffix)
+}

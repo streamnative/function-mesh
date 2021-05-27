@@ -59,14 +59,6 @@ public class FunctionsUtil {
 
     public static V1alpha1Function createV1alpha1FunctionFromFunctionConfig(String kind, String group, String version
             , String functionName, String functionPkgUrl, FunctionConfig functionConfig) {
-        V1alpha1Function v1alpha1Function = new V1alpha1Function();
-        v1alpha1Function.setKind(kind);
-        v1alpha1Function.setApiVersion(String.format("%s/%s", group, version));
-        v1alpha1Function.setMetadata(CommonUtil.makeV1ObjectMeta(functionConfig.getName(), functionConfig.getNamespace()));
-
-        V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
-        v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());
-
         String customRuntimeOptionsJSON = functionConfig.getCustomRuntimeOptions();
         CustomRuntimeOptions customRuntimeOptions = null;
         if (Strings.isEmpty(customRuntimeOptionsJSON)) {
@@ -98,6 +90,18 @@ public class FunctionsUtil {
             log.error("cannot convert FunctionConfig to FunctionDetails", ex);
             throw new RestException(Response.Status.BAD_REQUEST, "functionConfig cannot be parsed into functionDetails");
         }
+
+        V1alpha1Function v1alpha1Function = new V1alpha1Function();
+        v1alpha1Function.setKind(kind);
+        v1alpha1Function.setApiVersion(String.format("%s/%s", group, version));
+        v1alpha1Function.setMetadata(CommonUtil.makeV1ObjectMeta(functionConfig.getName(),
+                functionConfig.getNamespace(),
+                functionDetails.getNamespace(),
+                functionDetails.getTenant(),
+                clusterName));
+
+        V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
+        v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());
 
         V1alpha1FunctionSpecInput v1alpha1FunctionSpecInput = new V1alpha1FunctionSpecInput();
 

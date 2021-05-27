@@ -241,3 +241,9 @@ func paddingResourceLimit(requirement *corev1.ResourceRequirements) {
 	requirement.Limits.Memory().Set(requirement.Requests.Memory().Value())
 	requirement.Limits.Storage().Set(requirement.Requests.Storage().Value())
 }
+
+const (
+	FunctionComponent string = "function"
+	SourceComponent   string = "source"
+	SinkComponent     string = "sink"
+)

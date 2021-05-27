@@ -46,7 +46,7 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
 		Namespace: function.Namespace,
-		Name:      function.Name,
+		Name:      spec.MakeFunctionObjectMeta(function).Name,
 	}, statefulSet)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -126,7 +126,8 @@ func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, req ctr
 	}
 
 	svc := &corev1.Service{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace, Name: function.Name}, svc)
+	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace,
+		Name: spec.MakeFunctionObjectMeta(function).Name}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			r.Log.Info("service is not created...", "Name", function.Name)
@@ -185,7 +186,8 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, req ctrl.Re
 	}
 
 	hpa := &autov1.HorizontalPodAutoscaler{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace, Name: function.Name}, hpa)
+	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace,
+		Name: spec.MakeFunctionObjectMeta(function).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			r.Log.Info("hpa is not created for function...", "Name", function.Name)

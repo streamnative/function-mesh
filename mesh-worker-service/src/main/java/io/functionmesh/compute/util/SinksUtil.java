@@ -57,18 +57,6 @@ public class SinksUtil {
     public static V1alpha1Sink createV1alpha1SkinFromSinkConfig(String kind, String group, String version
             , String sinkName, String sinkPkgUrl, InputStream uploadedInputStream, SinkConfig sinkConfig,
                                                                 MeshConnectorsManager connectorsManager) {
-        V1alpha1Sink v1alpha1Sink = new V1alpha1Sink();
-        v1alpha1Sink.setKind(kind);
-        v1alpha1Sink.setApiVersion(String.format("%s/%s", group, version));
-        v1alpha1Sink.setMetadata(CommonUtil.makeV1ObjectMeta(sinkConfig.getName(), sinkConfig.getNamespace()));
-
-        V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
-        v1alpha1SinkSpec.setClassName(sinkConfig.getClassName());
-
-        Integer parallelism = sinkConfig.getParallelism() == null ? 1 : sinkConfig.getParallelism();
-        v1alpha1SinkSpec.setReplicas(parallelism);
-        v1alpha1SinkSpec.setMaxReplicas(parallelism);
-
         String customRuntimeOptionsJSON = sinkConfig.getCustomRuntimeOptions();
         CustomRuntimeOptions customRuntimeOptions = null;
         if (Strings.isEmpty(customRuntimeOptionsJSON)) {
@@ -103,6 +91,31 @@ public class SinksUtil {
         String archive = sinkConfig.getArchive();
         SinkConfigUtils.ExtractedSinkDetails extractedSinkDetails =
                 new SinkConfigUtils.ExtractedSinkDetails("", customRuntimeOptions.getInputTypeClassName());
+
+        Function.FunctionDetails functionDetails = null;
+        try {
+            functionDetails = SinkConfigUtils.convert(sinkConfig, extractedSinkDetails);
+        } catch (Exception ex) {
+            log.error("cannot convert SinkConfig to FunctionDetails", ex);
+            throw new RestException(Response.Status.BAD_REQUEST, "functionConfig cannot be parsed into functionDetails");
+        }
+
+        V1alpha1Sink v1alpha1Sink = new V1alpha1Sink();
+        v1alpha1Sink.setKind(kind);
+        v1alpha1Sink.setApiVersion(String.format("%s/%s", group, version));
+        v1alpha1Sink.setMetadata(CommonUtil.makeV1ObjectMeta(sinkConfig.getName(),
+                sinkConfig.getNamespace(),
+                functionDetails.getNamespace(),
+                functionDetails.getTenant(),
+                clusterName));
+
+        V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
+        v1alpha1SinkSpec.setClassName(sinkConfig.getClassName());
+
+        Integer parallelism = sinkConfig.getParallelism() == null ? 1 : sinkConfig.getParallelism();
+        v1alpha1SinkSpec.setReplicas(parallelism);
+        v1alpha1SinkSpec.setMaxReplicas(parallelism);
+
         V1alpha1SinkSpecJava v1alpha1SinkSpecJava = new V1alpha1SinkSpecJava();
         if (connectorsManager != null && archive.startsWith(BUILTIN)) {
             String connectorType = archive.replaceFirst("^builtin://", "");
@@ -127,13 +140,7 @@ public class SinksUtil {
             extractedSinkDetails.setSinkClassName(sinkConfig.getClassName());
         }
 
-        Function.FunctionDetails functionDetails = null;
-        try {
-            functionDetails = SinkConfigUtils.convert(sinkConfig, extractedSinkDetails);
-        } catch (Exception ex) {
-            log.error("cannot convert SinkConfig to FunctionDetails", ex);
-            throw new RestException(Response.Status.BAD_REQUEST, "functionConfig cannot be parsed into functionDetails");
-        }
+
 
         V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
 
