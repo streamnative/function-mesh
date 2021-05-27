@@ -21,6 +21,7 @@ package io.functionmesh.compute.util;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpec;
 import io.functionmesh.compute.testdata.Generate;
+import java.util.Collections;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,7 +46,7 @@ public class FunctionsUtilTest {
         FunctionConfig functionConfig = Generate.CreateJavaFunctionConfig(tenant, namespace, functionName);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group, version,
-                functionName, null, functionConfig);
+                functionName, null, functionConfig, Collections.emptyMap());
 
         Assert.assertEquals(v1alpha1Function.getKind(), kind);
 
@@ -75,7 +76,7 @@ public class FunctionsUtilTest {
         FunctionConfig functionConfig = Generate.CreateJavaFunctionConfig(tenant, namespace, functionName);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group, version,
-                functionName, null, functionConfig);
+                functionName, null, functionConfig, Collections.emptyMap());
 
         FunctionConfig newFunctionConfig = FunctionsUtil.createFunctionConfigFromV1alpha1Function(tenant, namespace,
                 functionName, v1alpha1Function);

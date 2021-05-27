@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import java.util.Collections;
 import okhttp3.Call;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
@@ -227,7 +228,8 @@ public class SourcesImpTest {
                         null,
                         uploadedInputStream,
                         sourceConfig,
-                        null);
+                        null,
+                        Collections.emptyMap());
         Map<String, String> customLabels = Maps.newHashMap();
         customLabels.put("pulsar-cluster", clusterName);
         customLabels.put("pulsar-tenant", tenant);
@@ -459,7 +461,8 @@ public class SourcesImpTest {
                         componentName,
                         null,
                         uploadedInputStream,
-                        sourceConfig, null);
+                        sourceConfig, null,
+                        Collections.emptyMap());
         v1alpha1Source.getMetadata().setResourceVersion("881033");
 
         PowerMockito.when(

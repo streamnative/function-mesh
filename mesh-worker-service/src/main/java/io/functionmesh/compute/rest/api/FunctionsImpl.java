@@ -124,7 +124,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 version,
                 functionName,
                 functionPkgUrl,
-                functionConfig
+                functionConfig,
+                worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs()
         );
         // override namespace by configuration file
         v1alpha1Function.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
@@ -188,7 +189,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                     version,
                     functionName,
                     functionPkgUrl,
-                    functionConfig
+                    functionConfig,
+                    worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs()
             );
             v1alpha1Function.getMetadata().setResourceVersion(oldFn.getMetadata().getResourceVersion());
             this.upsertFunction(tenant, namespace, functionName, functionConfig, v1alpha1Function, clientAuthenticationDataHttps);

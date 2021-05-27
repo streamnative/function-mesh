@@ -58,7 +58,8 @@ public class FunctionsUtil {
     public final static String sourceKey = "source";
 
     public static V1alpha1Function createV1alpha1FunctionFromFunctionConfig(String kind, String group, String version
-            , String functionName, String functionPkgUrl, FunctionConfig functionConfig) {
+            , String functionName, String functionPkgUrl, FunctionConfig functionConfig
+            , Map<String, Object> customConfigs) {
         String customRuntimeOptionsJSON = functionConfig.getCustomRuntimeOptions();
         CustomRuntimeOptions customRuntimeOptions = null;
         if (Strings.isEmpty(customRuntimeOptionsJSON)) {
@@ -98,7 +99,8 @@ public class FunctionsUtil {
                 functionConfig.getNamespace(),
                 functionDetails.getNamespace(),
                 functionDetails.getTenant(),
-                clusterName));
+                clusterName,
+                CommonUtil.getOwnerReferenceFromCustomConfigs(customConfigs)));
 
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());

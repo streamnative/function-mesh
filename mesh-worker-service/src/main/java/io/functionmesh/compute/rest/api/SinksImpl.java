@@ -132,7 +132,8 @@ public class SinksImpl extends MeshComponentImpl
                         sinkPkgUrl,
                         uploadedInputStream,
                         sinkConfig,
-                        this.meshWorkerServiceSupplier.get().getConnectorsManager());
+                        this.meshWorkerServiceSupplier.get().getConnectorsManager(),
+                        worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs());
         // override namesapce by configuration
         v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
         try {
@@ -207,7 +208,8 @@ public class SinksImpl extends MeshComponentImpl
                             sinkName,
                             sinkPkgUrl,
                             uploadedInputStream,
-                            sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager());
+                            sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager(),
+                            worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs());
             this.upsertSink(tenant, namespace, sinkName, sinkConfig, v1alpha1Sink, clientAuthenticationDataHttps);
             v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             v1alpha1Sink

@@ -61,7 +61,8 @@ public class SourcesUtil {
                                                                       String sourceName, String sourcePkgUrl,
                                                                       InputStream uploadedInputStream,
                                                                       SourceConfig sourceConfig,
-                                                                      MeshConnectorsManager connectorsManager) {
+                                                                      MeshConnectorsManager connectorsManager,
+                                                                      Map<String, Object> customConfigs) {
         String customRuntimeOptionsJSON = sourceConfig.getCustomRuntimeOptions();
         CustomRuntimeOptions customRuntimeOptions = null;
         if (Strings.isEmpty(customRuntimeOptionsJSON)) {
@@ -110,7 +111,8 @@ public class SourcesUtil {
                 sourceConfig.getNamespace(),
                 functionDetails.getNamespace(),
                 functionDetails.getTenant(),
-                clusterName));
+                clusterName,
+                CommonUtil.getOwnerReferenceFromCustomConfigs(customConfigs)));
 
         V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
         v1alpha1SourceSpec.setClassName(sourceConfig.getClassName());

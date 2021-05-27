@@ -23,6 +23,7 @@ import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpec;
 import io.functionmesh.compute.testdata.Generate;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
+import java.util.Collections;
 import org.apache.commons.io.FileUtils;
 import org.apache.pulsar.common.io.SourceConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
@@ -83,7 +84,8 @@ public class SourcesUtilTest {
         SourceConfig sourceConfig = Generate.CreateSourceConfig(tenant, namespace, componentName);
 
         V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
-                componentName, null, uploadedInputStream, sourceConfig, null);
+                componentName, null, uploadedInputStream, sourceConfig, null,
+                Collections.emptyMap());
 
         Assert.assertEquals(v1alpha1Source.getKind(), kind);
         V1alpha1SourceSpec v1alpha1SourceSpec = v1alpha1Source.getSpec();
@@ -121,7 +123,8 @@ public class SourcesUtilTest {
         SourceConfig sourceConfig = Generate.CreateSourceConfig(tenant, namespace, componentName);
 
         V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
-                componentName, null, uploadedInputStream, sourceConfig, null);
+                componentName, null, uploadedInputStream, sourceConfig, null,
+                Collections.emptyMap());
 
         SourceConfig newSourceConfig = SourcesUtil.createSourceConfigFromV1alpha1Source(tenant, namespace,
                 componentName, v1alpha1Source);
@@ -168,7 +171,8 @@ public class SourcesUtilTest {
 
         V1alpha1Source v1alpha1Source =
                 SourcesUtil.createV1alpha1SourceFromSourceConfig(
-                        kind, group, version, componentName, null, null, sourceConfig, connectorsManager);
+                        kind, group, version, componentName, null, null, sourceConfig, connectorsManager,
+                        Collections.emptyMap());
 
         Assert.assertEquals(v1alpha1Source.getKind(), kind);
         V1alpha1SourceSpec v1alpha1SourceSpec = v1alpha1Source.getSpec();
