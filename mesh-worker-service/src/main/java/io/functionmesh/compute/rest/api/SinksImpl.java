@@ -33,6 +33,7 @@ import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
+import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.functions.UpdateOptions;
 import org.apache.pulsar.common.io.ConfigFieldDefinition;
 import org.apache.pulsar.common.io.ConnectorDefinition;
@@ -64,8 +65,18 @@ public class SinksImpl extends MeshComponentImpl
         super.kind = this.kind;
     }
 
+    private void validateSinkEnabled() {
+        Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
+        if (customConfig != null) {
+            Boolean sinkEnabled = (Boolean) customConfig.get("sinkEnabled");
+            if (sinkEnabled != null && !sinkEnabled) {
+                throw new RestException(Response.Status.BAD_REQUEST, "Sink API is disabled");
+            }
+        }
+    }
+
     private void validateRegisterSinkRequestParams(
-            String tenant, String namespace, String sinkName, SinkConfig sinkConfig) {
+            String tenant, String namespace, String sinkName, SinkConfig sinkConfig, boolean jarUploaded) {
         if (tenant == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Tenant is not provided");
         }
@@ -78,11 +89,19 @@ public class SinksImpl extends MeshComponentImpl
         if (sinkConfig == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Sink config is not provided");
         }
+        Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
+        if (jarUploaded &&  customConfig != null && customConfig.get("uploadEnabled") != null &&
+                ! (Boolean) customConfig.get("uploadEnabled") ) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
+        }
+        Resources sinkResources = sinkConfig.getResources();
+        this.validateResources(sinkConfig.getResources(), worker().getWorkerConfig().getFunctionInstanceMinResources(),
+                worker().getWorkerConfig().getFunctionInstanceMaxResources());
     }
 
     private void validateUpdateSinkRequestParams(
-            String tenant, String namespace, String sinkName, SinkConfig sinkConfig) {
-        this.validateRegisterSinkRequestParams(tenant, namespace, sinkName, sinkConfig);
+            String tenant, String namespace, String sinkName, SinkConfig sinkConfig, boolean uploadedJar) {
+        this.validateRegisterSinkRequestParams(tenant, namespace, sinkName, sinkConfig, uploadedJar);
     }
 
     @Override
@@ -96,7 +115,8 @@ public class SinksImpl extends MeshComponentImpl
             final SinkConfig sinkConfig,
             final String clientRole,
             AuthenticationDataHttps clientAuthenticationDataHttps) {
-        validateRegisterSinkRequestParams(tenant, namespace, sinkName, sinkConfig);
+        validateSinkEnabled();
+        validateRegisterSinkRequestParams(tenant, namespace, sinkName, sinkConfig, uploadedInputStream != null);
         this.validatePermission(tenant,
                 namespace,
                 clientRole,
@@ -112,7 +132,8 @@ public class SinksImpl extends MeshComponentImpl
                         sinkPkgUrl,
                         uploadedInputStream,
                         sinkConfig,
-                        this.meshWorkerServiceSupplier.get().getConnectorsManager());
+                        this.meshWorkerServiceSupplier.get().getConnectorsManager(),
+                        worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs());
         // override namesapce by configuration
         v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
         try {
@@ -165,7 +186,8 @@ public class SinksImpl extends MeshComponentImpl
             final String clientRole,
             AuthenticationDataHttps clientAuthenticationDataHttps,
             UpdateOptions updateOptions) {
-        validateUpdateSinkRequestParams(tenant, namespace, sinkName, sinkConfig);
+        validateSinkEnabled();
+        validateUpdateSinkRequestParams(tenant, namespace, sinkName, sinkConfig, uploadedInputStream != null);
         this.validatePermission(tenant,
                 namespace,
                 clientRole,
@@ -186,7 +208,8 @@ public class SinksImpl extends MeshComponentImpl
                             sinkName,
                             sinkPkgUrl,
                             uploadedInputStream,
-                            sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager());
+                            sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager(),
+                            worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs());
             this.upsertSink(tenant, namespace, sinkName, sinkConfig, v1alpha1Sink, clientAuthenticationDataHttps);
             v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
             v1alpha1Sink
@@ -225,6 +248,7 @@ public class SinksImpl extends MeshComponentImpl
             final URI uri,
             final String clientRole,
             final AuthenticationDataSource clientAuthenticationDataHttps) {
+        validateSinkEnabled();
         SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData =
                 new SinkStatus.SinkInstanceStatus.SinkInstanceStatusData();
         return sinkInstanceStatusData;
@@ -238,6 +262,7 @@ public class SinksImpl extends MeshComponentImpl
             final URI uri,
             final String clientRole,
             final AuthenticationDataSource clientAuthenticationDataHttps) {
+        validateSinkEnabled();
         SinkStatus sinkStatus = new SinkStatus();
         this.validatePermission(tenant,
                 namespace,
@@ -286,6 +311,7 @@ public class SinksImpl extends MeshComponentImpl
     @Override
     public SinkConfig getSinkInfo(
             final String tenant, final String namespace, final String componentName) {
+        validateSinkEnabled();
         this.validateGetInfoRequestParams(tenant, namespace, componentName, kind);
         try {
             Call call =
@@ -313,11 +339,13 @@ public class SinksImpl extends MeshComponentImpl
                                       final String namespace,
                                       final String clientRole,
                                       final AuthenticationDataSource clientAuthenticationDataHttps) {
+        validateSinkEnabled();
         return super.listFunctions(tenant, namespace, clientRole, clientAuthenticationDataHttps);
     }
 
     @Override
     public List<ConnectorDefinition> getSinkList() {
+        validateSinkEnabled();
         List<ConnectorDefinition> connectorDefinitions = getListOfConnectors();
         List<ConnectorDefinition> retval = new ArrayList<>();
         for (ConnectorDefinition connectorDefinition : connectorDefinitions) {
@@ -330,6 +358,7 @@ public class SinksImpl extends MeshComponentImpl
 
     @Override
     public List<ConfigFieldDefinition> getSinkConfigDefinition(String name) {
+        validateSinkEnabled();
         return new ArrayList<>();
     }
 

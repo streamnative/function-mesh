@@ -244,6 +244,18 @@ functionsDirectory: ./functions
 validateConnectorConfig: false
 
 functionsWorkerServiceCustomConfigs:
+  # Enable user to upload custom function/source/sink jar/nar
+  uploadEnabled: true
+
+  # Enable the function api endpoint
+  functionEnabled: true
+
+  # Enable the sink api endpoint
+  sinkEnabled: true
+
+  # Enable the source api endpoint
+  sourceEnabled: true
+
   volumeMounts:
     - mountPath: /mnt/secrets
       name: secret-pulsarcluster-data
