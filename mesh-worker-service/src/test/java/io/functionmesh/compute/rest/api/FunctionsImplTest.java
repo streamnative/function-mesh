@@ -477,6 +477,17 @@ public class FunctionsImplTest {
                 version, functionName, null, functionConfig, Collections.emptyMap());
         v1alpha1Function.getMetadata().setResourceVersion("24794021");
 
+        String clusterName = "test-pulsar";
+        Map<String, String> customLabels = Maps.newHashMap();
+        customLabels.put("pulsar-cluster", clusterName);
+        customLabels.put("pulsar-tenant", tenant);
+        customLabels.put("pulsar-namespace", namespace);
+        customLabels.put("pulsar-component", functionName);
+        V1alpha1FunctionSpecPod pod = new V1alpha1FunctionSpecPod();
+        pod.setLabels(customLabels);
+        v1alpha1Function.getSpec().pod(pod);
+        v1alpha1Function.getMetadata().setLabels(customLabels);
+
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .replaceNamespacedCustomObjectCall(
                         group,

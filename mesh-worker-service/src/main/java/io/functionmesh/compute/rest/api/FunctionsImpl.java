@@ -195,6 +195,19 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                     functionConfig,
                     worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs()
             );
+            v1alpha1Function.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
+            Map<String, String> customLabels = Maps.newHashMap();
+            customLabels.put(CLUSTER_LABEL_CLAIM, v1alpha1Function.getSpec().getClusterName());
+            customLabels.put(TENANT_LABEL_CLAIM, tenant);
+            customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
+            customLabels.put(COMPONENT_LABEL_CLAIM, functionName);
+            V1alpha1FunctionSpecPod pod = new V1alpha1FunctionSpecPod();
+            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+                customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
+            }
+            pod.setLabels(customLabels);
+            v1alpha1Function.getSpec().setPod(pod);
+            v1alpha1Function.getMetadata().setLabels(customLabels);
             v1alpha1Function.getMetadata().setResourceVersion(oldFn.getMetadata().getResourceVersion());
             this.upsertFunction(tenant, namespace, functionName, functionConfig, v1alpha1Function, clientAuthenticationDataHttps);
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(

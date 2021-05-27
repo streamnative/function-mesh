@@ -448,6 +448,17 @@ public class SinksImpTest {
                         Collections.emptyMap());
         v1alpha1Sink.getMetadata().setResourceVersion("881033");
 
+        String clusterName = "test-pulsar";
+        Map<String, String> customLabels = Maps.newHashMap();
+        customLabels.put("pulsar-cluster", clusterName);
+        customLabels.put("pulsar-tenant", tenant);
+        customLabels.put("pulsar-namespace", namespace);
+        customLabels.put("pulsar-component", componentName);
+        V1alpha1SinkSpecPod pod = new V1alpha1SinkSpecPod();
+        pod.setLabels(customLabels);
+        v1alpha1Sink.getSpec().pod(pod);
+        v1alpha1Sink.getMetadata().setLabels(customLabels);
+
         PowerMockito.when(
                 meshWorkerService
                                 .getCustomObjectsApi()

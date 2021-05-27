@@ -212,6 +212,19 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                     this.meshWorkerServiceSupplier.get().getConnectorsManager(),
                     worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs()
             );
+            v1alpha1Source.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
+            Map<String, String> customLabels = Maps.newHashMap();
+            customLabels.put(CLUSTER_LABEL_CLAIM, v1alpha1Source.getSpec().getClusterName());
+            customLabels.put(TENANT_LABEL_CLAIM, tenant);
+            customLabels.put(NAMESPACE_LABEL_CLAIM, namespace);
+            customLabels.put(COMPONENT_LABEL_CLAIM, sourceName);
+            V1alpha1SourceSpecPod pod = new V1alpha1SourceSpecPod();
+            if (worker().getFactoryConfig() != null && worker().getFactoryConfig().getCustomLabels() != null) {
+                customLabels.putAll(worker().getFactoryConfig().getCustomLabels());
+            }
+            pod.setLabels(customLabels);
+            v1alpha1Source.getMetadata().setLabels(customLabels);
+            v1alpha1Source.getSpec().setPod(pod);
             v1alpha1Source.getMetadata().setResourceVersion(oldRes.getMetadata().getResourceVersion());
             this.upsertSource(tenant, namespace, sourceName, sourceConfig, v1alpha1Source, clientAuthenticationDataHttps);
             Call replaceCall = worker().getCustomObjectsApi().replaceNamespacedCustomObjectCall(
