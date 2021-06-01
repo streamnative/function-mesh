@@ -60,35 +60,10 @@ public class FunctionsUtil {
     public static V1alpha1Function createV1alpha1FunctionFromFunctionConfig(String kind, String group, String version
             , String functionName, String functionPkgUrl, FunctionConfig functionConfig
             , Map<String, Object> customConfigs, String cluster) {
-        String customRuntimeOptionsJSON = functionConfig.getCustomRuntimeOptions();
-        CustomRuntimeOptions customRuntimeOptions = null;
-        if (Strings.isEmpty(customRuntimeOptionsJSON)) {
-            throw new RestException(
-                    Response.Status.BAD_REQUEST, "customRuntimeOptions is not provided");
-        }
+        CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(functionConfig.getCustomRuntimeOptions());
+        String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
 
-        String clusterName = CommonUtil.getCurrentClusterName();
-        if (cluster == null) {
-            try {
-                customRuntimeOptions =
-                        new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
-            } catch (Exception ignored) {
-                throw new RestException(
-                        Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
-            }
-
-            if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
-                clusterName = customRuntimeOptions.getClusterName();
-            }
-        } else {
-            clusterName = cluster;
-        }
-
-        if (Strings.isEmpty(clusterName)) {
-            throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
-        }
-
-        Function.FunctionDetails functionDetails = null;
+        Function.FunctionDetails functionDetails;
         try {
             functionDetails = FunctionConfigUtils.convert(functionConfig, null);
         } catch (IllegalArgumentException ex) {
