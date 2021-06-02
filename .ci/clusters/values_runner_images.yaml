@@ -27,35 +27,35 @@ affinity:
 images:
   zookeeper:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.8.0-rc-202106012229
     pullPolicy: IfNotPresent
   bookie:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.8.0-rc-202106012229
     pullPolicy: IfNotPresent
   presto:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.8.0-rc-202106012229
     pullPolicy: IfNotPresent
   autorecovery:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.8.0-rc-202106012229
     pullPolicy: IfNotPresent
   broker:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.8.0-rc-202106012229
     pullPolicy: IfNotPresent
   proxy:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.8.0-rc-202106012229
     pullPolicy: IfNotPresent
   pulsar_detector:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.8.0-rc-202106012229
     pullPolicy: IfNotPresent
   functions:
     repository: streamnative/pulsar-all
-    tag: 2.7.1
+    tag: 2.8.0-rc-202106012229
     pullPolicy: IfNotPresent
 
 # disable auto recovery
@@ -125,9 +125,9 @@ functions:
     disk: 1048576000
   functionRuntimeFactoryConfigs:
     functionDockerImages:
-      JAVA: "streamnative/pulsar-functions-java-runner:2.7.1"
-      PYTHON: "streamnative/pulsar-functions-python-runner:2.7.1"
-      GO: "streamnative/pulsar-functions-go-runner:2.7.1"
+      JAVA: "streamnative/pulsar-functions-java-runner:2.8.0-rc-202106012229"
+      PYTHON: "streamnative/pulsar-functions-python-runner:2.8.0-rc-202106012229"
+      GO: "streamnative/pulsar-functions-go-runner:2.8.0-rc-202106012229"
     functionInstanceMinResources:
       cpu: 0.1
       ram: 10485760
