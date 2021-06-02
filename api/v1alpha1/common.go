@@ -130,7 +130,7 @@ type ConsumerConfig struct {
 	IsRegexPattern     bool              `json:"isRegexPattern,omitempty"`
 	SchemaProperties   map[string]string `json:"schemaProperties,omitempty"`
 	ConsumerProperties map[string]string `json:"consumerProperties,omitempty"`
-	ReceiverQueueSize  int32             `json:"receiverQueueSize,omitempty"`
+	ReceiverQueueSize  *int32            `json:"receiverQueueSize,omitempty"`
 	CryptoConfig       *CryptoConfig     `json:"cryptoConfig,omitempty"`
 }
 
