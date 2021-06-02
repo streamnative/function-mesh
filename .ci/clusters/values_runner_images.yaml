@@ -61,12 +61,47 @@ images:
 # disable auto recovery
 components:
   autorecovery: false
+  functions: true
+  sql_worker: false
+  kop: false
+  pulsar_detector: false
+  pulsar_manager: false
 
 zookeeper:
   replicaCount: 1
 
 bookkeeper:
   replicaCount: 1
+  configData:
+    BOOKIE_MEM: >
+      -Xms128m
+      -Xmx256m
+      -XX:MaxDirectMemorySize=256m
+      # we use `bin/pulsar` for starting bookie daemons
+    PULSAR_MEM: >
+      -Xms128m
+      -Xmx256m
+      -XX:MaxDirectMemorySize=256m
+    PULSAR_GC: >
+      -XX:+UseG1GC
+      -XX:MaxGCPauseMillis=10
+      -XX:+ParallelRefProcEnabled
+      -XX:+UnlockExperimentalVMOptions
+      -XX:+AggressiveOpts
+      -XX:+DoEscapeAnalysis
+      -XX:ParallelGCThreads=4
+      -XX:ConcGCThreads=4
+      -XX:G1NewSizePercent=50
+      -XX:+DisableExplicitGC
+      -XX:-ResizePLAB
+      -XX:+ExitOnOutOfMemoryError
+      -XX:+PerfDisableSharedMem
+      -XX:+PrintGCDetails
+      -XX:+PrintGCApplicationStoppedTime
+      -XX:+PrintHeapAtGC
+      -verbosegc
+      -Xloggc:/var/log/bookie-gc.log
+      -XX:G1LogLevel=finest
 
 broker:
   replicaCount: 1
