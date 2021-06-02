@@ -124,11 +124,17 @@ func generateInputSpec(sourceConf v1alpha1.InputConf) map[string]*proto.Consumer
 
 	if sourceConf.SourceSpecs != nil && len(sourceConf.SourceSpecs) > 0 {
 		for topicName, conf := range sourceConf.SourceSpecs {
+			var receiverQueueSize *proto.ConsumerSpec_ReceiverQueueSize
+			if conf.ReceiverQueueSize != nil {
+				receiverQueueSize = &proto.ConsumerSpec_ReceiverQueueSize{Value: *conf.ReceiverQueueSize}
+			} else {
+				receiverQueueSize = nil
+			}
 			inputSpecs[topicName] = &proto.ConsumerSpec{
 				SchemaType:         conf.SchemaType,
 				SerdeClassName:     conf.SerdeClassName,
 				IsRegexPattern:     conf.IsRegexPattern,
-				ReceiverQueueSize:  &proto.ConsumerSpec_ReceiverQueueSize{Value: conf.ReceiverQueueSize},
+				ReceiverQueueSize:  receiverQueueSize,
 				SchemaProperties:   conf.SchemaProperties,
 				ConsumerProperties: conf.ConsumerProperties,
 				CryptoSpec:         generateCryptoSpec(conf.CryptoConfig),

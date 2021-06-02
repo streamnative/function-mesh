@@ -82,7 +82,7 @@ func main() {
 							SchemaType:        functionConfig.InputSpecs[s].SchemaType,
 							SerdeClassName:    functionConfig.InputSpecs[s].SerdeClassName,
 							IsRegexPattern:    functionConfig.InputSpecs[s].IsRegexPattern,
-							ReceiverQueueSize: receiveQueueSize,
+							ReceiverQueueSize: &receiveQueueSize,
 						}
 					}
 					timeoutMs := int32(0)
