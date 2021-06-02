@@ -19,6 +19,8 @@
 #
 
 set -e
+BINDIR=`dirname "$0"`
+PULSAR_HOME=`cd ${BINDIR}/..;pwd`
 
 source ${PULSAR_HOME}/.ci/helm.sh
 
