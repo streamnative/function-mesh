@@ -23,8 +23,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Deploy k8s cluster env
-        run: |
-          .ci/deploy_pulsar_cluster.sh
+        uses: nick-invision/retry@v2
+        with:
+          timeout_minutes: 60
+          max_attempts: 3
+          retry_on: error
+          command: |
+            .ci/deploy_pulsar_cluster.sh
+          on_retry_command: |
+            .ci/cleanup.sh
 
       - name: Build runner images
         run: |
