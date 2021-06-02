@@ -45,6 +45,17 @@ function ci::delete_cluster() {
     echo "Successfully delete a kind cluster."
 }
 
+function ci::cleanup() {
+    echo "Clean up kind clusters ..."
+    clusters=( $(kind get clusters | grep sn-platform) )
+    for cluster in "${clusters[@]}"
+    do
+       echo "Deleting a kind cluster ${cluster}"
+       kind delete cluster --name=${cluster}
+    done
+    echo "Successfully clean up a kind cluster."
+}
+
 function ci::install_storage_provisioner() {
     echo "Installing the local storage provisioner ..."
     ${HELM} repo add streamnative https://charts.streamnative.io
