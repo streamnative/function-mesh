@@ -42,6 +42,11 @@ func (in *ConsumerConfig) DeepCopyInto(out *ConsumerConfig) {
 			(*out)[key] = val
 		}
 	}
+	if in.ReceiverQueueSize != nil {
+		in, out := &in.ReceiverQueueSize, &out.ReceiverQueueSize
+		*out = new(int32)
+		**out = **in
+	}
 	if in.CryptoConfig != nil {
 		in, out := &in.CryptoConfig, &out.CryptoConfig
 		*out = new(CryptoConfig)

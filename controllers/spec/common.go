@@ -396,6 +396,9 @@ func convertSubPosition(pos v1alpha1.SubscribePosition) proto.SubscriptionPositi
 }
 
 func generateRetryDetails(maxMessageRetry int32, deadLetterTopic string) *proto.RetryDetails {
+	if maxMessageRetry <= 0 && deadLetterTopic == "" {
+		return nil
+	}
 	return &proto.RetryDetails{
 		MaxMessageRetries: maxMessageRetry,
 		DeadLetterTopic:   deadLetterTopic,
