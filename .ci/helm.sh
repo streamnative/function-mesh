@@ -68,6 +68,9 @@ function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
     values=${1:-".ci/clusters/values.yaml"}
     echo $values
+    if [ -d "pulsar-charts" ]; then
+      rm -rf pulsar-charts
+    fi
     git clone https://github.com/streamnative/charts.git pulsar-charts
     cp ${values} pulsar-charts/charts/pulsar/mini_values.yaml
     cd pulsar-charts
