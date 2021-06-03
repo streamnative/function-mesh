@@ -76,6 +76,10 @@ deploy: manifests kustomize
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
+helm-crds: manifests
+	rm -rf charts/function-mesh-operator/crds/*.yaml
+	cp -r config/crd/bases/*.yaml charts/function-mesh-operator/crds/
+
 # Run go fmt against code
 fmt:
 	go fmt ./...
@@ -153,7 +157,7 @@ crd: manifests
 rbac: manifests
 	$(KUSTOMIZE) build config/rbac > manifests/rbac.yaml
 
-release: manifests crd rbac manager operator-docker-image
+release: manifests crd rbac manager operator-docker-image helm-crds
 
 operator-docker-image: test
 	docker build -f operator.Dockerfile -t $(OPERATOR_IMG) .
