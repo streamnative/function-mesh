@@ -17,7 +17,7 @@
 # under the License.
 #
 
-name: Precommit - Pulsar Helm Chart (Basic Installation)
+name: Precommit - Helm Chart (Basic Installation)
 on: [pull_request]
 jobs:
   lint-test:
