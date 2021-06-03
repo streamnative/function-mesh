@@ -30,7 +30,7 @@ jobs:
           sudo apt clean
           docker rmi $(docker images -q) -f
           df -h
-          
+
       - name: Checkout
         uses: actions/checkout@v2
 

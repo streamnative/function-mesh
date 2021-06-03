@@ -1,2 +1,5 @@
 check-version-increment: false
 helm-extra-args: --timeout 300
+chart-dirs:
+  - charts
+all: true
