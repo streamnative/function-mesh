@@ -18,19 +18,25 @@
  */
 package io.functionmesh.compute.util;
 
+import com.google.gson.Gson;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import java.util.Collections;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.FunctionConfig;
+import org.apache.pulsar.common.util.RestException;
+
+import javax.ws.rs.core.Response;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CommonUtil {
     private static final String CLUSTER_NAME_ENV = "clusterName";
 
-    public static String getCurrentClusterName() {
+    public static String getClusterNameEnv() {
         return System.getenv(CLUSTER_NAME_ENV);
     }
 
@@ -124,4 +130,33 @@ public class CommonUtil {
         return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    // Return a CustomRuntimeOption if a json string is provided, otherwise an empty object is returned
+    public static CustomRuntimeOptions getCustomRuntimeOptions(String customRuntimeOptionsJSON) {
+        CustomRuntimeOptions customRuntimeOptions;
+        if (Strings.isNotEmpty(customRuntimeOptionsJSON)) {
+            try {
+                customRuntimeOptions =
+                        new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
+            } catch (Exception ignored) {
+                throw new RestException(
+                        Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
+            }
+        } else {
+            customRuntimeOptions = new CustomRuntimeOptions();
+        }
+
+        return customRuntimeOptions;
+    }
+
+    public static String getClusterName(String cluster, CustomRuntimeOptions customRuntimeOptions) {
+        if (cluster != null) {
+            return cluster;
+        } else if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())){
+            return customRuntimeOptions.getClusterName();
+        } else if (Strings.isNotEmpty(CommonUtil.getClusterNameEnv())){
+            return CommonUtil.getClusterNameEnv();
+        } else {
+            throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
+        }
+    }
 }

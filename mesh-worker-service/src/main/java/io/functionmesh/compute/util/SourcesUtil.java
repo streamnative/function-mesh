@@ -63,31 +63,8 @@ public class SourcesUtil {
                                                                       SourceConfig sourceConfig,
                                                                       MeshConnectorsManager connectorsManager,
                                                                       Map<String, Object> customConfigs, String cluster) {
-        String customRuntimeOptionsJSON = sourceConfig.getCustomRuntimeOptions();
-        CustomRuntimeOptions customRuntimeOptions = null;
-        if (Strings.isEmpty(customRuntimeOptionsJSON)) {
-            throw new RestException(
-                    Response.Status.BAD_REQUEST, "customRuntimeOptions is not provided");
-        }
-        String clusterName = CommonUtil.getCurrentClusterName();
-        try {
-            customRuntimeOptions =
-                    new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
-        } catch (Exception ignored) {
-            throw new RestException(
-                    Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
-        }
-        if (cluster == null) {
-            if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
-                clusterName = customRuntimeOptions.getClusterName();
-            }
-        } else {
-            clusterName = cluster;
-        }
-
-        if (Strings.isEmpty(clusterName)) {
-            throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
-        }
+        CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(sourceConfig.getCustomRuntimeOptions());
+        String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
 
         String location = String.format("%s/%s/%s", sourceConfig.getTenant(), sourceConfig.getNamespace(),
                 sourceConfig.getName());
