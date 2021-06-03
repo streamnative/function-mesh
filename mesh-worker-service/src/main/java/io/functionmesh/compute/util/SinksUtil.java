@@ -191,6 +191,9 @@ public class SinksUtil {
         }
 
         v1alpha1SinkSpec.setReplicas(functionDetails.getParallelism());
+        if (customRuntimeOptions.getMaxReplicas() > functionDetails.getParallelism()) {
+            v1alpha1SinkSpec.setMaxReplicas(customRuntimeOptions.getMaxReplicas());
+        }
 
         double cpu = sinkConfig.getResources() != null &&
                 sinkConfig.getResources().getCpu() != 0 ? sinkConfig.getResources().getCpu() : 1;
