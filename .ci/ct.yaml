@@ -1,0 +1,2 @@
+check-version-increment: false
+helm-extra-args: --timeout 300
