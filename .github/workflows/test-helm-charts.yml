@@ -23,6 +23,14 @@ jobs:
   lint-test:
     runs-on: ubuntu-latest
     steps:
+      - name: clean disk
+        run: |
+          sudo swapoff -a
+          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt clean
+          docker rmi $(docker images -q) -f
+          df -h
+          
       - name: Checkout
         uses: actions/checkout@v2
 
