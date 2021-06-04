@@ -164,7 +164,16 @@ public class SinksUtil {
             }
         }
 
-        v1alpha1SinkSpecInput.setTopics(new ArrayList<>(sinkConfig.getInputs()));
+        if (sinkConfig.getInputs() != null) {
+            v1alpha1SinkSpecInput.setTopics(new ArrayList<>(sinkConfig.getInputs()));
+        }
+
+        if ((v1alpha1SinkSpecInput.getTopics() == null || v1alpha1SinkSpecInput.getTopics().size() == 0) &&
+                (v1alpha1SinkSpecInput.getSourceSpecs() == null || v1alpha1SinkSpecInput.getSourceSpecs().size() == 0)
+        ) {
+            log.warn("invalid SinkSpecInput {}", v1alpha1SinkSpecInput);
+            throw new RestException(Response.Status.BAD_REQUEST, "invalid SinkSpecInput");
+        }
         v1alpha1SinkSpec.setInput(v1alpha1SinkSpecInput);
 
         if (Strings.isNotEmpty(functionDetails.getSource().getSubscriptionName())) {
