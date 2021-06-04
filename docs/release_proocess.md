@@ -14,10 +14,9 @@
 ```
 git clone https://github.com/streamnative/function-mesh
 git checkout -b branch-x.y
-cd mesh-worker-service
-mvn versions:set -DnewVersion=vx.y.z
+./bump_version.sh x.y.z
 git add .
-git commit -m "Update release version for mesh worker service"
+git commit -m "Update release version"
 git push origin branch-x.y
 ```
 
