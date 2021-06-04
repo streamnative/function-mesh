@@ -32,10 +32,8 @@ import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodResources;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
-import io.functionmesh.compute.models.CustomRuntimeOptions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.apache.pulsar.common.functions.FunctionDefinition;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SourceConfig;
@@ -44,9 +42,7 @@ import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.utils.SourceConfigUtils;
 
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -164,6 +160,15 @@ public class SourcesUtil {
                         v1alpha1SourceSpecOutput.setTypeClassName("[B");
                     } else {
                         v1alpha1SourceSpecOutput.setTypeClassName(functionMeshConnectorDefinition.getTypeClassName());
+                    }
+                    // use default schema type if user not provided
+                    if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSchemaType())
+                            && StringUtils.isEmpty(v1alpha1SourceSpecOutput.getSinkSchemaType())) {
+                        v1alpha1SourceSpecOutput.setSinkSchemaType(functionMeshConnectorDefinition.getDefaultSchemaType());
+                    }
+                    if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSerdeClassName())
+                            && StringUtils.isEmpty(v1alpha1SourceSpecOutput.getSinkSerdeClassName())) {
+                        v1alpha1SourceSpecOutput.setSinkSerdeClassName(functionMeshConnectorDefinition.getDefaultSerdeClassName());
                     }
                 }
             }
