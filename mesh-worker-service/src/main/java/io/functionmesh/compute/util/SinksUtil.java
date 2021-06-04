@@ -169,15 +169,20 @@ public class SinksUtil {
                             V1alpha1SinkSpecInputSourceSpecs inputSourceSpecsItem =
                                     v1alpha1SinkSpecInput.getSourceSpecs().getOrDefault(input,
                                             new V1alpha1SinkSpecInputSourceSpecs());
+                            boolean updated = false;
                             if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSchemaType())
                                     && StringUtils.isEmpty(inputSourceSpecsItem.getSchemaType())) {
                                 inputSourceSpecsItem.setSchemaType(functionMeshConnectorDefinition.getDefaultSchemaType());
+                                updated = true;
                             }
                             if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSerdeClassName())
                                     && StringUtils.isEmpty(inputSourceSpecsItem.getSerdeClassname())) {
                                 inputSourceSpecsItem.setSerdeClassname(functionMeshConnectorDefinition.getDefaultSerdeClassName());
+                                updated = true;
                             }
-                            v1alpha1SinkSpecInput.putSourceSpecsItem(input, inputSourceSpecsItem);
+                            if (updated) {
+                                v1alpha1SinkSpecInput.putSourceSpecsItem(input, inputSourceSpecsItem);
+                            }
                         }
                     }
                 }
