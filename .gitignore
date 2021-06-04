@@ -29,3 +29,5 @@ bundle
 bundle.Dockerfile
 index.Dockerfile*
 index_build_*/
+
+*.bak
