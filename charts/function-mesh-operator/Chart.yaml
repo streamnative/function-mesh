@@ -2,10 +2,8 @@ apiVersion: v2
 name: function-mesh-operator
 description: function mesh operator Helm chart for Kubernetes
 maintainers:
-  - name: nlu90
-    email: nlu@streamnative.io
-  - name: freeznet
-    email: rfu@streamnative.io
+  - name: Function Mesh Support
+    email: function-mesh@streamnative.io
 
 # A chart can be either an 'application' or a 'library' chart.
 #

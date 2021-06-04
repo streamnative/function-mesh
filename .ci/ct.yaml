@@ -2,3 +2,4 @@ check-version-increment: false
 chart-dirs:
   - charts
 all: true
+validate-maintainers: false
