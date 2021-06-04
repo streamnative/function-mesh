@@ -25,8 +25,10 @@ public class CustomRuntimeOptions {
     public final static String clusterNameKey = "clusterName";
     public final static String inputTypeClassNameKey = "inputTypeClassName";
     public final static String outputTypeClassNameKey = "outputTypeClassName";
+    public final static String maxReplicasKey = "maxReplicas";
 
     private String clusterName;
     private String inputTypeClassName;
     private String outputTypeClassName;
+    private int maxReplicas;
 }
