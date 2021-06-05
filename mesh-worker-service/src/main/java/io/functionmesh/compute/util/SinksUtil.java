@@ -160,6 +160,31 @@ public class SinksUtil {
                     } else {
                         v1alpha1SinkSpecInput.setTypeClassName(functionMeshConnectorDefinition.getTypeClassName());
                     }
+                    // we only handle user provide --inputs but also with defaultSchemaType defined
+                    if (sinkConfig.getInputs() != null && sinkConfig.getInputs().size() > 0) {
+                        if (v1alpha1SinkSpecInput.getSourceSpecs() == null) {
+                            v1alpha1SinkSpecInput.setSourceSpecs(new HashMap<>());
+                        }
+                        for (String input : sinkConfig.getInputs()) {
+                            V1alpha1SinkSpecInputSourceSpecs inputSourceSpecsItem =
+                                    v1alpha1SinkSpecInput.getSourceSpecs().getOrDefault(input,
+                                            new V1alpha1SinkSpecInputSourceSpecs());
+                            boolean updated = false;
+                            if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSchemaType())
+                                    && StringUtils.isEmpty(inputSourceSpecsItem.getSchemaType())) {
+                                inputSourceSpecsItem.setSchemaType(functionMeshConnectorDefinition.getDefaultSchemaType());
+                                updated = true;
+                            }
+                            if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSerdeClassName())
+                                    && StringUtils.isEmpty(inputSourceSpecsItem.getSerdeClassname())) {
+                                inputSourceSpecsItem.setSerdeClassname(functionMeshConnectorDefinition.getDefaultSerdeClassName());
+                                updated = true;
+                            }
+                            if (updated) {
+                                v1alpha1SinkSpecInput.putSourceSpecsItem(input, inputSourceSpecsItem);
+                            }
+                        }
+                    }
                 }
             }
         }
