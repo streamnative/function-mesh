@@ -109,7 +109,16 @@ public class FunctionsUtil {
             v1alpha1FunctionSpecInput.setTypeClassName(customRuntimeOptions.getInputTypeClassName());
         }
 
-        v1alpha1FunctionSpecInput.setTopics(new ArrayList<>(functionConfig.getInputs()));
+        if (functionConfig.getInputs() != null) {
+            v1alpha1FunctionSpecInput.setTopics(new ArrayList<>(functionConfig.getInputs()));
+        }
+
+        if ((v1alpha1FunctionSpecInput.getTopics() == null || v1alpha1FunctionSpecInput.getTopics().size() == 0) &&
+                (v1alpha1FunctionSpecInput.getSourceSpecs() == null || v1alpha1FunctionSpecInput.getSourceSpecs().size() == 0)
+        ) {
+            log.warn("invalid FunctionSpecInput {}", v1alpha1FunctionSpecInput);
+            throw new RestException(Response.Status.BAD_REQUEST, "invalid FunctionSpecInput");
+        }
         v1alpha1FunctionSpec.setInput(v1alpha1FunctionSpecInput);
 
         if (!StringUtils.isEmpty(functionDetails.getSource().getSubscriptionName())) {
