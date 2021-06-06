@@ -63,6 +63,16 @@ public class FunctionMeshConnectorDefinition extends ConnectorDefinition {
      */
     private String typeClassName;
 
+    /**
+     * Default schema type of the connector's topic, optional.
+     */
+    private String defaultSchemaType;
+
+    /**
+     * Default serde class name of the connector's topic, optional.
+     */
+    private String defaultSerdeClassName;
+
     public String toFullImageURL() {
         return String.format("%s%s:%s", imageRegistry != null ? imageRegistry : DEFAULT_REGISTRY,
                 imageRepository, imageTag != null ? imageTag : version);
