@@ -40,7 +40,7 @@ FLAGS:
         --force-kubectl      Force reinstall kubectl client if it is already installed
         --force-kind         Force reinstall KinD if it is already installed
 OPTIONS:
-    -v, --version            Version of function-mesh, default value: v0.1.4
+    -v, --version            Version of function-mesh, default value: v0.1.5
     -l, --local [kind]       Choose a way to run a local kubernetes cluster, supported value: kind,
                              If this value is not set and the Kubernetes is not installed, this script will exit with 1.
     -n, --name               Name of Kubernetes cluster, default value: kind
@@ -56,7 +56,7 @@ EOF
 
 main() {
   local local_kube="kind"
-  local fm_version="0.1.5-rc18"
+  local fm_version="v0.1.5"
   local kind_name="kind"
   local kind_version="v0.7.0"
   local node_num=2
@@ -86,7 +86,7 @@ main() {
       shift
       ;;
     -v | --version)
-      fm_version="0.1.5-rc18"
+      fm_version="$2"
       shift
       shift
       ;;
