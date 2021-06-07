@@ -56,7 +56,7 @@ EOF
 
 main() {
   local local_kube="kind"
-  local cm_version="v0.1.4"
+  local fm_version="0.1.5-rc18"
   local kind_name="kind"
   local kind_version="v0.7.0"
   local node_num=2
@@ -86,7 +86,7 @@ main() {
       shift
       ;;
     -v | --version)
-      cm_version="$2"
+      fm_version="0.1.5-rc18"
       shift
       shift
       ;;
@@ -180,7 +180,7 @@ main() {
   #    fi
 
   if [ "${crd}" == "" ]; then
-    crd="https://github.com/streamnative/function-mesh/releases/download/${cm_version}/crd.yaml"
+    crd="https://github.com/streamnative/function-mesh/releases/download/${fm_version}/crd.yaml"
   fi
 
   need_cmd "sed"
@@ -200,7 +200,7 @@ main() {
   fi
 
   check_kubernetes
-  install_function_mesh "${release_name}" "${namespace}" "${crd}" "${runtime}" "${cm_version}" "${docker_registry}"
+  install_function_mesh "${release_name}" "${namespace}" "${crd}" "${runtime}" "${fm_version}" "${docker_registry}"
   ensure_pods_ready "${namespace}" "app.kubernetes.io/component=controller-manager" 100
   printf "Function Mesh %s is installed successfully\n" "${release_name}"
 }
