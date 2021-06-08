@@ -32,10 +32,8 @@ import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodResources;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
-import io.functionmesh.compute.models.CustomRuntimeOptions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.apache.pulsar.common.functions.FunctionDefinition;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SourceConfig;
@@ -44,9 +42,7 @@ import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.utils.SourceConfigUtils;
 
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,31 +59,8 @@ public class SourcesUtil {
                                                                       SourceConfig sourceConfig,
                                                                       MeshConnectorsManager connectorsManager,
                                                                       Map<String, Object> customConfigs, String cluster) {
-        String customRuntimeOptionsJSON = sourceConfig.getCustomRuntimeOptions();
-        CustomRuntimeOptions customRuntimeOptions = null;
-        if (Strings.isEmpty(customRuntimeOptionsJSON)) {
-            throw new RestException(
-                    Response.Status.BAD_REQUEST, "customRuntimeOptions is not provided");
-        }
-        String clusterName = CommonUtil.getCurrentClusterName();
-        try {
-            customRuntimeOptions =
-                    new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
-        } catch (Exception ignored) {
-            throw new RestException(
-                    Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
-        }
-        if (cluster == null) {
-            if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
-                clusterName = customRuntimeOptions.getClusterName();
-            }
-        } else {
-            clusterName = cluster;
-        }
-
-        if (Strings.isEmpty(clusterName)) {
-            throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
-        }
+        CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(sourceConfig.getCustomRuntimeOptions());
+        String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
 
         String location = String.format("%s/%s/%s", sourceConfig.getTenant(), sourceConfig.getNamespace(),
                 sourceConfig.getName());
@@ -188,6 +161,15 @@ public class SourcesUtil {
                     } else {
                         v1alpha1SourceSpecOutput.setTypeClassName(functionMeshConnectorDefinition.getTypeClassName());
                     }
+                    // use default schema type if user not provided
+                    if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSchemaType())
+                            && StringUtils.isEmpty(v1alpha1SourceSpecOutput.getSinkSchemaType())) {
+                        v1alpha1SourceSpecOutput.setSinkSchemaType(functionMeshConnectorDefinition.getDefaultSchemaType());
+                    }
+                    if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSerdeClassName())
+                            && StringUtils.isEmpty(v1alpha1SourceSpecOutput.getSinkSerdeClassName())) {
+                        v1alpha1SourceSpecOutput.setSinkSerdeClassName(functionMeshConnectorDefinition.getDefaultSerdeClassName());
+                    }
                 }
             }
         }
@@ -199,6 +181,9 @@ public class SourcesUtil {
         }
 
         v1alpha1SourceSpec.setReplicas(functionDetails.getParallelism());
+        if (customRuntimeOptions.getMaxReplicas() > functionDetails.getParallelism()) {
+            v1alpha1SourceSpec.setMaxReplicas(customRuntimeOptions.getMaxReplicas());
+        }
 
         double cpu = sourceConfig.getResources() != null && sourceConfig.getResources().getCpu() != 0 ? sourceConfig.getResources().getCpu() : 1;
         long ramRequest = sourceConfig.getResources() != null && sourceConfig.getResources().getRam() != 0 ? sourceConfig.getResources().getRam() : 1073741824;

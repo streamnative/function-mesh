@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.1.4
+VERSION ?= 0.1.5
 # Default image tag
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:v$(VERSION)
@@ -75,6 +75,10 @@ deploy: manifests kustomize
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+helm-crds: manifests
+	rm -rf charts/function-mesh-operator/crds/*.yaml
+	cp -r config/crd/bases/*.yaml charts/function-mesh-operator/crds/
 
 # Run go fmt against code
 fmt:
@@ -153,7 +157,7 @@ crd: manifests
 rbac: manifests
 	$(KUSTOMIZE) build config/rbac > manifests/rbac.yaml
 
-release: manifests crd rbac manager operator-docker-image
+release: manifests crd rbac manager operator-docker-image helm-crds
 
 operator-docker-image: test
 	docker build -f operator.Dockerfile -t $(OPERATOR_IMG) .

@@ -58,32 +58,8 @@ public class SinksUtil {
             , String sinkName, String sinkPkgUrl, InputStream uploadedInputStream, SinkConfig sinkConfig,
                                                                 MeshConnectorsManager connectorsManager,
                                                                 Map<String, Object> customConfigs, String cluster) {
-        String customRuntimeOptionsJSON = sinkConfig.getCustomRuntimeOptions();
-        CustomRuntimeOptions customRuntimeOptions = null;
-        if (Strings.isEmpty(customRuntimeOptionsJSON)) {
-            throw new RestException(
-                    Response.Status.BAD_REQUEST, "customRuntimeOptions is not provided");
-        }
-
-        String clusterName = CommonUtil.getCurrentClusterName();
-        try {
-            customRuntimeOptions =
-                    new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
-        } catch (Exception ignored) {
-            throw new RestException(
-                    Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
-        }
-        if (cluster == null) {
-            if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
-                clusterName = customRuntimeOptions.getClusterName();
-            }
-        } else {
-            clusterName = cluster;
-        }
-        if (Strings.isEmpty(clusterName)) {
-            throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
-        }
-
+        CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(sinkConfig.getCustomRuntimeOptions());
+        String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
 
         String location =
                 String.format(
@@ -184,11 +160,45 @@ public class SinksUtil {
                     } else {
                         v1alpha1SinkSpecInput.setTypeClassName(functionMeshConnectorDefinition.getTypeClassName());
                     }
+                    // we only handle user provide --inputs but also with defaultSchemaType defined
+                    if (sinkConfig.getInputs() != null && sinkConfig.getInputs().size() > 0) {
+                        if (v1alpha1SinkSpecInput.getSourceSpecs() == null) {
+                            v1alpha1SinkSpecInput.setSourceSpecs(new HashMap<>());
+                        }
+                        for (String input : sinkConfig.getInputs()) {
+                            V1alpha1SinkSpecInputSourceSpecs inputSourceSpecsItem =
+                                    v1alpha1SinkSpecInput.getSourceSpecs().getOrDefault(input,
+                                            new V1alpha1SinkSpecInputSourceSpecs());
+                            boolean updated = false;
+                            if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSchemaType())
+                                    && StringUtils.isEmpty(inputSourceSpecsItem.getSchemaType())) {
+                                inputSourceSpecsItem.setSchemaType(functionMeshConnectorDefinition.getDefaultSchemaType());
+                                updated = true;
+                            }
+                            if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSerdeClassName())
+                                    && StringUtils.isEmpty(inputSourceSpecsItem.getSerdeClassname())) {
+                                inputSourceSpecsItem.setSerdeClassname(functionMeshConnectorDefinition.getDefaultSerdeClassName());
+                                updated = true;
+                            }
+                            if (updated) {
+                                v1alpha1SinkSpecInput.putSourceSpecsItem(input, inputSourceSpecsItem);
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        v1alpha1SinkSpecInput.setTopics(new ArrayList<>(sinkConfig.getInputs()));
+        if (sinkConfig.getInputs() != null) {
+            v1alpha1SinkSpecInput.setTopics(new ArrayList<>(sinkConfig.getInputs()));
+        }
+
+        if ((v1alpha1SinkSpecInput.getTopics() == null || v1alpha1SinkSpecInput.getTopics().size() == 0) &&
+                (v1alpha1SinkSpecInput.getSourceSpecs() == null || v1alpha1SinkSpecInput.getSourceSpecs().size() == 0)
+        ) {
+            log.warn("invalid SinkSpecInput {}", v1alpha1SinkSpecInput);
+            throw new RestException(Response.Status.BAD_REQUEST, "invalid SinkSpecInput");
+        }
         v1alpha1SinkSpec.setInput(v1alpha1SinkSpecInput);
 
         if (Strings.isNotEmpty(functionDetails.getSource().getSubscriptionName())) {
@@ -215,6 +225,9 @@ public class SinksUtil {
         }
 
         v1alpha1SinkSpec.setReplicas(functionDetails.getParallelism());
+        if (customRuntimeOptions.getMaxReplicas() > functionDetails.getParallelism()) {
+            v1alpha1SinkSpec.setMaxReplicas(customRuntimeOptions.getMaxReplicas());
+        }
 
         double cpu = sinkConfig.getResources() != null &&
                 sinkConfig.getResources().getCpu() != 0 ? sinkConfig.getResources().getCpu() : 1;

@@ -60,35 +60,10 @@ public class FunctionsUtil {
     public static V1alpha1Function createV1alpha1FunctionFromFunctionConfig(String kind, String group, String version
             , String functionName, String functionPkgUrl, FunctionConfig functionConfig
             , Map<String, Object> customConfigs, String cluster) {
-        String customRuntimeOptionsJSON = functionConfig.getCustomRuntimeOptions();
-        CustomRuntimeOptions customRuntimeOptions = null;
-        if (Strings.isEmpty(customRuntimeOptionsJSON)) {
-            throw new RestException(
-                    Response.Status.BAD_REQUEST, "customRuntimeOptions is not provided");
-        }
+        CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(functionConfig.getCustomRuntimeOptions());
+        String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
 
-        String clusterName = CommonUtil.getCurrentClusterName();
-        if (cluster == null) {
-            try {
-                customRuntimeOptions =
-                        new Gson().fromJson(customRuntimeOptionsJSON, CustomRuntimeOptions.class);
-            } catch (Exception ignored) {
-                throw new RestException(
-                        Response.Status.BAD_REQUEST, "customRuntimeOptions cannot be deserialized.");
-            }
-
-            if (Strings.isNotEmpty(customRuntimeOptions.getClusterName())) {
-                clusterName = customRuntimeOptions.getClusterName();
-            }
-        } else {
-            clusterName = cluster;
-        }
-
-        if (Strings.isEmpty(clusterName)) {
-            throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
-        }
-
-        Function.FunctionDetails functionDetails = null;
+        Function.FunctionDetails functionDetails;
         try {
             functionDetails = FunctionConfigUtils.convert(functionConfig, null);
         } catch (IllegalArgumentException ex) {
@@ -134,7 +109,16 @@ public class FunctionsUtil {
             v1alpha1FunctionSpecInput.setTypeClassName(customRuntimeOptions.getInputTypeClassName());
         }
 
-        v1alpha1FunctionSpecInput.setTopics(new ArrayList<>(functionConfig.getInputs()));
+        if (functionConfig.getInputs() != null) {
+            v1alpha1FunctionSpecInput.setTopics(new ArrayList<>(functionConfig.getInputs()));
+        }
+
+        if ((v1alpha1FunctionSpecInput.getTopics() == null || v1alpha1FunctionSpecInput.getTopics().size() == 0) &&
+                (v1alpha1FunctionSpecInput.getSourceSpecs() == null || v1alpha1FunctionSpecInput.getSourceSpecs().size() == 0)
+        ) {
+            log.warn("invalid FunctionSpecInput {}", v1alpha1FunctionSpecInput);
+            throw new RestException(Response.Status.BAD_REQUEST, "invalid FunctionSpecInput");
+        }
         v1alpha1FunctionSpec.setInput(v1alpha1FunctionSpecInput);
 
         if (!StringUtils.isEmpty(functionDetails.getSource().getSubscriptionName())) {
@@ -210,6 +194,9 @@ public class FunctionsUtil {
         v1alpha1FunctionSpec.setMaxPendingAsyncRequests(functionConfig.getMaxPendingAsyncRequests());
 
         v1alpha1FunctionSpec.setReplicas(functionDetails.getParallelism());
+        if (customRuntimeOptions.getMaxReplicas() > functionDetails.getParallelism()) {
+            v1alpha1FunctionSpec.setMaxReplicas(customRuntimeOptions.getMaxReplicas());
+        }
 
         v1alpha1FunctionSpec.setLogTopic(functionConfig.getLogTopic());
 
