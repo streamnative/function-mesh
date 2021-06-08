@@ -36,6 +36,7 @@ import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.functions.UpdateOptions;
+import org.apache.pulsar.common.functions.UpdateOptionsImpl;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
@@ -174,7 +175,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                final FunctionConfig functionConfig,
                                final String clientRole,
                                AuthenticationDataHttps clientAuthenticationDataHttps,
-                               UpdateOptions updateOptions) {
+                               UpdateOptionsImpl updateOptions) {
         validateFunctionEnabled();
 
         validateUpdateFunctionRequestParams(tenant, namespace, functionName, functionConfig, uploadedInputStream != null);

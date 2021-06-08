@@ -34,7 +34,7 @@ import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
-import org.apache.pulsar.common.functions.UpdateOptions;
+import org.apache.pulsar.common.functions.UpdateOptionsImpl;
 import org.apache.pulsar.common.io.ConfigFieldDefinition;
 import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.io.SourceConfig;
@@ -184,7 +184,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                              final SourceConfig sourceConfig,
                              final String clientRole,
                              AuthenticationDataHttps clientAuthenticationDataHttps,
-                             UpdateOptions updateOptions) {
+                             UpdateOptionsImpl updateOptions) {
         validateSourceEnabled();
         validateUpdateSourceRequestParams(tenant, namespace, sourceName, sourceConfig, uploadedInputStream != null);
         this.validatePermission(tenant,

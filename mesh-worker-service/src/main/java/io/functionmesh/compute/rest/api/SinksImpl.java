@@ -36,7 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.functions.Resources;
-import org.apache.pulsar.common.functions.UpdateOptions;
+import org.apache.pulsar.common.functions.UpdateOptionsImpl;
 import org.apache.pulsar.common.io.ConfigFieldDefinition;
 import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.io.SinkConfig;
@@ -189,7 +189,7 @@ public class SinksImpl extends MeshComponentImpl
             final SinkConfig sinkConfig,
             final String clientRole,
             AuthenticationDataHttps clientAuthenticationDataHttps,
-            UpdateOptions updateOptions) {
+            UpdateOptionsImpl updateOptions) {
         validateSinkEnabled();
         validateUpdateSinkRequestParams(tenant, namespace, sinkName, sinkConfig, uploadedInputStream != null);
         this.validatePermission(tenant,
