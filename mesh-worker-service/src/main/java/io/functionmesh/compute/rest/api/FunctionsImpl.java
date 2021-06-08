@@ -159,6 +159,14 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                     null
             );
             executeCall(call, V1alpha1Function.class);
+        } catch (RestException restException) {
+            log.error(
+                    "register {}/{}/{} sink failed, error message: {}",
+                    tenant,
+                    namespace,
+                    functionConfig,
+                    restException.getMessage());
+            throw restException;
         } catch (Exception e) {
             log.error("register {}/{}/{} function failed, error message: {}", tenant, namespace, functionName, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());

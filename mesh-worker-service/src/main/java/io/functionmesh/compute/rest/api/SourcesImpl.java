@@ -169,6 +169,14 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                     null,
                     null);
             executeCall(call, V1alpha1Source.class);
+        } catch (RestException restException) {
+            log.error(
+                    "register {}/{}/{} sink failed, error message: {}",
+                    tenant,
+                    namespace,
+                    sourceConfig,
+                    restException.getMessage());
+            throw restException;
         } catch (Exception e) {
             log.error("register {}/{}/{} source failed, error message: {}", tenant, namespace, sourceConfig, e);
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());

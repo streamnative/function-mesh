@@ -181,6 +181,9 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                 return null;
             }
             return worker().getApiClient().getJSON().getGson().fromJson(data, c);
+        } else if (response.code() == 409) {
+            throw new RestException(javax.ws.rs.core.Response.Status.CONFLICT,
+                    "This resource already exists, please change the name");
         } else {
             String body = response.body() != null ? response.body().string() : "";
             String err = String.format(

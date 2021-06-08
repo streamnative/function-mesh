@@ -165,7 +165,15 @@ public class SinksImpl extends MeshComponentImpl
                                     null,
                                     null,
                                     null);
-            executeCall(call, V1alpha1Sink.class);
+           executeCall(call, V1alpha1Sink.class);
+        } catch (RestException restException){
+            log.error(
+                    "register {}/{}/{} sink failed, error message: {}",
+                    tenant,
+                    namespace,
+                    sinkConfig,
+                    restException.getMessage());
+            throw restException;
         } catch (Exception e) {
             e.printStackTrace();
             log.error(
