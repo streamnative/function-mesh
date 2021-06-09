@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.1.5
+VERSION ?= 0.1.6-rc1
 # Default image tag
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:v$(VERSION)
@@ -159,7 +159,7 @@ rbac: manifests
 
 release: manifests crd rbac manager operator-docker-image helm-crds
 
-operator-docker-image: test
+operator-docker-image: manager test
 	docker build -f operator.Dockerfile -t $(OPERATOR_IMG) .
 	docker tag $(OPERATOR_IMG) $(OPERATOR_IMG_LATEST)
 
