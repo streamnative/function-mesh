@@ -38,7 +38,7 @@ sed -i.bak -E "s/(version\: )(.+)/\1$NEW_VERSION/" charts/function-mesh-operator
 sed -i.bak -E "s/(operatorImage\: streamnative\/function\-mesh\:v)(.+)/\1$NEW_VERSION/" charts/function-mesh-operator/values.yaml
 
 # change install.sh
-sed -i.bak -E "s/(local fm_version\=)(.+)/\1\"$NEW_VERSION\"/" install.sh
+sed -i.bak -E "s/(local fm_version\=)(.+)/\1\"v$NEW_VERSION\"/" install.sh
 
 # change README.md
 sed -i.bak -E "s/(.+)v(.+)(\/install.sh)/\1v$NEW_VERSION\3/" README.md
