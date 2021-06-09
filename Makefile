@@ -217,3 +217,9 @@ catalog-push: ## Push a catalog image.
 ifneq ($(origin CATALOG_BRANCH_TAG), undefined)
 	$(MAKE) image-push IMG=$(CATALOG_BRANCH_IMG)
 endif
+
+version:
+	@echo ${VERSION}
+
+operator-docker-image-name:
+	@echo ${OPERATOR_IMG}
