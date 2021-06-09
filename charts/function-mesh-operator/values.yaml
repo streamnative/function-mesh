@@ -7,7 +7,7 @@ rbac:
   create: true
 
 # operatorImage is Function Mesh Operator image
-operatorImage: streamnative/function-mesh:v0.1.5
+operatorImage: streamnative/function-mesh:v0.1.6-rc1
 imagePullPolicy: IfNotPresent
 imagePullSecrets: []
 

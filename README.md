@@ -4,7 +4,7 @@ A Kubernetes-Native way to run pulsar functions, connectors and composed functio
 ## Install
 
 ```bash
-curl -sSL https://github.com/streamnative/function-mesh/releases/download/v0.1.5/install.sh | bash
+curl -sSL https://github.com/streamnative/function-mesh/releases/download/v0.1.6-rc1/install.sh | bash
 ```
 
 The above command installs all the CRDs, required service account configuration, and all function-mesh operator components. Before you start running a function-mesh example, verify if Function Mesh is installed correctly.
