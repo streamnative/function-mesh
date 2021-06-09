@@ -16,7 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-
 volumes:
   persistence: false
 
@@ -24,49 +23,86 @@ volumes:
 affinity:
   anti_affinity: false
 
-images:
-  zookeeper:
-    repository: streamnative/pulsar-all
-    tag: 2.7.1
-    pullPolicy: IfNotPresent
-  bookie:
-    repository: streamnative/pulsar-all
-    tag: 2.7.1
-    pullPolicy: IfNotPresent
-  presto:
-    repository: streamnative/pulsar-all
-    tag: 2.7.1
-    pullPolicy: IfNotPresent
-  autorecovery:
-    repository: streamnative/pulsar-all
-    tag: 2.7.1
-    pullPolicy: IfNotPresent
-  broker:
-    repository: streamnative/pulsar-all
-    tag: 2.7.1
-    pullPolicy: IfNotPresent
-  proxy:
-    repository: streamnative/pulsar-all
-    tag: 2.7.1
-    pullPolicy: IfNotPresent
-  pulsar_detector:
-    repository: streamnative/pulsar-all
-    tag: 2.7.1
-    pullPolicy: IfNotPresent
-  functions:
-    repository: streamnative/pulsar-all
-    tag: 2.7.1
-    pullPolicy: IfNotPresent
-
 # disable auto recovery
 components:
   autorecovery: false
+  pulsar_manager: false
+
+## disable monitoring stack
+monitoring:
+  # monitoring - prometheus
+  prometheus: false
+  # monitoring - grafana
+  grafana: false
+  # monitoring - node_exporter
+  node_exporter: false
+
+images:
+  zookeeper:
+    repository: streamnative/pulsar-all
+    tag: 2.8.0-rc-202106091215
+    pullPolicy: IfNotPresent
+  bookie:
+    repository: streamnative/pulsar-all
+    tag: 2.8.0-rc-202106091215
+    pullPolicy: IfNotPresent
+  autorecovery:
+    repository: streamnative/pulsar-all
+    tag: 2.8.0-rc-202106091215
+    pullPolicy: IfNotPresent
+  broker:
+    repository: streamnative/pulsar-all
+    tag: 2.8.0-rc-202106091215
+    pullPolicy: IfNotPresent
+  proxy:
+    repository: streamnative/pulsar-all
+    tag: 2.8.0-rc-202106091215
+    pullPolicy: IfNotPresent
+  functions:
+    repository: streamnative/pulsar-all
+    tag: 2.8.0-rc-202106091215
+    pullPolicy: IfNotPresent
 
 zookeeper:
   replicaCount: 1
 
 bookkeeper:
   replicaCount: 1
+  metadata:
+    image:
+      repository: freeznet/fm-pulsar-all
+      tag: 2.8.0-rc-202106012229
+  configData:
+    # `BOOKIE_MEM` is used for `bookie shell`
+    BOOKIE_MEM: >
+      -Xms128m
+      -Xmx256m
+      -XX:MaxDirectMemorySize=256m
+    # we use `bin/pulsar` for starting bookie daemons
+    PULSAR_MEM: >
+      -Xms128m
+      -Xmx256m
+      -XX:MaxDirectMemorySize=256m
+    PULSAR_GC: >
+      -XX:+UseG1GC
+      -XX:MaxGCPauseMillis=10
+      -XX:+ParallelRefProcEnabled
+      -XX:+UnlockExperimentalVMOptions
+      -XX:+AggressiveOpts
+      -XX:+DoEscapeAnalysis
+      -XX:ParallelGCThreads=4
+      -XX:ConcGCThreads=4
+      -XX:G1NewSizePercent=50
+      -XX:+DisableExplicitGC
+      -XX:-ResizePLAB
+      -XX:+ExitOnOutOfMemoryError
+      -XX:+PerfDisableSharedMem
+
+pulsar_metadata:
+  image:
+    repository: streamnative/pulsar-all
+    tag: 2.8.0-rc-202106091215
+    pullPolicy: IfNotPresent
 
 broker:
   replicaCount: 1
@@ -125,9 +161,9 @@ functions:
     disk: 1048576000
   functionRuntimeFactoryConfigs:
     functionDockerImages:
-      JAVA: "streamnative/pulsar-functions-java-runner:2.7.1"
-      PYTHON: "streamnative/pulsar-functions-python-runner:2.7.1"
-      GO: "streamnative/pulsar-functions-go-runner:2.7.1"
+      JAVA: "streamnative/pulsar-functions-java-runner:2.8.0-rc-202106091215"
+      PYTHON: "streamnative/pulsar-functions-python-runner:2.8.0-rc-202106091215"
+      GO: "streamnative/pulsar-functions-go-runner:2.8.0-rc-202106091215"
     functionInstanceMinResources:
       cpu: 0.1
       ram: 10485760
