@@ -18,12 +18,8 @@
  */
 package io.functionmesh.compute.rest.api;
 
-import com.google.common.collect.Maps;
-import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionList;
 import io.functionmesh.compute.MeshWorkerService;
-import io.functionmesh.compute.sinks.models.V1alpha1Sink;
-import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.KubernetesUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +35,8 @@ import org.apache.pulsar.common.functions.FunctionState;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.naming.NamespaceName;
-import org.apache.pulsar.common.policies.data.FunctionStats;
+import org.apache.pulsar.common.policies.data.FunctionInstanceStatsDataImpl;
+import org.apache.pulsar.common.policies.data.FunctionStatsImpl;
 import org.apache.pulsar.common.policies.data.TenantInfo;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
@@ -51,7 +48,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
@@ -185,6 +181,9 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
                 return null;
             }
             return worker().getApiClient().getJSON().getGson().fromJson(data, c);
+        } else if (response.code() == 409) {
+            throw new RestException(javax.ws.rs.core.Response.Status.CONFLICT,
+                    "This resource already exists, please change the name");
         } else {
             String body = response.body() != null ? response.body().string() : "";
             String err = String.format(
@@ -265,26 +264,26 @@ public abstract class MeshComponentImpl implements Component<MeshWorkerService> 
     }
 
     @Override
-    public FunctionStats getFunctionStats(final String tenant,
-                                          final String namespace,
-                                          final String componentName,
-                                          final URI uri,
-                                          final String clientRole,
-                                          final AuthenticationDataSource clientAuthenticationDataHttps) {
-        FunctionStats functionStats = new FunctionStats();
+    public FunctionStatsImpl getFunctionStats(final String tenant,
+                                              final String namespace,
+                                              final String componentName,
+                                              final URI uri,
+                                              final String clientRole,
+                                              final AuthenticationDataSource clientAuthenticationDataHttps) {
+        FunctionStatsImpl functionStats = new FunctionStatsImpl();
 
         return functionStats;
     }
 
     @Override
-    public FunctionStats.FunctionInstanceStats.FunctionInstanceStatsData getFunctionsInstanceStats(final String tenant,
-                                                                                                   final String namespace,
-                                                                                                   final String componentName,
-                                                                                                   final String instanceId,
-                                                                                                   final URI uri,
-                                                                                                   final String clientRole,
-                                                                                                   final AuthenticationDataSource clientAuthenticationDataHttps) {
-        return new FunctionStats.FunctionInstanceStats.FunctionInstanceStatsData();
+    public FunctionInstanceStatsDataImpl getFunctionsInstanceStats(final String tenant,
+                                                                   final String namespace,
+                                                                   final String componentName,
+                                                                   final String instanceId,
+                                                                   final URI uri,
+                                                                   final String clientRole,
+                                                                   final AuthenticationDataSource clientAuthenticationDataHttps) {
+        return new FunctionInstanceStatsDataImpl();
     }
 
     @Override
