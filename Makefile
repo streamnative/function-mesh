@@ -159,7 +159,7 @@ rbac: manifests
 
 release: manifests crd rbac manager operator-docker-image helm-crds
 
-operator-docker-image: test
+operator-docker-image: manager test
 	docker build -f operator.Dockerfile -t $(OPERATOR_IMG) .
 	docker tag $(OPERATOR_IMG) $(OPERATOR_IMG_LATEST)
 
