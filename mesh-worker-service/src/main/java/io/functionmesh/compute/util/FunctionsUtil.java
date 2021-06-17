@@ -302,6 +302,10 @@ public class FunctionsUtil {
             customRuntimeOptions.setClusterName(v1alpha1FunctionSpec.getClusterName());
         }
 
+        if (v1alpha1FunctionSpec.getMaxReplicas() != null && v1alpha1FunctionSpec.getMaxReplicas() > 0) {
+            customRuntimeOptions.setMaxReplicas(v1alpha1FunctionSpec.getMaxReplicas());
+        }
+
         if (v1alpha1FunctionSpecInput.getTopics() != null) {
             for (String topic : v1alpha1FunctionSpecInput.getTopics()) {
                 ConsumerConfig consumerConfig = new ConsumerConfig();

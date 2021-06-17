@@ -279,6 +279,10 @@ public class SourcesUtil {
             customRuntimeOptions.setClusterName(v1alpha1SourceSpec.getClusterName());
         }
 
+        if (v1alpha1SourceSpec.getMaxReplicas() != null && v1alpha1SourceSpec.getMaxReplicas() > 0) {
+            customRuntimeOptions.setMaxReplicas(v1alpha1SourceSpec.getMaxReplicas());
+        }
+
         if (v1alpha1SourceSpec.getSourceConfig() != null) {
             sourceConfig.setConfigs(new HashMap<>(v1alpha1SourceSpec.getSourceConfig()));
         }
@@ -299,6 +303,7 @@ public class SourcesUtil {
         if (Strings.isNotEmpty(v1alpha1SourceSpec.getRuntimeFlags())) {
             sourceConfig.setRuntimeFlags(v1alpha1SourceSpec.getRuntimeFlags());
         }
+
 
         if (v1alpha1SourceSpec.getJava() != null && Strings.isNotEmpty(v1alpha1SourceSpec.getJava().getJar())) {
             sourceConfig.setArchive(v1alpha1SourceSpec.getJava().getJar());
