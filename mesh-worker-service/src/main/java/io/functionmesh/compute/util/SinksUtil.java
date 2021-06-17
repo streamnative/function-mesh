@@ -298,6 +298,9 @@ public class SinksUtil {
         if (Strings.isNotEmpty(v1alpha1SinkSpec.getClusterName())) {
             customRuntimeOptions.setClusterName(v1alpha1SinkSpec.getClusterName());
         }
+        if (v1alpha1SinkSpec.getMaxReplicas() != null && v1alpha1SinkSpec.getMaxReplicas() > 0) {
+            customRuntimeOptions.setMaxReplicas(v1alpha1SinkSpec.getMaxReplicas());
+        }
 
         if (v1alpha1SinkSpecInput.getTopics() != null) {
             for (String topic : v1alpha1SinkSpecInput.getTopics()) {
