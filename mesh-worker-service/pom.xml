@@ -26,10 +26,10 @@
 
     <groupId>io.functionmesh.proxy</groupId>
     <artifactId>mesh-worker-service</artifactId>
-    <version>v0.1.6-rc1</version>
+    <version>v0.1.6-rc2</version>
 
     <properties>
-        <pulsar.version>2.8.0-rc-202106091215</pulsar.version>
+        <pulsar.version>2.8.0-rc-202106151929</pulsar.version>
         <lombok.version>1.18.16</lombok.version>
         <log4j2.version>2.14.0</log4j2.version>
         <kubernetes-client.version>10.0.1</kubernetes-client.version>
