@@ -8,8 +8,12 @@ on:
       - 'docs/**'
       - 'README.md'
       - 'CONTRIBUTING.md'
+  pull_request:
+    # Only following types are handled by the action, but one can default to all as well
+    types: [ opened, reopened, synchronize ]
+
 jobs:
-  build:
+  update_release_draft:
 
     runs-on: ubuntu-latest
 
@@ -23,6 +27,6 @@ jobs:
           df -h
 
       - name: release note
-        uses: toolmantim/release-drafter@v5.2.0
+        uses: release-drafter/release-drafter@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
