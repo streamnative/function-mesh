@@ -49,10 +49,10 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 			condition.Action = v1alpha1.Create
 			sink.Status.Conditions[v1alpha1.StatefulSet] = condition
 			return nil
-		} else {
-			sink.Status.Conditions[v1alpha1.StatefulSet] = condition
-			return err
 		}
+
+		sink.Status.Conditions[v1alpha1.StatefulSet] = condition
+		return err
 	} else {
 		// statefulset created, waiting it to be ready
 		condition.Action = v1alpha1.Wait

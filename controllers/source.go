@@ -50,10 +50,10 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 			condition.Action = v1alpha1.Create
 			source.Status.Conditions[v1alpha1.StatefulSet] = condition
 			return nil
-		} else {
-			source.Status.Conditions[v1alpha1.StatefulSet] = condition
-			return err
 		}
+
+		source.Status.Conditions[v1alpha1.StatefulSet] = condition
+		return err
 	} else {
 		// statefulset created, waiting it to be ready
 		condition.Action = v1alpha1.Wait
