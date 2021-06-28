@@ -32,14 +32,10 @@ import (
 )
 
 func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Request, sink *v1alpha1.Sink) error {
-	condition, ok := sink.Status.Conditions[v1alpha1.StatefulSet]
-	if !ok {
-		sink.Status.Conditions[v1alpha1.StatefulSet] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.StatefulSetReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
-		return nil
+	condition := v1alpha1.ResourceCondition{
+		Condition: v1alpha1.StatefulSetReady,
+		Status:    metav1.ConditionFalse,
+		Action:    v1alpha1.NoAction,
 	}
 
 	statefulSet := &appsv1.StatefulSet{}
@@ -49,11 +45,29 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 	}, statefulSet)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Info("sink is not ready yet...")
+			r.Log.Info("sink statefulset is not found...")
+			condition.Action = v1alpha1.Create
+			sink.Status.Conditions[v1alpha1.StatefulSet] = condition
 			return nil
 		}
+
+		sink.Status.Conditions[v1alpha1.StatefulSet] = condition
 		return err
 	}
+
+	// statefulset created, waiting it to be ready
+	condition.Action = v1alpha1.Wait
+
+	if *statefulSet.Spec.Replicas != *sink.Spec.Replicas {
+		condition.Action = v1alpha1.Update
+	}
+
+	if statefulSet.Status.ReadyReplicas == *sink.Spec.Replicas {
+		condition.Status = metav1.ConditionTrue
+	}
+
+	sink.Status.Replicas = statefulSet.Status.Replicas
+	sink.Status.Conditions[v1alpha1.StatefulSet] = condition
 
 	selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
 	if err != nil {
@@ -61,23 +75,6 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 		return err
 	}
 	sink.Status.Selector = selector.String()
-
-	if *statefulSet.Spec.Replicas != *sink.Spec.Replicas {
-		condition.Status = metav1.ConditionFalse
-		condition.Action = v1alpha1.Update
-		sink.Status.Conditions[v1alpha1.StatefulSet] = condition
-		return nil
-	}
-
-	if statefulSet.Status.ReadyReplicas == *sink.Spec.Replicas {
-		condition.Action = v1alpha1.NoAction
-		condition.Status = metav1.ConditionTrue
-	} else {
-		condition.Action = v1alpha1.Wait
-	}
-	sink.Status.Replicas = *statefulSet.Spec.Replicas
-	sink.Status.Conditions[v1alpha1.StatefulSet] = condition
-
 	return nil
 }
 
@@ -101,7 +98,7 @@ func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, req ctrl.Requ
 			r.Log.Error(err, "failed to update the sink statefulSet")
 			return err
 		}
-	case v1alpha1.Wait:
+	case v1alpha1.Wait, v1alpha1.NoAction:
 		// do nothing
 	}
 
@@ -109,18 +106,10 @@ func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, req ctrl.Requ
 }
 
 func (r *SinkReconciler) ObserveSinkService(ctx context.Context, req ctrl.Request, sink *v1alpha1.Sink) error {
-	condition, ok := sink.Status.Conditions[v1alpha1.Service]
-	if !ok {
-		sink.Status.Conditions[v1alpha1.Service] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.ServiceReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
-		return nil
-	}
-
-	if condition.Status == metav1.ConditionTrue {
-		return nil
+	condition := v1alpha1.ResourceCondition{
+		Condition: v1alpha1.ServiceReady,
+		Status:    metav1.ConditionFalse,
+		Action:    v1alpha1.NoAction,
 	}
 
 	svc := &corev1.Service{}
@@ -128,14 +117,17 @@ func (r *SinkReconciler) ObserveSinkService(ctx context.Context, req ctrl.Reques
 		Name: spec.MakeSinkObjectMeta(sink).Name}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			condition.Action = v1alpha1.Create
 			r.Log.Info("service is not created...", "Name", sink.Name)
-			return nil
+		} else {
+			sink.Status.Conditions[v1alpha1.Service] = condition
+			return err
 		}
-		return err
+	} else {
+		// service object doesn't have status, so once it's created just consider it's ready
+		condition.Status = metav1.ConditionTrue
 	}
 
-	condition.Action = v1alpha1.NoAction
-	condition.Status = metav1.ConditionTrue
 	sink.Status.Conditions[v1alpha1.Service] = condition
 	return nil
 }
@@ -154,7 +146,7 @@ func (r *SinkReconciler) ApplySinkService(ctx context.Context, req ctrl.Request,
 			r.Log.Error(err, "failed to expose service for sink", "name", sink.Name)
 			return err
 		}
-	case v1alpha1.Wait:
+	case v1alpha1.Wait, v1alpha1.NoAction:
 		// do nothing
 	}
 
@@ -167,18 +159,10 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, s
 		return nil
 	}
 
-	condition, ok := sink.Status.Conditions[v1alpha1.HPA]
-	if !ok {
-		sink.Status.Conditions[v1alpha1.HPA] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.HPAReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
-		return nil
-	}
-
-	if condition.Status == metav1.ConditionTrue {
-		return nil
+	condition := v1alpha1.ResourceCondition{
+		Condition: v1alpha1.HPAReady,
+		Status:    metav1.ConditionFalse,
+		Action:    v1alpha1.NoAction,
 	}
 
 	hpa := &autov1.HorizontalPodAutoscaler{}
@@ -186,14 +170,17 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, s
 		Name: spec.MakeSinkObjectMeta(sink).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			condition.Action = v1alpha1.Create
 			r.Log.Info("hpa is not created for sink...", "name", sink.Name)
-			return nil
+		} else {
+			sink.Status.Conditions[v1alpha1.HPA] = condition
+			return err
 		}
-		return err
+	} else {
+		// HPA's status doesn't show its readiness, so once it's created just consider it's ready
+		condition.Status = metav1.ConditionTrue
 	}
 
-	condition.Action = v1alpha1.NoAction
-	condition.Status = metav1.ConditionTrue
 	sink.Status.Conditions[v1alpha1.HPA] = condition
 	return nil
 }
@@ -217,7 +204,7 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, req ctrl.Request, sin
 			r.Log.Error(err, "failed to create pod autoscaler for sink", "name", sink.Name)
 			return err
 		}
-	case v1alpha1.Wait:
+	case v1alpha1.Wait, v1alpha1.NoAction:
 		// do nothing
 	}
 
