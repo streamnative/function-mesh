@@ -54,10 +54,10 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 
 		source.Status.Conditions[v1alpha1.StatefulSet] = condition
 		return err
-	} else {
-		// statefulset created, waiting it to be ready
-		condition.Action = v1alpha1.Wait
 	}
+
+	// statefulset created, waiting it to be ready
+	condition.Action = v1alpha1.Wait
 
 	if *statefulSet.Spec.Replicas != *source.Spec.Replicas {
 		condition.Action = v1alpha1.Update
@@ -179,7 +179,7 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Reques
 			return err
 		}
 	} else {
-		// HPA's status doesn't show its readiness, , so once it's created just consider it's ready
+		// HPA's status doesn't show its readiness, so once it's created just consider it's ready
 		condition.Status = metav1.ConditionTrue
 	}
 
