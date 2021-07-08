@@ -329,6 +329,7 @@ public class SinksImpl extends MeshComponentImpl
             String jobName = CommonUtil.makeJobName(v1alpha1Sink.getMetadata().getName(), CommonUtil.COMPONENT_SINK);
             V1StatefulSet v1StatefulSet = worker().getAppsV1Api().readNamespacedStatefulSet(jobName, nameSpaceName, null, null, null);
             String statefulSetName = v1StatefulSet != null && v1StatefulSet.getMetadata() != null ? v1StatefulSet.getMetadata().getName() : null;
+            String subdomain = v1StatefulSet != null && v1StatefulSet.getSpec() != null ? v1StatefulSet.getSpec().getServiceName() : null;
             if (v1StatefulSet != null && v1StatefulSet.getStatus() != null && v1StatefulSet.getStatus().getReplicas() != null
                     && v1StatefulSet.getStatus().getReadyReplicas() != null) {
                 sinkStatus.setNumInstances(v1StatefulSet.getStatus().getReplicas());
@@ -352,7 +353,7 @@ public class SinksImpl extends MeshComponentImpl
                     String name = pod.getMetadata() != null && pod.getMetadata().getName() != null ? pod.getMetadata().getName() : null;
                     Integer shardId = name != null ? new Integer(name.substring(name.lastIndexOf("-"))) : null;
                     if (shardId != null) {
-                        String address = KubernetesUtils.getServiceUrl(name, nameSpaceName);
+                        String address = KubernetesUtils.getServiceUrl(name, subdomain, nameSpaceName);
                         channel[shardId] = ManagedChannelBuilder.forAddress(address, 9093)
                                 .usePlaintext()
                                 .build();

@@ -72,6 +72,7 @@ var MetricsPort = corev1.ContainerPort{
 }
 
 func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev1.Service {
+	objectMeta.Name = makeHeadlessServiceName(objectMeta.Name)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -88,6 +89,10 @@ func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev
 			ClusterIP: "None",
 		},
 	}
+}
+
+func makeHeadlessServiceName(serviceName string) string {
+	return fmt.Sprintf("%s-headless", serviceName)
 }
 
 func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
@@ -121,7 +126,8 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: *objectMeta,
-		Spec:       *MakeStatefulSetSpec(replicas, container, volumes, labels, policy, objectMeta.Name),
+		Spec: *MakeStatefulSetSpec(replicas, container, volumes, labels, policy,
+			makeHeadlessServiceName(objectMeta.Name)),
 	}
 }
 

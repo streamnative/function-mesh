@@ -189,8 +189,8 @@ public class KubernetesUtils {
 		return secretName;
 	}
 
-	public static String getServiceUrl(String podName, String jobNamespace) {
-		return String.format("%s.%s.svc.cluster.local", podName, jobNamespace);
+	public static String getServiceUrl(String podName, String subdomain, String jobNamespace) {
+		return String.format("%s.%s.%s.svc.cluster.local", podName, subdomain, jobNamespace);
 	}
 
 }
