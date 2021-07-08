@@ -20,12 +20,11 @@ package controllers
 import (
 	"context"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
 	autov1 "k8s.io/api/autoscaling/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -113,27 +112,20 @@ func (r *SinkReconciler) ObserveSinkService(ctx context.Context, req ctrl.Reques
 		Action:    v1alpha1.NoAction,
 	}
 
-	replicas := int(sink.Status.Replicas)
-	for i := 0; i < replicas; i++ {
-		svc := &corev1.Service{}
-		serviceName := spec.MakeSinkServiceName(sink, i)
-		err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace,
-			Name: serviceName}, svc)
-		if err != nil {
-			// if cannot find one of service, set to ConditionFalse first
-			condition.Status = metav1.ConditionFalse
-			if errors.IsNotFound(err) {
-				condition.Action = v1alpha1.Create
-				r.Log.Info("service is not created...", "Name", sink.Name, "ServiceName", serviceName)
-				break
-			} else {
-				sink.Status.Conditions[v1alpha1.Service] = condition
-				return err
-			}
+	svc := &corev1.Service{}
+	err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace,
+		Name: spec.MakeSinkObjectMeta(sink).Name}, svc)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			condition.Action = v1alpha1.Create
+			r.Log.Info("service is not created...", "Name", sink.Name)
 		} else {
-			// service object doesn't have status, so once it's created just consider it's ready
-			condition.Status = metav1.ConditionTrue
+			sink.Status.Conditions[v1alpha1.Service] = condition
+			return err
 		}
+	} else {
+		// service object doesn't have status, so once it's created just consider it's ready
+		condition.Status = metav1.ConditionTrue
 	}
 
 	sink.Status.Conditions[v1alpha1.Service] = condition
@@ -147,22 +139,12 @@ func (r *SinkReconciler) ApplySinkService(ctx context.Context, req ctrl.Request,
 		return nil
 	}
 
-	replicas := int(sink.Status.Replicas)
-
 	switch condition.Action {
 	case v1alpha1.Create:
-		for i := 0; i < replicas; i++ {
-			svc := &corev1.Service{}
-			serviceName := spec.MakeSinkServiceName(sink, i)
-			err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace,
-				Name: serviceName}, svc)
-			if err != nil && errors.IsNotFound(err) {
-				svcObj := spec.MakeSinkService(sink, i)
-				if err := r.Create(ctx, svcObj); err != nil {
-					r.Log.Error(err, "failed to expose service for sink", "name", sink.Name, "replica", i)
-					return err
-				}
-			}
+		svc := spec.MakeSinkService(sink)
+		if err := r.Create(ctx, svc); err != nil {
+			r.Log.Error(err, "failed to expose service for sink", "name", sink.Name)
+			return err
 		}
 	case v1alpha1.Wait, v1alpha1.NoAction:
 		// do nothing

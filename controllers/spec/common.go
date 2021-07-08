@@ -121,12 +121,13 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: *objectMeta,
-		Spec:       *MakeStatefulSetSpec(replicas, container, volumes, labels, policy),
+		Spec:       *MakeStatefulSetSpec(replicas, container, volumes, labels, policy, objectMeta.Name),
 	}
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
-	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy) *appsv1.StatefulSetSpec {
+	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy,
+	serviceName string) *appsv1.StatefulSetSpec {
 	return &appsv1.StatefulSetSpec{
 		Replicas: replicas,
 		Selector: &metav1.LabelSelector{
@@ -137,6 +138,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
 		},
+		ServiceName: serviceName,
 	}
 }
 
