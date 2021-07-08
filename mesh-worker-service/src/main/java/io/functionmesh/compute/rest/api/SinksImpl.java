@@ -326,11 +326,8 @@ public class SinksImpl extends MeshComponentImpl
                 throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, "no SinkStatus exists");
             }
             String sinkLabelSelector = v1alpha1SinkStatus.getSelector();
-            V1StatefulSetList v1StatefulSetList = worker().getAppsV1Api().listNamespacedStatefulSet(
-                    nameSpaceName, null, null, null, null, sinkLabelSelector, null,
-                    null, null, null);
-            V1StatefulSet v1StatefulSet = v1StatefulSetList != null && !v1StatefulSetList.getItems().isEmpty() ?
-                    v1StatefulSetList.getItems().get(0) : null;
+            String jobName = CommonUtil.makeJobName(v1alpha1Sink.getMetadata().getName(), CommonUtil.COMPONENT_SINK);
+            V1StatefulSet v1StatefulSet = worker().getAppsV1Api().readNamespacedStatefulSet(jobName, nameSpaceName, null, null, null);
             String statefulSetName = v1StatefulSet != null && v1StatefulSet.getMetadata() != null ? v1StatefulSet.getMetadata().getName() : null;
             if (v1StatefulSet != null && v1StatefulSet.getStatus() != null && v1StatefulSet.getStatus().getReplicas() != null
                     && v1StatefulSet.getStatus().getReadyReplicas() != null) {
@@ -346,8 +343,7 @@ public class SinksImpl extends MeshComponentImpl
             }
             V1PodList podList = worker().getCoreV1Api().listNamespacedPod(
                     nameSpaceName, null, null, null, null, sinkLabelSelector,
-                    null, null, null, null
-            );
+                    null, null, null, null, null);
             if (podList != null && !podList.getItems().isEmpty()) {
                 int podsCount = podList.getItems().size();
                 ManagedChannel[] channel = new ManagedChannel[podsCount];
@@ -356,7 +352,7 @@ public class SinksImpl extends MeshComponentImpl
                     String name = pod.getMetadata() != null && pod.getMetadata().getName() != null ? pod.getMetadata().getName() : null;
                     Integer shardId = name != null ? new Integer(name.substring(name.lastIndexOf("-"))) : null;
                     if (shardId != null) {
-                        String address = KubernetesUtils.getServiceUrl(statefulSetName, nameSpaceName, shardId);
+                        String address = KubernetesUtils.getServiceUrl(name, nameSpaceName);
                         channel[shardId] = ManagedChannelBuilder.forAddress(address, 9093)
                                 .usePlaintext()
                                 .build();

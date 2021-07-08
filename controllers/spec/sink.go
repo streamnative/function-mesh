@@ -18,6 +18,8 @@
 package spec
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -31,9 +33,10 @@ func MakeSinkHPA(sink *v1alpha1.Sink) *autov1.HorizontalPodAutoscaler {
 	return MakeHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, sink.Kind)
 }
 
-func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
-	labels := MakeSinkLabels(sink)
-	objectMeta := MakeSinkObjectMeta(sink)
+func MakeSinkService(sink *v1alpha1.Sink, replica int) *corev1.Service {
+	podName := MakeSinkServiceName(sink, replica)
+	labels := MakeSinkServiceLabels(sink, podName)
+	objectMeta := MakeSinkServiceObjectMeta(sink, replica)
 	return MakeService(objectMeta, labels)
 }
 
@@ -51,6 +54,16 @@ func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
 			*metav1.NewControllerRef(sink, sink.GroupVersionKind()),
 		},
 	}
+}
+
+func MakeSinkServiceObjectMeta(sink *v1alpha1.Sink, replica int) *metav1.ObjectMeta {
+	meta := MakeSinkObjectMeta(sink)
+	meta.Name = MakeSinkServiceName(sink, replica)
+	return meta
+}
+
+func MakeSinkServiceName(sink *v1alpha1.Sink, replica int) string {
+	return fmt.Sprintf("%s-%d", makeJobName(sink.Name, v1alpha1.SinkComponent), replica)
 }
 
 func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
@@ -77,6 +90,13 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 	labels["component"] = ComponentSink
 	labels["name"] = sink.Name
 	labels["namespace"] = sink.Namespace
+
+	return labels
+}
+
+func MakeSinkServiceLabels(sink *v1alpha1.Sink, podName string) map[string]string {
+	labels := MakeSinkLabels(sink)
+	labels["statefulset.kubernetes.io/pod-name"] = podName
 
 	return labels
 }

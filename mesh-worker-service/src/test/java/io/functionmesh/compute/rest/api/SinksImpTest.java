@@ -619,13 +619,9 @@ public class SinksImpTest {
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
-        V1StatefulSetList v1StatefulSetList = PowerMockito.mock(V1StatefulSetList.class);
         V1StatefulSet v1StatefulSet = PowerMockito.mock(V1StatefulSet.class);
-        List<V1StatefulSet> statefulSetList = new ArrayList<>();
-        statefulSetList.add(v1StatefulSet);
-        PowerMockito.when(appsV1Api.listNamespacedStatefulSet(namespace, null, null, null, null, "component=sink,name=sink-sample,namespace=default",
-                null, null, null, null)).thenReturn(v1StatefulSetList);
-        PowerMockito.when(v1StatefulSetList.getItems()).thenReturn(statefulSetList);
+        PowerMockito.when(appsV1Api.readNamespacedStatefulSet(any(), namespace, null, null, null)).thenReturn(v1StatefulSet);
+
         V1ObjectMeta v1StatefulSetV1ObjectMeta = PowerMockito.mock(V1ObjectMeta.class);
         PowerMockito.when(v1StatefulSet.getMetadata()).thenReturn(v1StatefulSetV1ObjectMeta);
         PowerMockito.when(v1StatefulSetV1ObjectMeta.getName()).thenReturn(hashName+"-sink");
@@ -638,7 +634,7 @@ public class SinksImpTest {
         V1Pod pod = PowerMockito.mock(V1Pod.class);
         podList.add(pod);
         PowerMockito.when(coreV1Api.listNamespacedPod(namespace, null, null, null, null, "component=sink,name=sink-sample,namespace=default",
-                null, null, null, null)).thenReturn(list);
+                null, null, null, null, null)).thenReturn(list);
         PowerMockito.when(list.getItems()).thenReturn(podList);
         V1ObjectMeta podV1ObjectMeta = PowerMockito.mock(V1ObjectMeta.class);
         PowerMockito.when(pod.getMetadata()).thenReturn(podV1ObjectMeta);

@@ -36,6 +36,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CommonUtil {
+    public static final String COMPONENT_FUNCTION = "function";
+    public static final String COMPONENT_SOURCE = "source";
+    public static final String COMPONENT_SINK = "sink";
     public static final String COMPONENT_STATEFUL_SET = "StatefulSet";
     public static final String COMPONENT_SERVICE = "Service";
     public static final String COMPONENT_HPA = "HorizontalPodAutoscaler";
@@ -171,5 +174,9 @@ public class CommonUtil {
         exceptionInformation.setTimestampMs(exceptionEntry.getMsSinceEpoch());
         exceptionInformation.setExceptionString(exceptionEntry.getExceptionString());
         return exceptionInformation;
+    }
+
+    public static String makeJobName(String name, String suffix) {
+        return String.format("%s-%s", name, suffix);
     }
 }

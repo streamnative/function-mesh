@@ -272,7 +272,6 @@ public class SinksUtil {
         v1alpha1SinkSpec.setPulsar(v1alpha1SinkSpecPulsar);
 
         v1alpha1SinkSpec.setClusterName(clusterName);
-        v1alpha1SinkSpec.setAutoAck(sinkConfig.getAutoAck());
 
         v1alpha1SinkSpec.setSinkConfig(CommonUtil.transformedMapValueToString(sinkConfig.getConfigs()));
 
