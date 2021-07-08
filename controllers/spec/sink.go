@@ -34,8 +34,7 @@ func MakeSinkHPA(sink *v1alpha1.Sink) *autov1.HorizontalPodAutoscaler {
 }
 
 func MakeSinkService(sink *v1alpha1.Sink, replica int) *corev1.Service {
-	podName := MakeSinkServiceName(sink, replica)
-	labels := MakeSinkServiceLabels(sink, podName)
+	labels := MakeSinkServiceLabels(sink, replica)
 	objectMeta := MakeSinkServiceObjectMeta(sink, replica)
 	return MakeService(objectMeta, labels)
 }
@@ -94,7 +93,8 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 	return labels
 }
 
-func MakeSinkServiceLabels(sink *v1alpha1.Sink, podName string) map[string]string {
+func MakeSinkServiceLabels(sink *v1alpha1.Sink, replica int) map[string]string {
+	podName := MakeSinkServiceName(sink, replica)
 	labels := MakeSinkLabels(sink)
 	labels["statefulset.kubernetes.io/pod-name"] = podName
 
