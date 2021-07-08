@@ -27,13 +27,18 @@ import java.util.Collections;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.FunctionConfig;
+import org.apache.pulsar.common.policies.data.ExceptionInformation;
 import org.apache.pulsar.common.util.RestException;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
 
 import javax.ws.rs.core.Response;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CommonUtil {
+    public static final String COMPONENT_STATEFUL_SET = "StatefulSet";
+    public static final String COMPONENT_SERVICE = "Service";
+    public static final String COMPONENT_HPA = "HorizontalPodAutoscaler";
     private static final String CLUSTER_NAME_ENV = "clusterName";
 
     public static String getClusterNameEnv() {
@@ -158,5 +163,13 @@ public class CommonUtil {
         } else {
             throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
         }
+    }
+
+    public static ExceptionInformation getExceptionInformation(InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry) {
+        ExceptionInformation exceptionInformation
+                = new ExceptionInformation();
+        exceptionInformation.setTimestampMs(exceptionEntry.getMsSinceEpoch());
+        exceptionInformation.setExceptionString(exceptionEntry.getExceptionString());
+        return exceptionInformation;
     }
 }

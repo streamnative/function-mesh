@@ -29,7 +29,15 @@ import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SinksUtil;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkStatus;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
+import io.kubernetes.client.openapi.models.V1StatefulSetList;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
@@ -40,9 +48,12 @@ import org.apache.pulsar.common.functions.UpdateOptionsImpl;
 import org.apache.pulsar.common.io.ConfigFieldDefinition;
 import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.io.SinkConfig;
+import org.apache.pulsar.common.policies.data.ExceptionInformation;
 import org.apache.pulsar.common.policies.data.SinkStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
+import org.apache.pulsar.functions.proto.InstanceControlGrpc;
 import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Sinks;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
@@ -50,9 +61,16 @@ import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
+
+import static io.functionmesh.compute.util.CommonUtil.getExceptionInformation;
+import static io.functionmesh.compute.util.KubernetesUtils.GRPC_TIMEOUT_SECS;
 
 @Slf4j
 public class SinksImpl extends MeshComponentImpl
@@ -291,33 +309,124 @@ public class SinksImpl extends MeshComponentImpl
                 ComponentTypeUtils.toString(componentType));
         try {
             String hashName = CommonUtil.generateObjectName(worker(), tenant, namespace, componentName);
+            String nameSpaceName = KubernetesUtils.getNamespace(worker().getFactoryConfig());
             Call call =
                     worker().getCustomObjectsApi()
                             .getNamespacedCustomObjectCall(
-                                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                                    group, version, nameSpaceName,
                                     plural, hashName, null);
             V1alpha1Sink v1alpha1Sink = executeCall(call, V1alpha1Sink.class);
-            SinkStatus.SinkInstanceStatus sinkInstanceStatus = new SinkStatus.SinkInstanceStatus();
-            SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData =
-                    new SinkStatus.SinkInstanceStatus.SinkInstanceStatusData();
-            sinkInstanceStatusData.setRunning(false);
             V1alpha1SinkStatus v1alpha1SinkStatus = v1alpha1Sink.getStatus();
-            if (v1alpha1SinkStatus != null) {
-                boolean running =
-                        v1alpha1SinkStatus.getConditions().values().stream()
-                                .allMatch(
-                                        n ->
-                                                StringUtils.isNotEmpty(n.getStatus())
-                                                        && n.getStatus().equals("True"));
-                sinkInstanceStatusData.setRunning(running);
-                sinkInstanceStatusData.setWorkerId(v1alpha1Sink.getSpec().getClusterName());
-                sinkStatus.addInstance(sinkInstanceStatus);
-                sinkInstanceStatus.setStatus(sinkInstanceStatusData);
-            } else {
-                sinkInstanceStatusData.setRunning(false);
+            if (v1alpha1SinkStatus == null) {
+                log.error(
+                        "get status {}/{}/{} sink failed, no SinkStatus exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, "no SinkStatus exists");
             }
+            String sinkLabelSelector = v1alpha1SinkStatus.getSelector();
+            V1StatefulSetList v1StatefulSetList = worker().getAppsV1Api().listNamespacedStatefulSet(
+                    nameSpaceName, null, null, null, null, sinkLabelSelector, null,
+                    null, null, null);
+            V1StatefulSet v1StatefulSet = v1StatefulSetList != null && !v1StatefulSetList.getItems().isEmpty() ?
+                    v1StatefulSetList.getItems().get(0) : null;
+            String statefulSetName = v1StatefulSet != null && v1StatefulSet.getMetadata() != null ? v1StatefulSet.getMetadata().getName() : null;
+            if (v1StatefulSet != null && v1StatefulSet.getStatus() != null && v1StatefulSet.getStatus().getReplicas() != null
+                    && v1StatefulSet.getStatus().getReadyReplicas() != null) {
+                sinkStatus.setNumInstances(v1StatefulSet.getStatus().getReplicas());
+                sinkStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
+                for(int i=0; i<v1StatefulSet.getStatus().getReplicas(); i++) {
+                    SinkStatus.SinkInstanceStatus sinkInstanceStatus = new SinkStatus.SinkInstanceStatus();
+                    SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData = new SinkStatus.SinkInstanceStatus.SinkInstanceStatusData();
+                    sinkInstanceStatus.setInstanceId(i);
+                    sinkInstanceStatus.setStatus(sinkInstanceStatusData);
+                    sinkStatus.addInstance(sinkInstanceStatus);
+                }
+            }
+            V1PodList podList = worker().getCoreV1Api().listNamespacedPod(
+                    nameSpaceName, null, null, null, null, sinkLabelSelector,
+                    null, null, null, null
+            );
+            if (podList != null && !podList.getItems().isEmpty()) {
+                int podsCount = podList.getItems().size();
+                ManagedChannel[] channel = new ManagedChannel[podsCount];
+                InstanceControlGrpc.InstanceControlFutureStub[] stub = new InstanceControlGrpc.InstanceControlFutureStub[podsCount];
+                podList.getItems().forEach(pod -> {
+                    String name = pod.getMetadata() != null && pod.getMetadata().getName() != null ? pod.getMetadata().getName() : null;
+                    Integer shardId = name != null ? new Integer(name.substring(name.lastIndexOf("-"))) : null;
+                    if (shardId != null) {
+                        String address = KubernetesUtils.getServiceUrl(statefulSetName, nameSpaceName, shardId);
+                        channel[shardId] = ManagedChannelBuilder.forAddress(address, 9093)
+                                .usePlaintext()
+                                .build();
+                        stub[shardId] = InstanceControlGrpc.newFutureStub(channel[shardId]);
 
-            sinkStatus.setNumInstances(sinkStatus.getInstances().size());
+                        SinkStatus.SinkInstanceStatus sinkInstanceStatus = sinkStatus.getInstances().get(shardId);
+                        if (sinkInstanceStatus != null) {
+                            SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData = sinkInstanceStatus.getStatus();
+                            V1PodStatus podStatus = pod.getStatus();
+                            if(v1alpha1Sink.getSpec() != null && StringUtils.isNotEmpty(v1alpha1Sink.getSpec().getClusterName())) {
+                                sinkInstanceStatusData.setWorkerId(v1alpha1Sink.getSpec().getClusterName());
+                            }
+                            if(podStatus != null) {
+                                sinkInstanceStatusData.setRunning(podStatus.getPhase() != null && podStatus.getPhase().equals("Running"));
+                                if (podStatus.getContainerStatuses() != null && !podStatus.getContainerStatuses().isEmpty()) {
+                                    V1ContainerStatus containerStatus = podStatus.getContainerStatuses().get(0);
+                                    sinkInstanceStatusData.setNumRestarts(containerStatus.getRestartCount());
+                                }
+                            }
+                            // get status from grpc
+                            InstanceCommunication.FunctionStatus protoStatus = null;
+                            try {
+                                protoStatus = SinksUtil.getFunctionStatus(stub[shardId]).get(GRPC_TIMEOUT_SECS, TimeUnit.SECONDS);
+                            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                                log.error("Get sink {}-{} status from grpc failed from namespace {}, error message: {}",
+                                        statefulSetName,
+                                        shardId,
+                                        nameSpaceName,
+                                        e.getMessage());
+                                sinkInstanceStatusData.setRunning(false);
+                                sinkInstanceStatusData.setError(e.getMessage());
+                            }
+                            if(protoStatus != null) {
+                                sinkInstanceStatusData.setRunning(protoStatus.getRunning());
+                                sinkInstanceStatusData.setError(protoStatus.getFailureException());
+                                sinkInstanceStatusData.setNumReadFromPulsar(protoStatus.getNumReceived());
+                                sinkInstanceStatusData.setNumSystemExceptions(protoStatus.getNumSystemExceptions()
+                                        + protoStatus.getNumUserExceptions() + protoStatus.getNumSourceExceptions());
+                                List<ExceptionInformation> systemExceptionInformationList = new LinkedList<>();
+                                for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestUserExceptionsList()) {
+                                    ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+                                    systemExceptionInformationList.add(exceptionInformation);
+                                }
+                                for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSystemExceptionsList()) {
+                                    ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+                                    systemExceptionInformationList.add(exceptionInformation);
+                                }
+                                for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSourceExceptionsList()) {
+                                    ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+                                    systemExceptionInformationList.add(exceptionInformation);
+                                }
+                                sinkInstanceStatusData.setLatestSystemExceptions(systemExceptionInformationList);
+                                sinkInstanceStatusData.setNumSinkExceptions(protoStatus.getNumSinkExceptions());
+                                List<ExceptionInformation> sinkExceptionInformationList = new LinkedList<>();
+                                for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSinkExceptionsList()) {
+                                    ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+                                    sinkExceptionInformationList.add(exceptionInformation);
+                                }
+                                sinkInstanceStatusData.setLatestSinkExceptions(sinkExceptionInformationList);
+
+                                sinkInstanceStatusData.setNumWrittenToSink(protoStatus.getNumSuccessfullyProcessed());
+                                sinkInstanceStatusData.setLastReceivedTime(protoStatus.getLastInvocationTime());
+                            }
+                        }
+                    }
+                });
+                for (ManagedChannel cn : channel) {
+                    cn.shutdown();
+                }
+            }
         } catch (Exception e) {
             log.error(
                     "Get sink {} status failed from namespace {}, error message: {}",

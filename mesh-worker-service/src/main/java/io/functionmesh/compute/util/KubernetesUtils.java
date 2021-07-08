@@ -19,13 +19,18 @@
 package io.functionmesh.compute.util;
 
 import com.google.common.collect.Maps;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.pulsar.functions.proto.InstanceControlGrpc;
 import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
 import org.apache.pulsar.functions.utils.Actions;
 import org.apache.pulsar.functions.worker.WorkerConfig;
@@ -50,6 +55,7 @@ public class KubernetesUtils {
 	private static final String USE_TLS_CLAIM = "useTls";
 	private static final String TLS_ALLOW_INSECURE_CONNECTION_CLAIM = "tlsAllowInsecureConnection";
 	private static final String TLS_HOSTNAME_VERIFICATION_ENABLE_CLAIM = "tlsHostnameVerificationEnable";
+	public static final long GRPC_TIMEOUT_SECS = 5;
 
 	public static String getNamespace() {
 		String namespace = null;
@@ -181,6 +187,10 @@ public class KubernetesUtils {
 		}
 
 		return secretName;
+	}
+
+	public static String getServiceUrl(String jobName, String jobNamespace, int instanceId) {
+		return String.format("%s-%d.%s.%s.svc.cluster.local", jobName, instanceId, jobName, jobNamespace);
 	}
 
 }
