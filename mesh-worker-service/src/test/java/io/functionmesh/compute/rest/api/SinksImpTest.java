@@ -603,6 +603,7 @@ public class SinksImpTest {
         String namespace = "default";
         String componentName = "sink-sample";
         String hashName = CommonUtil.generateObjectName(meshWorkerService, tenant, namespace, componentName);
+        String jobName = CommonUtil.makeJobName(componentName, CommonUtil.COMPONENT_SINK);
 
         PowerMockito.when(
                 meshWorkerService
@@ -620,11 +621,11 @@ public class SinksImpTest {
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
         V1StatefulSet v1StatefulSet = PowerMockito.mock(V1StatefulSet.class);
-        PowerMockito.when(appsV1Api.readNamespacedStatefulSet(any(), namespace, null, null, null)).thenReturn(v1StatefulSet);
+        PowerMockito.when(appsV1Api.readNamespacedStatefulSet(jobName, namespace, null, null, null)).thenReturn(v1StatefulSet);
 
         V1ObjectMeta v1StatefulSetV1ObjectMeta = PowerMockito.mock(V1ObjectMeta.class);
         PowerMockito.when(v1StatefulSet.getMetadata()).thenReturn(v1StatefulSetV1ObjectMeta);
-        PowerMockito.when(v1StatefulSetV1ObjectMeta.getName()).thenReturn(hashName+"-sink");
+        PowerMockito.when(v1StatefulSetV1ObjectMeta.getName()).thenReturn(jobName);
         V1StatefulSetStatus v1StatefulSetStatus = PowerMockito.mock(V1StatefulSetStatus.class);
         PowerMockito.when(v1StatefulSet.getStatus()).thenReturn(v1StatefulSetStatus);
         PowerMockito.when(v1StatefulSetStatus.getReplicas()).thenReturn(1);
