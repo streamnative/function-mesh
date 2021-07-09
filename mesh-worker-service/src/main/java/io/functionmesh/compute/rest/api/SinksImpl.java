@@ -323,14 +323,44 @@ public class SinksImpl extends MeshComponentImpl
                         tenant,
                         namespace,
                         componentName);
-                throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, "no SinkStatus exists");
+                throw new RestException(Response.Status.NOT_FOUND, "no SinkStatus exists");
             }
             String sinkLabelSelector = v1alpha1SinkStatus.getSelector();
             String jobName = CommonUtil.makeJobName(v1alpha1Sink.getMetadata().getName(), CommonUtil.COMPONENT_SINK);
             V1StatefulSet v1StatefulSet = worker().getAppsV1Api().readNamespacedStatefulSet(jobName, nameSpaceName, null, null, null);
-            String statefulSetName = v1StatefulSet != null && v1StatefulSet.getMetadata() != null ? v1StatefulSet.getMetadata().getName() : null;
-            String subdomain = v1StatefulSet != null && v1StatefulSet.getSpec() != null ? v1StatefulSet.getSpec().getServiceName() : null;
-            if (v1StatefulSet != null && v1StatefulSet.getStatus() != null && v1StatefulSet.getStatus().getReplicas() != null
+            String statefulSetName = "";
+            String subdomain = "";
+            if (v1StatefulSet == null) {
+                log.error(
+                        "get status {}/{}/{} sink failed, no StatefulSet exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no StatefulSet exists");
+            }
+            if (v1StatefulSet.getMetadata() != null &&
+                    StringUtils.isNotEmpty(v1StatefulSet.getMetadata().getName())) {
+                statefulSetName = v1StatefulSet.getMetadata().getName();
+            } else {
+                log.error(
+                        "get status {}/{}/{} sink failed, no statefulSetName exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no statefulSetName exists");
+            }
+            if (v1StatefulSet.getSpec() != null &&
+                    StringUtils.isNotEmpty(v1StatefulSet.getSpec().getServiceName())) {
+                subdomain = v1StatefulSet.getSpec().getServiceName();
+            } else {
+                log.error(
+                        "get status {}/{}/{} sink failed, no ServiceName exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no ServiceName exists");
+            }
+            if (v1StatefulSet.getStatus() != null && v1StatefulSet.getStatus().getReplicas() != null
                     && v1StatefulSet.getStatus().getReadyReplicas() != null) {
                 sinkStatus.setNumInstances(v1StatefulSet.getStatus().getReplicas());
                 sinkStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
@@ -341,6 +371,12 @@ public class SinksImpl extends MeshComponentImpl
                     sinkInstanceStatus.setStatus(sinkInstanceStatusData);
                     sinkStatus.addInstance(sinkInstanceStatus);
                 }
+            } else {
+                log.warn(
+                        "no StatefulSet status exists when get status of sink {}/{}/{}",
+                        tenant,
+                        namespace,
+                        componentName);
             }
             V1PodList podList = worker().getCoreV1Api().listNamespacedPod(
                     nameSpaceName, null, null, null, null, sinkLabelSelector,
@@ -349,11 +385,12 @@ public class SinksImpl extends MeshComponentImpl
                 int podsCount = podList.getItems().size();
                 ManagedChannel[] channel = new ManagedChannel[podsCount];
                 InstanceControlGrpc.InstanceControlFutureStub[] stub = new InstanceControlGrpc.InstanceControlFutureStub[podsCount];
+                final String finalSubdomain = subdomain;
                 podList.getItems().forEach(pod -> {
                     String name = pod.getMetadata() != null && pod.getMetadata().getName() != null ? pod.getMetadata().getName() : null;
                     Integer shardId = name != null ? new Integer(name.substring(name.lastIndexOf("-"))) : null;
                     if (shardId != null) {
-                        String address = KubernetesUtils.getServiceUrl(name, subdomain, nameSpaceName);
+                        String address = KubernetesUtils.getServiceUrl(name, finalSubdomain, nameSpaceName);
                         channel[shardId] = ManagedChannelBuilder.forAddress(address, 9093)
                                 .usePlaintext()
                                 .build();
@@ -387,35 +424,7 @@ public class SinksImpl extends MeshComponentImpl
                                 sinkInstanceStatusData.setError(e.getMessage());
                             }
                             if(protoStatus != null) {
-                                sinkInstanceStatusData.setRunning(protoStatus.getRunning());
-                                sinkInstanceStatusData.setError(protoStatus.getFailureException());
-                                sinkInstanceStatusData.setNumReadFromPulsar(protoStatus.getNumReceived());
-                                sinkInstanceStatusData.setNumSystemExceptions(protoStatus.getNumSystemExceptions()
-                                        + protoStatus.getNumUserExceptions() + protoStatus.getNumSourceExceptions());
-                                List<ExceptionInformation> systemExceptionInformationList = new LinkedList<>();
-                                for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestUserExceptionsList()) {
-                                    ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
-                                    systemExceptionInformationList.add(exceptionInformation);
-                                }
-                                for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSystemExceptionsList()) {
-                                    ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
-                                    systemExceptionInformationList.add(exceptionInformation);
-                                }
-                                for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSourceExceptionsList()) {
-                                    ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
-                                    systemExceptionInformationList.add(exceptionInformation);
-                                }
-                                sinkInstanceStatusData.setLatestSystemExceptions(systemExceptionInformationList);
-                                sinkInstanceStatusData.setNumSinkExceptions(protoStatus.getNumSinkExceptions());
-                                List<ExceptionInformation> sinkExceptionInformationList = new LinkedList<>();
-                                for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSinkExceptionsList()) {
-                                    ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
-                                    sinkExceptionInformationList.add(exceptionInformation);
-                                }
-                                sinkInstanceStatusData.setLatestSinkExceptions(sinkExceptionInformationList);
-
-                                sinkInstanceStatusData.setNumWrittenToSink(protoStatus.getNumSuccessfullyProcessed());
-                                sinkInstanceStatusData.setLastReceivedTime(protoStatus.getLastInvocationTime());
+                                SinksUtil.convertFunctionStatusToInstanceStatusData(protoStatus, sinkInstanceStatusData);
                             }
                         }
                     }

@@ -43,6 +43,8 @@ import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SinkConfig;
+import org.apache.pulsar.common.policies.data.ExceptionInformation;
+import org.apache.pulsar.common.policies.data.SinkStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
@@ -53,6 +55,8 @@ import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +64,7 @@ import java.util.concurrent.TimeUnit;
 import static io.functionmesh.compute.util.CommonUtil.COMPONENT_HPA;
 import static io.functionmesh.compute.util.CommonUtil.COMPONENT_SERVICE;
 import static io.functionmesh.compute.util.CommonUtil.COMPONENT_STATEFUL_SET;
+import static io.functionmesh.compute.util.CommonUtil.getExceptionInformation;
 import static io.functionmesh.compute.util.KubernetesUtils.GRPC_TIMEOUT_SECS;
 import static org.apache.pulsar.common.functions.Utils.BUILTIN;
 
@@ -442,6 +447,42 @@ public class SinksUtil {
             }
         }, MoreExecutors.directExecutor());
         return retval;
+    }
+
+    public static void convertFunctionStatusToInstanceStatusData(InstanceCommunication.FunctionStatus protoStatus,
+                                                            SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData) {
+        if (protoStatus == null || sinkInstanceStatusData == null) {
+            return;
+        }
+        sinkInstanceStatusData.setRunning(protoStatus.getRunning());
+        sinkInstanceStatusData.setError(protoStatus.getFailureException());
+        sinkInstanceStatusData.setNumReadFromPulsar(protoStatus.getNumReceived());
+        sinkInstanceStatusData.setNumSystemExceptions(protoStatus.getNumSystemExceptions()
+                + protoStatus.getNumUserExceptions() + protoStatus.getNumSourceExceptions());
+        List<ExceptionInformation> systemExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestUserExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSystemExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSourceExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        sinkInstanceStatusData.setLatestSystemExceptions(systemExceptionInformationList);
+        sinkInstanceStatusData.setNumSinkExceptions(protoStatus.getNumSinkExceptions());
+        List<ExceptionInformation> sinkExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSinkExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            sinkExceptionInformationList.add(exceptionInformation);
+        }
+        sinkInstanceStatusData.setLatestSinkExceptions(sinkExceptionInformationList);
+
+        sinkInstanceStatusData.setNumWrittenToSink(protoStatus.getNumSuccessfullyProcessed());
+        sinkInstanceStatusData.setLastReceivedTime(protoStatus.getLastInvocationTime());
     }
 
 }
