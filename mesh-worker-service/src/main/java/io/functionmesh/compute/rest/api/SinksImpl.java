@@ -50,6 +50,7 @@ import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.policies.data.ExceptionInformation;
 import org.apache.pulsar.common.policies.data.SinkStatus;
+import org.apache.pulsar.common.util.FutureUtil;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
@@ -61,9 +62,12 @@ import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -386,15 +390,19 @@ public class SinksImpl extends MeshComponentImpl
                 ManagedChannel[] channel = new ManagedChannel[podsCount];
                 InstanceControlGrpc.InstanceControlFutureStub[] stub = new InstanceControlGrpc.InstanceControlFutureStub[podsCount];
                 final String finalSubdomain = subdomain;
+                final String finalStatefulSetName = statefulSetName;
+                Set<CompletableFuture<InstanceCommunication.FunctionStatus>> completableFutureSet = new HashSet<>();
                 podList.getItems().forEach(pod -> {
                     String name = pod.getMetadata() != null && pod.getMetadata().getName() != null ? pod.getMetadata().getName() : null;
                     Integer shardId = name != null ? new Integer(name.substring(name.lastIndexOf("-"))) : null;
                     if (shardId != null) {
                         String address = KubernetesUtils.getServiceUrl(name, finalSubdomain, nameSpaceName);
-                        channel[shardId] = ManagedChannelBuilder.forAddress(address, 9093)
-                                .usePlaintext()
-                                .build();
-                        stub[shardId] = InstanceControlGrpc.newFutureStub(channel[shardId]);
+                        if (channel[shardId] == null && stub[shardId] == null) {
+                            channel[shardId] = ManagedChannelBuilder.forAddress(address, 9093)
+                                    .usePlaintext()
+                                    .build();
+                            stub[shardId] = InstanceControlGrpc.newFutureStub(channel[shardId]);
+                        }
 
                         SinkStatus.SinkInstanceStatus sinkInstanceStatus = sinkStatus.getInstances().get(shardId);
                         if (sinkInstanceStatus != null) {
@@ -411,24 +419,24 @@ public class SinksImpl extends MeshComponentImpl
                                 }
                             }
                             // get status from grpc
-                            InstanceCommunication.FunctionStatus protoStatus = null;
-                            try {
-                                protoStatus = SinksUtil.getFunctionStatus(stub[shardId]).get(GRPC_TIMEOUT_SECS, TimeUnit.SECONDS);
-                            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                                log.error("Get sink {}-{} status from grpc failed from namespace {}, error message: {}",
-                                        statefulSetName,
-                                        shardId,
-                                        nameSpaceName,
-                                        e.getMessage());
-                                sinkInstanceStatusData.setRunning(false);
-                                sinkInstanceStatusData.setError(e.getMessage());
-                            }
-                            if(protoStatus != null) {
-                                SinksUtil.convertFunctionStatusToInstanceStatusData(protoStatus, sinkInstanceStatusData);
-                            }
+                            CompletableFuture<InstanceCommunication.FunctionStatus> future = SinksUtil.getFunctionStatus(stub[shardId]);
+                            future.whenComplete((fs, e) -> {
+                                if (e != null) {
+                                    log.error("Get sink {}-{} status from grpc failed from namespace {}, error message: {}",
+                                            finalStatefulSetName,
+                                            shardId,
+                                            nameSpaceName,
+                                            e.getMessage());
+                                    sinkInstanceStatusData.setError(e.getMessage());
+                                } else if (fs != null){
+                                    SinksUtil.convertFunctionStatusToInstanceStatusData(fs, sinkInstanceStatusData);
+                                }
+                            });
+                            completableFutureSet.add(future);
                         }
                     }
                 });
+                FutureUtil.waitForAll(new ArrayList<>(completableFutureSet));
                 for (ManagedChannel cn : channel) {
                     cn.shutdown();
                 }
