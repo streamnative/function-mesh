@@ -43,6 +43,11 @@ func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 		makeSinkVolumes(sink), MakeSinkLabels(sink), sink.Spec.Pod)
 }
 
+func MakeSinkServiceName(sink *v1alpha1.Sink) string {
+	objectMeta := MakeSinkObjectMeta(sink)
+	return makeHeadlessServiceName(objectMeta.Name)
+}
+
 func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
 		Name:      makeJobName(sink.Name, v1alpha1.SinkComponent),
