@@ -449,40 +449,40 @@ public class SinksUtil {
         return retval;
     }
 
-    public static void convertFunctionStatusToInstanceStatusData(InstanceCommunication.FunctionStatus protoStatus,
+    public static void convertFunctionStatusToInstanceStatusData(InstanceCommunication.FunctionStatus functionStatus,
                                                             SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData) {
-        if (protoStatus == null || sinkInstanceStatusData == null) {
+        if (functionStatus == null || sinkInstanceStatusData == null) {
             return;
         }
-        sinkInstanceStatusData.setRunning(protoStatus.getRunning());
-        sinkInstanceStatusData.setError(protoStatus.getFailureException());
-        sinkInstanceStatusData.setNumReadFromPulsar(protoStatus.getNumReceived());
-        sinkInstanceStatusData.setNumSystemExceptions(protoStatus.getNumSystemExceptions()
-                + protoStatus.getNumUserExceptions() + protoStatus.getNumSourceExceptions());
+        sinkInstanceStatusData.setRunning(functionStatus.getRunning());
+        sinkInstanceStatusData.setError(functionStatus.getFailureException());
+        sinkInstanceStatusData.setNumReadFromPulsar(functionStatus.getNumReceived());
+        sinkInstanceStatusData.setNumSystemExceptions(functionStatus.getNumSystemExceptions()
+                + functionStatus.getNumUserExceptions() + functionStatus.getNumSourceExceptions());
         List<ExceptionInformation> systemExceptionInformationList = new LinkedList<>();
-        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestUserExceptionsList()) {
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestUserExceptionsList()) {
             ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
             systemExceptionInformationList.add(exceptionInformation);
         }
-        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSystemExceptionsList()) {
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSystemExceptionsList()) {
             ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
             systemExceptionInformationList.add(exceptionInformation);
         }
-        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSourceExceptionsList()) {
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSourceExceptionsList()) {
             ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
             systemExceptionInformationList.add(exceptionInformation);
         }
         sinkInstanceStatusData.setLatestSystemExceptions(systemExceptionInformationList);
-        sinkInstanceStatusData.setNumSinkExceptions(protoStatus.getNumSinkExceptions());
+        sinkInstanceStatusData.setNumSinkExceptions(functionStatus.getNumSinkExceptions());
         List<ExceptionInformation> sinkExceptionInformationList = new LinkedList<>();
-        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : protoStatus.getLatestSinkExceptionsList()) {
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSinkExceptionsList()) {
             ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
             sinkExceptionInformationList.add(exceptionInformation);
         }
         sinkInstanceStatusData.setLatestSinkExceptions(sinkExceptionInformationList);
 
-        sinkInstanceStatusData.setNumWrittenToSink(protoStatus.getNumSuccessfullyProcessed());
-        sinkInstanceStatusData.setLastReceivedTime(protoStatus.getLastInvocationTime());
+        sinkInstanceStatusData.setNumWrittenToSink(functionStatus.getNumSuccessfullyProcessed());
+        sinkInstanceStatusData.setLastReceivedTime(functionStatus.getLastInvocationTime());
     }
 
 }

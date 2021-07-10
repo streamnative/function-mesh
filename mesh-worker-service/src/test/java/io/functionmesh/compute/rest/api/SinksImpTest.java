@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1StatefulSetList;
+import io.kubernetes.client.openapi.models.V1StatefulSetSpec;
 import io.kubernetes.client.openapi.models.V1StatefulSetStatus;
 import okhttp3.Call;
 import okhttp3.Response;
@@ -625,7 +626,10 @@ public class SinksImpTest {
 
         V1ObjectMeta v1StatefulSetV1ObjectMeta = PowerMockito.mock(V1ObjectMeta.class);
         PowerMockito.when(v1StatefulSet.getMetadata()).thenReturn(v1StatefulSetV1ObjectMeta);
+        V1StatefulSetSpec v1StatefulSetSpec = PowerMockito.mock(V1StatefulSetSpec.class);
+        PowerMockito.when(v1StatefulSet.getSpec()).thenReturn(v1StatefulSetSpec);
         PowerMockito.when(v1StatefulSetV1ObjectMeta.getName()).thenReturn(jobName);
+        PowerMockito.when(v1StatefulSetSpec.getServiceName()).thenReturn(jobName);
         V1StatefulSetStatus v1StatefulSetStatus = PowerMockito.mock(V1StatefulSetStatus.class);
         PowerMockito.when(v1StatefulSet.getStatus()).thenReturn(v1StatefulSetStatus);
         PowerMockito.when(v1StatefulSetStatus.getReplicas()).thenReturn(1);
@@ -644,9 +648,8 @@ public class SinksImpTest {
         PowerMockito.when(pod.getStatus()).thenReturn(podStatus);
         InstanceCommunication.FunctionStatus.Builder builder = InstanceCommunication.FunctionStatus.newBuilder();
         builder.setRunning(true);
-        PowerMockito.mockStatic(SinksUtil.class);
         PowerMockito.mockStatic(InstanceControlGrpc.InstanceControlFutureStub.class);
-        PowerMockito.when(SinksUtil.getFunctionStatus(any())).thenReturn(CompletableFuture.completedFuture(builder.build()));
+        PowerMockito.stub(PowerMockito.method(SinksUtil.class, "getFunctionStatus")).toReturn(CompletableFuture.completedFuture(builder.build()));
 
         SinksImpl sinks = spy(new SinksImpl(meshWorkerServiceSupplier));
         SinkStatus sinkStatus =
