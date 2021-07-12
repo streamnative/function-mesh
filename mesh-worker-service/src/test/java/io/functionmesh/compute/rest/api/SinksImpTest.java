@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.JSON;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
@@ -646,6 +647,8 @@ public class SinksImpTest {
         PowerMockito.when(podV1ObjectMeta.getName()).thenReturn(hashName+"-sink-0");
         V1PodStatus podStatus = PowerMockito.mock(V1PodStatus.class);
         PowerMockito.when(pod.getStatus()).thenReturn(podStatus);
+        PowerMockito.when(podStatus.getPhase()).thenReturn("Running");
+        PowerMockito.when(podStatus.getContainerStatuses()).thenReturn(new ArrayList<>());
         InstanceCommunication.FunctionStatus.Builder builder = InstanceCommunication.FunctionStatus.newBuilder();
         builder.setRunning(true);
         PowerMockito.mockStatic(InstanceControlGrpc.InstanceControlFutureStub.class);
