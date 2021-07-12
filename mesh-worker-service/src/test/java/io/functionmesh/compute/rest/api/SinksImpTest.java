@@ -638,8 +638,8 @@ public class SinksImpTest {
         List<V1Pod> podList = new ArrayList<>();
         V1Pod pod = PowerMockito.mock(V1Pod.class);
         podList.add(pod);
-        PowerMockito.when(coreV1Api.listNamespacedPod(namespace, null, null, null, null, "component=sink,name=sink-sample,namespace=default",
-                null, null, null, null, null)).thenReturn(list);
+        PowerMockito.when(coreV1Api.listNamespacedPod(any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any())).thenReturn(list);
         PowerMockito.when(list.getItems()).thenReturn(podList);
         V1ObjectMeta podV1ObjectMeta = PowerMockito.mock(V1ObjectMeta.class);
         PowerMockito.when(pod.getMetadata()).thenReturn(podV1ObjectMeta);
@@ -649,7 +649,7 @@ public class SinksImpTest {
         InstanceCommunication.FunctionStatus.Builder builder = InstanceCommunication.FunctionStatus.newBuilder();
         builder.setRunning(true);
         PowerMockito.mockStatic(InstanceControlGrpc.InstanceControlFutureStub.class);
-        PowerMockito.stub(PowerMockito.method(SinksUtil.class, "getFunctionStatus")).toReturn(CompletableFuture.completedFuture(builder.build()));
+        PowerMockito.stub(PowerMockito.method(SinksUtil.class, "getFunctionStatusAsync")).toReturn(CompletableFuture.completedFuture(builder.build()));
 
         SinksImpl sinks = spy(new SinksImpl(meshWorkerServiceSupplier));
         SinkStatus sinkStatus =

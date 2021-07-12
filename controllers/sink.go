@@ -58,13 +58,11 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 	// statefulset created, waiting it to be ready
 	condition.Action = v1alpha1.Wait
 
-	if *statefulSet.Spec.Replicas != *sink.Spec.Replicas ||
-		statefulSet.Spec.ServiceName != spec.MakeSinkServiceName(sink) {
+	if *statefulSet.Spec.Replicas != *sink.Spec.Replicas {
 		condition.Action = v1alpha1.Update
 	}
 
-	if statefulSet.Status.ReadyReplicas == *sink.Spec.Replicas &&
-		statefulSet.Spec.ServiceName == spec.MakeSinkServiceName(sink) {
+	if statefulSet.Status.ReadyReplicas == *sink.Spec.Replicas {
 		condition.Status = metav1.ConditionTrue
 	}
 

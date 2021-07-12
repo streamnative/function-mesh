@@ -24,6 +24,8 @@ import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import java.util.Collections;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.FunctionConfig;
@@ -35,6 +37,7 @@ import javax.ws.rs.core.Response;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class CommonUtil {
     public static final String COMPONENT_FUNCTION = "function";
     public static final String COMPONENT_SOURCE = "source";
@@ -178,5 +181,15 @@ public class CommonUtil {
 
     public static String makeJobName(String name, String suffix) {
         return String.format("%s-%s", name, suffix);
+    }
+
+    public static int getShardIdFromPodName(String podName) {
+        int shardId = -1;
+        try {
+            shardId = new Integer(podName.substring(podName.lastIndexOf("-")+1));
+        } catch (Exception ex) {
+            log.info("getShardIdFromPodName failed with podName {}, exception: {}", podName, ex);
+        }
+        return shardId;
     }
 }

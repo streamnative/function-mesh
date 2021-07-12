@@ -425,7 +425,7 @@ public class SinksUtil {
         return null;
     }
 
-    public static CompletableFuture<InstanceCommunication.FunctionStatus> getFunctionStatus(InstanceControlGrpc.InstanceControlFutureStub stub) {
+    public static CompletableFuture<InstanceCommunication.FunctionStatus> getFunctionStatusAsync(InstanceControlGrpc.InstanceControlFutureStub stub) {
         CompletableFuture<InstanceCommunication.FunctionStatus> retval = new CompletableFuture<>();
         if (stub == null) {
             retval.completeExceptionally(new RuntimeException("Not alive"));
