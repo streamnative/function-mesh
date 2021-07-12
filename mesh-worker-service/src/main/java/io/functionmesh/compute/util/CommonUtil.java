@@ -188,7 +188,7 @@ public class CommonUtil {
         try {
             shardId = new Integer(podName.substring(podName.lastIndexOf("-")+1));
         } catch (Exception ex) {
-            log.info("getShardIdFromPodName failed with podName {}, exception: {}", podName, ex);
+            log.error("getShardIdFromPodName failed with podName {}, exception: {}", podName, ex);
         }
         return shardId;
     }
