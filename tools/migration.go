@@ -18,6 +18,8 @@
 package main
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -31,6 +33,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func SHA1(s string) string {
+	o := sha1.New()
+	o.Write([]byte(s))
+	return hex.EncodeToString(o.Sum(nil))
+}
 
 func main() {
 	admin := cmdutils.NewPulsarClient()
@@ -110,8 +118,17 @@ func main() {
 					if functionConfig.MaxMessageRetries != nil {
 						maxMessageRetry = int32(*functionConfig.MaxMessageRetries)
 					}
+					labels := make(map[string]string)
+
+					pulsarCluster = "dev"
+					labels["pulsar-cluster"] = pulsarCluster
+					labels["pulsar-component"] = functionConfig.Name
+					labels["pulsar-namespace"] = tenantNamespace[1]
+					labels["pulsar-tenant"] = tenant
+					sha1Value := SHA1(pulsarCluster + "-" + tenantNamespace[0] +
+						"-" + tenantNamespace[1] + "-" + functionConfig.Name)
 					functionSpec := v1alpha1.FunctionSpec{
-						Name:                functionConfig.Name,
+						Name:                "function-" + sha1Value[0: 8],
 						ClassName:           functionConfig.ClassName,
 						Tenant:              functionConfig.Tenant,
 						ClusterName:         pulsarCluster,
@@ -129,7 +146,8 @@ func main() {
 							CustomSchemaSources: functionConfig.CustomSchemaInputs,
 							SourceSpecs:         sourceSpecs,
 						},
-						MaxReplicas: &replicas,
+						// Disable maxReplicas
+						//MaxReplicas: &replicas,
 						Timeout:     timeoutMs,
 						Output: v1alpha1.OutputConf{
 							Topic:              functionConfig.Output,
@@ -143,15 +161,18 @@ func main() {
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse(fmt.Sprintf("%f", functionConfig.Resources.CPU)),
-								corev1.ResourceMemory: resource.MustParse(fmt.Sprintf("%d", functionConfig.Resources.RAM/1024/1024/1024)),
+								corev1.ResourceMemory: resource.MustParse(fmt.Sprintf("%dM", functionConfig.Resources.RAM/1024/1024)),
 							},
 							Requests: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse(fmt.Sprintf("%f", functionConfig.Resources.CPU)),
-								corev1.ResourceMemory: resource.MustParse(fmt.Sprintf("%d", functionConfig.Resources.RAM/1024/1024/1024)),
+								corev1.ResourceMemory: resource.MustParse(fmt.Sprintf("%dM", functionConfig.Resources.RAM/1024/1024)),
 							},
 						},
 						FuncConfig:      funcConfig,
 						MaxMessageRetry: maxMessageRetry,
+						Pod: v1alpha1.PodPolicy{
+							Labels: labels,
+						},
 					}
 					if functionConfig.ProcessingGuarantees != "" {
 						switch strings.ToLower(functionConfig.ProcessingGuarantees) {
@@ -178,13 +199,18 @@ func main() {
 					if functionConfig.Go != nil && *functionConfig.Go != "" {
 						functionSpec.Golang.Go = *functionConfig.Go
 					}
+					functionSpec.Pulsar = &v1alpha1.PulsarMessaging{
+						PulsarConfig: pulsarCluster + "-function-mesh-config",
+						AuthSecret:   "",
+						TLSSecret:    "",
+					}
 					typeMeta := metav1.TypeMeta{
 						APIVersion: "compute.functionmesh.io/v1alpha1",
 						Kind:       "Function",
 					}
 					objectMeta := metav1.ObjectMeta{
-						Namespace: functionConfig.Namespace,
-						Name:      functionConfig.Name,
+						Name:      "function-" + sha1Value[0: 8],
+						Labels:    labels,
 					}
 					functionData := v1alpha1.Function{
 						TypeMeta:   typeMeta,
