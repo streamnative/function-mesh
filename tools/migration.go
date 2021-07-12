@@ -120,7 +120,6 @@ func main() {
 					}
 					labels := make(map[string]string)
 
-					pulsarCluster = "dev"
 					labels["pulsar-cluster"] = pulsarCluster
 					labels["pulsar-component"] = functionConfig.Name
 					labels["pulsar-namespace"] = tenantNamespace[1]
