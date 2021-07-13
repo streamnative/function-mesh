@@ -19,8 +19,8 @@
 package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
-import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
 import io.functionmesh.compute.testdata.Generate;
 import io.functionmesh.compute.util.CommonUtil;
@@ -29,9 +29,16 @@ import io.functionmesh.compute.util.KubernetesUtils;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import java.util.Collections;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
+import io.kubernetes.client.openapi.models.V1StatefulSetSpec;
+import io.kubernetes.client.openapi.models.V1StatefulSetStatus;
 import okhttp3.Call;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
@@ -42,7 +49,8 @@ import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.admin.Tenants;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
-import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
+import org.apache.pulsar.functions.proto.InstanceControlGrpc;
 import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.junit.Assert;
 import org.junit.Test;
@@ -54,16 +62,23 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.powermock.api.mockito.PowerMockito.spy;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Response.class, RealResponseBody.class})
+@PrepareForTest({
+        Response.class,
+        RealResponseBody.class,
+        CommonUtil.class,
+        InstanceControlGrpc.InstanceControlFutureStub.class})
 @PowerMockIgnore({"javax.management.*"})
 public class FunctionsImplTest {
     @Test
@@ -151,30 +166,34 @@ public class FunctionsImplTest {
                 "}";
 
         MeshWorkerService meshWorkerService = PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> meshWorkerServiceSupplier = new Supplier<MeshWorkerService>() {
-            @Override
-            public MeshWorkerService get() {
-                return meshWorkerService;
-            }
-        };
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier = () -> meshWorkerService;
+        CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
+        CoreV1Api coreV1Api = PowerMockito.mock(CoreV1Api.class);
+        AppsV1Api appsV1Api = PowerMockito.mock(AppsV1Api.class);
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(meshWorkerService.getCoreV1Api())
+                .thenReturn(coreV1Api);
+        PowerMockito.when(meshWorkerService.getAppsV1Api())
+                .thenReturn(appsV1Api);
         WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
-        CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
-        PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        PowerMockito.when(workerConfig.getPulsarFunctionsCluster()).thenReturn("test-pulsar");
+
+        Call call = PowerMockito.mock(Call.class);
+        Response response = PowerMockito.mock(Response.class);
+        ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
+        ApiClient apiClient = PowerMockito.mock(ApiClient.class);
+
         String tenant = "public";
         String namespace = "default";
         String name = "test";
         String group = "compute.functionmesh.io";
         String plural = "functions";
         String version = "v1alpha1";
-        Call call = PowerMockito.mock(Call.class);
-        Response response = PowerMockito.mock(Response.class);
-        ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
-        ApiClient apiClient = PowerMockito.mock(ApiClient.class);
-
-        PowerMockito.when(workerConfig.getPulsarFunctionsCluster()).thenReturn("test-pulsar");
+        String hashName = CommonUtil.generateObjectName(meshWorkerService, tenant, namespace, name);
+        String jobName = CommonUtil.makeJobName(name, CommonUtil.COMPONENT_SINK);
 
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .getNamespacedCustomObjectCall(
@@ -188,25 +207,59 @@ public class FunctionsImplTest {
         PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
+
+        V1StatefulSet v1StatefulSet = PowerMockito.mock(V1StatefulSet.class);
+        PowerMockito.when(appsV1Api.readNamespacedStatefulSet(any(), any(), any(), any(), any())).thenReturn(v1StatefulSet);
+
+        V1ObjectMeta v1StatefulSetV1ObjectMeta = PowerMockito.mock(V1ObjectMeta.class);
+        PowerMockito.when(v1StatefulSet.getMetadata()).thenReturn(v1StatefulSetV1ObjectMeta);
+        V1StatefulSetSpec v1StatefulSetSpec = PowerMockito.mock(V1StatefulSetSpec.class);
+        PowerMockito.when(v1StatefulSet.getSpec()).thenReturn(v1StatefulSetSpec);
+        PowerMockito.when(v1StatefulSetV1ObjectMeta.getName()).thenReturn(jobName);
+        PowerMockito.when(v1StatefulSetSpec.getServiceName()).thenReturn(jobName);
+        V1StatefulSetStatus v1StatefulSetStatus = PowerMockito.mock(V1StatefulSetStatus.class);
+        PowerMockito.when(v1StatefulSet.getStatus()).thenReturn(v1StatefulSetStatus);
+        PowerMockito.when(v1StatefulSetStatus.getReplicas()).thenReturn(1);
+        PowerMockito.when(v1StatefulSetStatus.getReadyReplicas()).thenReturn(1);
+        V1PodList list = PowerMockito.mock(V1PodList.class);
+        List<V1Pod> podList = new ArrayList<>();
+        V1Pod pod = PowerMockito.mock(V1Pod.class);
+        podList.add(pod);
+        PowerMockito.when(coreV1Api.listNamespacedPod(any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any())).thenReturn(list);
+        PowerMockito.when(list.getItems()).thenReturn(podList);
+        V1ObjectMeta podV1ObjectMeta = PowerMockito.mock(V1ObjectMeta.class);
+        PowerMockito.when(pod.getMetadata()).thenReturn(podV1ObjectMeta);
+        PowerMockito.when(podV1ObjectMeta.getName()).thenReturn(hashName + "-function-0");
+        V1PodStatus podStatus = PowerMockito.mock(V1PodStatus.class);
+        PowerMockito.when(pod.getStatus()).thenReturn(podStatus);
+        PowerMockito.when(podStatus.getPhase()).thenReturn("Running");
+        PowerMockito.when(podStatus.getContainerStatuses()).thenReturn(new ArrayList<>());
+        InstanceCommunication.FunctionStatus.Builder builder = InstanceCommunication.FunctionStatus.newBuilder();
+        builder.setRunning(true);
+        PowerMockito.mockStatic(InstanceControlGrpc.InstanceControlFutureStub.class);
+        PowerMockito.stub(PowerMockito.method(CommonUtil.class, "getFunctionStatusAsync")).toReturn(CompletableFuture.completedFuture(builder.build()));
+
+        FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
+        FunctionStatus functionStatus = functions.getFunctionStatus(
+                tenant, namespace, name, null, null, null);
+
         FunctionStatus expectedFunctionStatus = new FunctionStatus();
-        expectedFunctionStatus.setNumInstances(0);
-        expectedFunctionStatus.setNumInstances(1);
-        List<FunctionStatus.FunctionInstanceStatus> expectedFunctionInstanceStatusList = new ArrayList<>();
         FunctionStatus.FunctionInstanceStatus expectedFunctionInstanceStatus =
                 new FunctionStatus.FunctionInstanceStatus();
         FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData expectedFunctionInstanceStatusData =
                 new FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData();
         expectedFunctionInstanceStatusData.setWorkerId("test-pulsar");
         expectedFunctionInstanceStatusData.setRunning(true);
+        expectedFunctionInstanceStatusData.setError("");
+        expectedFunctionInstanceStatusData.setLatestUserExceptions(Collections.emptyList());
+        expectedFunctionInstanceStatusData.setLatestSystemExceptions(Collections.emptyList());
         expectedFunctionInstanceStatus.setStatus(expectedFunctionInstanceStatusData);
-        expectedFunctionInstanceStatusList.add(expectedFunctionInstanceStatus);
-        expectedFunctionStatus.setInstances(expectedFunctionInstanceStatusList);
-        FunctionsImpl functions = spy(new FunctionsImpl(meshWorkerServiceSupplier));
-        FunctionStatus functionStatus = functions.getFunctionStatus(
-                tenant, namespace, name, null, null, null);
-        String jsonData = json.getGson().toJson(functionStatus);
-        String expectedData = json.getGson().toJson(expectedFunctionStatus);
-        Assert.assertEquals(jsonData, expectedData);
+        expectedFunctionStatus.addInstance(expectedFunctionInstanceStatus);
+        expectedFunctionStatus.setNumInstances(1);
+        expectedFunctionStatus.setNumRunning(1);
+
+        Assert.assertEquals(expectedFunctionStatus, functionStatus);
     }
 
     @Test
@@ -648,7 +701,7 @@ public class FunctionsImplTest {
                 null,
                 null,
                 null
-                )).thenReturn(deleteAuthSecretCall);
+        )).thenReturn(deleteAuthSecretCall);
         PowerMockito.when(deleteAuthSecretCall.execute()).thenReturn(response);
         Call deleteTlsSecretCall = PowerMockito.mock(Call.class);
         PowerMockito.when(coreV1Api.deleteNamespacedSecretCall(
