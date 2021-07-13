@@ -1,3 +1,9 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: controller-manager
+  namespace: system
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -204,7 +210,7 @@ roleRef:
   name: leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: controller-manager
   namespace: system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -217,7 +223,7 @@ roleRef:
   name: manager-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: controller-manager
   namespace: system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -230,7 +236,7 @@ roleRef:
   name: proxy-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: controller-manager
   namespace: system
 ---
 apiVersion: v1

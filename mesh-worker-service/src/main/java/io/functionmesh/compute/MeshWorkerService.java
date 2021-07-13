@@ -23,6 +23,7 @@ import io.functionmesh.compute.rest.api.SinksImpl;
 import io.functionmesh.compute.rest.api.SourcesImpl;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.util.Config;
@@ -68,6 +69,7 @@ public class MeshWorkerService implements WorkerService {
     private Sinks<MeshWorkerService> sinks;
     private Sources<MeshWorkerService> sources;
     private CoreV1Api coreV1Api;
+    private AppsV1Api appsV1Api;
     private CustomObjectsApi customObjectsApi;
     private ApiClient apiClient;
     private PulsarAdmin brokerAdmin;
@@ -143,6 +145,7 @@ public class MeshWorkerService implements WorkerService {
         try {
             apiClient = Config.defaultClient();
             coreV1Api = new CoreV1Api(Config.defaultClient());
+            appsV1Api = new AppsV1Api(Config.defaultClient());
             customObjectsApi = new CustomObjectsApi(Config.defaultClient());
         } catch (java.io.IOException e) {
             log.error("Initialization kubernetes client failed, exception: {}", e.getMessage());

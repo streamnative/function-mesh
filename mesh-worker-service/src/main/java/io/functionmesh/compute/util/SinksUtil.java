@@ -18,7 +18,12 @@
  */
 package io.functionmesh.compute.util;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
+import com.google.protobuf.Empty;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
@@ -29,6 +34,7 @@ import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInputSourceSpecs;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPulsar;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodResources;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkStatusConditions;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
@@ -37,16 +43,29 @@ import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SinkConfig;
+import org.apache.pulsar.common.policies.data.ExceptionInformation;
+import org.apache.pulsar.common.policies.data.SinkStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
+import org.apache.pulsar.functions.proto.InstanceControlGrpc;
 import org.apache.pulsar.functions.utils.SinkConfigUtils;
 
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
+import static io.functionmesh.compute.util.CommonUtil.COMPONENT_HPA;
+import static io.functionmesh.compute.util.CommonUtil.COMPONENT_SERVICE;
+import static io.functionmesh.compute.util.CommonUtil.COMPONENT_STATEFUL_SET;
+import static io.functionmesh.compute.util.CommonUtil.getExceptionInformation;
+import static io.functionmesh.compute.util.KubernetesUtils.GRPC_TIMEOUT_SECS;
 import static org.apache.pulsar.common.functions.Utils.BUILTIN;
 
 @Slf4j
@@ -258,7 +277,6 @@ public class SinksUtil {
         v1alpha1SinkSpec.setPulsar(v1alpha1SinkSpecPulsar);
 
         v1alpha1SinkSpec.setClusterName(clusterName);
-        v1alpha1SinkSpec.setAutoAck(sinkConfig.getAutoAck());
 
         v1alpha1SinkSpec.setSinkConfig(CommonUtil.transformedMapValueToString(sinkConfig.getConfigs()));
 
@@ -405,6 +423,66 @@ public class SinksUtil {
     private static V1alpha1SinkSpecInputCryptoConfig convertFromCryptoSpec(Function.CryptoSpec cryptoSpec) {
         // TODO: convertFromCryptoSpec
         return null;
+    }
+
+    public static CompletableFuture<InstanceCommunication.FunctionStatus> getFunctionStatusAsync(InstanceControlGrpc.InstanceControlFutureStub stub) {
+        CompletableFuture<InstanceCommunication.FunctionStatus> retval = new CompletableFuture<>();
+        if (stub == null) {
+            retval.completeExceptionally(new RuntimeException("Not alive"));
+            return retval;
+        }
+        ListenableFuture<InstanceCommunication.FunctionStatus> response = stub.withDeadlineAfter(GRPC_TIMEOUT_SECS, TimeUnit.SECONDS).getFunctionStatus(Empty.newBuilder().build());
+        Futures.addCallback(response, new FutureCallback<InstanceCommunication.FunctionStatus>() {
+            @Override
+            public void onFailure(Throwable throwable) {
+                InstanceCommunication.FunctionStatus.Builder builder = InstanceCommunication.FunctionStatus.newBuilder();
+                builder.setRunning(false);
+                builder.setFailureException(throwable.getMessage());
+                retval.complete(builder.build());
+            }
+
+            @Override
+            public void onSuccess(InstanceCommunication.FunctionStatus t) {
+                retval.complete(t);
+            }
+        }, MoreExecutors.directExecutor());
+        return retval;
+    }
+
+    public static void convertFunctionStatusToInstanceStatusData(InstanceCommunication.FunctionStatus functionStatus,
+                                                            SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData) {
+        if (functionStatus == null || sinkInstanceStatusData == null) {
+            return;
+        }
+        sinkInstanceStatusData.setRunning(functionStatus.getRunning());
+        sinkInstanceStatusData.setError(functionStatus.getFailureException());
+        sinkInstanceStatusData.setNumReadFromPulsar(functionStatus.getNumReceived());
+        sinkInstanceStatusData.setNumSystemExceptions(functionStatus.getNumSystemExceptions()
+                + functionStatus.getNumUserExceptions() + functionStatus.getNumSourceExceptions());
+        List<ExceptionInformation> systemExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestUserExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSystemExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSourceExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        sinkInstanceStatusData.setLatestSystemExceptions(systemExceptionInformationList);
+        sinkInstanceStatusData.setNumSinkExceptions(functionStatus.getNumSinkExceptions());
+        List<ExceptionInformation> sinkExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSinkExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            sinkExceptionInformationList.add(exceptionInformation);
+        }
+        sinkInstanceStatusData.setLatestSinkExceptions(sinkExceptionInformationList);
+
+        sinkInstanceStatusData.setNumWrittenToSink(functionStatus.getNumSuccessfullyProcessed());
+        sinkInstanceStatusData.setLastReceivedTime(functionStatus.getLastInvocationTime());
     }
 
 }

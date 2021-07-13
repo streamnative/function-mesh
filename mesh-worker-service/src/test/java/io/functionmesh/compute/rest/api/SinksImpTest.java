@@ -28,7 +28,18 @@ import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
+import io.kubernetes.client.openapi.models.V1StatefulSetList;
+import io.kubernetes.client.openapi.models.V1StatefulSetSpec;
+import io.kubernetes.client.openapi.models.V1StatefulSetStatus;
 import okhttp3.Call;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
@@ -41,6 +52,8 @@ import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.common.policies.data.SinkStatus;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
+import org.apache.pulsar.functions.proto.InstanceControlGrpc;
 import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
 import org.apache.pulsar.functions.utils.FunctionCommon;
 import org.apache.pulsar.functions.utils.io.ConnectorUtils;
@@ -57,11 +70,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import static io.functionmesh.compute.util.KubernetesUtils.GRPC_TIMEOUT_SECS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
@@ -73,7 +91,9 @@ import static org.powermock.api.mockito.PowerMockito.spy;
         RealResponseBody.class,
         FunctionCommon.class,
         ConnectorUtils.class,
-        FileUtils.class
+        FileUtils.class,
+        SinksUtil.class,
+        InstanceControlGrpc.InstanceControlFutureStub.class
 })
 @PowerMockIgnore({"javax.management.*"})
 public class SinksImpTest {
@@ -485,7 +505,7 @@ public class SinksImpTest {
     }
 
     @Test
-    public void testGetSinkStatus() throws IOException, ApiException {
+    public void testGetSinkStatus() throws Exception {
         String testBody =
                 "{\n"
                         + "  \"apiVersion\": \"compute.functionmesh.io/v1alpha1\",\n"
@@ -560,8 +580,14 @@ public class SinksImpTest {
         Supplier<MeshWorkerService> meshWorkerServiceSupplier =
                 () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
+        CoreV1Api coreV1Api = PowerMockito.mock(CoreV1Api.class);
+        AppsV1Api appsV1Api = PowerMockito.mock(AppsV1Api.class);
         PowerMockito.when(meshWorkerService.getCustomObjectsApi())
                 .thenReturn(customObjectsApi);
+        PowerMockito.when(meshWorkerService.getCoreV1Api())
+                .thenReturn(coreV1Api);
+        PowerMockito.when(meshWorkerService.getAppsV1Api())
+                .thenReturn(appsV1Api);
         WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
@@ -578,6 +604,8 @@ public class SinksImpTest {
         String tenant = "public";
         String namespace = "default";
         String componentName = "sink-sample";
+        String hashName = CommonUtil.generateObjectName(meshWorkerService, tenant, namespace, componentName);
+        String jobName = CommonUtil.makeJobName(componentName, CommonUtil.COMPONENT_SINK);
 
         PowerMockito.when(
                 meshWorkerService
@@ -594,6 +622,38 @@ public class SinksImpTest {
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
 
+        V1StatefulSet v1StatefulSet = PowerMockito.mock(V1StatefulSet.class);
+        PowerMockito.when(appsV1Api.readNamespacedStatefulSet(jobName, namespace, null, null, null)).thenReturn(v1StatefulSet);
+
+        V1ObjectMeta v1StatefulSetV1ObjectMeta = PowerMockito.mock(V1ObjectMeta.class);
+        PowerMockito.when(v1StatefulSet.getMetadata()).thenReturn(v1StatefulSetV1ObjectMeta);
+        V1StatefulSetSpec v1StatefulSetSpec = PowerMockito.mock(V1StatefulSetSpec.class);
+        PowerMockito.when(v1StatefulSet.getSpec()).thenReturn(v1StatefulSetSpec);
+        PowerMockito.when(v1StatefulSetV1ObjectMeta.getName()).thenReturn(jobName);
+        PowerMockito.when(v1StatefulSetSpec.getServiceName()).thenReturn(jobName);
+        V1StatefulSetStatus v1StatefulSetStatus = PowerMockito.mock(V1StatefulSetStatus.class);
+        PowerMockito.when(v1StatefulSet.getStatus()).thenReturn(v1StatefulSetStatus);
+        PowerMockito.when(v1StatefulSetStatus.getReplicas()).thenReturn(1);
+        PowerMockito.when(v1StatefulSetStatus.getReadyReplicas()).thenReturn(1);
+        V1PodList list = PowerMockito.mock(V1PodList.class);
+        List<V1Pod> podList = new ArrayList<>();
+        V1Pod pod = PowerMockito.mock(V1Pod.class);
+        podList.add(pod);
+        PowerMockito.when(coreV1Api.listNamespacedPod(any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any())).thenReturn(list);
+        PowerMockito.when(list.getItems()).thenReturn(podList);
+        V1ObjectMeta podV1ObjectMeta = PowerMockito.mock(V1ObjectMeta.class);
+        PowerMockito.when(pod.getMetadata()).thenReturn(podV1ObjectMeta);
+        PowerMockito.when(podV1ObjectMeta.getName()).thenReturn(hashName+"-sink-0");
+        V1PodStatus podStatus = PowerMockito.mock(V1PodStatus.class);
+        PowerMockito.when(pod.getStatus()).thenReturn(podStatus);
+        PowerMockito.when(podStatus.getPhase()).thenReturn("Running");
+        PowerMockito.when(podStatus.getContainerStatuses()).thenReturn(new ArrayList<>());
+        InstanceCommunication.FunctionStatus.Builder builder = InstanceCommunication.FunctionStatus.newBuilder();
+        builder.setRunning(true);
+        PowerMockito.mockStatic(InstanceControlGrpc.InstanceControlFutureStub.class);
+        PowerMockito.stub(PowerMockito.method(SinksUtil.class, "getFunctionStatusAsync")).toReturn(CompletableFuture.completedFuture(builder.build()));
+
         SinksImpl sinks = spy(new SinksImpl(meshWorkerServiceSupplier));
         SinkStatus sinkStatus =
                 sinks.getSinkStatus(tenant, namespace, componentName, null, null, null);
@@ -605,9 +665,13 @@ public class SinksImpTest {
                 new SinkStatus.SinkInstanceStatus.SinkInstanceStatusData();
         expectedSinkInstanceStatusData.setRunning(true);
         expectedSinkInstanceStatusData.setWorkerId("test-pulsar");
+        expectedSinkInstanceStatusData.setError("");
+        expectedSinkInstanceStatusData.setLatestSinkExceptions(Collections.emptyList());
+        expectedSinkInstanceStatusData.setLatestSystemExceptions(Collections.emptyList());
         expectedSinkInstanceStatus.setStatus(expectedSinkInstanceStatusData);
         expectedSinkStatus.addInstance(expectedSinkInstanceStatus);
         expectedSinkStatus.setNumInstances(expectedSinkStatus.getInstances().size());
+        expectedSinkStatus.setNumRunning(expectedSinkStatus.getInstances().size());
 
         Assert.assertEquals(expectedSinkStatus, sinkStatus);
     }
