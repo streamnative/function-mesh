@@ -34,7 +34,6 @@ import io.grpc.ManagedChannelBuilder;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
@@ -49,7 +48,6 @@ import org.apache.pulsar.common.io.ConfigFieldDefinition;
 import org.apache.pulsar.common.io.ConnectorDefinition;
 import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.policies.data.SinkStatus;
-import org.apache.pulsar.common.util.FutureUtil;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
@@ -322,6 +320,14 @@ public class SinksImpl extends MeshComponentImpl
                         componentName);
                 throw new RestException(Response.Status.NOT_FOUND, "no SinkStatus exists");
             }
+            if (v1alpha1Sink.getMetadata() == null) {
+                log.error(
+                        "get status {}/{}/{} sink failed, no Metadata exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no Metadata exists");
+            }
             String sinkLabelSelector = v1alpha1SinkStatus.getSelector();
             String jobName = CommonUtil.makeJobName(v1alpha1Sink.getMetadata().getName(), CommonUtil.COMPONENT_SINK);
             V1StatefulSet v1StatefulSet = worker().getAppsV1Api().readNamespacedStatefulSet(jobName, nameSpaceName, null, null, null);
@@ -422,7 +428,7 @@ public class SinksImpl extends MeshComponentImpl
                                         .build();
                                 stub[podIndex] = InstanceControlGrpc.newFutureStub(channel[podIndex]);
                             }
-                            CompletableFuture<InstanceCommunication.FunctionStatus> future = SinksUtil.getFunctionStatusAsync(stub[podIndex]);
+                            CompletableFuture<InstanceCommunication.FunctionStatus> future = CommonUtil.getFunctionStatusAsync(stub[podIndex]);
                             future.whenComplete((fs, e) -> {
                                 if (channel[podIndex]!= null) {
                                     log.debug("closing channel {}", podIndex);

@@ -27,8 +27,8 @@ import io.functionmesh.compute.sources.models.V1alpha1SourceSpecJava;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutput;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerConf;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerConfCryptoConfig;
-import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodResources;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
@@ -37,13 +37,18 @@ import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SourceConfig;
+import org.apache.pulsar.common.policies.data.ExceptionInformation;
+import org.apache.pulsar.common.policies.data.SourceStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
 import org.apache.pulsar.functions.utils.SourceConfigUtils;
 
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import static org.apache.pulsar.common.functions.Utils.BUILTIN;
@@ -315,5 +320,59 @@ public class SourcesUtil {
     private static V1alpha1SourceSpecOutputProducerConfCryptoConfig convertFromCryptoSpec(Function.CryptoSpec cryptoSpec) {
         // TODO: convertFromCryptoSpec
         return null;
+    }
+
+    public static void convertFunctionStatusToInstanceStatusData(InstanceCommunication.FunctionStatus functionStatus,
+                                                                 SourceStatus.SourceInstanceStatus.SourceInstanceStatusData instanceStatusData) {
+        if (functionStatus == null || instanceStatusData == null) {
+            return;
+        }
+        instanceStatusData.setRunning(functionStatus.getRunning());
+        instanceStatusData.setError(functionStatus.getFailureException());
+        instanceStatusData.setNumReceivedFromSource(functionStatus.getNumReceived());
+        instanceStatusData.setNumSourceExceptions(functionStatus.getNumSourceExceptions());
+
+        List<ExceptionInformation> sourceExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSourceExceptionsList()) {
+            ExceptionInformation exceptionInformation
+                    = new ExceptionInformation();
+            exceptionInformation.setTimestampMs(exceptionEntry.getMsSinceEpoch());
+            exceptionInformation.setExceptionString(exceptionEntry.getExceptionString());
+            sourceExceptionInformationList.add(exceptionInformation);
+        }
+        instanceStatusData.setLatestSourceExceptions(sourceExceptionInformationList);
+
+        // Source treats all system and sink exceptions as system exceptions
+        instanceStatusData.setNumSystemExceptions(functionStatus.getNumSystemExceptions()
+                + functionStatus.getNumUserExceptions() + functionStatus.getNumSinkExceptions());
+        List<ExceptionInformation> systemExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestUserExceptionsList()) {
+            ExceptionInformation exceptionInformation
+                    = new ExceptionInformation();
+            exceptionInformation.setTimestampMs(exceptionEntry.getMsSinceEpoch());
+            exceptionInformation.setExceptionString(exceptionEntry.getExceptionString());
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSystemExceptionsList()) {
+            ExceptionInformation exceptionInformation
+                    = new ExceptionInformation();
+            exceptionInformation.setTimestampMs(exceptionEntry.getMsSinceEpoch());
+            exceptionInformation.setExceptionString(exceptionEntry.getExceptionString());
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSinkExceptionsList()) {
+            ExceptionInformation exceptionInformation
+                    = new ExceptionInformation();
+            exceptionInformation.setTimestampMs(exceptionEntry.getMsSinceEpoch());
+            exceptionInformation.setExceptionString(exceptionEntry.getExceptionString());
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        instanceStatusData.setLatestSystemExceptions(systemExceptionInformationList);
+
+
+        instanceStatusData.setNumWritten(functionStatus.getNumSuccessfullyProcessed());
+        instanceStatusData.setLastReceivedTime(functionStatus.getLastInvocationTime());
     }
 }

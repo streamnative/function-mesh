@@ -19,16 +19,23 @@
 package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
+import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecJava;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodVolumeMounts;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodVolumes;
+import io.functionmesh.compute.sources.models.V1alpha1SourceStatus;
 import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SourcesUtil;
-import io.functionmesh.compute.MeshWorkerService;
-import io.functionmesh.compute.sources.models.V1alpha1Source;
-import io.functionmesh.compute.sources.models.V1alpha1SourceStatus;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang3.StringUtils;
@@ -41,22 +48,29 @@ import org.apache.pulsar.common.io.SourceConfig;
 import org.apache.pulsar.common.policies.data.SourceStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
+import org.apache.pulsar.functions.proto.InstanceControlGrpc;
 import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Sources;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorkerService> {
-    private String kind = "Source";
+    private final String kind = "Source";
 
-    private String plural = "sources";
+    private final String plural = "sources";
 
     public SourcesImpl(Supplier<MeshWorkerService> meshWorkerServiceSupplier) {
         super(meshWorkerServiceSupplier, Function.FunctionDetails.ComponentType.SOURCE);
@@ -89,8 +103,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             throw new RestException(Response.Status.BAD_REQUEST, "Source config is not provided");
         }
         Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-        if (jarUploaded &&  customConfig != null && customConfig.get("uploadEnabled") != null &&
-                ! (Boolean) customConfig.get("uploadEnabled") ) {
+        if (jarUploaded && customConfig != null && customConfig.get("uploadEnabled") != null &&
+                !(Boolean) customConfig.get("uploadEnabled")) {
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
         }
         this.validateResources(sourceConfig.getResources(), worker().getWorkerConfig().getFunctionInstanceMinResources(),
@@ -171,7 +185,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             executeCall(call, V1alpha1Source.class);
         } catch (RestException restException) {
             log.error(
-                    "register {}/{}/{} sink failed, error message: {}",
+                    "register {}/{}/{} source failed, error message: {}",
                     tenant,
                     namespace,
                     sourceConfig,
@@ -258,34 +272,178 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                                         final String clientRole,
                                         final AuthenticationDataSource clientAuthenticationDataHttps) {
         validateSourceEnabled();
+        SourceStatus sourceStatus = new SourceStatus();
         this.validatePermission(tenant,
                 namespace,
                 clientRole,
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
-        SourceStatus sourceStatus = new SourceStatus();
-        String hashName = CommonUtil.generateObjectName(worker(), tenant, namespace, componentName);
+
         try {
+            String hashName = CommonUtil.generateObjectName(worker(), tenant, namespace, componentName);
+            String nameSpaceName = KubernetesUtils.getNamespace(worker().getFactoryConfig());
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
-                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                    group, version, nameSpaceName,
                     plural, hashName, null);
             V1alpha1Source v1alpha1Source = executeCall(call, V1alpha1Source.class);
-            SourceStatus.SourceInstanceStatus sourceInstanceStatus = new SourceStatus.SourceInstanceStatus();
-            SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData =
-                    new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
-            sourceInstanceStatusData.setRunning(false);
             V1alpha1SourceStatus v1alpha1SourceStatus = v1alpha1Source.getStatus();
-            if (v1alpha1SourceStatus != null) {
-                boolean running = v1alpha1SourceStatus.getConditions().values()
-                        .stream().allMatch(n -> StringUtils.isNotEmpty(n.getStatus()) && n.getStatus().equals("True"));
-                sourceInstanceStatusData.setRunning(running);
-                sourceInstanceStatusData.setWorkerId(v1alpha1Source.getSpec().getClusterName());
-                sourceInstanceStatus.setStatus(sourceInstanceStatusData);
-                sourceStatus.addInstance(sourceInstanceStatus);
-            } else {
-                sourceInstanceStatusData.setRunning(false);
+            if (v1alpha1SourceStatus == null) {
+                log.error(
+                        "get status {}/{}/{} source failed, no SourceStatus exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no SourceStatus exists");
             }
-            sourceStatus.setNumInstances(sourceStatus.getInstances().size());
+            if (v1alpha1Source.getMetadata() == null) {
+                log.error(
+                        "get status {}/{}/{} source failed, no Metadata exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no Metadata exists");
+            }
+            String sourceLabelSelector = v1alpha1SourceStatus.getSelector();
+            String jobName = CommonUtil.makeJobName(v1alpha1Source.getMetadata().getName(), CommonUtil.COMPONENT_SOURCE);
+            V1StatefulSet v1StatefulSet = worker().getAppsV1Api().readNamespacedStatefulSet(jobName, nameSpaceName, null, null, null);
+            String statefulSetName = "";
+            String subdomain = "";
+            if (v1StatefulSet == null) {
+                log.error(
+                        "get status {}/{}/{} source failed, no StatefulSet exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no StatefulSet exists");
+            }
+            if (v1StatefulSet.getMetadata() != null &&
+                    StringUtils.isNotEmpty(v1StatefulSet.getMetadata().getName())) {
+                statefulSetName = v1StatefulSet.getMetadata().getName();
+            } else {
+                log.error(
+                        "get status {}/{}/{} source failed, no statefulSetName exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no statefulSetName exists");
+            }
+            if (v1StatefulSet.getSpec() != null &&
+                    StringUtils.isNotEmpty(v1StatefulSet.getSpec().getServiceName())) {
+                subdomain = v1StatefulSet.getSpec().getServiceName();
+            } else {
+                log.error(
+                        "get status {}/{}/{} source failed, no ServiceName exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no ServiceName exists");
+            }
+            if (v1StatefulSet.getStatus() != null && v1StatefulSet.getStatus().getReplicas() != null
+                    && v1StatefulSet.getStatus().getReadyReplicas() != null) {
+                sourceStatus.setNumInstances(v1StatefulSet.getStatus().getReplicas());
+                sourceStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
+                for (int i = 0; i < v1StatefulSet.getStatus().getReplicas(); i++) {
+                    SourceStatus.SourceInstanceStatus sourceInstanceStatus = new SourceStatus.SourceInstanceStatus();
+                    SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData = new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
+                    sourceInstanceStatus.setInstanceId(i);
+                    sourceInstanceStatus.setStatus(sourceInstanceStatusData);
+                    sourceStatus.addInstance(sourceInstanceStatus);
+                }
+            } else {
+                log.warn(
+                        "no StatefulSet status exists when get status of source {}/{}/{}",
+                        tenant,
+                        namespace,
+                        componentName);
+            }
+            V1PodList podList = worker().getCoreV1Api().listNamespacedPod(
+                    nameSpaceName, null, null, null, null,
+                    sourceLabelSelector, null, null, null, null,
+                    null);
+            if (podList != null) {
+                List<V1Pod> runningPods = podList.getItems().stream().
+                        filter(KubernetesUtils::isPodRunning).collect(Collectors.toList());
+                List<V1Pod> pendingPods = podList.getItems().stream().
+                        filter(pod -> !KubernetesUtils.isPodRunning(pod)).collect(Collectors.toList());
+                if (!runningPods.isEmpty()) {
+                    int podsCount = runningPods.size();
+                    ManagedChannel[] channel = new ManagedChannel[podsCount];
+                    InstanceControlGrpc.InstanceControlFutureStub[] stub =
+                            new InstanceControlGrpc.InstanceControlFutureStub[podsCount];
+                    final String finalSubdomain = subdomain;
+                    final String finalStatefulSetName = statefulSetName;
+                    Set<CompletableFuture<InstanceCommunication.FunctionStatus>> completableFutureSet = new HashSet<>();
+                    runningPods.forEach(pod -> {
+                        String podName = KubernetesUtils.getPodName(pod);
+                        int shardId = CommonUtil.getShardIdFromPodName(podName);
+                        int podIndex = runningPods.indexOf(pod);
+                        String address = KubernetesUtils.getServiceUrl(podName, finalSubdomain, nameSpaceName);
+                        if (shardId == -1) {
+                            log.warn("shardId invalid {}", podName);
+                            return;
+                        }
+                        SourceStatus.SourceInstanceStatus sourceInstanceStatus = sourceStatus.getInstances().get(shardId);
+                        if (sourceInstanceStatus != null) {
+                            SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData = sourceInstanceStatus.getStatus();
+                            V1PodStatus podStatus = pod.getStatus();
+                            if (v1alpha1Source.getSpec() != null && StringUtils.isNotEmpty(v1alpha1Source.getSpec().getClusterName())) {
+                                sourceInstanceStatusData.setWorkerId(v1alpha1Source.getSpec().getClusterName());
+                            }
+                            if (podStatus != null) {
+                                sourceInstanceStatusData.setRunning(KubernetesUtils.isPodRunning(pod));
+                                if (podStatus.getContainerStatuses() != null && !podStatus.getContainerStatuses().isEmpty()) {
+                                    V1ContainerStatus containerStatus = podStatus.getContainerStatuses().get(0);
+                                    sourceInstanceStatusData.setNumRestarts(containerStatus.getRestartCount());
+                                }
+                            }
+                            // get status from grpc
+                            if (channel[podIndex] == null && stub[podIndex] == null) {
+                                channel[podIndex] = ManagedChannelBuilder.forAddress(address, 9093)
+                                        .usePlaintext()
+                                        .build();
+                                stub[podIndex] = InstanceControlGrpc.newFutureStub(channel[podIndex]);
+                            }
+                            CompletableFuture<InstanceCommunication.FunctionStatus> future = CommonUtil.getFunctionStatusAsync(stub[podIndex]);
+                            future.whenComplete((fs, e) -> {
+                                if (channel[podIndex] != null) {
+                                    log.debug("closing channel {}", podIndex);
+                                    channel[podIndex].shutdown();
+                                }
+                                if (e != null) {
+                                    log.error("Get source {}-{} status from grpc failed from namespace {}, error message: {}",
+                                            finalStatefulSetName,
+                                            shardId,
+                                            nameSpaceName,
+                                            e.getMessage());
+                                    sourceInstanceStatusData.setError(e.getMessage());
+                                } else if (fs != null) {
+                                    SourcesUtil.convertFunctionStatusToInstanceStatusData(fs, sourceInstanceStatusData);
+                                }
+                            });
+                            completableFutureSet.add(future);
+                        }
+                    });
+                    completableFutureSet.forEach(CompletableFuture::join);
+                }
+                if (!pendingPods.isEmpty()) {
+                    pendingPods.forEach(pod -> {
+                        String podName = KubernetesUtils.getPodName(pod);
+                        int shardId = CommonUtil.getShardIdFromPodName(podName);
+                        if (shardId == -1) {
+                            log.warn("shardId invalid {}", podName);
+                            return;
+                        }
+                        SourceStatus.SourceInstanceStatus sourceInstanceStatus = sourceStatus.getInstances().get(shardId);
+                        if (sourceInstanceStatus != null) {
+                            SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData = sourceInstanceStatus.getStatus();
+                            V1PodStatus podStatus = pod.getStatus();
+                            if (podStatus != null && StringUtils.isNotEmpty(podStatus.getPhase())) {
+                                sourceInstanceStatusData.setError(podStatus.getPhase());
+                            }
+                        }
+                    });
+                }
+            }
         } catch (Exception e) {
             log.error("Get source {} status failed from namespace {}, error message: {}",
                     componentName, namespace, e.getMessage());
@@ -350,15 +508,15 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
     }
 
     private void upsertSource(final String tenant,
-                                        final String namespace,
-                                        final String sourceName,
-                                        SourceConfig sourceConfig,
-                                        V1alpha1Source v1alpha1Source,
-                                        AuthenticationDataHttps clientAuthenticationDataHttps) {
+                              final String namespace,
+                              final String sourceName,
+                              SourceConfig sourceConfig,
+                              V1alpha1Source v1alpha1Source,
+                              AuthenticationDataHttps clientAuthenticationDataHttps) {
         if (worker().getWorkerConfig().isAuthenticationEnabled()) {
             if (clientAuthenticationDataHttps != null) {
                 try {
-                    Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
+                    Map<String, Object> functionsWorkerServiceCustomConfigs = worker()
                             .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
                     Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
                     if (volumes != null) {
@@ -373,7 +531,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                             v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
                         }
                         v1alpha1SourceSpecJava.setExtraDependenciesDir(
-                                (String)functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
+                                (String) functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
                         v1alpha1Source.getSpec().setJava(v1alpha1SourceSpecJava);
                     }
                     Object volumeMounts = functionsWorkerServiceCustomConfigs.get("volumeMounts");
@@ -401,7 +559,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
 
                     throw new RestException(Response.Status.INTERNAL_SERVER_ERROR,
                             String.format("Error create or update auth or tls secret %s %s:- %s",
-                            ComponentTypeUtils.toString(componentType), sourceName, e.getMessage()));
+                                    ComponentTypeUtils.toString(componentType), sourceName, e.getMessage()));
                 }
             }
         }

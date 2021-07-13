@@ -18,13 +18,16 @@
  */
 package io.functionmesh.compute.util;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
+import com.google.protobuf.Empty;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
-import java.util.Collections;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -32,10 +35,16 @@ import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.policies.data.ExceptionInformation;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
+import org.apache.pulsar.functions.proto.InstanceControlGrpc;
 
 import javax.ws.rs.core.Response;
+import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static io.functionmesh.compute.util.KubernetesUtils.GRPC_TIMEOUT_SECS;
 
 @Slf4j
 public class CommonUtil {
@@ -191,5 +200,29 @@ public class CommonUtil {
             log.error("getShardIdFromPodName failed with podName {}, exception: {}", podName, ex);
         }
         return shardId;
+    }
+
+    public static CompletableFuture<InstanceCommunication.FunctionStatus> getFunctionStatusAsync(InstanceControlGrpc.InstanceControlFutureStub stub) {
+        CompletableFuture<InstanceCommunication.FunctionStatus> retval = new CompletableFuture<>();
+        if (stub == null) {
+            retval.completeExceptionally(new RuntimeException("Not alive"));
+            return retval;
+        }
+        ListenableFuture<InstanceCommunication.FunctionStatus> response = stub.withDeadlineAfter(GRPC_TIMEOUT_SECS, TimeUnit.SECONDS).getFunctionStatus(Empty.newBuilder().build());
+        Futures.addCallback(response, new FutureCallback<InstanceCommunication.FunctionStatus>() {
+            @Override
+            public void onFailure(Throwable throwable) {
+                InstanceCommunication.FunctionStatus.Builder builder = InstanceCommunication.FunctionStatus.newBuilder();
+                builder.setRunning(false);
+                builder.setFailureException(throwable.getMessage());
+                retval.complete(builder.build());
+            }
+
+            @Override
+            public void onSuccess(InstanceCommunication.FunctionStatus t) {
+                retval.complete(t);
+            }
+        }, MoreExecutors.directExecutor());
+        return retval;
     }
 }
