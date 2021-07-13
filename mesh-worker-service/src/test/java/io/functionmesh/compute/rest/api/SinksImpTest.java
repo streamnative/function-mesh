@@ -31,13 +31,11 @@ import io.kubernetes.client.openapi.JSON;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
-import io.kubernetes.client.openapi.models.V1StatefulSetList;
 import io.kubernetes.client.openapi.models.V1StatefulSetSpec;
 import io.kubernetes.client.openapi.models.V1StatefulSetStatus;
 import okhttp3.Call;
@@ -54,7 +52,6 @@ import org.apache.pulsar.common.nar.NarClassLoader;
 import org.apache.pulsar.common.policies.data.SinkStatus;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
 import org.apache.pulsar.functions.proto.InstanceControlGrpc;
-import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
 import org.apache.pulsar.functions.utils.FunctionCommon;
 import org.apache.pulsar.functions.utils.io.ConnectorUtils;
 import org.apache.pulsar.functions.worker.WorkerConfig;
@@ -76,10 +73,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import static io.functionmesh.compute.util.KubernetesUtils.GRPC_TIMEOUT_SECS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
@@ -92,7 +87,7 @@ import static org.powermock.api.mockito.PowerMockito.spy;
         FunctionCommon.class,
         ConnectorUtils.class,
         FileUtils.class,
-        SinksUtil.class,
+        CommonUtil.class,
         InstanceControlGrpc.InstanceControlFutureStub.class
 })
 @PowerMockIgnore({"javax.management.*"})
@@ -652,7 +647,7 @@ public class SinksImpTest {
         InstanceCommunication.FunctionStatus.Builder builder = InstanceCommunication.FunctionStatus.newBuilder();
         builder.setRunning(true);
         PowerMockito.mockStatic(InstanceControlGrpc.InstanceControlFutureStub.class);
-        PowerMockito.stub(PowerMockito.method(SinksUtil.class, "getFunctionStatusAsync")).toReturn(CompletableFuture.completedFuture(builder.build()));
+        PowerMockito.stub(PowerMockito.method(CommonUtil.class, "getFunctionStatusAsync")).toReturn(CompletableFuture.completedFuture(builder.build()));
 
         SinksImpl sinks = spy(new SinksImpl(meshWorkerServiceSupplier));
         SinkStatus sinkStatus =
