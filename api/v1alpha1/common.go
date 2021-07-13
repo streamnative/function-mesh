@@ -86,6 +86,10 @@ type PodPolicy struct {
 	// Sidecar containers running alongside with the main function container in the
 	// pod.
 	Sidecars []corev1.Container `json:"sidecars,omitempty"`
+
+	// ServiceAccountName is the name of the ServiceAccount to use to run this pod.
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 type Runtime struct {

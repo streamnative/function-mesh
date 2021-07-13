@@ -165,6 +165,7 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 			Tolerations:                   policy.Tolerations,
 			SecurityContext:               policy.SecurityContext,
 			ImagePullSecrets:              policy.ImagePullSecrets,
+			ServiceAccountName:            policy.ServiceAccountName,
 		},
 	}
 }
