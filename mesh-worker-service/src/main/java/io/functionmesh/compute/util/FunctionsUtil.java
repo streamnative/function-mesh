@@ -40,8 +40,11 @@ import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
+import org.apache.pulsar.common.policies.data.ExceptionInformation;
+import org.apache.pulsar.common.policies.data.FunctionStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
 import org.apache.pulsar.functions.utils.FunctionConfigUtils;
 
 import javax.ws.rs.core.Response;
@@ -49,7 +52,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+
+import static io.functionmesh.compute.util.CommonUtil.getExceptionInformation;
 
 @Slf4j
 public class FunctionsUtil {
@@ -447,6 +454,47 @@ public class FunctionsUtil {
         }
 
         return functionConfig;
+    }
+
+    public static void convertFunctionStatusToInstanceStatusData(InstanceCommunication.FunctionStatus functionStatus,
+                                                                 FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData) {
+        if (functionStatus == null || functionInstanceStatusData == null) {
+            return;
+        }
+        functionInstanceStatusData.setRunning(functionStatus.getRunning());
+        functionInstanceStatusData.setError(functionStatus.getFailureException());
+        functionInstanceStatusData.setNumRestarts(functionStatus.getNumRestarts());
+        functionInstanceStatusData.setNumReceived(functionStatus.getNumReceived());
+        functionInstanceStatusData.setNumSuccessfullyProcessed(functionStatus.getNumSuccessfullyProcessed());
+        functionInstanceStatusData.setNumUserExceptions(functionStatus.getNumUserExceptions());
+
+        List<ExceptionInformation> userExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestUserExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            userExceptionInformationList.add(exceptionInformation);
+        }
+        functionInstanceStatusData.setLatestUserExceptions(userExceptionInformationList);
+
+        // For regular functions source/sink errors are system exceptions
+        functionInstanceStatusData.setNumSystemExceptions(functionStatus.getNumSystemExceptions()
+                + functionStatus.getNumSourceExceptions() + functionStatus.getNumSinkExceptions());
+        List<ExceptionInformation> systemExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSystemExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSourceExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSinkExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        functionInstanceStatusData.setLatestSystemExceptions(systemExceptionInformationList);
+
+        functionInstanceStatusData.setAverageLatency(functionStatus.getAverageLatency());
+        functionInstanceStatusData.setLastInvocationTime(functionStatus.getLastInvocationTime());
     }
 
 }
