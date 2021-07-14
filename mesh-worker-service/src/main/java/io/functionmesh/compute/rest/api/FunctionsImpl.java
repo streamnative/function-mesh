@@ -19,36 +19,49 @@
 package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
+import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecJava;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumeMounts;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumes;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionStatus;
 import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.FunctionsUtil;
-import io.functionmesh.compute.functions.models.V1alpha1Function;
-import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.util.KubernetesUtils;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import org.apache.commons.lang.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
 import org.apache.pulsar.common.functions.FunctionConfig;
-import org.apache.pulsar.common.functions.Resources;
-import org.apache.pulsar.common.functions.UpdateOptions;
 import org.apache.pulsar.common.functions.UpdateOptionsImpl;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
+import org.apache.pulsar.functions.proto.InstanceControlGrpc;
 import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.worker.service.api.Functions;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWorkerService> {
@@ -73,8 +86,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             throw new RestException(Response.Status.BAD_REQUEST, "Function config is not provided");
         }
         Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-        if (jarUploaded &&  customConfig != null && customConfig.get("uploadEnabled") != null &&
-                ! (Boolean) customConfig.get("uploadEnabled") ) {
+        if (jarUploaded && customConfig != null && customConfig.get("uploadEnabled") != null &&
+                !(Boolean) customConfig.get("uploadEnabled")) {
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
         }
         this.validateResources(functionConfig.getResources(), worker().getWorkerConfig().getFunctionInstanceMinResources(),
@@ -289,36 +302,178 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                             final URI uri,
                                             final String clientRole,
                                             final AuthenticationDataSource clientAuthenticationDataHttps) {
+        validateFunctionEnabled();
+        FunctionStatus functionStatus = new FunctionStatus();
         this.validatePermission(tenant,
                 namespace,
                 clientRole,
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
-        FunctionStatus functionStatus = new FunctionStatus();
-        String hashName = CommonUtil.generateObjectName(worker(), tenant, namespace, componentName);
         try {
+            String hashName = CommonUtil.generateObjectName(worker(), tenant, namespace, componentName);
+            String nameSpaceName = KubernetesUtils.getNamespace(worker().getFactoryConfig());
             Call call = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
-                    group, version, KubernetesUtils.getNamespace(worker().getFactoryConfig()),
+                    group, version, nameSpaceName,
                     plural, hashName, null);
             V1alpha1Function v1alpha1Function = executeCall(call, V1alpha1Function.class);
-            FunctionStatus.FunctionInstanceStatus functionInstanceStatus = new FunctionStatus.FunctionInstanceStatus();
-            FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData =
-                    new FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData();
-            functionInstanceStatusData.setRunning(true);
-            if (v1alpha1Function.getStatus() != null) {
-                v1alpha1Function.getStatus().getConditions().forEach((s, v1alpha1FunctionStatusConditions) -> {
-                    if (v1alpha1FunctionStatusConditions.getStatus() != null
-                            && v1alpha1FunctionStatusConditions.getStatus().equals("False")) {
-                        functionInstanceStatusData.setRunning(false);
-                    }
-                });
-                functionInstanceStatusData.setWorkerId(v1alpha1Function.getSpec().getClusterName());
-                functionInstanceStatus.setStatus(functionInstanceStatusData);
-                functionStatus.addInstance(functionInstanceStatus);
-            } else {
-                functionInstanceStatusData.setRunning(false);
+            V1alpha1FunctionStatus v1alpha1FunctionStatus = v1alpha1Function.getStatus();
+            if (v1alpha1FunctionStatus == null) {
+                log.error(
+                        "get status {}/{}/{} function failed, no FunctionStatus exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no FunctionStatus exists");
             }
-            functionStatus.setNumInstances(functionStatus.getInstances().size());
+            if (v1alpha1Function.getMetadata() == null) {
+                log.error(
+                        "get status {}/{}/{} function failed, no Metadata exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no Metadata exists");
+            }
+            String functionLabelSelector = v1alpha1FunctionStatus.getSelector();
+            String jobName = CommonUtil.makeJobName(v1alpha1Function.getMetadata().getName(), CommonUtil.COMPONENT_FUNCTION);
+            V1StatefulSet v1StatefulSet = worker().getAppsV1Api().readNamespacedStatefulSet(jobName, nameSpaceName, null, null, null);
+            String statefulSetName = "";
+            String subdomain = "";
+            if (v1StatefulSet == null) {
+                log.error(
+                        "get status {}/{}/{} function failed, no StatefulSet exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no StatefulSet exists");
+            }
+            if (v1StatefulSet.getMetadata() != null &&
+                    StringUtils.isNotEmpty(v1StatefulSet.getMetadata().getName())) {
+                statefulSetName = v1StatefulSet.getMetadata().getName();
+            } else {
+                log.error(
+                        "get status {}/{}/{} function failed, no statefulSetName exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no statefulSetName exists");
+            }
+            if (v1StatefulSet.getSpec() != null &&
+                    StringUtils.isNotEmpty(v1StatefulSet.getSpec().getServiceName())) {
+                subdomain = v1StatefulSet.getSpec().getServiceName();
+            } else {
+                log.error(
+                        "get status {}/{}/{} function failed, no ServiceName exists",
+                        tenant,
+                        namespace,
+                        componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no ServiceName exists");
+            }
+            if (v1StatefulSet.getStatus() != null && v1StatefulSet.getStatus().getReplicas() != null
+                    && v1StatefulSet.getStatus().getReadyReplicas() != null) {
+                functionStatus.setNumInstances(v1StatefulSet.getStatus().getReplicas());
+                functionStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
+                for (int i = 0; i < v1StatefulSet.getStatus().getReplicas(); i++) {
+                    FunctionStatus.FunctionInstanceStatus functionInstanceStatus = new FunctionStatus.FunctionInstanceStatus();
+                    FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData = new FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData();
+                    functionInstanceStatus.setInstanceId(i);
+                    functionInstanceStatus.setStatus(functionInstanceStatusData);
+                    functionStatus.addInstance(functionInstanceStatus);
+                }
+            } else {
+                log.warn(
+                        "no StatefulSet status exists when get status of function {}/{}/{}",
+                        tenant,
+                        namespace,
+                        componentName);
+            }
+            V1PodList podList = worker().getCoreV1Api().listNamespacedPod(
+                    nameSpaceName, null, null, null, null,
+                    functionLabelSelector, null, null, null, null,
+                    null);
+            if (podList != null) {
+                List<V1Pod> runningPods = podList.getItems().stream().
+                        filter(KubernetesUtils::isPodRunning).collect(Collectors.toList());
+                List<V1Pod> pendingPods = podList.getItems().stream().
+                        filter(pod -> !KubernetesUtils.isPodRunning(pod)).collect(Collectors.toList());
+                if (!runningPods.isEmpty()) {
+                    int podsCount = runningPods.size();
+                    ManagedChannel[] channel = new ManagedChannel[podsCount];
+                    InstanceControlGrpc.InstanceControlFutureStub[] stub =
+                            new InstanceControlGrpc.InstanceControlFutureStub[podsCount];
+                    final String finalSubdomain = subdomain;
+                    final String finalStatefulSetName = statefulSetName;
+                    Set<CompletableFuture<InstanceCommunication.FunctionStatus>> completableFutureSet = new HashSet<>();
+                    runningPods.forEach(pod -> {
+                        String podName = KubernetesUtils.getPodName(pod);
+                        int shardId = CommonUtil.getShardIdFromPodName(podName);
+                        int podIndex = runningPods.indexOf(pod);
+                        String address = KubernetesUtils.getServiceUrl(podName, finalSubdomain, nameSpaceName);
+                        if (shardId == -1) {
+                            log.warn("shardId invalid {}", podName);
+                            return;
+                        }
+                        FunctionStatus.FunctionInstanceStatus functionInstanceStatus = functionStatus.getInstances().get(shardId);
+                        if (functionInstanceStatus != null) {
+                            FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData = functionInstanceStatus.getStatus();
+                            V1PodStatus podStatus = pod.getStatus();
+                            if (v1alpha1Function.getSpec() != null && StringUtils.isNotEmpty(v1alpha1Function.getSpec().getClusterName())) {
+                                functionInstanceStatusData.setWorkerId(v1alpha1Function.getSpec().getClusterName());
+                            }
+                            if (podStatus != null) {
+                                functionInstanceStatusData.setRunning(KubernetesUtils.isPodRunning(pod));
+                                if (podStatus.getContainerStatuses() != null && !podStatus.getContainerStatuses().isEmpty()) {
+                                    V1ContainerStatus containerStatus = podStatus.getContainerStatuses().get(0);
+                                    functionInstanceStatusData.setNumRestarts(containerStatus.getRestartCount());
+                                }
+                            }
+                            // get status from grpc
+                            if (channel[podIndex] == null && stub[podIndex] == null) {
+                                channel[podIndex] = ManagedChannelBuilder.forAddress(address, 9093)
+                                        .usePlaintext()
+                                        .build();
+                                stub[podIndex] = InstanceControlGrpc.newFutureStub(channel[podIndex]);
+                            }
+                            CompletableFuture<InstanceCommunication.FunctionStatus> future = CommonUtil.getFunctionStatusAsync(stub[podIndex]);
+                            future.whenComplete((fs, e) -> {
+                                if (channel[podIndex] != null) {
+                                    log.debug("closing channel {}", podIndex);
+                                    channel[podIndex].shutdown();
+                                }
+                                if (e != null) {
+                                    log.error("Get function {}-{} status from grpc failed from namespace {}, error message: {}",
+                                            finalStatefulSetName,
+                                            shardId,
+                                            nameSpaceName,
+                                            e.getMessage());
+                                    functionInstanceStatusData.setError(e.getMessage());
+                                } else if (fs != null) {
+                                    FunctionsUtil.convertFunctionStatusToInstanceStatusData(fs, functionInstanceStatusData);
+                                }
+                            });
+                            completableFutureSet.add(future);
+                        }
+                    });
+                    completableFutureSet.forEach(CompletableFuture::join);
+                }
+                if (!pendingPods.isEmpty()) {
+                    pendingPods.forEach(pod -> {
+                        String podName = KubernetesUtils.getPodName(pod);
+                        int shardId = CommonUtil.getShardIdFromPodName(podName);
+                        if (shardId == -1) {
+                            log.warn("shardId invalid {}", podName);
+                            return;
+                        }
+                        FunctionStatus.FunctionInstanceStatus functionInstanceStatus = functionStatus.getInstances().get(shardId);
+                        if (functionInstanceStatus != null) {
+                            FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData = functionInstanceStatus.getStatus();
+                            V1PodStatus podStatus = pod.getStatus();
+                            if (podStatus != null && StringUtils.isNotEmpty(podStatus.getPhase())) {
+                                functionInstanceStatusData.setError(podStatus.getPhase());
+                            }
+                        }
+                    });
+                }
+            }
         } catch (Exception e) {
             log.error("Get function {} status failed from namespace {}, error message: {}",
                     componentName, namespace, e.getMessage());
@@ -349,7 +504,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             if (clientAuthenticationDataHttps != null) {
                 try {
 
-                    Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
+                    Map<String, Object> functionsWorkerServiceCustomConfigs = worker()
                             .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
                     Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
                     if (volumes != null) {
@@ -369,7 +524,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                             v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
                         }
                         v1alpha1FunctionSpecJava.setExtraDependenciesDir(
-                                (String)functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
+                                (String) functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
                         v1alpha1Function.getSpec().setJava(v1alpha1FunctionSpecJava);
                     }
                     if (!StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationPlugin())
@@ -392,7 +547,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
 
                     throw new RestException(Response.Status.INTERNAL_SERVER_ERROR,
                             String.format("Error create or update auth or tls secret for %s %s:- %s",
-                            ComponentTypeUtils.toString(componentType), functionName, e.getMessage()));
+                                    ComponentTypeUtils.toString(componentType), functionName, e.getMessage()));
                 }
             }
         }
