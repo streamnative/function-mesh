@@ -113,12 +113,13 @@ func (r *SinkReconciler) ObserveSinkService(ctx context.Context, req ctrl.Reques
 	}
 
 	svc := &corev1.Service{}
+	svcName := spec.MakeHeadlessServiceName(spec.MakeSinkObjectMeta(sink).Name)
 	err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace,
-		Name: spec.MakeSinkObjectMeta(sink).Name}, svc)
+		Name: svcName}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			condition.Action = v1alpha1.Create
-			r.Log.Info("service is not created...", "Name", sink.Name)
+			r.Log.Info("service is not created...", "Name", sink.Name, "ServiceName", svcName)
 		} else {
 			sink.Status.Conditions[v1alpha1.Service] = condition
 			return err

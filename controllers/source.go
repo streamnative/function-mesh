@@ -115,12 +115,13 @@ func (r *SourceReconciler) ObserveSourceService(ctx context.Context, req ctrl.Re
 	}
 
 	svc := &corev1.Service{}
+	svcName := spec.MakeHeadlessServiceName(spec.MakeSourceObjectMeta(source).Name)
 	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
-		Name: spec.MakeSourceObjectMeta(source).Name}, svc)
+		Name: svcName}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			condition.Action = v1alpha1.Create
-			r.Log.Info("service is not created...", "Name", source.Name)
+			r.Log.Info("service is not created...", "Name", source.Name, "ServiceName", svcName)
 		} else {
 			source.Status.Conditions[v1alpha1.Service] = condition
 			return err

@@ -45,7 +45,7 @@ func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 
 func MakeSinkServiceName(sink *v1alpha1.Sink) string {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return makeHeadlessServiceName(objectMeta.Name)
+	return MakeHeadlessServiceName(objectMeta.Name)
 }
 
 func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
