@@ -72,7 +72,7 @@ var MetricsPort = corev1.ContainerPort{
 }
 
 func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev1.Service {
-	objectMeta.Name = makeHeadlessServiceName(objectMeta.Name)
+	objectMeta.Name = MakeHeadlessServiceName(objectMeta.Name)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -91,7 +91,8 @@ func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev
 	}
 }
 
-func makeHeadlessServiceName(serviceName string) string {
+// MakeHeadlessServiceName changes the name of service to headless style
+func MakeHeadlessServiceName(serviceName string) string {
 	return fmt.Sprintf("%s-headless", serviceName)
 }
 
@@ -127,7 +128,7 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *
 		},
 		ObjectMeta: *objectMeta,
 		Spec: *MakeStatefulSetSpec(replicas, container, volumes, labels, policy,
-			makeHeadlessServiceName(objectMeta.Name)),
+			MakeHeadlessServiceName(objectMeta.Name)),
 	}
 }
 

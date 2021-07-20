@@ -126,11 +126,12 @@ func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, req ctr
 	}
 
 	svc := &corev1.Service{}
+	svcName := spec.MakeHeadlessServiceName(spec.MakeFunctionObjectMeta(function).Name)
 	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace,
-		Name: spec.MakeFunctionObjectMeta(function).Name}, svc)
+		Name: svcName}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Info("service is not created...", "Name", function.Name)
+			r.Log.Info("service is not created...", "Name", function.Name, "ServiceName", svcName)
 			return nil
 		}
 		return err
