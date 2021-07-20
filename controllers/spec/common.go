@@ -91,6 +91,7 @@ func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev
 	}
 }
 
+// MakeHeadlessServiceName changes the name of service to headless style
 func MakeHeadlessServiceName(serviceName string) string {
 	return fmt.Sprintf("%s-headless", serviceName)
 }
