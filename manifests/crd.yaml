@@ -42,9 +42,8 @@ spec:
                   forwardSourceMessageProperty:
                     type: boolean
                   funcConfig:
-                    additionalProperties:
-                      type: string
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   golang:
                     properties:
                       go:
@@ -4407,9 +4406,8 @@ spec:
                       type: object
                     type: object
                   sinkConfig:
-                    additionalProperties:
-                      type: string
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   sinkType:
                     type: string
                   subscriptionName:
@@ -6557,9 +6555,8 @@ spec:
                       type: object
                     type: object
                   sourceConfig:
-                    additionalProperties:
-                      type: string
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   sourceType:
                     type: string
                   tenant:
@@ -6681,9 +6678,8 @@ spec:
             forwardSourceMessageProperty:
               type: boolean
             funcConfig:
-              additionalProperties:
-                type: string
               type: object
+              x-kubernetes-preserve-unknown-fields: true
             golang:
               properties:
                 go:
@@ -11110,9 +11106,8 @@ spec:
                 type: object
               type: object
             sinkConfig:
-              additionalProperties:
-                type: string
               type: object
+              x-kubernetes-preserve-unknown-fields: true
             sinkType:
               type: string
             subscriptionName:
@@ -13324,9 +13319,8 @@ spec:
                 type: object
               type: object
             sourceConfig:
-              additionalProperties:
-                type: string
               type: object
+              x-kubernetes-preserve-unknown-fields: true
             sourceType:
               type: string
             tenant:

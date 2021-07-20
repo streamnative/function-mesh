@@ -29,15 +29,18 @@ import (
 type SinkSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name         string                      `json:"name,omitempty"`
-	ClassName    string                      `json:"className,omitempty"`
-	ClusterName  string                      `json:"clusterName,omitempty"`
-	Tenant       string                      `json:"tenant,omitempty"`
-	SinkType     string                      `json:"sinkType,omitempty"` // refer to `--sink-type` as builtin connector
-	Replicas     *int32                      `json:"replicas,omitempty"`
-	MaxReplicas  *int32                      `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Input        InputConf                   `json:"input,omitempty"`
-	SinkConfig   map[string]string           `json:"sinkConfig,omitempty"`
+	Name        string    `json:"name,omitempty"`
+	ClassName   string    `json:"className,omitempty"`
+	ClusterName string    `json:"clusterName,omitempty"`
+	Tenant      string    `json:"tenant,omitempty"`
+	SinkType    string    `json:"sinkType,omitempty"` // refer to `--sink-type` as builtin connector
+	Replicas    *int32    `json:"replicas,omitempty"`
+	MaxReplicas *int32    `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
+	Input       InputConf `json:"input,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
+	SinkConfig   *Config                     `json:"sinkConfig,omitempty"`
 	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
 	SecretsMap   map[string]SecretRef        `json:"secretsMap,omitempty"`
 	VolumeMounts []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
