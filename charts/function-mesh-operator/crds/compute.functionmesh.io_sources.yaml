@@ -2145,9 +2145,8 @@ spec:
                 type: object
               type: object
             sourceConfig:
-              additionalProperties:
-                type: string
               type: object
+              x-kubernetes-preserve-unknown-fields: true
             sourceType:
               type: string
             tenant:

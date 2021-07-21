@@ -19,6 +19,7 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
@@ -213,7 +214,7 @@ public class SourcesUtil {
 
         v1alpha1SourceSpec.setClusterName(clusterName);
 
-        v1alpha1SourceSpec.setSourceConfig(CommonUtil.transformedMapValueToString(sourceConfig.getConfigs()));
+        v1alpha1SourceSpec.setSourceConfig(sourceConfig.getConfigs());
 
         v1alpha1Source.setSpec(v1alpha1SourceSpec);
 
@@ -284,7 +285,7 @@ public class SourcesUtil {
         }
 
         if (v1alpha1SourceSpec.getSourceConfig() != null) {
-            sourceConfig.setConfigs(new HashMap<>(v1alpha1SourceSpec.getSourceConfig()));
+            sourceConfig.setConfigs((Map<String, Object>) v1alpha1SourceSpec.getSourceConfig());
         }
 
         // TODO: secretsMap

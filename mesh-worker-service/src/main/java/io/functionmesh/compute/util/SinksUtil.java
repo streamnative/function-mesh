@@ -19,6 +19,7 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
@@ -260,7 +261,8 @@ public class SinksUtil {
 
         v1alpha1SinkSpec.setClusterName(clusterName);
 
-        v1alpha1SinkSpec.setSinkConfig(CommonUtil.transformedMapValueToString(sinkConfig.getConfigs()));
+//        String sinkConfigJson = new Gson().toJson(sinkConfig.getConfigs());
+        v1alpha1SinkSpec.setSinkConfig(sinkConfig.getConfigs());
 
         v1alpha1Sink.setSpec(v1alpha1SinkSpec);
 
@@ -376,7 +378,7 @@ public class SinksUtil {
         }
         sinkConfig.setClassName(v1alpha1SinkSpec.getClassName());
         if (v1alpha1SinkSpec.getSinkConfig() != null) {
-            sinkConfig.setConfigs(new HashMap<>(v1alpha1SinkSpec.getSinkConfig()));
+            sinkConfig.setConfigs((Map<String, Object>) v1alpha1SinkSpec.getSinkConfig());
         }
         // TODO: secretsMap
 

@@ -2172,9 +2172,8 @@ spec:
                 type: object
               type: object
             sinkConfig:
-              additionalProperties:
-                type: string
               type: object
+              x-kubernetes-preserve-unknown-fields: true
             sinkType:
               type: string
             subscriptionName:
