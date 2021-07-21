@@ -19,7 +19,6 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
@@ -126,8 +125,6 @@ public class SinksUtil {
             v1alpha1SinkSpec.setJava(v1alpha1SinkSpecJava);
             extractedSinkDetails.setSinkClassName(sinkConfig.getClassName());
         }
-
-
 
         V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
 
@@ -261,7 +258,6 @@ public class SinksUtil {
 
         v1alpha1SinkSpec.setClusterName(clusterName);
 
-//        String sinkConfigJson = new Gson().toJson(sinkConfig.getConfigs());
         v1alpha1SinkSpec.setSinkConfig(sinkConfig.getConfigs());
 
         v1alpha1Sink.setSpec(v1alpha1SinkSpec);

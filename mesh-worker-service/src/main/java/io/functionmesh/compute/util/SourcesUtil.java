@@ -19,7 +19,6 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
@@ -305,7 +304,6 @@ public class SourcesUtil {
             sourceConfig.setRuntimeFlags(v1alpha1SourceSpec.getRuntimeFlags());
         }
 
-
         if (v1alpha1SourceSpec.getJava() != null && Strings.isNotEmpty(v1alpha1SourceSpec.getJava().getJar())) {
             sourceConfig.setArchive(v1alpha1SourceSpec.getJava().getJar());
         }
@@ -366,7 +364,6 @@ public class SourcesUtil {
             systemExceptionInformationList.add(exceptionInformation);
         }
         instanceStatusData.setLatestSystemExceptions(systemExceptionInformationList);
-
 
         instanceStatusData.setNumWritten(functionStatus.getNumSuccessfullyProcessed());
         instanceStatusData.setLastReceivedTime(functionStatus.getLastInvocationTime());
