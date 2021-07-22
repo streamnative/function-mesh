@@ -255,22 +255,6 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 	}
 }
 
-func getBoolFromPtrOrDefault(ptr *bool, val bool) bool {
-	ret := val
-	if ptr != nil {
-		ret = *ptr
-	}
-	return ret
-}
-
-func getInt32FromPtrOrDefault(ptr *int32, val int32) int32 {
-	ret := val
-	if ptr != nil {
-		ret = *ptr
-	}
-	return ret
-}
-
 func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 	return &proto.FunctionDetails{
 		Tenant:               sink.Spec.Tenant,
@@ -384,4 +368,20 @@ func sanitizeVolumeName(name string) string {
 
 func makeJobName(name, suffix string) string {
 	return fmt.Sprintf("%s-%s", name, suffix)
+}
+
+func getBoolFromPtrOrDefault(ptr *bool, val bool) bool {
+	ret := val
+	if ptr != nil {
+		ret = *ptr
+	}
+	return ret
+}
+
+func getInt32FromPtrOrDefault(ptr *int32, val int32) int32 {
+	ret := val
+	if ptr != nil {
+		ret = *ptr
+	}
+	return ret
 }
