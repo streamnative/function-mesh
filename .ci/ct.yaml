@@ -1,6 +1,7 @@
 check-version-increment: false
 chart-dirs:
   - charts
-all: true
+all: false
 validate-maintainers: false
 helm-extra-args: --timeout 800s
+namespace: default
