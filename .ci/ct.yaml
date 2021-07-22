@@ -3,6 +3,6 @@ chart-dirs:
   - charts
 all: false
 validate-maintainers: false
-helm-extra-args: --timeout 800s
+helm-extra-args: --timeout 2000s
 namespace: default
 release-label: release
