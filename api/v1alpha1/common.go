@@ -20,7 +20,12 @@ package v1alpha1
 import (
 	"encoding/json"
 
+	"fmt"
+	"strings"
+
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+
+	pctlutil "github.com/streamnative/pulsarctl/pkg/pulsar/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -150,7 +155,6 @@ type SecretRef struct {
 }
 
 type InputConf struct {
-	// +kubebuilder:default="[B"
 	TypeClassName       string                    `json:"typeClassName,omitempty"`
 	Topics              []string                  `json:"topics,omitempty"`
 	TopicPattern        string                    `json:"topicPattern,omitempty"`
@@ -170,7 +174,6 @@ type ConsumerConfig struct {
 }
 
 type OutputConf struct {
-	// +kubebuilder:default="[B"
 	TypeClassName      string            `json:"typeClassName,omitempty"`
 	Topic              string            `json:"topic,omitempty"`
 	SinkSerdeClassName string            `json:"sinkSerdeClassName,omitempty"`
@@ -259,6 +262,9 @@ const (
 	DefaultTenant    string = "public"
 	DefaultNamespace string = "default"
 	DefaultCluster   string = "kubernetes"
+
+	DefaultResourceCpu    int64 = 1
+	DefaultResourceMemory int64 = 1073741824
 )
 
 func validResourceRequirement(requirements corev1.ResourceRequirements) bool {
@@ -285,6 +291,13 @@ const (
 	FunctionComponent string = "function"
 	SourceComponent   string = "source"
 	SinkComponent     string = "sink"
+
+	PackageUrlHttp  string = "http://"
+	PackageUrlHttps string = "https://"
+	// PackageUrlFile  string = "file://"
+	PackageUrlFunction string = "function://"
+	PackageUrlSource   string = "source://"
+	PackageUrlSink     string = "sink://"
 )
 
 // Config represents untyped YAML configuration.
@@ -319,4 +332,87 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 // This exists here to work around https://github.com/kubernetes/code-generator/issues/50
 func (c *Config) DeepCopyInto(out *Config) {
 	out.Data = runtime.DeepCopyJSON(c.Data)
+}
+
+func validPackageLocation(packageLocation string) error {
+	if hasPackageTypePrefix(packageLocation) {
+		err := isValidPulsarPackageURL(packageLocation)
+		if err != nil {
+			return err
+		}
+	} else {
+		if !isFunctionPackageUrlSupported(packageLocation) {
+			return fmt.Errorf("invalid function package url %s, supported url (http/https)", packageLocation)
+		}
+	}
+
+	return nil
+}
+
+func hasPackageTypePrefix(packageLocation string) bool {
+	lowerCase := strings.ToLower(packageLocation)
+	return strings.HasPrefix(lowerCase, PackageUrlFunction) ||
+		strings.HasPrefix(lowerCase, PackageUrlSource) ||
+		strings.HasPrefix(lowerCase, PackageUrlSink)
+}
+
+func isValidPulsarPackageURL(packageLocation string) error {
+	parts := strings.Split(packageLocation, "://")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid package name %s", packageLocation)
+	}
+	if !hasPackageTypePrefix(packageLocation) {
+		return fmt.Errorf("invalid package name %s", packageLocation)
+	}
+	rest := parts[1]
+	if !strings.Contains(rest, "@") {
+		rest += "@"
+	}
+	packageParts := strings.Split(rest, "@")
+	if len(packageParts) != 2 {
+		return fmt.Errorf("invalid package name %s", packageLocation)
+	}
+	partsWithoutVersion := strings.Split(packageParts[0], "/")
+	if len(partsWithoutVersion) != 3 {
+		return fmt.Errorf("invalid package name %s", packageLocation)
+	}
+	return nil
+}
+
+func isFunctionPackageUrlSupported(packageLocation string) bool {
+	// TODO: support file:// schema
+	lowerCase := strings.ToLower(packageLocation)
+	return strings.HasPrefix(lowerCase, PackageUrlHttp) ||
+		strings.HasPrefix(lowerCase, PackageUrlHttps)
+}
+
+func collectAllInputTopics(inputs InputConf) []string {
+	ret := []string{}
+	if len(inputs.Topics) > 0 {
+		ret = append(ret, inputs.Topics...)
+	}
+	if inputs.TopicPattern != "" {
+		ret = append(ret, inputs.TopicPattern)
+	}
+	if len(inputs.CustomSerdeSources) > 0 {
+		for k := range inputs.CustomSerdeSources {
+			ret = append(ret, k)
+		}
+	}
+	if len(inputs.CustomSchemaSources) > 0 {
+		for k := range inputs.CustomSchemaSources {
+			ret = append(ret, k)
+		}
+	}
+	if len(inputs.SourceSpecs) > 0 {
+		for k := range inputs.SourceSpecs {
+			ret = append(ret, k)
+		}
+	}
+	return ret
+}
+
+func isValidTopicName(topicName string) error {
+	_, err := pctlutil.GetTopicName(topicName)
+	return err
 }

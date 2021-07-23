@@ -33,7 +33,6 @@ spec:
         spec:
           properties:
             autoAck:
-              default: true
               type: boolean
             className:
               type: string
@@ -124,7 +123,6 @@ spec:
                     type: string
                   type: array
                 typeClassName:
-                  default: '[B'
                   type: string
               type: object
             java:
@@ -2402,7 +2400,6 @@ spec:
                   type: string
               type: object
             replicas:
-              default: 1
               format: int32
               minimum: 1
               type: integer
@@ -2443,7 +2440,6 @@ spec:
               - earliest
               type: string
             tenant:
-              default: public
               type: string
             timeout:
               format: int32

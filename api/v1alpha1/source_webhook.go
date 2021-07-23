@@ -18,8 +18,9 @@
 package v1alpha1
 
 import (
-	"encoding/json"
-	"errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,14 +48,9 @@ func (r *Source) Default() {
 	sourcelog.Info("default", "name", r.Name)
 
 	if r.Spec.Replicas == nil {
-		zeroVal := int32(0)
-		r.Spec.Replicas = &zeroVal
+		r.Spec.Replicas = new(int32)
+		*r.Spec.Replicas = 1
 	}
-
-	//if r.Spec.AutoAck == nil {
-	//	trueVal := true
-	//	r.Spec.AutoAck = &trueVal
-	//}
 
 	if r.Spec.ProcessingGuarantee == "" {
 		r.Spec.ProcessingGuarantee = AtleastOnce
@@ -78,11 +74,11 @@ func (r *Source) Default() {
 
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
-			r.Spec.Resources.Requests.Cpu().Set(int64(1))
+			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCpu)
 		}
 
 		if r.Spec.Resources.Requests.Memory() == nil {
-			r.Spec.Resources.Requests.Memory().Set(int64(1073741824))
+			r.Spec.Resources.Requests.Memory().Set(DefaultResourceMemory)
 		}
 	}
 
@@ -104,6 +100,10 @@ func (r *Source) Default() {
 	if r.Spec.Resources.Limits == nil {
 		paddingResourceLimit(&r.Spec.Resources)
 	}
+
+	if r.Spec.Output.TypeClassName == "" {
+		r.Spec.Output.TypeClassName = "[B"
+	}
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -113,49 +113,54 @@ var _ webhook.Validator = &Source{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Source) ValidateCreate() error {
-	sourcelog.Info("validate create", "name", r.Name)
+	sourcelog.Info("validate create source", "name", r.Name)
+	var allErrs field.ErrorList
+	var fieldErr *field.Error
+	var fieldErrs []*field.Error
 
-	if r.Spec.Java != nil {
-		if r.Spec.ClassName == "" {
-			return errors.New("class name cannot be empty")
-		}
+	if r.Spec.SourceConfig == nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("sourceConfig"), r.Spec.SourceConfig, "source config is not provided"))
 	}
 
-	// TODO: verify inputConf
-
-	// TODO: allow 0 replicas, currently hpa's min value has to be 1
-	if *r.Spec.Replicas == 0 {
-		return errors.New("replicas cannot be zero")
+	if r.Spec.Runtime.Java == nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "java"), r.Spec.Runtime.Java, "source must have java runtime specified"))
 	}
 
-	if r.Spec.MaxReplicas != nil && *r.Spec.Replicas > *r.Spec.MaxReplicas {
-		return errors.New("maxReplicas must be greater than or equal to replicas")
+	fieldErrs = validateJavaRuntime(r.Spec.Java, r.Spec.ClassName)
+	if fieldErrs != nil && len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	if !validResourceRequirement(r.Spec.Resources) {
-		return errors.New("resource requirement is invalid")
+	fieldErrs = validateReplicasAndMaxReplicas(r.Spec.Replicas, r.Spec.MaxReplicas)
+	if fieldErrs != nil && len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	if r.Spec.Java == nil && r.Spec.Python == nil && r.Spec.Golang == nil {
-		return errors.New("must specify a runtime from java, python or golang")
+	fieldErr = validateResourceRequirement(r.Spec.Resources)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
 
-	if r.Spec.SourceConfig != nil {
-		_, err := json.Marshal(r.Spec.SourceConfig)
-		if err != nil {
-			return errors.New("provided config is wrong: " + err.Error())
-		}
+	fieldErr = validateSourceConfig(r.Spec.SourceConfig)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
 
-	if r.Spec.SecretsMap != nil {
-		_, err := json.Marshal(r.Spec.SecretsMap)
-		if err != nil {
-			return errors.New("provided secrets map is wrong: " + err.Error())
-		}
+	fieldErr = validateSecretsMap(r.Spec.SecretsMap)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
-	// TODO python/golang specific check
 
-	return nil
+	fieldErrs = validateInputOutput(nil, &r.Spec.Output)
+	if fieldErrs != nil && len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
+	}
+
+	if len(allErrs) == 0 {
+		return nil
+	}
+
+	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "Source"}, r.Name, allErrs)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type

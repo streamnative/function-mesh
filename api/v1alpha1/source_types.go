@@ -38,8 +38,6 @@ type SourceSpec struct {
 	ClusterName string `json:"clusterName,omitempty"`
 	SourceType  string `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default=1
-	// +kubebuilder:validation:Minimum=1
 	Replicas *int32 `json:"replicas,omitempty"`
 
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
@@ -87,6 +85,7 @@ type SourceStatus struct {
 //+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 
 // Source is the Schema for the sources API
+// +kubebuilder:pruning:PreserveUnknownFields
 type Source struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

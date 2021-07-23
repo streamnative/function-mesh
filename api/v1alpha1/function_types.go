@@ -37,7 +37,6 @@ type FunctionSpec struct {
 	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default=1
 	// +kubebuilder:validation:Minimum=1
 	Replicas *int32 `json:"replicas,omitempty"`
 
@@ -104,6 +103,7 @@ type FunctionStatus struct {
 //+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 
 // Function is the Schema for the functions API
+// +kubebuilder:pruning:PreserveUnknownFields
 type Function struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -38,7 +38,6 @@ type SinkSpec struct {
 	Namespace   string `json:"namespace,omitempty"`
 	SinkType    string `json:"sinkType,omitempty"` // refer to `--sink-type` as builtin connector
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default=1
 	// +kubebuilder:validation:Minimum=1
 	Replicas *int32 `json:"replicas,omitempty"`
 
@@ -98,7 +97,8 @@ type SinkStatus struct {
 // +kubebuilder:subresource:status
 //+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 
-// Topic is the Schema for the sinks API
+// Sink is the Schema for the sinks API
+// +kubebuilder:pruning:PreserveUnknownFields
 type Sink struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

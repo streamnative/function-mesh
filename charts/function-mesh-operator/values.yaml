@@ -46,3 +46,5 @@ controllerManager:
   selector: []
   # - k1==v1
   # - k2!=v2
+  service:
+    type: ClusterIP
