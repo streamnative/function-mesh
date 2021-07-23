@@ -14,6 +14,7 @@ spec:
     listKind: FunctionMeshList
     plural: functionmeshes
     singular: functionmesh
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}

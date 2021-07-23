@@ -7,7 +7,7 @@ spec:
   image: streamnative/pulsar-functions-python-sample:2.8.0.14
   className: exclamation_function.ExclamationFunction
   forwardSourceMessageProperty: true
-  MaxPendingAsyncRequests: 1000
+  maxPendingAsyncRequests: 1000
   replicas: 1
   maxReplicas: 1
   logTopic: persistent://public/default/py-function-logs

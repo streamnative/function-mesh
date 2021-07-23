@@ -21,6 +21,7 @@ spec:
     listKind: FunctionMeshList
     plural: functionmeshes
     singular: functionmesh
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}
@@ -7446,6 +7447,7 @@ spec:
     listKind: FunctionList
     plural: functions
     singular: function
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     scale:
@@ -10019,6 +10021,7 @@ spec:
     listKind: SinkList
     plural: sinks
     singular: sink
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     scale:
@@ -12529,6 +12532,7 @@ spec:
     listKind: SourceList
     plural: sources
     singular: source
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     scale:
