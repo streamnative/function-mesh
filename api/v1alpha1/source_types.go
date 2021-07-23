@@ -26,16 +26,21 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // SourceSpec defines the desired state of Source
+// +kubebuilder:validation:Optional
 type SourceSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// +kubebuilder:validation:Required
 	Name        string `json:"name,omitempty"`
 	ClassName   string `json:"className,omitempty"`
 	Tenant      string `json:"tenant,omitempty"`
 	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	SourceType  string `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
-	Replicas    *int32 `json:"replicas,omitempty"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=1
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
 	// If provided, a default HPA with CPU at average of 80% will be used.
@@ -54,8 +59,11 @@ type SourceSpec struct {
 	ForwardSourceMessageProperty *bool                       `json:"forwardSourceMessageProperty,omitempty"`
 	Pod                          PodPolicy                   `json:"pod,omitempty"`
 
+	// +kubebuilder:validation:Required
 	Messaging `json:",inline"`
-	Runtime   `json:",inline"`
+
+	// +kubebuilder:validation:Required
+	Runtime `json:",inline"`
 
 	// Image is the container image used to run source pods.
 	// default is streamnative/pulsar-functions-java-runner

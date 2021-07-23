@@ -122,18 +122,24 @@ type Runtime struct {
 	Golang *GoRuntime     `json:"golang,omitempty"`
 }
 
+// +kubebuilder:validation:Optional
 type JavaRuntime struct {
+	// +kubebuilder:validation:Required
 	Jar                  string `json:"jar,omitempty"`
 	JarLocation          string `json:"jarLocation,omitempty"`
 	ExtraDependenciesDir string `json:"extraDependenciesDir,omitempty"`
 }
 
+// +kubebuilder:validation:Optional
 type PythonRuntime struct {
+	// +kubebuilder:validation:Required
 	Py         string `json:"py,omitempty"`
 	PyLocation string `json:"pyLocation,omitempty"`
 }
 
+// +kubebuilder:validation:Optional
 type GoRuntime struct {
+	// +kubebuilder:validation:Required
 	Go         string `json:"go,omitempty"`
 	GoLocation string `json:"goLocation,omitempty"`
 }
@@ -144,6 +150,7 @@ type SecretRef struct {
 }
 
 type InputConf struct {
+	// +kubebuilder:default="[B"
 	TypeClassName       string                    `json:"typeClassName,omitempty"`
 	Topics              []string                  `json:"topics,omitempty"`
 	TopicPattern        string                    `json:"topicPattern,omitempty"`
@@ -163,6 +170,7 @@ type ConsumerConfig struct {
 }
 
 type OutputConf struct {
+	// +kubebuilder:default="[B"
 	TypeClassName      string            `json:"typeClassName,omitempty"`
 	Topic              string            `json:"topic,omitempty"`
 	SinkSerdeClassName string            `json:"sinkSerdeClassName,omitempty"`
@@ -195,6 +203,7 @@ type CryptoSecret struct {
 	//AsEnv      string `json:"asEnv,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=latest;earliest
 type SubscribePosition string
 
 const (
@@ -239,6 +248,7 @@ const (
 	NoAction ReconcileAction = "NoAction"
 )
 
+// +kubebuilder:validation:Enum=atleast_once;atmost_once;effectively_once
 type ProcessGuarantee string
 
 const (

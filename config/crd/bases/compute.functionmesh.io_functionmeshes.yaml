@@ -32,6 +32,7 @@ spec:
               items:
                 properties:
                   autoAck:
+                    default: true
                     type: boolean
                   className:
                     type: string
@@ -127,6 +128,7 @@ spec:
                           type: string
                         type: array
                       typeClassName:
+                        default: '[B'
                         type: string
                     type: object
                   java:
@@ -210,6 +212,7 @@ spec:
                       topic:
                         type: string
                       typeClassName:
+                        default: '[B'
                         type: string
                     type: object
                   pod:
@@ -2443,6 +2446,10 @@ spec:
                         type: array
                     type: object
                   processingGuarantee:
+                    enum:
+                    - atleast_once
+                    - atmost_once
+                    - effectively_once
                     type: string
                   pulsar:
                     properties:
@@ -2461,7 +2468,9 @@ spec:
                         type: string
                     type: object
                   replicas:
+                    default: 1
                     format: int32
+                    minimum: 1
                     type: integer
                   resources:
                     properties:
@@ -2492,8 +2501,12 @@ spec:
                   subscriptionName:
                     type: string
                   subscriptionPosition:
+                    enum:
+                    - latest
+                    - earliest
                     type: string
                   tenant:
+                    default: public
                     type: string
                   timeout:
                     format: int32
@@ -2524,6 +2537,7 @@ spec:
               items:
                 properties:
                   autoAck:
+                    default: true
                     type: boolean
                   className:
                     type: string
@@ -2614,6 +2628,7 @@ spec:
                           type: string
                         type: array
                       typeClassName:
+                        default: '[B'
                         type: string
                     type: object
                   java:
@@ -4869,6 +4884,10 @@ spec:
                         type: array
                     type: object
                   processingGuarantee:
+                    enum:
+                    - atleast_once
+                    - atmost_once
+                    - effectively_once
                     type: string
                   pulsar:
                     properties:
@@ -4887,7 +4906,9 @@ spec:
                         type: string
                     type: object
                   replicas:
+                    default: 1
                     format: int32
+                    minimum: 1
                     type: integer
                   resources:
                     properties:
@@ -4921,8 +4942,12 @@ spec:
                   subscriptionName:
                     type: string
                   subscriptionPosition:
+                    enum:
+                    - latest
+                    - earliest
                     type: string
                   tenant:
+                    default: public
                     type: string
                   timeout:
                     format: int32
@@ -5042,6 +5067,7 @@ spec:
                       topic:
                         type: string
                       typeClassName:
+                        default: '[B'
                         type: string
                     type: object
                   pod:
@@ -7275,6 +7301,10 @@ spec:
                         type: array
                     type: object
                   processingGuarantee:
+                    enum:
+                    - atleast_once
+                    - atmost_once
+                    - effectively_once
                     type: string
                   pulsar:
                     properties:
@@ -7293,7 +7323,9 @@ spec:
                         type: string
                     type: object
                   replicas:
+                    default: 1
                     format: int32
+                    minimum: 1
                     type: integer
                   resources:
                     properties:
@@ -7323,6 +7355,7 @@ spec:
                   sourceType:
                     type: string
                   tenant:
+                    default: public
                     type: string
                   volumeMounts:
                     items:
