@@ -31,6 +31,7 @@ import (
 )
 
 func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails {
+
 	return &proto.FunctionDetails{
 		Tenant:               function.Spec.Tenant,
 		Namespace:            function.Namespace,
@@ -41,8 +42,8 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		UserConfig:           getUserConfig(function.Spec.FuncConfig),
 		SecretsMap:           marshalSecretsMap(function.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
-		AutoAck:              *function.Spec.AutoAck,
-		Parallelism:          *function.Spec.Replicas,
+		AutoAck:              getBoolFromPtrOrDefault(function.Spec.AutoAck, true),
+		Parallelism:          getInt32FromPtrOrDefault(function.Spec.Replicas, 1),
 		Source:               generateFunctionInputSpec(function),
 		Sink:                 generateFunctionOutputSpec(function),
 		Resources:            generateResource(function.Spec.Resources.Requests),
@@ -72,8 +73,8 @@ func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 		ProcessingGuarantees: int32(convertProcessingGuarantee(function.Spec.ProcessingGuarantee)),
 		//SecretsMap:                  marshalSecretsMap(function.Spec.SecretsMap),
 		Runtime:                     int32(proto.FunctionDetails_GO),
-		AutoACK:                     *function.Spec.AutoAck,
-		Parallelism:                 *function.Spec.Replicas,
+		AutoACK:                     getBoolFromPtrOrDefault(function.Spec.AutoAck, true),
+		Parallelism:                 getInt32FromPtrOrDefault(function.Spec.Replicas, 1),
 		TimeoutMs:                   uint64(function.Spec.Timeout),
 		SubscriptionName:            function.Spec.SubscriptionName,
 		CleanupSubscription:         function.Spec.CleanupSubscription,
@@ -212,7 +213,7 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 		SecretsMap:           marshalSecretsMap(source.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              true,
-		Parallelism:          *source.Spec.Replicas,
+		Parallelism:          getInt32FromPtrOrDefault(source.Spec.Replicas, 1),
 		Source:               generateSourceInputSpec(source),
 		Sink:                 generateSourceOutputSpec(source),
 		Resources:            generateResource(source.Spec.Resources.Requests),
@@ -264,8 +265,8 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		ProcessingGuarantees: convertProcessingGuarantee(sink.Spec.ProcessingGuarantee),
 		SecretsMap:           marshalSecretsMap(sink.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
-		AutoAck:              *sink.Spec.AutoAck,
-		Parallelism:          *sink.Spec.Replicas,
+		AutoAck:              getBoolFromPtrOrDefault(sink.Spec.AutoAck, true),
+		Parallelism:          getInt32FromPtrOrDefault(sink.Spec.Replicas, 1),
 		Source:               generateSinkInputSpec(sink),
 		Sink:                 generateSinkOutputSpec(sink),
 		Resources:            generateResource(sink.Spec.Resources.Requests),
@@ -367,4 +368,20 @@ func sanitizeVolumeName(name string) string {
 
 func makeJobName(name, suffix string) string {
 	return fmt.Sprintf("%s-%s", name, suffix)
+}
+
+func getBoolFromPtrOrDefault(ptr *bool, val bool) bool {
+	ret := val
+	if ptr != nil {
+		ret = *ptr
+	}
+	return ret
+}
+
+func getInt32FromPtrOrDefault(ptr *int32, val int32) int32 {
+	ret := val
+	if ptr != nil {
+		ret = *ptr
+	}
+	return ret
 }
