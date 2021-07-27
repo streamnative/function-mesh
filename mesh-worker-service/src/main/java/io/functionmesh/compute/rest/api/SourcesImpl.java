@@ -349,9 +349,9 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                         sourceInstanceStatus.setStatus(sourceInstanceStatusData);
                         sourceStatus.addInstance(sourceInstanceStatus);
                     }
-                }
-                if (v1StatefulSet.getStatus().getReadyReplicas() != null) {
-                    sourceStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
+                    if (v1StatefulSet.getStatus().getReadyReplicas() != null) {
+                        sourceStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
+                    }
                 }
             } else {
                 log.error(

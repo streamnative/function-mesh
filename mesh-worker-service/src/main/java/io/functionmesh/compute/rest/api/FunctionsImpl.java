@@ -379,9 +379,9 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                         functionInstanceStatus.setStatus(functionInstanceStatusData);
                         functionStatus.addInstance(functionInstanceStatus);
                     }
-                }
-                if (v1StatefulSet.getStatus().getReadyReplicas() != null) {
-                    functionStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
+                    if (v1StatefulSet.getStatus().getReadyReplicas() != null) {
+                        functionStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
+                    }
                 }
             } else {
                 log.error(

@@ -374,9 +374,9 @@ public class SinksImpl extends MeshComponentImpl
                         sinkInstanceStatus.setStatus(sinkInstanceStatusData);
                         sinkStatus.addInstance(sinkInstanceStatus);
                     }
-                }
-                if (v1StatefulSet.getStatus().getReadyReplicas() != null) {
-                    sinkStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
+                    if (v1StatefulSet.getStatus().getReadyReplicas() != null) {
+                        sinkStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
+                    }
                 }
             } else {
                 log.error(
