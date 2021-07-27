@@ -292,8 +292,8 @@ const (
 	SourceComponent   string = "source"
 	SinkComponent     string = "sink"
 
-	PackageURLHTTP  string = "http://"
-	PackageURLHTTPS string = "https://"
+	PackageURLHTTP     string = "http://"
+	PackageURLHTTPS    string = "https://"
 	PackageURLFunction string = "function://"
 	PackageURLSource   string = "source://"
 	PackageURLSink     string = "sink://"
