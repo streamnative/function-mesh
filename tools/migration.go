@@ -18,9 +18,11 @@
 package main
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -29,9 +31,13 @@ import (
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	cmdutils "github.com/streamnative/pulsarctl/pkg/cmdutils"
 	"github.com/streamnative/pulsarctl/pkg/pulsar/common"
+	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func SHA1(s string) string {
@@ -40,13 +46,66 @@ func SHA1(s string) string {
 	return hex.EncodeToString(o.Sum(nil))
 }
 
+func getStatefulSet(stListItems []appv1.StatefulSet, tenant string, namespace string, name string) []string {
+	// --tenant public --namespace default --name test-func
+	searchTenant := "--tenant " + tenant
+	searchNamespace := "--namespace " + namespace
+	searchName := "--name " + name
+	for i := range stListItems {
+		containers := stListItems[i].Spec.Template.Spec.Containers
+		for j := range containers {
+			commands := containers[j].Command
+			for m := range commands {
+				if strings.Contains(commands[m], searchTenant) && strings.Contains(commands[m], searchNamespace) && strings.Contains(commands[m], searchName) {
+					fmt.Println(strings.Split(commands[m], " "))
+					return strings.Split(commands[m], " ")
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func main() {
 	admin := cmdutils.NewPulsarClient()
 	functionAdmin := cmdutils.NewPulsarClientWithAPIVersion(common.V3)
 	tenants, err := admin.Tenants().List()
 	if err != nil {
-		fmt.Printf("List tenant failed from service %s\n", cmdutils.PulsarCtlConfig.WebServiceURL)
+		fmt.Println(cmdutils.PulsarCtlConfig.AuthParams)
+		fmt.Println(cmdutils.PulsarCtlConfig.AuthPlugin)
+		fmt.Printf("List tenant failed from service %s, %v\n", cmdutils.PulsarCtlConfig.WebServiceURL, err)
 		os.Exit(1)
+	}
+	var kubeConfig *string
+	kubeConfig = flag.String("kubeConfig", "", "absolute path to the kubeconfig file")
+	kubeNamespace := flag.String("namespace", "", "Please configure kubernetes namespace")
+	flag.Parse()
+	if *kubeConfig == "" {
+		fmt.Println("Please specify the kubernetes config path.")
+		os.Exit(0)
+	}
+	if *kubeNamespace == "" {
+		fmt.Println("Please specify the kubernetes namespace name")
+		os.Exit(1)
+	}
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeConfig)
+	if err != nil {
+		panic(err.Error())
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		fmt.Printf("Init kubernetes config path failed. %v\n", err)
+		os.Exit(0)
+	}
+	st := clientset.AppsV1().StatefulSets(*kubeNamespace)
+	stList, err := st.List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("List stateful set failed for k8s namespace: %s.%v\n", *kubeNamespace, err)
+		os.Exit(0)
+	}
+	if stList.Size() <= 0 {
+		fmt.Printf("No function to migrate for k8s namespace: %s.\n", *kubeNamespace)
+		os.Exit(0)
 	}
 	for _, tenant := range tenants {
 		namespaces, err := admin.Namespaces().GetNamespaces(tenant)
@@ -64,6 +123,7 @@ func main() {
 				os.Exit(1)
 			}
 			for _, function := range functions {
+				getStatefulSet(stList.Items, tenantNamespace[0], tenantNamespace[1], function)
 				functionConfig, err := functionAdmin.Functions().GetFunction(
 					tenantNamespace[0], tenantNamespace[1], function)
 				if err != nil {
