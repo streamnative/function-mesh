@@ -144,12 +144,12 @@ func (r *Function) ValidateCreate() error {
 	}
 
 	fieldErrs = validateJavaRuntime(r.Spec.Java, r.Spec.ClassName)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
 	fieldErrs = validatePythonRuntime(r.Spec.Python, r.Spec.ClassName)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 

@@ -9,12 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-func ensureJavaRuntime(java *JavaRuntime, python *PythonRuntime, golang *GoRuntime) []*field.Error {
-	var allErrs field.ErrorList
-
-	return allErrs
-}
-
 func validateJavaRuntime(java *JavaRuntime, className string) []*field.Error {
 	var allErrs field.ErrorList
 	if java != nil {
