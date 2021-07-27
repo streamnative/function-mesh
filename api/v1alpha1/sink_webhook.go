@@ -79,7 +79,7 @@ func (r *Sink) Default() {
 
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
-			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCpu)
+			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
 		}
 
 		if r.Spec.Resources.Requests.Memory() == nil {
@@ -117,12 +117,12 @@ func (r *Sink) ValidateCreate() error {
 	}
 
 	fieldErrs = validateJavaRuntime(r.Spec.Java, r.Spec.ClassName)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
 	fieldErrs = validateReplicasAndMaxReplicas(r.Spec.Replicas, r.Spec.MaxReplicas)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
@@ -142,7 +142,7 @@ func (r *Sink) ValidateCreate() error {
 	}
 
 	fieldErrs = validateMaxMessageRetry(r.Spec.MaxMessageRetry, r.Spec.ProcessingGuarantee, r.Spec.DeadLetterTopic)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
@@ -157,7 +157,7 @@ func (r *Sink) ValidateCreate() error {
 	}
 
 	fieldErrs = validateInputOutput(&r.Spec.Input, nil)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 

@@ -92,9 +92,7 @@ func validateReplicasAndMaxReplicas(replicas, maxReplicas *int32) []*field.Error
 }
 
 func validateResourceRequirement(requirements corev1.ResourceRequirements) *field.Error {
-	if !(validResource(requirements.Requests) && validResource(requirements.Limits) &&
-		requirements.Requests.Memory().Cmp(*requirements.Limits.Memory()) <= 0 &&
-		requirements.Requests.Cpu().Cmp(*requirements.Limits.Cpu()) <= 0) {
+	if !validResourceRequirement(requirements) {
 		return field.Invalid(field.NewPath("spec").Child("resources"), requirements, "resource requirement is invalid")
 	}
 	return nil

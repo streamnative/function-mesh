@@ -263,7 +263,7 @@ const (
 	DefaultNamespace string = "default"
 	DefaultCluster   string = "kubernetes"
 
-	DefaultResourceCpu    int64 = 1
+	DefaultResourceCPU    int64 = 1
 	DefaultResourceMemory int64 = 1073741824
 )
 
@@ -292,12 +292,11 @@ const (
 	SourceComponent   string = "source"
 	SinkComponent     string = "sink"
 
-	PackageUrlHttp  string = "http://"
-	PackageUrlHttps string = "https://"
-	// PackageUrlFile  string = "file://"
-	PackageUrlFunction string = "function://"
-	PackageUrlSource   string = "source://"
-	PackageUrlSink     string = "sink://"
+	PackageURLHTTP  string = "http://"
+	PackageURLHTTPS string = "https://"
+	PackageURLFunction string = "function://"
+	PackageURLSource   string = "source://"
+	PackageURLSink     string = "sink://"
 )
 
 // Config represents untyped YAML configuration.
@@ -341,7 +340,7 @@ func validPackageLocation(packageLocation string) error {
 			return err
 		}
 	} else {
-		if !isFunctionPackageUrlSupported(packageLocation) {
+		if !isFunctionPackageURLSupported(packageLocation) {
 			return fmt.Errorf("invalid function package url %s, supported url (http/https)", packageLocation)
 		}
 	}
@@ -351,9 +350,9 @@ func validPackageLocation(packageLocation string) error {
 
 func hasPackageTypePrefix(packageLocation string) bool {
 	lowerCase := strings.ToLower(packageLocation)
-	return strings.HasPrefix(lowerCase, PackageUrlFunction) ||
-		strings.HasPrefix(lowerCase, PackageUrlSource) ||
-		strings.HasPrefix(lowerCase, PackageUrlSink)
+	return strings.HasPrefix(lowerCase, PackageURLFunction) ||
+		strings.HasPrefix(lowerCase, PackageURLSource) ||
+		strings.HasPrefix(lowerCase, PackageURLSink)
 }
 
 func isValidPulsarPackageURL(packageLocation string) error {
@@ -379,11 +378,11 @@ func isValidPulsarPackageURL(packageLocation string) error {
 	return nil
 }
 
-func isFunctionPackageUrlSupported(packageLocation string) bool {
+func isFunctionPackageURLSupported(packageLocation string) bool {
 	// TODO: support file:// schema
 	lowerCase := strings.ToLower(packageLocation)
-	return strings.HasPrefix(lowerCase, PackageUrlHttp) ||
-		strings.HasPrefix(lowerCase, PackageUrlHttps)
+	return strings.HasPrefix(lowerCase, PackageURLHTTP) ||
+		strings.HasPrefix(lowerCase, PackageURLHTTPS)
 }
 
 func collectAllInputTopics(inputs InputConf) []string {

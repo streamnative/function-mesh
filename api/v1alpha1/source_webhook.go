@@ -74,7 +74,7 @@ func (r *Source) Default() {
 
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
-			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCpu)
+			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
 		}
 
 		if r.Spec.Resources.Requests.Memory() == nil {
@@ -127,12 +127,12 @@ func (r *Source) ValidateCreate() error {
 	}
 
 	fieldErrs = validateJavaRuntime(r.Spec.Java, r.Spec.ClassName)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
 	fieldErrs = validateReplicasAndMaxReplicas(r.Spec.Replicas, r.Spec.MaxReplicas)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
@@ -152,7 +152,7 @@ func (r *Source) ValidateCreate() error {
 	}
 
 	fieldErrs = validateInputOutput(nil, &r.Spec.Output)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 

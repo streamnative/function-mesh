@@ -89,7 +89,7 @@ func (r *Function) Default() {
 
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
-			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCpu)
+			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
 		}
 
 		if r.Spec.Resources.Requests.Memory() == nil {
@@ -154,12 +154,12 @@ func (r *Function) ValidateCreate() error {
 	}
 
 	fieldErrs = validateGolangRuntime(r.Spec.Golang)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
 	fieldErrs = validateReplicasAndMaxReplicas(r.Spec.Replicas, r.Spec.MaxReplicas)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
@@ -179,7 +179,7 @@ func (r *Function) ValidateCreate() error {
 	}
 
 	fieldErrs = validateMaxMessageRetry(r.Spec.MaxMessageRetry, r.Spec.ProcessingGuarantee, r.Spec.DeadLetterTopic)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
@@ -189,7 +189,7 @@ func (r *Function) ValidateCreate() error {
 	}
 
 	fieldErrs = validateRetainOrderingConflicts(r.Spec.RetainKeyOrdering, r.Spec.RetainOrdering)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
@@ -204,7 +204,7 @@ func (r *Function) ValidateCreate() error {
 	}
 
 	fieldErrs = validateInputOutput(&r.Spec.Input, &r.Spec.Output)
-	if fieldErrs != nil && len(fieldErrs) > 0 {
+	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
