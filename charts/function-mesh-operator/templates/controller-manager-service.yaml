@@ -3,9 +3,9 @@ kind: Service
 metadata:
   name: function-mesh-controller-manager-service
   labels:
-    app.kubernetes.io/name: { { template "function-mesh-operator.name" . } }
-    app.kubernetes.io/managed-by: { { .Release.Service } }
-    app.kubernetes.io/instance: { { .Release.Name } }
+    app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: controller-manager
     helm.sh/chart: { { .Chart.Name } }-{{ .Chart.Version | replace "+"  "_" }}
 spec:
