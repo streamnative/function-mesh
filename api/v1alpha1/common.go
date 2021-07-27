@@ -127,6 +127,7 @@ type Runtime struct {
 	Golang *GoRuntime     `json:"golang,omitempty"`
 }
 
+// JavaRuntime contains the java runtime configs
 // +kubebuilder:validation:Optional
 type JavaRuntime struct {
 	// +kubebuilder:validation:Required
@@ -135,6 +136,7 @@ type JavaRuntime struct {
 	ExtraDependenciesDir string `json:"extraDependenciesDir,omitempty"`
 }
 
+// PythonRuntime contains the python runtime configs
 // +kubebuilder:validation:Optional
 type PythonRuntime struct {
 	// +kubebuilder:validation:Required
@@ -142,6 +144,7 @@ type PythonRuntime struct {
 	PyLocation string `json:"pyLocation,omitempty"`
 }
 
+// GoRuntime contains the golang runtime configs
 // +kubebuilder:validation:Optional
 type GoRuntime struct {
 	// +kubebuilder:validation:Required
@@ -206,6 +209,7 @@ type CryptoSecret struct {
 	//AsEnv      string `json:"asEnv,omitempty"`
 }
 
+// SubscribePosition enum type
 // +kubebuilder:validation:Enum=latest;earliest
 type SubscribePosition string
 
@@ -251,6 +255,7 @@ const (
 	NoAction ReconcileAction = "NoAction"
 )
 
+// ProcessGuarantee enum type
 // +kubebuilder:validation:Enum=atleast_once;atmost_once;effectively_once
 type ProcessGuarantee string
 
