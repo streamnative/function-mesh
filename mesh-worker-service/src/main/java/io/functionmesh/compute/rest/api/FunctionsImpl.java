@@ -368,23 +368,28 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                         componentName);
                 throw new RestException(Response.Status.NOT_FOUND, "no ServiceName exists");
             }
-            if (v1StatefulSet.getStatus() != null && v1StatefulSet.getStatus().getReplicas() != null
-                    && v1StatefulSet.getStatus().getReadyReplicas() != null) {
-                functionStatus.setNumInstances(v1StatefulSet.getStatus().getReplicas());
-                functionStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
-                for (int i = 0; i < v1StatefulSet.getStatus().getReplicas(); i++) {
-                    FunctionStatus.FunctionInstanceStatus functionInstanceStatus = new FunctionStatus.FunctionInstanceStatus();
-                    FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData = new FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData();
-                    functionInstanceStatus.setInstanceId(i);
-                    functionInstanceStatus.setStatus(functionInstanceStatusData);
-                    functionStatus.addInstance(functionInstanceStatus);
+            if (v1StatefulSet.getStatus() != null) {
+                Integer replicas = v1StatefulSet.getStatus().getReplicas();
+                if (replicas != null) {
+                    functionStatus.setNumInstances(replicas);
+                    for (int i = 0; i < replicas; i++) {
+                        FunctionStatus.FunctionInstanceStatus functionInstanceStatus = new FunctionStatus.FunctionInstanceStatus();
+                        FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData = new FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData();
+                        functionInstanceStatus.setInstanceId(i);
+                        functionInstanceStatus.setStatus(functionInstanceStatusData);
+                        functionStatus.addInstance(functionInstanceStatus);
+                    }
+                }
+                if (v1StatefulSet.getStatus().getReadyReplicas() != null) {
+                    functionStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
                 }
             } else {
-                log.warn(
+                log.error(
                         "no StatefulSet status exists when get status of function {}/{}/{}",
                         tenant,
                         namespace,
                         componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no StatefulSet status exists");
             }
             V1PodList podList = worker().getCoreV1Api().listNamespacedPod(
                     nameSpaceName, null, null, null, null,
@@ -395,13 +400,13 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                         filter(KubernetesUtils::isPodRunning).collect(Collectors.toList());
                 List<V1Pod> pendingPods = podList.getItems().stream().
                         filter(pod -> !KubernetesUtils.isPodRunning(pod)).collect(Collectors.toList());
+                final String finalStatefulSetName = statefulSetName;
                 if (!runningPods.isEmpty()) {
                     int podsCount = runningPods.size();
                     ManagedChannel[] channel = new ManagedChannel[podsCount];
                     InstanceControlGrpc.InstanceControlFutureStub[] stub =
                             new InstanceControlGrpc.InstanceControlFutureStub[podsCount];
                     final String finalSubdomain = subdomain;
-                    final String finalStatefulSetName = statefulSetName;
                     Set<CompletableFuture<InstanceCommunication.FunctionStatus>> completableFutureSet = new HashSet<>();
                     runningPods.forEach(pod -> {
                         String podName = KubernetesUtils.getPodName(pod);
@@ -412,7 +417,13 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                             log.warn("shardId invalid {}", podName);
                             return;
                         }
-                        FunctionStatus.FunctionInstanceStatus functionInstanceStatus = functionStatus.getInstances().get(shardId);
+                        FunctionStatus.FunctionInstanceStatus functionInstanceStatus = null;
+                        for (FunctionStatus.FunctionInstanceStatus ins : functionStatus.getInstances()) {
+                            if (ins.getInstanceId() == shardId) {
+                                functionInstanceStatus = ins;
+                                break;
+                            }
+                        }
                         if (functionInstanceStatus != null) {
                             FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData = functionInstanceStatus.getStatus();
                             V1PodStatus podStatus = pod.getStatus();
@@ -451,6 +462,12 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                 }
                             });
                             completableFutureSet.add(future);
+                        } else {
+                            log.error("Get function {}-{} status failed from namespace {}, cannot find status for shardId {}",
+                                    finalStatefulSetName,
+                                    shardId,
+                                    nameSpaceName,
+                                    shardId);
                         }
                     });
                     completableFutureSet.forEach(CompletableFuture::join);
@@ -463,13 +480,25 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                             log.warn("shardId invalid {}", podName);
                             return;
                         }
-                        FunctionStatus.FunctionInstanceStatus functionInstanceStatus = functionStatus.getInstances().get(shardId);
+                        FunctionStatus.FunctionInstanceStatus functionInstanceStatus = null;
+                        for (FunctionStatus.FunctionInstanceStatus ins : functionStatus.getInstances()) {
+                            if (ins.getInstanceId() == shardId) {
+                                functionInstanceStatus = ins;
+                                break;
+                            }
+                        }
                         if (functionInstanceStatus != null) {
                             FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData = functionInstanceStatus.getStatus();
                             V1PodStatus podStatus = pod.getStatus();
                             if (podStatus != null && StringUtils.isNotEmpty(podStatus.getPhase())) {
                                 functionInstanceStatusData.setError(podStatus.getPhase());
                             }
+                        } else {
+                            log.error("Get function {}-{} status failed from namespace {}, cannot find status for shardId {}",
+                                finalStatefulSetName,
+                                shardId,
+                                nameSpaceName,
+                                shardId);
                         }
                     });
                 }

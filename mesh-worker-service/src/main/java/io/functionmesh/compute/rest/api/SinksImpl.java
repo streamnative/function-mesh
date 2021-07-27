@@ -363,23 +363,28 @@ public class SinksImpl extends MeshComponentImpl
                         componentName);
                 throw new RestException(Response.Status.NOT_FOUND, "no ServiceName exists");
             }
-            if (v1StatefulSet.getStatus() != null && v1StatefulSet.getStatus().getReplicas() != null
-                    && v1StatefulSet.getStatus().getReadyReplicas() != null) {
-                sinkStatus.setNumInstances(v1StatefulSet.getStatus().getReplicas());
-                sinkStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
-                for(int i=0; i<v1StatefulSet.getStatus().getReplicas(); i++) {
-                    SinkStatus.SinkInstanceStatus sinkInstanceStatus = new SinkStatus.SinkInstanceStatus();
-                    SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData = new SinkStatus.SinkInstanceStatus.SinkInstanceStatusData();
-                    sinkInstanceStatus.setInstanceId(i);
-                    sinkInstanceStatus.setStatus(sinkInstanceStatusData);
-                    sinkStatus.addInstance(sinkInstanceStatus);
+            if (v1StatefulSet.getStatus() != null) {
+                Integer replicas = v1StatefulSet.getStatus().getReplicas();
+                if (replicas != null) {
+                    sinkStatus.setNumInstances(replicas);
+                    for(int i=0; i<replicas; i++) {
+                        SinkStatus.SinkInstanceStatus sinkInstanceStatus = new SinkStatus.SinkInstanceStatus();
+                        SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData = new SinkStatus.SinkInstanceStatus.SinkInstanceStatusData();
+                        sinkInstanceStatus.setInstanceId(i);
+                        sinkInstanceStatus.setStatus(sinkInstanceStatusData);
+                        sinkStatus.addInstance(sinkInstanceStatus);
+                    }
+                }
+                if (v1StatefulSet.getStatus().getReadyReplicas() != null) {
+                    sinkStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
                 }
             } else {
-                log.warn(
+                log.error(
                         "no StatefulSet status exists when get status of sink {}/{}/{}",
                         tenant,
                         namespace,
                         componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no StatefulSet status exists");
             }
             V1PodList podList = worker().getCoreV1Api().listNamespacedPod(
                     nameSpaceName, null, null, null, null,
@@ -390,13 +395,13 @@ public class SinksImpl extends MeshComponentImpl
                         filter(KubernetesUtils::isPodRunning).collect(Collectors.toList());
                 List<V1Pod> pendingPods = podList.getItems().stream().
                         filter(pod -> !KubernetesUtils.isPodRunning(pod)).collect(Collectors.toList());
+                String finalStatefulSetName = statefulSetName;
                 if (!runningPods.isEmpty()) {
                     int podsCount = runningPods.size();
                     ManagedChannel[] channel = new ManagedChannel[podsCount];
                     InstanceControlGrpc.InstanceControlFutureStub[] stub =
                             new InstanceControlGrpc.InstanceControlFutureStub[podsCount];
                     final String finalSubdomain = subdomain;
-                    final String finalStatefulSetName = statefulSetName;
                     Set<CompletableFuture<InstanceCommunication.FunctionStatus>> completableFutureSet = new HashSet<>();
                     runningPods.forEach(pod -> {
                         String podName = KubernetesUtils.getPodName(pod);
@@ -407,7 +412,13 @@ public class SinksImpl extends MeshComponentImpl
                             log.warn("shardId invalid {}", podName);
                             return;
                         }
-                        SinkStatus.SinkInstanceStatus sinkInstanceStatus = sinkStatus.getInstances().get(shardId);
+                        SinkStatus.SinkInstanceStatus sinkInstanceStatus = null;
+                        for (SinkStatus.SinkInstanceStatus ins : sinkStatus.getInstances()) {
+                            if (ins.getInstanceId() == shardId) {
+                                sinkInstanceStatus = ins;
+                                break;
+                            }
+                        }
                         if (sinkInstanceStatus != null) {
                             SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData = sinkInstanceStatus.getStatus();
                             V1PodStatus podStatus = pod.getStatus();
@@ -446,11 +457,18 @@ public class SinksImpl extends MeshComponentImpl
                                 }
                             });
                             completableFutureSet.add(future);
+                        } else {
+                            log.error("Get sink {}-{} status failed from namespace {}, cannot find status for shardId {}",
+                                    finalStatefulSetName,
+                                    shardId,
+                                    nameSpaceName,
+                                    shardId);
                         }
                     });
                     completableFutureSet.forEach(CompletableFuture::join);
                 }
                 if (!pendingPods.isEmpty()) {
+
                     pendingPods.forEach(pod -> {
                         String podName = KubernetesUtils.getPodName(pod);
                         int shardId = CommonUtil.getShardIdFromPodName(podName);
@@ -458,13 +476,25 @@ public class SinksImpl extends MeshComponentImpl
                             log.warn("shardId invalid {}", podName);
                             return;
                         }
-                        SinkStatus.SinkInstanceStatus sinkInstanceStatus = sinkStatus.getInstances().get(shardId);
+                        SinkStatus.SinkInstanceStatus sinkInstanceStatus = null;
+                        for (SinkStatus.SinkInstanceStatus ins : sinkStatus.getInstances()) {
+                            if (ins.getInstanceId() == shardId) {
+                                sinkInstanceStatus = ins;
+                                break;
+                            }
+                        }
                         if (sinkInstanceStatus != null) {
                             SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData = sinkInstanceStatus.getStatus();
                             V1PodStatus podStatus = pod.getStatus();
                             if (podStatus != null && StringUtils.isNotEmpty(podStatus.getPhase())) {
                                 sinkInstanceStatusData.setError(podStatus.getPhase());
                             }
+                        }  else {
+                            log.error("Get sink {}-{} status failed from namespace {}, cannot find status for shardId {}",
+                                finalStatefulSetName,
+                                shardId,
+                                nameSpaceName,
+                                shardId);
                         }
                     });
                 }
