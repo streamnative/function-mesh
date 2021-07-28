@@ -181,10 +181,6 @@ public class SourcesUtil {
 
         v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
 
-        if (!org.apache.commons.lang3.StringUtils.isEmpty(functionDetails.getLogTopic())) {
-            v1alpha1SourceSpec.setLogTopic(functionDetails.getLogTopic());
-        }
-
         v1alpha1SourceSpec.setReplicas(functionDetails.getParallelism());
         if (customRuntimeOptions.getMaxReplicas() > functionDetails.getParallelism()) {
             v1alpha1SourceSpec.setMaxReplicas(customRuntimeOptions.getMaxReplicas());
