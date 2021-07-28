@@ -56,8 +56,6 @@ spec:
                 jarLocation:
                   type: string
               type: object
-            logTopic:
-              type: string
             maxReplicas:
               format: int32
               type: integer
