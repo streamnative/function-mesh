@@ -31,6 +31,7 @@ import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SourcesUtil;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
@@ -338,23 +339,28 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                         componentName);
                 throw new RestException(Response.Status.NOT_FOUND, "no ServiceName exists");
             }
-            if (v1StatefulSet.getStatus() != null && v1StatefulSet.getStatus().getReplicas() != null
-                    && v1StatefulSet.getStatus().getReadyReplicas() != null) {
-                sourceStatus.setNumInstances(v1StatefulSet.getStatus().getReplicas());
-                sourceStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
-                for (int i = 0; i < v1StatefulSet.getStatus().getReplicas(); i++) {
-                    SourceStatus.SourceInstanceStatus sourceInstanceStatus = new SourceStatus.SourceInstanceStatus();
-                    SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData = new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
-                    sourceInstanceStatus.setInstanceId(i);
-                    sourceInstanceStatus.setStatus(sourceInstanceStatusData);
-                    sourceStatus.addInstance(sourceInstanceStatus);
+            if (v1StatefulSet.getStatus() != null) {
+                Integer replicas = v1StatefulSet.getStatus().getReplicas();
+                if (replicas != null) {
+                    sourceStatus.setNumInstances(replicas);
+                    for (int i = 0; i < replicas; i++) {
+                        SourceStatus.SourceInstanceStatus sourceInstanceStatus = new SourceStatus.SourceInstanceStatus();
+                        SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData = new SourceStatus.SourceInstanceStatus.SourceInstanceStatusData();
+                        sourceInstanceStatus.setInstanceId(i);
+                        sourceInstanceStatus.setStatus(sourceInstanceStatusData);
+                        sourceStatus.addInstance(sourceInstanceStatus);
+                    }
+                    if (v1StatefulSet.getStatus().getReadyReplicas() != null) {
+                        sourceStatus.setNumRunning(v1StatefulSet.getStatus().getReadyReplicas());
+                    }
                 }
             } else {
-                log.warn(
+                log.error(
                         "no StatefulSet status exists when get status of source {}/{}/{}",
                         tenant,
                         namespace,
                         componentName);
+                throw new RestException(Response.Status.NOT_FOUND, "no StatefulSet status exists");
             }
             V1PodList podList = worker().getCoreV1Api().listNamespacedPod(
                     nameSpaceName, null, null, null, null,
@@ -365,13 +371,13 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                         filter(KubernetesUtils::isPodRunning).collect(Collectors.toList());
                 List<V1Pod> pendingPods = podList.getItems().stream().
                         filter(pod -> !KubernetesUtils.isPodRunning(pod)).collect(Collectors.toList());
+                String finalStatefulSetName = statefulSetName;
                 if (!runningPods.isEmpty()) {
                     int podsCount = runningPods.size();
                     ManagedChannel[] channel = new ManagedChannel[podsCount];
                     InstanceControlGrpc.InstanceControlFutureStub[] stub =
                             new InstanceControlGrpc.InstanceControlFutureStub[podsCount];
                     final String finalSubdomain = subdomain;
-                    final String finalStatefulSetName = statefulSetName;
                     Set<CompletableFuture<InstanceCommunication.FunctionStatus>> completableFutureSet = new HashSet<>();
                     runningPods.forEach(pod -> {
                         String podName = KubernetesUtils.getPodName(pod);
@@ -382,7 +388,13 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                             log.warn("shardId invalid {}", podName);
                             return;
                         }
-                        SourceStatus.SourceInstanceStatus sourceInstanceStatus = sourceStatus.getInstances().get(shardId);
+                        SourceStatus.SourceInstanceStatus sourceInstanceStatus = null;
+                        for (SourceStatus.SourceInstanceStatus ins : sourceStatus.getInstances()) {
+                            if (ins.getInstanceId() == shardId) {
+                                sourceInstanceStatus = ins;
+                                break;
+                            }
+                        }
                         if (sourceInstanceStatus != null) {
                             SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData = sourceInstanceStatus.getStatus();
                             V1PodStatus podStatus = pod.getStatus();
@@ -421,6 +433,12 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                                 }
                             });
                             completableFutureSet.add(future);
+                        } else {
+                            log.error("Get source {}-{} status failed from namespace {}, cannot find status for shardId {}",
+                                    finalStatefulSetName,
+                                    shardId,
+                                    nameSpaceName,
+                                    shardId);
                         }
                     });
                     completableFutureSet.forEach(CompletableFuture::join);
@@ -433,13 +451,55 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                             log.warn("shardId invalid {}", podName);
                             return;
                         }
-                        SourceStatus.SourceInstanceStatus sourceInstanceStatus = sourceStatus.getInstances().get(shardId);
+                        SourceStatus.SourceInstanceStatus sourceInstanceStatus = null;
+                        for (SourceStatus.SourceInstanceStatus ins : sourceStatus.getInstances()) {
+                            if (ins.getInstanceId() == shardId) {
+                                sourceInstanceStatus = ins;
+                                break;
+                            }
+                        }
                         if (sourceInstanceStatus != null) {
                             SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData = sourceInstanceStatus.getStatus();
                             V1PodStatus podStatus = pod.getStatus();
-                            if (podStatus != null && StringUtils.isNotEmpty(podStatus.getPhase())) {
-                                sourceInstanceStatusData.setError(podStatus.getPhase());
+                            if (podStatus != null) {
+                                List<V1ContainerStatus> containerStatuses = podStatus.getContainerStatuses();
+                                if (containerStatuses != null && !containerStatuses.isEmpty()) {
+                                    V1ContainerStatus containerStatus = null;
+                                    for (V1ContainerStatus s : containerStatuses){
+                                        // TODO need more precise way to find the status
+                                        if (s.getImage().contains(v1alpha1Source.getSpec().getImage())) {
+                                            containerStatus = s;
+                                            break;
+                                        }
+                                    }
+                                    if (containerStatus != null) {
+                                        V1ContainerState state = containerStatus.getState();
+                                        if (state != null && state.getTerminated() != null) {
+                                            sourceInstanceStatusData.setError(state.getTerminated().getMessage());
+                                        } else if (state != null && state.getWaiting() != null) {
+                                            sourceInstanceStatusData.setError(state.getWaiting().getMessage());
+                                        } else {
+                                            V1ContainerState lastState = containerStatus.getLastState();
+                                            if (lastState != null && lastState.getTerminated() != null) {
+                                                sourceInstanceStatusData.setError(lastState.getTerminated().getMessage());
+                                            } else if (lastState != null && lastState.getWaiting() != null) {
+                                                sourceInstanceStatusData.setError(lastState.getWaiting().getMessage());
+                                            }
+                                        }
+                                        if (containerStatus.getRestartCount() != null) {
+                                            sourceInstanceStatusData.setNumRestarts(containerStatus.getRestartCount());
+                                        }
+                                    } else {
+                                        sourceInstanceStatusData.setError(podStatus.getPhase());
+                                    }
+                                }
                             }
+                        } else {
+                            log.error("Get source {}-{} status failed from namespace {}, cannot find status for shardId {}",
+                                finalStatefulSetName,
+                                shardId,
+                                nameSpaceName,
+                                shardId);
                         }
                     });
                 }
