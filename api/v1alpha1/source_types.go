@@ -37,7 +37,6 @@ type SourceSpec struct {
 	Replicas            *int32                      `json:"replicas,omitempty"`
 	MaxReplicas         *int32                      `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
 	Output              OutputConf                  `json:"output,omitempty"`
-	LogTopic            string                      `json:"logTopic,omitempty"`
 	SourceConfig        map[string]string           `json:"sourceConfig,omitempty"`
 	Resources           corev1.ResourceRequirements `json:"resources,omitempty"`
 	SecretsMap          map[string]SecretRef        `json:"secretsMap,omitempty"`

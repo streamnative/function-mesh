@@ -2373,8 +2373,6 @@ spec:
                       jarLocation:
                         type: string
                     type: object
-                  logTopic:
-                    type: string
                   maxMessageRetry:
                     format: int32
                     type: integer
@@ -4474,8 +4472,6 @@ spec:
                       jarLocation:
                         type: string
                     type: object
-                  logTopic:
-                    type: string
                   maxReplicas:
                     format: int32
                     type: integer
