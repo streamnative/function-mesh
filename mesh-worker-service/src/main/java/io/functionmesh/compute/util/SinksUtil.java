@@ -219,10 +219,6 @@ public class SinksUtil {
             v1alpha1SinkSpec.setTimeout((int) functionDetails.getSource().getTimeoutMs());
         }
 
-        if (Strings.isNotEmpty(functionDetails.getLogTopic())) {
-            v1alpha1SinkSpec.setLogTopic(functionDetails.getLogTopic());
-        }
-
         if (functionDetails.hasRetryDetails()) {
             v1alpha1SinkSpec.setMaxMessageRetry(functionDetails.getRetryDetails().getMaxMessageRetries());
             if (Strings.isNotEmpty(functionDetails.getRetryDetails().getDeadLetterTopic())) {
