@@ -32,6 +32,7 @@ import io.functionmesh.compute.sinks.models.V1alpha1SinkStatus;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
@@ -486,8 +487,37 @@ public class SinksImpl extends MeshComponentImpl
                         if (sinkInstanceStatus != null) {
                             SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData = sinkInstanceStatus.getStatus();
                             V1PodStatus podStatus = pod.getStatus();
-                            if (podStatus != null && StringUtils.isNotEmpty(podStatus.getPhase())) {
-                                sinkInstanceStatusData.setError(podStatus.getPhase());
+                            if (podStatus != null) {
+                                List<V1ContainerStatus> containerStatuses = podStatus.getContainerStatuses();
+                                if (containerStatuses != null && !containerStatuses.isEmpty()) {
+                                    V1ContainerStatus containerStatus = null;
+                                    for (V1ContainerStatus s : containerStatuses){
+                                        if (s.getImage().contains(v1alpha1Sink.getSpec().getImage())) {
+                                            containerStatus = s;
+                                            break;
+                                        }
+                                    }
+                                    if (containerStatus != null) {
+                                        V1ContainerState state = containerStatus.getState();
+                                        if (state != null && state.getTerminated() != null) {
+                                            sinkInstanceStatusData.setError(state.getTerminated().getMessage());
+                                        } else if (state != null && state.getWaiting() != null) {
+                                            sinkInstanceStatusData.setError(state.getWaiting().getMessage());
+                                        } else {
+                                            V1ContainerState lastState = containerStatus.getLastState();
+                                            if (lastState != null && lastState.getTerminated() != null) {
+                                                sinkInstanceStatusData.setError(lastState.getTerminated().getMessage());
+                                            } else if (lastState != null && lastState.getWaiting() != null) {
+                                                sinkInstanceStatusData.setError(lastState.getWaiting().getMessage());
+                                            }
+                                        }
+                                        if (containerStatus.getRestartCount() != null) {
+                                            sinkInstanceStatusData.setNumRestarts(containerStatus.getRestartCount());
+                                        }
+                                    } else {
+                                        sinkInstanceStatusData.setError(podStatus.getPhase());
+                                    }
+                                }
                             }
                         }  else {
                             log.error("Get sink {}-{} status failed from namespace {}, cannot find status for shardId {}",

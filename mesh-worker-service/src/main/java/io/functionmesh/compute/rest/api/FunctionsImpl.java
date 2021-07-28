@@ -31,6 +31,7 @@ import io.functionmesh.compute.util.FunctionsUtil;
 import io.functionmesh.compute.util.KubernetesUtils;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
@@ -490,8 +491,37 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                         if (functionInstanceStatus != null) {
                             FunctionStatus.FunctionInstanceStatus.FunctionInstanceStatusData functionInstanceStatusData = functionInstanceStatus.getStatus();
                             V1PodStatus podStatus = pod.getStatus();
-                            if (podStatus != null && StringUtils.isNotEmpty(podStatus.getPhase())) {
-                                functionInstanceStatusData.setError(podStatus.getPhase());
+                            if (podStatus != null) {
+                                List<V1ContainerStatus> containerStatuses = podStatus.getContainerStatuses();
+                                if (containerStatuses != null && !containerStatuses.isEmpty()) {
+                                    V1ContainerStatus containerStatus = null;
+                                    for (V1ContainerStatus s : containerStatuses){
+                                        if (s.getImage().contains(v1alpha1Function.getSpec().getImage())) {
+                                            containerStatus = s;
+                                            break;
+                                        }
+                                    }
+                                    if (containerStatus != null) {
+                                        V1ContainerState state = containerStatus.getState();
+                                        if (state != null && state.getTerminated() != null) {
+                                            functionInstanceStatusData.setError(state.getTerminated().getMessage());
+                                        } else if (state != null && state.getWaiting() != null) {
+                                            functionInstanceStatusData.setError(state.getWaiting().getMessage());
+                                        } else {
+                                            V1ContainerState lastState = containerStatus.getLastState();
+                                            if (lastState != null && lastState.getTerminated() != null) {
+                                                functionInstanceStatusData.setError(lastState.getTerminated().getMessage());
+                                            } else if (lastState != null && lastState.getWaiting() != null) {
+                                                functionInstanceStatusData.setError(lastState.getWaiting().getMessage());
+                                            }
+                                        }
+                                        if (containerStatus.getRestartCount() != null) {
+                                            functionInstanceStatusData.setNumRestarts(containerStatus.getRestartCount());
+                                        }
+                                    } else {
+                                        functionInstanceStatusData.setError(podStatus.getPhase());
+                                    }
+                                }
                             }
                         } else {
                             log.error("Get function {}-{} status failed from namespace {}, cannot find status for shardId {}",

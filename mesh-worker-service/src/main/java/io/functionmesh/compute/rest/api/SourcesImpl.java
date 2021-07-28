@@ -31,6 +31,7 @@ import io.functionmesh.compute.util.KubernetesUtils;
 import io.functionmesh.compute.util.SourcesUtil;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
@@ -460,8 +461,38 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                         if (sourceInstanceStatus != null) {
                             SourceStatus.SourceInstanceStatus.SourceInstanceStatusData sourceInstanceStatusData = sourceInstanceStatus.getStatus();
                             V1PodStatus podStatus = pod.getStatus();
-                            if (podStatus != null && StringUtils.isNotEmpty(podStatus.getPhase())) {
-                                sourceInstanceStatusData.setError(podStatus.getPhase());
+                            if (podStatus != null) {
+                                List<V1ContainerStatus> containerStatuses = podStatus.getContainerStatuses();
+                                if (containerStatuses != null && !containerStatuses.isEmpty()) {
+                                    V1ContainerStatus containerStatus = null;
+                                    for (V1ContainerStatus s : containerStatuses){
+                                        // TODO need more precise way to find the status
+                                        if (s.getImage().contains(v1alpha1Source.getSpec().getImage())) {
+                                            containerStatus = s;
+                                            break;
+                                        }
+                                    }
+                                    if (containerStatus != null) {
+                                        V1ContainerState state = containerStatus.getState();
+                                        if (state != null && state.getTerminated() != null) {
+                                            sourceInstanceStatusData.setError(state.getTerminated().getMessage());
+                                        } else if (state != null && state.getWaiting() != null) {
+                                            sourceInstanceStatusData.setError(state.getWaiting().getMessage());
+                                        } else {
+                                            V1ContainerState lastState = containerStatus.getLastState();
+                                            if (lastState != null && lastState.getTerminated() != null) {
+                                                sourceInstanceStatusData.setError(lastState.getTerminated().getMessage());
+                                            } else if (lastState != null && lastState.getWaiting() != null) {
+                                                sourceInstanceStatusData.setError(lastState.getWaiting().getMessage());
+                                            }
+                                        }
+                                        if (containerStatus.getRestartCount() != null) {
+                                            sourceInstanceStatusData.setNumRestarts(containerStatus.getRestartCount());
+                                        }
+                                    } else {
+                                        sourceInstanceStatusData.setError(podStatus.getPhase());
+                                    }
+                                }
                             }
                         } else {
                             log.error("Get source {}-{} status failed from namespace {}, cannot find status for shardId {}",

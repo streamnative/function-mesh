@@ -1003,6 +1003,8 @@ spec:
                           type: string
                       type: object
                   type: object
+                serviceAccountName:
+                  type: string
                 sidecars:
                   items:
                     properties:
