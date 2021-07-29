@@ -23,7 +23,7 @@ import (
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
-	autov1 "k8s.io/api/autoscaling/v1"
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -186,7 +186,7 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, req ctrl.Re
 		return nil
 	}
 
-	hpa := &autov1.HorizontalPodAutoscaler{}
+	hpa := &autov2beta2.HorizontalPodAutoscaler{}
 	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace,
 		Name: spec.MakeFunctionObjectMeta(function).Name}, hpa)
 	if err != nil {

@@ -21,12 +21,12 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
-	autov1 "k8s.io/api/autoscaling/v1"
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func MakeSourceHPA(source *v1alpha1.Source) *autov1.HorizontalPodAutoscaler {
+func MakeSourceHPA(source *v1alpha1.Source) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeSourceObjectMeta(source)
 	return MakeHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, source.Kind)
 }

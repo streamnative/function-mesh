@@ -21,7 +21,7 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
-	autov1 "k8s.io/api/autoscaling/v1"
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -30,7 +30,7 @@ import (
 // log is for logging in this package.
 var log = logf.Log.WithName("sink-resource")
 
-func MakeFunctionHPA(function *v1alpha1.Function) *autov1.HorizontalPodAutoscaler {
+func MakeFunctionHPA(function *v1alpha1.Function) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeFunctionObjectMeta(function)
 	return MakeHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, function.Kind)
 }

@@ -24,11 +24,12 @@ import (
 	"strings"
 	"time"
 
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
 
 	appsv1 "k8s.io/api/apps/v1"
-	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -97,24 +98,35 @@ func MakeHeadlessServiceName(serviceName string) string {
 }
 
 func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
-	kind string) *autov1.HorizontalPodAutoscaler {
+	kind string) *autov2beta2.HorizontalPodAutoscaler {
 	// TODO: configurable cpu percentage
 	cpuPercentage := int32(80)
-	return &autov1.HorizontalPodAutoscaler{
+	return &autov2beta2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "autoscaling/v1",
 			APIVersion: "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: *objectMeta,
-		Spec: autov1.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autov1.CrossVersionObjectReference{
+		Spec: autov2beta2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autov2beta2.CrossVersionObjectReference{
 				Kind:       kind,
 				Name:       objectMeta.Name,
 				APIVersion: "compute.functionmesh.io/v1alpha1",
 			},
-			MinReplicas:                    &minReplicas,
-			MaxReplicas:                    maxReplicas,
-			TargetCPUUtilizationPercentage: &cpuPercentage,
+			MinReplicas: &minReplicas,
+			MaxReplicas: maxReplicas,
+			Metrics: []autov2beta2.MetricSpec{
+				{
+					Type: autov2beta2.ResourceMetricSourceType,
+					Resource: &autov2beta2.ResourceMetricSource{
+						Name: corev1.ResourceCPU,
+						Target: autov2beta2.MetricTarget{
+							Type:               autov2beta2.UtilizationMetricType,
+							AverageUtilization: &cpuPercentage,
+						},
+					},
+				},
+			},
 		},
 	}
 }
