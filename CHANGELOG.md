@@ -5,7 +5,7 @@
 - Move the Function runner image to Java 11 to support Pulsar 2.8.0. ([#202](https://github.com/streamnative/function-mesh/pull/202))
 - Fix the value of the `MaxReplicas` in Function Mesh Worker service. ([#212](https://github.com/streamnative/function-mesh/pull/212))
 - Update the observation logics of the sinks and sources. ([#217](https://github.com/streamnative/function-mesh/pull/217))
-- Add function/sink/source status API support with mesh worker service ([#220](https://github.com/streamnative/function-mesh/pull/220)) ([#224](https://github.com/streamnative/function-mesh/pull/224)) ([#225](https://github.com/streamnative/function-mesh/pull/225))
+- Support Pulsar Functions and connectors (sinks and sources) status API in Function Mesh Worker service. ([#220](https://github.com/streamnative/function-mesh/pull/220)) ([#224](https://github.com/streamnative/function-mesh/pull/224)) ([#225](https://github.com/streamnative/function-mesh/pull/225))
 - Allow set service account name for running pod ([#226](https://github.com/streamnative/function-mesh/pull/226))
 - Fixed NPE when not set AutoAck ([#234](https://github.com/streamnative/function-mesh/pull/234))
 - Fixed mesh worker service get status with fault pod ([#239](https://github.com/streamnative/function-mesh/pull/239))
