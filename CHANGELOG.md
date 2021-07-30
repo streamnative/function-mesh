@@ -7,7 +7,7 @@
 - Update the observation logics of the sinks and sources. ([#217](https://github.com/streamnative/function-mesh/pull/217))
 - Support Pulsar Functions and connectors (sinks and sources) status API in Function Mesh Worker service. ([#220](https://github.com/streamnative/function-mesh/pull/220)) ([#224](https://github.com/streamnative/function-mesh/pull/224)) ([#225](https://github.com/streamnative/function-mesh/pull/225))
 - Support setting the service account name for running Pods. ([#226](https://github.com/streamnative/function-mesh/pull/226))
-- Fixed NPE when not set AutoAck ([#234](https://github.com/streamnative/function-mesh/pull/234))
+- Fix the NPE that is generated when the `AutoAck` option is not set. ([#234](https://github.com/streamnative/function-mesh/pull/234))
 - Fixed mesh worker service get status with fault pod ([#239](https://github.com/streamnative/function-mesh/pull/239))
 - Remove logTopic from source/sink CRD ([#242](https://github.com/streamnative/function-mesh/pull/242))
 - Fixed service name observe ([#230](https://github.com/streamnative/function-mesh/pull/230))
