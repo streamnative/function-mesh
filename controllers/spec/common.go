@@ -99,8 +99,6 @@ func MakeHeadlessServiceName(serviceName string) string {
 
 func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
 	kind string) *autov2beta2.HorizontalPodAutoscaler {
-	// TODO: configurable cpu percentage
-	cpuPercentage := int32(80)
 	return &autov2beta2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "autoscaling/v1",
@@ -115,18 +113,7 @@ func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
 			},
 			MinReplicas: &minReplicas,
 			MaxReplicas: maxReplicas,
-			Metrics: []autov2beta2.MetricSpec{
-				{
-					Type: autov2beta2.ResourceMetricSourceType,
-					Resource: &autov2beta2.ResourceMetricSource{
-						Name: corev1.ResourceCPU,
-						Target: autov2beta2.MetricTarget{
-							Type:               autov2beta2.UtilizationMetricType,
-							AverageUtilization: &cpuPercentage,
-						},
-					},
-				},
-			},
+			Metrics:     defaultHPAMetrics(),
 		},
 	}
 }
