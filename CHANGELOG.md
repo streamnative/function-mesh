@@ -11,7 +11,7 @@
 - Fix the issue that the Function Mesh worker service gets status with a fault pod. ([#239](https://github.com/streamnative/function-mesh/pull/239))
 - Remove the `logTopic` option from source and sink CRDs. ([#242](https://github.com/streamnative/function-mesh/pull/242))
 - Fix the observation logic of the service name. ([#230](https://github.com/streamnative/function-mesh/pull/230))
-- Bump Pulsar to 2.8 ([#240](https://github.com/streamnative/function-mesh/pull/240))
+- Bump Pulsar to version 2.8.0. ([#240](https://github.com/streamnative/function-mesh/pull/240))
 
 # Function Mesh v0.1.5 Release Notes
 
