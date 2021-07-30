@@ -2,7 +2,7 @@
 
 ## v0.1.6 What's New
 
-- Move function runner image to java11 to support Pulsar 2.8 ([#202](https://github.com/streamnative/function-mesh/pull/202))
+- Move the Function runner image to Java 11 to support Pulsar 2.8.0. ([#202](https://github.com/streamnative/function-mesh/pull/202))
 - Fixed max replicas value in mesh worker service ([#212](https://github.com/streamnative/function-mesh/pull/212))
 - Update sink/source component observation logic ([#217](https://github.com/streamnative/function-mesh/pull/217))
 - Add function/sink/source status API support with mesh worker service ([#220](https://github.com/streamnative/function-mesh/pull/220)) ([#224](https://github.com/streamnative/function-mesh/pull/224)) ([#225](https://github.com/streamnative/function-mesh/pull/225))
