@@ -20,6 +20,7 @@ package spec
 import (
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // defaultHPAMetrics generates a default HPA metrics settings based on CPU usage and utilized on 80%.
@@ -36,6 +37,49 @@ func defaultHPAMetrics() []autov2beta2.MetricSpec {
 					AverageUtilization: &cpuPercentage,
 				},
 			},
+		},
+	}
+}
+
+func MakeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
+	kind string) *autov2beta2.HorizontalPodAutoscaler {
+	return &autov2beta2.HorizontalPodAutoscaler{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "autoscaling/v1",
+			APIVersion: "HorizontalPodAutoscaler",
+		},
+		ObjectMeta: *objectMeta,
+		Spec: autov2beta2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autov2beta2.CrossVersionObjectReference{
+				Kind:       kind,
+				Name:       objectMeta.Name,
+				APIVersion: "compute.functionmesh.io/v1alpha1",
+			},
+			MinReplicas: &minReplicas,
+			MaxReplicas: maxReplicas,
+			Metrics:     defaultHPAMetrics(),
+		},
+	}
+}
+
+func MakeHPA(objectMeta *metav1.ObjectMeta, autoscalerSpec *autov2beta2.HorizontalPodAutoscalerSpec,
+	kind string) *autov2beta2.HorizontalPodAutoscaler {
+	return &autov2beta2.HorizontalPodAutoscaler{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "autoscaling/v1",
+			APIVersion: "HorizontalPodAutoscaler",
+		},
+		ObjectMeta: *objectMeta,
+		Spec: autov2beta2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autov2beta2.CrossVersionObjectReference{
+				Kind:       kind,
+				Name:       objectMeta.Name,
+				APIVersion: "compute.functionmesh.io/v1alpha1",
+			},
+			MinReplicas: autoscalerSpec.MinReplicas,
+			MaxReplicas: autoscalerSpec.MaxReplicas,
+			Metrics:     autoscalerSpec.Metrics,
+			Behavior:    autoscalerSpec.Behavior,
 		},
 	}
 }

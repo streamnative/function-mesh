@@ -24,8 +24,6 @@ import (
 	"strings"
 	"time"
 
-	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
-
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
 
@@ -95,49 +93,6 @@ func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev
 // MakeHeadlessServiceName changes the name of service to headless style
 func MakeHeadlessServiceName(serviceName string) string {
 	return fmt.Sprintf("%s-headless", serviceName)
-}
-
-func MakeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
-	kind string) *autov2beta2.HorizontalPodAutoscaler {
-	return &autov2beta2.HorizontalPodAutoscaler{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "autoscaling/v1",
-			APIVersion: "HorizontalPodAutoscaler",
-		},
-		ObjectMeta: *objectMeta,
-		Spec: autov2beta2.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autov2beta2.CrossVersionObjectReference{
-				Kind:       kind,
-				Name:       objectMeta.Name,
-				APIVersion: "compute.functionmesh.io/v1alpha1",
-			},
-			MinReplicas: &minReplicas,
-			MaxReplicas: maxReplicas,
-			Metrics:     defaultHPAMetrics(),
-		},
-	}
-}
-
-func MakeHPA(objectMeta *metav1.ObjectMeta, autoscalerSpec *autov2beta2.HorizontalPodAutoscalerSpec,
-	kind string) *autov2beta2.HorizontalPodAutoscaler {
-	return &autov2beta2.HorizontalPodAutoscaler{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "autoscaling/v1",
-			APIVersion: "HorizontalPodAutoscaler",
-		},
-		ObjectMeta: *objectMeta,
-		Spec: autov2beta2.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autov2beta2.CrossVersionObjectReference{
-				Kind:       kind,
-				Name:       objectMeta.Name,
-				APIVersion: "compute.functionmesh.io/v1alpha1",
-			},
-			MinReplicas: autoscalerSpec.MinReplicas,
-			MaxReplicas: autoscalerSpec.MaxReplicas,
-			Metrics:     autoscalerSpec.Metrics,
-			Behavior:    autoscalerSpec.Behavior,
-		},
-	}
 }
 
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *corev1.Container,

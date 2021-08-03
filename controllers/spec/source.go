@@ -30,9 +30,8 @@ func MakeSourceHPA(source *v1alpha1.Source) *autov2beta2.HorizontalPodAutoscaler
 	objectMeta := MakeSourceObjectMeta(source)
 	if source.Spec.Pod.HPAutoscaler == nil {
 		return MakeDefaultHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, source.Kind)
-	} else {
-		return MakeHPA(objectMeta, source.Spec.Pod.HPAutoscaler, source.Kind)
 	}
+	return MakeHPA(objectMeta, source.Spec.Pod.HPAutoscaler, source.Kind)
 }
 
 func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
