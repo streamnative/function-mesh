@@ -41,7 +41,7 @@ func defaultHPAMetrics() []autov2beta2.MetricSpec {
 	}
 }
 
-func MakeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
+func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
 	kind string) *autov2beta2.HorizontalPodAutoscaler {
 	return &autov2beta2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
@@ -62,24 +62,20 @@ func MakeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int3
 	}
 }
 
-func MakeHPA(objectMeta *metav1.ObjectMeta, autoscalerSpec *autov2beta2.HorizontalPodAutoscalerSpec,
+func makeHPA(objectMeta *metav1.ObjectMeta, autoscalerSpec *autov2beta2.HorizontalPodAutoscalerSpec,
 	kind string) *autov2beta2.HorizontalPodAutoscaler {
+	spec := *autoscalerSpec
+	spec.ScaleTargetRef = autov2beta2.CrossVersionObjectReference{
+		Kind:       kind,
+		Name:       objectMeta.Name,
+		APIVersion: "compute.functionmesh.io/v1alpha1",
+	}
 	return &autov2beta2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "autoscaling/v1",
 			APIVersion: "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: *objectMeta,
-		Spec: autov2beta2.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autov2beta2.CrossVersionObjectReference{
-				Kind:       kind,
-				Name:       objectMeta.Name,
-				APIVersion: "compute.functionmesh.io/v1alpha1",
-			},
-			MinReplicas: autoscalerSpec.MinReplicas,
-			MaxReplicas: autoscalerSpec.MaxReplicas,
-			Metrics:     autoscalerSpec.Metrics,
-			Behavior:    autoscalerSpec.Behavior,
-		},
+		Spec:       spec,
 	}
 }
