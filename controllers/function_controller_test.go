@@ -20,6 +20,8 @@ package controllers
 import (
 	"context"
 
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
@@ -82,6 +84,33 @@ var _ = Describe("Function Controller (Batcher)", func() {
 	})
 })
 
+var _ = Describe("Function Controller (HPA)", func() {
+	Context("Simple Function Item with HPA", func() {
+		configs := makeSamplePulsarConfig()
+		function := makeFunctionSample(TestFunctionName)
+		cpuPercentage := int32(80)
+		function.Spec.Pod.AutoScalingMetrics = []autov2beta2.MetricSpec{
+			{
+				Type: autov2beta2.ResourceMetricSourceType,
+				Resource: &autov2beta2.ResourceMetricSource{
+					Name: v1.ResourceCPU,
+					Target: autov2beta2.MetricTarget{
+						Type:               autov2beta2.UtilizationMetricType,
+						AverageUtilization: &cpuPercentage,
+					},
+				},
+			},
+		}
+
+		createFunctionConfigMap(configs)
+		createFunction(function)
+		createFunctionHPA(function)
+		deleteFunctionHPA(function)
+		deleteFunction(function)
+		deleteFunctionConfigMap(configs)
+	})
+})
+
 func createFunction(function *v1alpha1.Function) {
 	if function.Status.Conditions == nil {
 		function.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
@@ -90,6 +119,17 @@ func createFunction(function *v1alpha1.Function) {
 	It("StatefulSet should be created", func() {
 		statefulSet := spec.MakeFunctionStatefulSet(function)
 		Expect(k8sClient.Create(context.Background(), statefulSet)).Should(Succeed())
+	})
+}
+
+func createFunctionHPA(function *v1alpha1.Function) {
+	if function.Status.Conditions == nil {
+		function.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
+	}
+
+	It("HPA should be created", func() {
+		hpa := spec.MakeFunctionHPA(function)
+		Expect(k8sClient.Create(context.Background(), hpa)).Should(Succeed())
 	})
 }
 
@@ -121,5 +161,12 @@ func deleteFunctionConfigMap(configs *v1.ConfigMap) {
 func deleteFunctionSecret(secret *v1.Secret) {
 	It("Should delete crypto secret successfully", func() {
 		Expect(k8sClient.Delete(context.Background(), secret)).Should(Succeed())
+	})
+}
+
+func deleteFunctionHPA(function *v1alpha1.Function) {
+	hpa := spec.MakeFunctionHPA(function)
+	It("Should delete HPA successfully", func() {
+		Expect(k8sClient.Delete(context.Background(), hpa)).Should(Succeed())
 	})
 }

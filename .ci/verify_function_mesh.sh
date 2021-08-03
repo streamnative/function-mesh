@@ -57,4 +57,12 @@ case ${1} in
     ci::print_function_log functionmesh-sample-python-function
     ci::verify_mesh_function
     ;;
+  compute_v1alpha1_function_hpa)
+    ci::verify_function_mesh function-hpa-sample
+    ci::verify_hpa function-hpa-sample
+    sleep 60
+    ci::print_function_log function-hpa-sample
+    ci::verify_java_function function-hpa-sample
+    ci::verify_hpa function-hpa-sample
+    ;;
 esac

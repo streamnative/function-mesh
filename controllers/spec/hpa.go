@@ -18,10 +18,15 @@
 package spec
 
 import (
+	"github.com/streamnative/function-mesh/api/v1alpha1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func isDefaultHPAEnabled(minReplicas, maxReplicas *int32, podPolicy v1alpha1.PodPolicy) bool {
+	return minReplicas != nil && maxReplicas != nil && podPolicy.AutoScalingBehavior == nil && len(podPolicy.AutoScalingMetrics) == 0 && *maxReplicas > *minReplicas
+}
 
 // defaultHPAMetrics generates a default HPA metrics settings based on CPU usage and utilized on 80%.
 func defaultHPAMetrics() []autov2beta2.MetricSpec {
@@ -41,19 +46,18 @@ func defaultHPAMetrics() []autov2beta2.MetricSpec {
 	}
 }
 
-func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
-	kind string) *autov2beta2.HorizontalPodAutoscaler {
+func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32) *autov2beta2.HorizontalPodAutoscaler {
 	return &autov2beta2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "autoscaling/v1",
-			APIVersion: "HorizontalPodAutoscaler",
+			APIVersion: "autoscaling/v2beta2",
+			Kind:       "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: *objectMeta,
 		Spec: autov2beta2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autov2beta2.CrossVersionObjectReference{
-				Kind:       kind,
+				Kind:       "StatefulSet",
 				Name:       objectMeta.Name,
-				APIVersion: "compute.functionmesh.io/v1alpha1",
+				APIVersion: "apps/v1",
 			},
 			MinReplicas: &minReplicas,
 			MaxReplicas: maxReplicas,
@@ -62,18 +66,22 @@ func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int3
 	}
 }
 
-func makeHPA(objectMeta *metav1.ObjectMeta, autoscalerSpec *autov2beta2.HorizontalPodAutoscalerSpec,
-	kind string) *autov2beta2.HorizontalPodAutoscaler {
-	spec := *autoscalerSpec
-	spec.ScaleTargetRef = autov2beta2.CrossVersionObjectReference{
-		Kind:       kind,
-		Name:       objectMeta.Name,
-		APIVersion: "compute.functionmesh.io/v1alpha1",
+func makeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, podPolicy v1alpha1.PodPolicy) *autov2beta2.HorizontalPodAutoscaler {
+	spec := autov2beta2.HorizontalPodAutoscalerSpec{
+		ScaleTargetRef: autov2beta2.CrossVersionObjectReference{
+			Kind:       "StatefulSet",
+			Name:       objectMeta.Name,
+			APIVersion: "apps/v1",
+		},
+		MinReplicas: &minReplicas,
+		MaxReplicas: maxReplicas,
+		Metrics:     podPolicy.AutoScalingMetrics,
+		Behavior:    podPolicy.AutoScalingBehavior,
 	}
 	return &autov2beta2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "autoscaling/v1",
-			APIVersion: "HorizontalPodAutoscaler",
+			APIVersion: "autoscaling/v2beta2",
+			Kind:       "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: *objectMeta,
 		Spec:       spec,

@@ -583,9 +583,16 @@ func (in *PodPolicy) DeepCopyInto(out *PodPolicy) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.HPAutoscaler != nil {
-		in, out := &in.HPAutoscaler, &out.HPAutoscaler
-		*out = new(v2beta2.HorizontalPodAutoscalerSpec)
+	if in.AutoScalingMetrics != nil {
+		in, out := &in.AutoScalingMetrics, &out.AutoScalingMetrics
+		*out = make([]v2beta2.MetricSpec, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.AutoScalingBehavior != nil {
+		in, out := &in.AutoScalingBehavior, &out.AutoScalingBehavior
+		*out = new(v2beta2.HorizontalPodAutoscalerBehavior)
 		(*in).DeepCopyInto(*out)
 	}
 }

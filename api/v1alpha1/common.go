@@ -95,12 +95,18 @@ type PodPolicy struct {
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
-	// HPAutoscaler allows user to configure the HPA with k8s.io/api/autoscaling/v2beta2
-	// This config will override the maxReplicas in Function/Source/Sink Spec
-	// If user set HPAutoscaler, then controller will use HPAutoscaler to create HPA
-	// More info: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+	// AutoScalingMetrics contains the specifications for which to use to calculate the
+	// desired replica count (the maximum replica count across all metrics will
+	// be used).
+	// More info: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#metricspec-v2beta2-autoscaling
 	// +optional
-	HPAutoscaler *autov2beta2.HorizontalPodAutoscalerSpec `json:"hpAutoscaler,omitempty"`
+	AutoScalingMetrics []autov2beta2.MetricSpec `json:"autoScalingMetrics,omitempty"`
+
+	// AutoScalingBehavior configures the scaling behavior of the target
+	// in both Up and Down directions (scaleUp and scaleDown fields respectively).
+	// If not set, the default HPAScalingRules for scale up and scale down are used.
+	// +optional
+	AutoScalingBehavior *autov2beta2.HorizontalPodAutoscalerBehavior `json:"autoScalingBehavior,omitempty"`
 }
 
 type Runtime struct {

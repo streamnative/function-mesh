@@ -126,6 +126,11 @@ function ci::verify_function_mesh() {
     ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
 }
 
+function ci::verify_hpa() {
+    FUNCTION_NAME=$1
+    ${KUBECTL} get hpa.v2beta2.autoscaling
+}
+
 function ci::test_function_runners() {
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-java --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/test-java-input --jar /pulsar/examples/api-examples.jar --cpu 0.1
     sleep 15

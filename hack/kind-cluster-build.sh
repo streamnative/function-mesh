@@ -118,6 +118,8 @@ configFile=${workDir}/kind-config.yaml
 cat <<EOF > ${configFile}
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+runtimeConfig:
+  "autoscaling/v2beta2": "true"
 nodes:
 - role: control-plane
   extraPortMappings:
@@ -237,6 +239,10 @@ $KUBECTL_BIN apply -f ${PULSAR_CHART_HOME}/manifests/local-dind/local-volume-pro
 docker pull gcr.io/google-containers/kube-scheduler:${k8sVersion}
 docker tag gcr.io/google-containers/kube-scheduler:${k8sVersion} mirantis/hypokube:final
 kind load docker-image --name=${clusterName} mirantis/hypokube:final
+
+echo "install metrics-server"
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.7/components.yaml
+kubectl patch deployment metrics-server -n kube-system -p '{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","args":["--cert-dir=/tmp", "--secure-port=4443", "--kubelet-insecure-tls","--kubelet-preferred-address-types=InternalIP"]}]}}}}'
 
 echo "############# success create cluster:[${clusterName}] #############"
 
