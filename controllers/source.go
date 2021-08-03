@@ -157,7 +157,7 @@ func (r *SourceReconciler) ApplySourceService(ctx context.Context, req ctrl.Requ
 }
 
 func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Request, source *v1alpha1.Source) error {
-	if source.Spec.MaxReplicas == nil {
+	if source.Spec.Pod.HPAutoscaler == nil && source.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		return nil
 	}
@@ -189,7 +189,7 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Reques
 }
 
 func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, req ctrl.Request, source *v1alpha1.Source) error {
-	if source.Spec.MaxReplicas == nil {
+	if source.Spec.Pod.HPAutoscaler == nil && source.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		return nil
 	}

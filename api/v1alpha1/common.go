@@ -20,6 +20,7 @@ package v1alpha1
 import (
 	"encoding/json"
 
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -93,6 +94,13 @@ type PodPolicy struct {
 	// ServiceAccountName is the name of the ServiceAccount to use to run this pod.
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// HPAutoscaler allows user to configure the HPA with k8s.io/api/autoscaling/v2beta2
+	// This config will override the maxReplicas in Function/Source/Sink Spec
+	// If user set HPAutoscaler, then controller will use HPAutoscaler to create HPA
+	// More info: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+	// +optional
+	HPAutoscaler *autov2beta2.HorizontalPodAutoscalerSpec `json:"hpAutoscaler,omitempty"`
 }
 
 type Runtime struct {

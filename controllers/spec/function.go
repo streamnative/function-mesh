@@ -32,7 +32,11 @@ var log = logf.Log.WithName("sink-resource")
 
 func MakeFunctionHPA(function *v1alpha1.Function) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeFunctionObjectMeta(function)
-	return MakeHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, function.Kind)
+	if function.Spec.Pod.HPAutoscaler == nil {
+		return MakeDefaultHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, function.Kind)
+	} else {
+		return MakeHPA(objectMeta, function.Spec.Pod.HPAutoscaler, function.Kind)
+	}
 }
 
 func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {

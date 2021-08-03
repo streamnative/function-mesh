@@ -476,6 +476,277 @@ spec:
                         additionalProperties:
                           type: string
                         type: object
+                      hpAutoscaler:
+                        properties:
+                          behavior:
+                            properties:
+                              scaleDown:
+                                properties:
+                                  policies:
+                                    items:
+                                      properties:
+                                        periodSeconds:
+                                          format: int32
+                                          type: integer
+                                        type:
+                                          type: string
+                                        value:
+                                          format: int32
+                                          type: integer
+                                      required:
+                                      - periodSeconds
+                                      - type
+                                      - value
+                                      type: object
+                                    type: array
+                                  selectPolicy:
+                                    type: string
+                                  stabilizationWindowSeconds:
+                                    format: int32
+                                    type: integer
+                                type: object
+                              scaleUp:
+                                properties:
+                                  policies:
+                                    items:
+                                      properties:
+                                        periodSeconds:
+                                          format: int32
+                                          type: integer
+                                        type:
+                                          type: string
+                                        value:
+                                          format: int32
+                                          type: integer
+                                      required:
+                                      - periodSeconds
+                                      - type
+                                      - value
+                                      type: object
+                                    type: array
+                                  selectPolicy:
+                                    type: string
+                                  stabilizationWindowSeconds:
+                                    format: int32
+                                    type: integer
+                                type: object
+                            type: object
+                          maxReplicas:
+                            format: int32
+                            type: integer
+                          metrics:
+                            items:
+                              properties:
+                                external:
+                                  properties:
+                                    metric:
+                                      properties:
+                                        name:
+                                          type: string
+                                        selector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                      required:
+                                      - name
+                                      type: object
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - metric
+                                  - target
+                                  type: object
+                                object:
+                                  properties:
+                                    describedObject:
+                                      properties:
+                                        apiVersion:
+                                          type: string
+                                        kind:
+                                          type: string
+                                        name:
+                                          type: string
+                                      required:
+                                      - kind
+                                      - name
+                                      type: object
+                                    metric:
+                                      properties:
+                                        name:
+                                          type: string
+                                        selector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                      required:
+                                      - name
+                                      type: object
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - describedObject
+                                  - metric
+                                  - target
+                                  type: object
+                                pods:
+                                  properties:
+                                    metric:
+                                      properties:
+                                        name:
+                                          type: string
+                                        selector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                      required:
+                                      - name
+                                      type: object
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - metric
+                                  - target
+                                  type: object
+                                resource:
+                                  properties:
+                                    name:
+                                      type: string
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - name
+                                  - target
+                                  type: object
+                                type:
+                                  type: string
+                              required:
+                              - type
+                              type: object
+                            type: array
+                          minReplicas:
+                            format: int32
+                            type: integer
+                          scaleTargetRef:
+                            properties:
+                              apiVersion:
+                                type: string
+                              kind:
+                                type: string
+                              name:
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                        required:
+                        - maxReplicas
+                        - scaleTargetRef
+                        type: object
                       imagePullSecrets:
                         items:
                           properties:
@@ -2649,6 +2920,277 @@ spec:
                         additionalProperties:
                           type: string
                         type: object
+                      hpAutoscaler:
+                        properties:
+                          behavior:
+                            properties:
+                              scaleDown:
+                                properties:
+                                  policies:
+                                    items:
+                                      properties:
+                                        periodSeconds:
+                                          format: int32
+                                          type: integer
+                                        type:
+                                          type: string
+                                        value:
+                                          format: int32
+                                          type: integer
+                                      required:
+                                      - periodSeconds
+                                      - type
+                                      - value
+                                      type: object
+                                    type: array
+                                  selectPolicy:
+                                    type: string
+                                  stabilizationWindowSeconds:
+                                    format: int32
+                                    type: integer
+                                type: object
+                              scaleUp:
+                                properties:
+                                  policies:
+                                    items:
+                                      properties:
+                                        periodSeconds:
+                                          format: int32
+                                          type: integer
+                                        type:
+                                          type: string
+                                        value:
+                                          format: int32
+                                          type: integer
+                                      required:
+                                      - periodSeconds
+                                      - type
+                                      - value
+                                      type: object
+                                    type: array
+                                  selectPolicy:
+                                    type: string
+                                  stabilizationWindowSeconds:
+                                    format: int32
+                                    type: integer
+                                type: object
+                            type: object
+                          maxReplicas:
+                            format: int32
+                            type: integer
+                          metrics:
+                            items:
+                              properties:
+                                external:
+                                  properties:
+                                    metric:
+                                      properties:
+                                        name:
+                                          type: string
+                                        selector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                      required:
+                                      - name
+                                      type: object
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - metric
+                                  - target
+                                  type: object
+                                object:
+                                  properties:
+                                    describedObject:
+                                      properties:
+                                        apiVersion:
+                                          type: string
+                                        kind:
+                                          type: string
+                                        name:
+                                          type: string
+                                      required:
+                                      - kind
+                                      - name
+                                      type: object
+                                    metric:
+                                      properties:
+                                        name:
+                                          type: string
+                                        selector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                      required:
+                                      - name
+                                      type: object
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - describedObject
+                                  - metric
+                                  - target
+                                  type: object
+                                pods:
+                                  properties:
+                                    metric:
+                                      properties:
+                                        name:
+                                          type: string
+                                        selector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                      required:
+                                      - name
+                                      type: object
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - metric
+                                  - target
+                                  type: object
+                                resource:
+                                  properties:
+                                    name:
+                                      type: string
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - name
+                                  - target
+                                  type: object
+                                type:
+                                  type: string
+                              required:
+                              - type
+                              type: object
+                            type: array
+                          minReplicas:
+                            format: int32
+                            type: integer
+                          scaleTargetRef:
+                            properties:
+                              apiVersion:
+                                type: string
+                              kind:
+                                type: string
+                              name:
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                        required:
+                        - maxReplicas
+                        - scaleTargetRef
+                        type: object
                       imagePullSecrets:
                         items:
                           properties:
@@ -4801,6 +5343,277 @@ spec:
                       annotations:
                         additionalProperties:
                           type: string
+                        type: object
+                      hpAutoscaler:
+                        properties:
+                          behavior:
+                            properties:
+                              scaleDown:
+                                properties:
+                                  policies:
+                                    items:
+                                      properties:
+                                        periodSeconds:
+                                          format: int32
+                                          type: integer
+                                        type:
+                                          type: string
+                                        value:
+                                          format: int32
+                                          type: integer
+                                      required:
+                                      - periodSeconds
+                                      - type
+                                      - value
+                                      type: object
+                                    type: array
+                                  selectPolicy:
+                                    type: string
+                                  stabilizationWindowSeconds:
+                                    format: int32
+                                    type: integer
+                                type: object
+                              scaleUp:
+                                properties:
+                                  policies:
+                                    items:
+                                      properties:
+                                        periodSeconds:
+                                          format: int32
+                                          type: integer
+                                        type:
+                                          type: string
+                                        value:
+                                          format: int32
+                                          type: integer
+                                      required:
+                                      - periodSeconds
+                                      - type
+                                      - value
+                                      type: object
+                                    type: array
+                                  selectPolicy:
+                                    type: string
+                                  stabilizationWindowSeconds:
+                                    format: int32
+                                    type: integer
+                                type: object
+                            type: object
+                          maxReplicas:
+                            format: int32
+                            type: integer
+                          metrics:
+                            items:
+                              properties:
+                                external:
+                                  properties:
+                                    metric:
+                                      properties:
+                                        name:
+                                          type: string
+                                        selector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                      required:
+                                      - name
+                                      type: object
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - metric
+                                  - target
+                                  type: object
+                                object:
+                                  properties:
+                                    describedObject:
+                                      properties:
+                                        apiVersion:
+                                          type: string
+                                        kind:
+                                          type: string
+                                        name:
+                                          type: string
+                                      required:
+                                      - kind
+                                      - name
+                                      type: object
+                                    metric:
+                                      properties:
+                                        name:
+                                          type: string
+                                        selector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                      required:
+                                      - name
+                                      type: object
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - describedObject
+                                  - metric
+                                  - target
+                                  type: object
+                                pods:
+                                  properties:
+                                    metric:
+                                      properties:
+                                        name:
+                                          type: string
+                                        selector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                - key
+                                                - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                      required:
+                                      - name
+                                      type: object
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - metric
+                                  - target
+                                  type: object
+                                resource:
+                                  properties:
+                                    name:
+                                      type: string
+                                    target:
+                                      properties:
+                                        averageUtilization:
+                                          format: int32
+                                          type: integer
+                                        averageValue:
+                                          type: string
+                                        type:
+                                          type: string
+                                        value:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                  required:
+                                  - name
+                                  - target
+                                  type: object
+                                type:
+                                  type: string
+                              required:
+                              - type
+                              type: object
+                            type: array
+                          minReplicas:
+                            format: int32
+                            type: integer
+                          scaleTargetRef:
+                            properties:
+                              apiVersion:
+                                type: string
+                              kind:
+                                type: string
+                              name:
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                        required:
+                        - maxReplicas
+                        - scaleTargetRef
                         type: object
                       imagePullSecrets:
                         items:
@@ -7114,6 +7927,277 @@ spec:
                   additionalProperties:
                     type: string
                   type: object
+                hpAutoscaler:
+                  properties:
+                    behavior:
+                      properties:
+                        scaleDown:
+                          properties:
+                            policies:
+                              items:
+                                properties:
+                                  periodSeconds:
+                                    format: int32
+                                    type: integer
+                                  type:
+                                    type: string
+                                  value:
+                                    format: int32
+                                    type: integer
+                                required:
+                                - periodSeconds
+                                - type
+                                - value
+                                type: object
+                              type: array
+                            selectPolicy:
+                              type: string
+                            stabilizationWindowSeconds:
+                              format: int32
+                              type: integer
+                          type: object
+                        scaleUp:
+                          properties:
+                            policies:
+                              items:
+                                properties:
+                                  periodSeconds:
+                                    format: int32
+                                    type: integer
+                                  type:
+                                    type: string
+                                  value:
+                                    format: int32
+                                    type: integer
+                                required:
+                                - periodSeconds
+                                - type
+                                - value
+                                type: object
+                              type: array
+                            selectPolicy:
+                              type: string
+                            stabilizationWindowSeconds:
+                              format: int32
+                              type: integer
+                          type: object
+                      type: object
+                    maxReplicas:
+                      format: int32
+                      type: integer
+                    metrics:
+                      items:
+                        properties:
+                          external:
+                            properties:
+                              metric:
+                                properties:
+                                  name:
+                                    type: string
+                                  selector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                required:
+                                - name
+                                type: object
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - metric
+                            - target
+                            type: object
+                          object:
+                            properties:
+                              describedObject:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  kind:
+                                    type: string
+                                  name:
+                                    type: string
+                                required:
+                                - kind
+                                - name
+                                type: object
+                              metric:
+                                properties:
+                                  name:
+                                    type: string
+                                  selector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                required:
+                                - name
+                                type: object
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - describedObject
+                            - metric
+                            - target
+                            type: object
+                          pods:
+                            properties:
+                              metric:
+                                properties:
+                                  name:
+                                    type: string
+                                  selector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                required:
+                                - name
+                                type: object
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - metric
+                            - target
+                            type: object
+                          resource:
+                            properties:
+                              name:
+                                type: string
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - name
+                            - target
+                            type: object
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      type: array
+                    minReplicas:
+                      format: int32
+                      type: integer
+                    scaleTargetRef:
+                      properties:
+                        apiVersion:
+                          type: string
+                        kind:
+                          type: string
+                        name:
+                          type: string
+                      required:
+                      - kind
+                      - name
+                      type: object
+                  required:
+                  - maxReplicas
+                  - scaleTargetRef
+                  type: object
                 imagePullSecrets:
                   items:
                     properties:
@@ -9351,6 +10435,277 @@ spec:
                   additionalProperties:
                     type: string
                   type: object
+                hpAutoscaler:
+                  properties:
+                    behavior:
+                      properties:
+                        scaleDown:
+                          properties:
+                            policies:
+                              items:
+                                properties:
+                                  periodSeconds:
+                                    format: int32
+                                    type: integer
+                                  type:
+                                    type: string
+                                  value:
+                                    format: int32
+                                    type: integer
+                                required:
+                                - periodSeconds
+                                - type
+                                - value
+                                type: object
+                              type: array
+                            selectPolicy:
+                              type: string
+                            stabilizationWindowSeconds:
+                              format: int32
+                              type: integer
+                          type: object
+                        scaleUp:
+                          properties:
+                            policies:
+                              items:
+                                properties:
+                                  periodSeconds:
+                                    format: int32
+                                    type: integer
+                                  type:
+                                    type: string
+                                  value:
+                                    format: int32
+                                    type: integer
+                                required:
+                                - periodSeconds
+                                - type
+                                - value
+                                type: object
+                              type: array
+                            selectPolicy:
+                              type: string
+                            stabilizationWindowSeconds:
+                              format: int32
+                              type: integer
+                          type: object
+                      type: object
+                    maxReplicas:
+                      format: int32
+                      type: integer
+                    metrics:
+                      items:
+                        properties:
+                          external:
+                            properties:
+                              metric:
+                                properties:
+                                  name:
+                                    type: string
+                                  selector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                required:
+                                - name
+                                type: object
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - metric
+                            - target
+                            type: object
+                          object:
+                            properties:
+                              describedObject:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  kind:
+                                    type: string
+                                  name:
+                                    type: string
+                                required:
+                                - kind
+                                - name
+                                type: object
+                              metric:
+                                properties:
+                                  name:
+                                    type: string
+                                  selector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                required:
+                                - name
+                                type: object
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - describedObject
+                            - metric
+                            - target
+                            type: object
+                          pods:
+                            properties:
+                              metric:
+                                properties:
+                                  name:
+                                    type: string
+                                  selector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                required:
+                                - name
+                                type: object
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - metric
+                            - target
+                            type: object
+                          resource:
+                            properties:
+                              name:
+                                type: string
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - name
+                            - target
+                            type: object
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      type: array
+                    minReplicas:
+                      format: int32
+                      type: integer
+                    scaleTargetRef:
+                      properties:
+                        apiVersion:
+                          type: string
+                        kind:
+                          type: string
+                        name:
+                          type: string
+                      required:
+                      - kind
+                      - name
+                      type: object
+                  required:
+                  - maxReplicas
+                  - scaleTargetRef
+                  type: object
                 imagePullSecrets:
                   items:
                     properties:
@@ -11567,6 +12922,277 @@ spec:
                 annotations:
                   additionalProperties:
                     type: string
+                  type: object
+                hpAutoscaler:
+                  properties:
+                    behavior:
+                      properties:
+                        scaleDown:
+                          properties:
+                            policies:
+                              items:
+                                properties:
+                                  periodSeconds:
+                                    format: int32
+                                    type: integer
+                                  type:
+                                    type: string
+                                  value:
+                                    format: int32
+                                    type: integer
+                                required:
+                                - periodSeconds
+                                - type
+                                - value
+                                type: object
+                              type: array
+                            selectPolicy:
+                              type: string
+                            stabilizationWindowSeconds:
+                              format: int32
+                              type: integer
+                          type: object
+                        scaleUp:
+                          properties:
+                            policies:
+                              items:
+                                properties:
+                                  periodSeconds:
+                                    format: int32
+                                    type: integer
+                                  type:
+                                    type: string
+                                  value:
+                                    format: int32
+                                    type: integer
+                                required:
+                                - periodSeconds
+                                - type
+                                - value
+                                type: object
+                              type: array
+                            selectPolicy:
+                              type: string
+                            stabilizationWindowSeconds:
+                              format: int32
+                              type: integer
+                          type: object
+                      type: object
+                    maxReplicas:
+                      format: int32
+                      type: integer
+                    metrics:
+                      items:
+                        properties:
+                          external:
+                            properties:
+                              metric:
+                                properties:
+                                  name:
+                                    type: string
+                                  selector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                required:
+                                - name
+                                type: object
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - metric
+                            - target
+                            type: object
+                          object:
+                            properties:
+                              describedObject:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  kind:
+                                    type: string
+                                  name:
+                                    type: string
+                                required:
+                                - kind
+                                - name
+                                type: object
+                              metric:
+                                properties:
+                                  name:
+                                    type: string
+                                  selector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                required:
+                                - name
+                                type: object
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - describedObject
+                            - metric
+                            - target
+                            type: object
+                          pods:
+                            properties:
+                              metric:
+                                properties:
+                                  name:
+                                    type: string
+                                  selector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                required:
+                                - name
+                                type: object
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - metric
+                            - target
+                            type: object
+                          resource:
+                            properties:
+                              name:
+                                type: string
+                              target:
+                                properties:
+                                  averageUtilization:
+                                    format: int32
+                                    type: integer
+                                  averageValue:
+                                    type: string
+                                  type:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                            required:
+                            - name
+                            - target
+                            type: object
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      type: array
+                    minReplicas:
+                      format: int32
+                      type: integer
+                    scaleTargetRef:
+                      properties:
+                        apiVersion:
+                          type: string
+                        kind:
+                          type: string
+                        name:
+                          type: string
+                      required:
+                      - kind
+                      - name
+                      type: object
+                  required:
+                  - maxReplicas
+                  - scaleTargetRef
                   type: object
                 imagePullSecrets:
                   items:
