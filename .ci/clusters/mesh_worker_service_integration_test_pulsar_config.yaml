@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sn-platform-pulsar-function-mesh-config
+data:
+  webServiceURL: http://sn-platform-pulsar-proxy.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-proxy.default.svc.cluster.local:6650

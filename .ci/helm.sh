@@ -226,6 +226,10 @@ function ci::ensure_mesh_worker_service_role() {
   ${KUBECTL} create clusterrolebinding broker-acct-manager-role-binding --clusterrole=manager-role --serviceaccount=default:sn-platform-pulsar-broker-acct
 }
 
+function ci::ensure_function_mesh_config() {
+  ${KUBECTL} apply -f ${FUNCTION_MESH_HOME}/.ci/clusters/mesh_worker_service_integration_test_pulsar_config.yaml
+}
+
 function ci::verify_mesh_worker_service_pulsar_admin() {
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks available-sinks
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources available-sources
