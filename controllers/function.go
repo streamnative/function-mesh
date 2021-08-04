@@ -199,7 +199,10 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, req ctrl.Re
 	}
 
 	if hpa.Spec.MaxReplicas != *function.Spec.MaxReplicas ||
-		!reflect.DeepEqual(hpa.Spec.Metrics, function.Spec.Pod.AutoScalingMetrics) {
+		!reflect.DeepEqual(hpa.Spec.Metrics, function.Spec.Pod.AutoScalingMetrics) ||
+		(function.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior == nil) ||
+		(function.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior != nil &&
+			!reflect.DeepEqual(*hpa.Spec.Behavior, *function.Spec.Pod.AutoScalingBehavior)) {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		function.Status.Conditions[v1alpha1.HPA] = condition
@@ -245,6 +248,9 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, req ctrl.Requ
 		}
 		if !reflect.DeepEqual(hpa.Spec.Metrics, function.Spec.Pod.AutoScalingMetrics) {
 			hpa.Spec.Metrics = function.Spec.Pod.AutoScalingMetrics
+		}
+		if function.Spec.Pod.AutoScalingBehavior != nil {
+			hpa.Spec.Behavior = function.Spec.Pod.AutoScalingBehavior
 		}
 		if err := r.Update(ctx, hpa); err != nil {
 			r.Log.Error(err, "failed to update pod autoscaler for function", "name", function.Name)

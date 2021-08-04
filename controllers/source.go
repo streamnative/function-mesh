@@ -186,7 +186,10 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Reques
 	}
 
 	if hpa.Spec.MaxReplicas != *source.Spec.MaxReplicas ||
-		!reflect.DeepEqual(hpa.Spec.Metrics, source.Spec.Pod.AutoScalingMetrics) {
+		!reflect.DeepEqual(hpa.Spec.Metrics, source.Spec.Pod.AutoScalingMetrics) ||
+		(source.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior == nil) ||
+		(source.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior != nil &&
+			!reflect.DeepEqual(*hpa.Spec.Behavior, *source.Spec.Pod.AutoScalingBehavior)) {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		source.Status.Conditions[v1alpha1.HPA] = condition
@@ -229,6 +232,9 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, req ctrl.Request,
 		}
 		if !reflect.DeepEqual(hpa.Spec.Metrics, source.Spec.Pod.AutoScalingMetrics) {
 			hpa.Spec.Metrics = source.Spec.Pod.AutoScalingMetrics
+		}
+		if source.Spec.Pod.AutoScalingBehavior != nil {
+			hpa.Spec.Behavior = source.Spec.Pod.AutoScalingBehavior
 		}
 		if err := r.Update(ctx, hpa); err != nil {
 			r.Log.Error(err, "failed to update pod autoscaler for source", "name", source.Name)

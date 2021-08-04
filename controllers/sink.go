@@ -184,7 +184,10 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, s
 	}
 
 	if hpa.Spec.MaxReplicas != *sink.Spec.MaxReplicas ||
-		!reflect.DeepEqual(hpa.Spec.Metrics, sink.Spec.Pod.AutoScalingMetrics) {
+		!reflect.DeepEqual(hpa.Spec.Metrics, sink.Spec.Pod.AutoScalingMetrics) ||
+		(sink.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior == nil) ||
+		(sink.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior != nil &&
+			!reflect.DeepEqual(*hpa.Spec.Behavior, *sink.Spec.Pod.AutoScalingBehavior)) {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		sink.Status.Conditions[v1alpha1.HPA] = condition
@@ -227,6 +230,9 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, req ctrl.Request, sin
 		}
 		if !reflect.DeepEqual(hpa.Spec.Metrics, sink.Spec.Pod.AutoScalingMetrics) {
 			hpa.Spec.Metrics = sink.Spec.Pod.AutoScalingMetrics
+		}
+		if sink.Spec.Pod.AutoScalingBehavior != nil {
+			hpa.Spec.Behavior = sink.Spec.Pod.AutoScalingBehavior
 		}
 		if err := r.Update(ctx, hpa); err != nil {
 			r.Log.Error(err, "failed to update pod autoscaler for sink", "name", sink.Name)
