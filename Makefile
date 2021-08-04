@@ -61,7 +61,8 @@ run: generate fmt vet manifests
 
 # Install CRDs into a cluster
 install: manifests kustomize crd
-	kubectl apply -f manifests/crd.yaml manifests/rbac.yaml
+	kubectl apply -f manifests/crd.yaml
+	kubectl apply -f manifests/rbac.yaml
 
 # Uninstall CRDs from a cluster
 uninstall: manifests kustomize
