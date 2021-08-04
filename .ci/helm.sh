@@ -221,6 +221,10 @@ function ci:verify_exclamation_function() {
   return 1
 }
 
+function ci::ensure_mesh_worker_service_role() {
+  ${KUBECTL} create clusterrolebinding broker-acct-manager-role-binding --clusterrole=manager-role --serviceaccount=default:sn-platform-pulsar-broker-acct
+}
+
 function ci::verify_mesh_worker_service_pulsar_admin() {
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks available-sinks
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources available-sources

@@ -28,4 +28,5 @@ FUNCTION=${FUNCTION:-"false"}
 
 source ${PULSAR_HOME}/.ci/helm.sh
 
+ci::ensure_mesh_worker_service_role
 ci::verify_mesh_worker_service_pulsar_admin
