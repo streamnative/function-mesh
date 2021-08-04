@@ -97,10 +97,7 @@ func createFunction(function *v1alpha1.Function) {
 				Namespace: function.Namespace,
 				Name:      spec.MakeFunctionObjectMeta(function).Name,
 			}, statefulSet)
-			if err != nil {
-				return false
-			}
-			return true
+			return err == nil
 		}, timeout, interval).Should(BeTrue())
 
 		Expect(*statefulSet.Spec.Replicas).Should(Equal(int32(1)))
@@ -112,10 +109,7 @@ func createFunction(function *v1alpha1.Function) {
 		Eventually(func() bool {
 			err := k8sClient.Get(context.Background(), types.NamespacedName{Namespace: function.Namespace,
 				Name: svcName}, srv)
-			if err != nil {
-				return false
-			}
-			return true
+			return err == nil
 		}, timeout, interval).Should(BeTrue())
 	})
 
@@ -125,10 +119,7 @@ func createFunction(function *v1alpha1.Function) {
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), types.NamespacedName{Namespace: function.Namespace,
 					Name: spec.MakeFunctionObjectMeta(function).Name}, hpa)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 		}
 	})
