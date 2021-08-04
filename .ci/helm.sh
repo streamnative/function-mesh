@@ -222,6 +222,7 @@ function ci:verify_exclamation_function() {
 }
 
 function ci::ensure_mesh_worker_service_role() {
+  ${KUBECTL} apply -f ${FUNCTION_MESH_HOME}/config/rbac/role.yaml
   ${KUBECTL} create clusterrolebinding broker-acct-manager-role-binding --clusterrole=manager-role --serviceaccount=default:sn-platform-pulsar-broker-acct
 }
 
