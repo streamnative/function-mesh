@@ -219,7 +219,6 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, req ctrl.Requ
 	switch condition.Action {
 	case v1alpha1.Create:
 		hpa := spec.MakeFunctionHPA(function)
-		r.Log.Info("hpa", "hpa", *hpa)
 		if err := r.Create(ctx, hpa); err != nil {
 			r.Log.Error(err, "failed to create pod autoscaler for function", "name", function.Name)
 			return err
