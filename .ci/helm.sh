@@ -68,6 +68,10 @@ function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
     values=${1:-".ci/clusters/values.yaml"}
     echo $values
+    if [ "$values" = ".ci/clusters/values_mesh_worker_service.yaml" ]; then
+      echo "load mesh-worker-service-integration-pulsar:latest ..."
+      ${KIND_BIN} load docker-image mesh-worker-service-integration-pulsar:latest --name sn-platform-${CLUSTER_ID}
+    fi
     if [ -d "pulsar-charts" ]; then
       rm -rf pulsar-charts
     fi
@@ -215,4 +219,16 @@ function ci:verify_exclamation_function() {
     return 0
   fi
   return 1
+}
+
+function ci:verify_mesh_worker_service_pulsar_admin() {
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks available-sinks
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources available-sources
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources create --name data-generator-source --source-type data-generator --destination-topic-name persistent://public/default/random-data-topic --custom-runtime-options '{"outputTypeClassName": "org.apache.pulsar.io.datagenerator.Person"}' --source-config '{"sleepBetweenMessages": "1000"}'
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks create --name data-generator-sink --sink-type data-generator --inputs persistent://public/default/random-data-topic --custom-runtime-options '{"inputTypeClassName": "org.apache.pulsar.io.datagenerator.Person"}'
+  ${KUBECTL} get pods -n ${NAMESPACE}
+  sleep 120
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks status --name data-generator-sink
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources status --name data-generator-source
+  ${KUBECTL} get pods -n ${NAMESPACE}
 }
