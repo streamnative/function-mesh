@@ -143,6 +143,16 @@ function ci::verify_function_mesh() {
 function ci::verify_hpa() {
     FUNCTION_NAME=$1
     ${KUBECTL} get hpa.v2beta2.autoscaling
+    ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o yaml
+    ${KUBECTL} describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
+    WC=$(${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o -o jsonpath='{.status.conditions}' | grep False | wc -l)
+    while [[ ${WC} -lt 0 ]]; do
+      echo ${WC};
+      sleep 20
+      ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o yaml
+      ${KUBECTL} describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
+      WC=$(${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o -o jsonpath='{.status.conditions}' | grep False | wc -l)
+    done
 }
 
 function ci::test_function_runners() {
