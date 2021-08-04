@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
@@ -184,6 +185,14 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Reques
 		condition.Status = metav1.ConditionTrue
 	}
 
+	if hpa.Spec.MaxReplicas != *source.Spec.MaxReplicas ||
+		!reflect.DeepEqual(hpa.Spec.Metrics, source.Spec.Pod.AutoScalingMetrics) {
+		condition.Status = metav1.ConditionFalse
+		condition.Action = v1alpha1.Update
+		source.Status.Conditions[v1alpha1.HPA] = condition
+		return nil
+	}
+
 	source.Status.Conditions[v1alpha1.HPA] = condition
 	return nil
 }
@@ -205,6 +214,24 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, req ctrl.Request,
 		hpa := spec.MakeSourceHPA(source)
 		if err := r.Create(ctx, hpa); err != nil {
 			r.Log.Error(err, "failed to create pod autoscaler for source", "name", source.Name)
+			return err
+		}
+	case v1alpha1.Update:
+		hpa := &autov2beta2.HorizontalPodAutoscaler{}
+		err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
+			Name: spec.MakeSourceObjectMeta(source).Name}, hpa)
+		if err != nil {
+			r.Log.Error(err, "failed to update pod autoscaler for source, cannot find hpa", "name", source.Name)
+			return err
+		}
+		if hpa.Spec.MaxReplicas != *source.Spec.MaxReplicas {
+			hpa.Spec.MaxReplicas = *source.Spec.MaxReplicas
+		}
+		if !reflect.DeepEqual(hpa.Spec.Metrics, source.Spec.Pod.AutoScalingMetrics) {
+			hpa.Spec.Metrics = source.Spec.Pod.AutoScalingMetrics
+		}
+		if err := r.Update(ctx, hpa); err != nil {
+			r.Log.Error(err, "failed to update pod autoscaler for source", "name", source.Name)
 			return err
 		}
 	case v1alpha1.Wait, v1alpha1.NoAction:

@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
@@ -182,6 +183,14 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, s
 		condition.Status = metav1.ConditionTrue
 	}
 
+	if hpa.Spec.MaxReplicas != *sink.Spec.MaxReplicas ||
+		!reflect.DeepEqual(hpa.Spec.Metrics, sink.Spec.Pod.AutoScalingMetrics) {
+		condition.Status = metav1.ConditionFalse
+		condition.Action = v1alpha1.Update
+		sink.Status.Conditions[v1alpha1.HPA] = condition
+		return nil
+	}
+
 	sink.Status.Conditions[v1alpha1.HPA] = condition
 	return nil
 }
@@ -203,6 +212,24 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, req ctrl.Request, sin
 		hpa := spec.MakeSinkHPA(sink)
 		if err := r.Create(ctx, hpa); err != nil {
 			r.Log.Error(err, "failed to create pod autoscaler for sink", "name", sink.Name)
+			return err
+		}
+	case v1alpha1.Update:
+		hpa := &autov2beta2.HorizontalPodAutoscaler{}
+		err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace,
+			Name: spec.MakeSinkObjectMeta(sink).Name}, hpa)
+		if err != nil {
+			r.Log.Error(err, "failed to update pod autoscaler for sink, cannot find hpa", "name", sink.Name)
+			return err
+		}
+		if hpa.Spec.MaxReplicas != *sink.Spec.MaxReplicas {
+			hpa.Spec.MaxReplicas = *sink.Spec.MaxReplicas
+		}
+		if !reflect.DeepEqual(hpa.Spec.Metrics, sink.Spec.Pod.AutoScalingMetrics) {
+			hpa.Spec.Metrics = sink.Spec.Pod.AutoScalingMetrics
+		}
+		if err := r.Update(ctx, hpa); err != nil {
+			r.Log.Error(err, "failed to update pod autoscaler for sink", "name", sink.Name)
 			return err
 		}
 	case v1alpha1.Wait, v1alpha1.NoAction:
