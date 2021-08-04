@@ -145,14 +145,14 @@ function ci::verify_hpa() {
     ${KUBECTL} get hpa.v2beta2.autoscaling
     ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o yaml
     ${KUBECTL} describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
-    WC=$(${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[*].status}' | grep False | wc -l)
+    WC=$(${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}' | grep False | wc -l)
     while [[ ${WC} -lt 0 ]]; do
       echo ${WC};
       sleep 20
       ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o yaml
       ${KUBECTL} describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
-      ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[*].status}'
-      WC=$(${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[*].status}' | grep False | wc -l)
+      ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}'
+      WC=$(${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}' | grep False | wc -l)
     done
 }
 

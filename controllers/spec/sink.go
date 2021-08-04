@@ -28,10 +28,15 @@ import (
 
 func MakeSinkHPA(sink *v1alpha1.Sink) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeSinkObjectMeta(sink)
-	if !isDefaultHPAEnabled(sink.Spec.Replicas, sink.Spec.MaxReplicas, sink.Spec.Pod) {
-		return makeHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, sink.Spec.Pod)
+	targetRef := autov2beta2.CrossVersionObjectReference{
+		Kind:       sink.Kind,
+		Name:       sink.Name,
+		APIVersion: sink.APIVersion,
 	}
-	return makeDefaultHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas)
+	if !isDefaultHPAEnabled(sink.Spec.Replicas, sink.Spec.MaxReplicas, sink.Spec.Pod) {
+		return makeHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, sink.Spec.Pod, targetRef)
+	}
+	return makeDefaultHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, targetRef)
 }
 
 func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {

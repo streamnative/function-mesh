@@ -46,7 +46,7 @@ func defaultHPAMetrics() []autov2beta2.MetricSpec {
 	}
 }
 
-func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32) *autov2beta2.HorizontalPodAutoscaler {
+func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2beta2.CrossVersionObjectReference) *autov2beta2.HorizontalPodAutoscaler {
 	return &autov2beta2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "autoscaling/v2beta2",
@@ -54,29 +54,21 @@ func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int3
 		},
 		ObjectMeta: *objectMeta,
 		Spec: autov2beta2.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autov2beta2.CrossVersionObjectReference{
-				Kind:       "StatefulSet",
-				Name:       objectMeta.Name,
-				APIVersion: "apps/v1",
-			},
-			MinReplicas: &minReplicas,
-			MaxReplicas: maxReplicas,
-			Metrics:     defaultHPAMetrics(),
+			ScaleTargetRef: targetRef,
+			MinReplicas:    &minReplicas,
+			MaxReplicas:    maxReplicas,
+			Metrics:        defaultHPAMetrics(),
 		},
 	}
 }
 
-func makeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, podPolicy v1alpha1.PodPolicy) *autov2beta2.HorizontalPodAutoscaler {
+func makeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, podPolicy v1alpha1.PodPolicy, targetRef autov2beta2.CrossVersionObjectReference) *autov2beta2.HorizontalPodAutoscaler {
 	spec := autov2beta2.HorizontalPodAutoscalerSpec{
-		ScaleTargetRef: autov2beta2.CrossVersionObjectReference{
-			Kind:       "StatefulSet",
-			Name:       objectMeta.Name,
-			APIVersion: "apps/v1",
-		},
-		MinReplicas: &minReplicas,
-		MaxReplicas: maxReplicas,
-		Metrics:     podPolicy.AutoScalingMetrics,
-		Behavior:    podPolicy.AutoScalingBehavior,
+		ScaleTargetRef: targetRef,
+		MinReplicas:    &minReplicas,
+		MaxReplicas:    maxReplicas,
+		Metrics:        podPolicy.AutoScalingMetrics,
+		Behavior:       podPolicy.AutoScalingBehavior,
 	}
 	return &autov2beta2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{

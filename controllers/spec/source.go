@@ -28,10 +28,15 @@ import (
 
 func MakeSourceHPA(source *v1alpha1.Source) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeSourceObjectMeta(source)
-	if !isDefaultHPAEnabled(source.Spec.Replicas, source.Spec.MaxReplicas, source.Spec.Pod) {
-		return makeHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, source.Spec.Pod)
+	targetRef := autov2beta2.CrossVersionObjectReference{
+		Kind:       source.Kind,
+		Name:       source.Name,
+		APIVersion: source.APIVersion,
 	}
-	return makeDefaultHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas)
+	if !isDefaultHPAEnabled(source.Spec.Replicas, source.Spec.MaxReplicas, source.Spec.Pod) {
+		return makeHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, source.Spec.Pod, targetRef)
+	}
+	return makeDefaultHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, targetRef)
 }
 
 func MakeSourceService(source *v1alpha1.Source) *corev1.Service {

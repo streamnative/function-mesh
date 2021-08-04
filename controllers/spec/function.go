@@ -28,14 +28,19 @@ import (
 )
 
 // log is for logging in this package.
-var log = logf.Log.WithName("sink-resource")
+var log = logf.Log.WithName("function-resource")
 
 func MakeFunctionHPA(function *v1alpha1.Function) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeFunctionObjectMeta(function)
-	if !isDefaultHPAEnabled(function.Spec.Replicas, function.Spec.MaxReplicas, function.Spec.Pod) {
-		return makeHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, function.Spec.Pod)
+	targetRef := autov2beta2.CrossVersionObjectReference{
+		Kind:       function.Kind,
+		Name:       function.Name,
+		APIVersion: function.APIVersion,
 	}
-	return makeDefaultHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas)
+	if !isDefaultHPAEnabled(function.Spec.Replicas, function.Spec.MaxReplicas, function.Spec.Pod) {
+		return makeHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, function.Spec.Pod, targetRef)
+	}
+	return makeDefaultHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, targetRef)
 }
 
 func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
