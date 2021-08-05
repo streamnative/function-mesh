@@ -161,10 +161,9 @@ public class SourcesUtil {
                 if (functionMeshConnectorDefinition == null) {
                     v1alpha1SourceSpecOutput.setTypeClassName("[B");
                 } else {
-                    if (functionMeshConnectorDefinition.getTypeClassName() == null) {
+                    v1alpha1SourceSpecOutput.setTypeClassName(functionMeshConnectorDefinition.getSourceTypeClassName());
+                    if (StringUtils.isEmpty(v1alpha1SourceSpecOutput.getTypeClassName())) {
                         v1alpha1SourceSpecOutput.setTypeClassName("[B");
-                    } else {
-                        v1alpha1SourceSpecOutput.setTypeClassName(functionMeshConnectorDefinition.getTypeClassName());
                     }
                     // use default schema type if user not provided
                     if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSchemaType())
