@@ -68,6 +68,10 @@ function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
     values=${1:-".ci/clusters/values.yaml"}
     echo $values
+    if [ "$values" = ".ci/clusters/values_mesh_worker_service.yaml" ]; then
+      echo "load mesh-worker-service-integration-pulsar:latest ..."
+      kind load docker-image mesh-worker-service-integration-pulsar:latest --name sn-platform-${CLUSTER_ID}
+    fi
     if [ -d "pulsar-charts" ]; then
       rm -rf pulsar-charts
     fi
@@ -215,4 +219,68 @@ function ci:verify_exclamation_function() {
     return 0
   fi
   return 1
+}
+
+function ci::ensure_mesh_worker_service_role() {
+  ${KUBECTL} apply -f ${FUNCTION_MESH_HOME}/config/rbac/role.yaml
+  ${KUBECTL} create clusterrolebinding broker-acct-manager-role-binding --clusterrole=manager-role --serviceaccount=default:sn-platform-pulsar-broker-acct
+}
+
+function ci::ensure_function_mesh_config() {
+  ${KUBECTL} apply -f ${FUNCTION_MESH_HOME}/.ci/clusters/mesh_worker_service_integration_test_pulsar_config.yaml
+}
+
+function ci::verify_mesh_worker_service_pulsar_admin() {
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks available-sinks
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks available-sinks)
+  if [[ $RET != *"data-generator"* ]]; then
+   return 1
+  fi
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources available-sources
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources available-sources)
+  if [[ $RET != *"data-generator"* ]]; then
+   return 1
+  fi
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources create --name data-generator-source --source-type data-generator --destination-topic-name persistent://public/default/random-data-topic --custom-runtime-options '{"outputTypeClassName": "org.apache.pulsar.io.datagenerator.Person"}' --source-config '{"sleepBetweenMessages": "1000"}')
+  echo $RET
+  if [[ $RET != *"successfully"* ]]; then
+   return 1
+  fi
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks create --name data-generator-sink --sink-type data-generator --inputs persistent://public/default/random-data-topic --custom-runtime-options '{"inputTypeClassName": "org.apache.pulsar.io.datagenerator.Person"}')
+  echo $RET
+  if [[ $RET != *"successfully"* ]]; then
+   return 1
+  fi
+  ${KUBECTL} get pods -n ${NAMESPACE}
+  sleep 120
+  WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-sink" | wc -l)
+  while [[ ${WC} -lt 1 ]]; do
+    echo ${WC};
+    sleep 20
+    ${KUBECTL} get pods -n ${NAMESPACE}
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-sink" | wc -l)
+  done
+  WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-source" | wc -l)
+  while [[ ${WC} -lt 1 ]]; do
+    echo ${WC};
+    sleep 20
+    ${KUBECTL} get pods -n ${NAMESPACE}
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-source" | wc -l)
+  done
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks status --name data-generator-sink
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks status --name data-generator-sink)
+  if [[ $RET != *"true"* ]]; then
+   return 1
+  fi
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources status --name data-generator-source
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources status --name data-generator-source)
+  if [[ $RET != *"true"* ]]; then
+   return 1
+  fi
+  ${KUBECTL} get pods -n ${NAMESPACE}
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources delete --name data-generator-source)
+  echo $RET
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks delete --name data-generator-sink)
+  echo $RET
+  ${KUBECTL} get pods -n ${NAMESPACE}
 }
