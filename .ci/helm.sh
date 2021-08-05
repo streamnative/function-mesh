@@ -299,6 +299,8 @@ function ci::verify_mesh_worker_service_pulsar_admin() {
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources status --name data-generator-source
   RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources status --name data-generator-source)
   if [[ $RET != *"true"* ]]; then
+    ${KUBECTL} logs -n ${NAMESPACE} data-generator-source-69865103-source-0
+    ${KUBECTL} get pods data-generator-source-69865103-source-0 -o yaml
    return 1
   fi
   ${KUBECTL} get pods -n ${NAMESPACE}
