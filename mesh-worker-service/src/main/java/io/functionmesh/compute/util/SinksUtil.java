@@ -161,10 +161,9 @@ public class SinksUtil {
                 if (functionMeshConnectorDefinition == null) {
                     v1alpha1SinkSpecInput.setTypeClassName("[B");
                 } else {
-                    if (functionMeshConnectorDefinition.getTypeClassName() == null) {
+                    v1alpha1SinkSpecInput.setTypeClassName(functionMeshConnectorDefinition.getSinkTypeClassName());
+                    if (StringUtils.isEmpty(v1alpha1SinkSpecInput.getTypeClassName())) {
                         v1alpha1SinkSpecInput.setTypeClassName("[B");
-                    } else {
-                        v1alpha1SinkSpecInput.setTypeClassName(functionMeshConnectorDefinition.getTypeClassName());
                     }
                     // we only handle user provide --inputs but also with defaultSchemaType defined
                     if (sinkConfig.getInputs() != null && sinkConfig.getInputs().size() > 0) {
