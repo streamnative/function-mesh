@@ -20,6 +20,7 @@ package io.functionmesh.compute.models;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.common.io.ConnectorDefinition;
 
 @Data
@@ -58,10 +59,22 @@ public class FunctionMeshConnectorDefinition extends ConnectorDefinition {
     private String imageTag;
 
     /**
-     * Type name of the connector or function
+     * Type class name of the connector or function
      * If not set, the default value '[B' will be used
      */
     private String typeClassName;
+
+    /**
+     * Type class name of the source connector
+     * If not set, will inherit the value from typeClassName
+     */
+    private String sourceTypeClassName;
+
+    /**
+     * Type class name of the sink connector
+     * If not set, will inherit the value from typeClassName
+     */
+    private String sinkTypeClassName;
 
     /**
      * Default schema type of the connector's topic, optional.
@@ -80,5 +93,25 @@ public class FunctionMeshConnectorDefinition extends ConnectorDefinition {
 
     public String getJar() {
         return String.format("connectors/%s-%s.nar", id, version);
+    }
+
+    public String getSourceTypeClassName() {
+        if (StringUtils.isNotBlank(sourceTypeClassName)) {
+            return sourceTypeClassName;
+        } else if (StringUtils.isNotBlank(typeClassName)) {
+            return typeClassName;
+        } else {
+            return "[B";
+        }
+    }
+
+    public String getSinkTypeClassName() {
+        if (StringUtils.isNotBlank(sinkTypeClassName)) {
+            return sinkTypeClassName;
+        } else if (StringUtils.isNotBlank(typeClassName)) {
+            return typeClassName;
+        } else {
+            return "[B";
+        }
     }
 }
