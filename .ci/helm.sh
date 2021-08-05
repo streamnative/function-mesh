@@ -232,11 +232,41 @@ function ci::ensure_function_mesh_config() {
 
 function ci::verify_mesh_worker_service_pulsar_admin() {
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks available-sinks
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks available-sinks)
+  if [[ $RET != *"data-generator"* ]]; then
+   return 1
+  fi
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources available-sources
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources available-sources)
+  if [[ $RET != *"data-generator"* ]]; then
+   return 1
+  fi
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources create --name data-generator-source --source-type data-generator --destination-topic-name persistent://public/default/random-data-topic --custom-runtime-options '{"outputTypeClassName": "org.apache.pulsar.io.datagenerator.Person"}' --source-config '{"sleepBetweenMessages": "1000"}'
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources create --name data-generator-source --source-type data-generator --destination-topic-name persistent://public/default/random-data-topic --custom-runtime-options '{"outputTypeClassName": "org.apache.pulsar.io.datagenerator.Person"}' --source-config '{"sleepBetweenMessages": "1000"}')
+  if [[ $RET != *"successfully"* ]]; then
+   return 1
+  fi
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks create --name data-generator-sink --sink-type data-generator --inputs persistent://public/default/random-data-topic --custom-runtime-options '{"inputTypeClassName": "org.apache.pulsar.io.datagenerator.Person"}'
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks create --name data-generator-sink --sink-type data-generator --inputs persistent://public/default/random-data-topic --custom-runtime-options '{"inputTypeClassName": "org.apache.pulsar.io.datagenerator.Person"}')
+  if [[ $RET != *"successfully"* ]]; then
+   return 1
+  fi
   ${KUBECTL} get pods -n ${NAMESPACE}
   sleep 120
+  WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-sink" | wc -l)
+  while [[ ${WC} -lt 1 ]]; do
+    echo ${WC};
+    sleep 20
+    ${KUBECTL} get pods -n ${NAMESPACE}
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-sink" | wc -l)
+  done
+  WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-source" | wc -l)
+  while [[ ${WC} -lt 1 ]]; do
+    echo ${WC};
+    sleep 20
+    ${KUBECTL} get pods -n ${NAMESPACE}
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-source" | wc -l)
+  done
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks status --name data-generator-sink
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources status --name data-generator-source
   ${KUBECTL} get pods -n ${NAMESPACE}
