@@ -425,7 +425,7 @@ func generateResource(resources corev1.ResourceList) *proto.Resources {
 
 func getUserConfig(configs *v1alpha1.Config) string {
 	if configs == nil {
-		return "{}"
+		return ""
 	}
 	// validated in admission web hook
 	bytes, _ := json.Marshal(configs)
