@@ -213,7 +213,7 @@ public class SourcesUtil {
 
         v1alpha1SourceSpec.setClusterName(clusterName);
 
-        v1alpha1SourceSpec.setSourceConfig(CommonUtil.transformedMapValueToString(sourceConfig.getConfigs()));
+        v1alpha1SourceSpec.setSourceConfig(sourceConfig.getConfigs());
 
         v1alpha1Source.setSpec(v1alpha1SourceSpec);
 
@@ -284,7 +284,7 @@ public class SourcesUtil {
         }
 
         if (v1alpha1SourceSpec.getSourceConfig() != null) {
-            sourceConfig.setConfigs(new HashMap<>(v1alpha1SourceSpec.getSourceConfig()));
+            sourceConfig.setConfigs((Map<String, Object>) v1alpha1SourceSpec.getSourceConfig());
         }
 
         // TODO: secretsMap
@@ -303,7 +303,6 @@ public class SourcesUtil {
         if (Strings.isNotEmpty(v1alpha1SourceSpec.getRuntimeFlags())) {
             sourceConfig.setRuntimeFlags(v1alpha1SourceSpec.getRuntimeFlags());
         }
-
 
         if (v1alpha1SourceSpec.getJava() != null && Strings.isNotEmpty(v1alpha1SourceSpec.getJava().getJar())) {
             sourceConfig.setArchive(v1alpha1SourceSpec.getJava().getJar());
@@ -365,7 +364,6 @@ public class SourcesUtil {
             systemExceptionInformationList.add(exceptionInformation);
         }
         instanceStatusData.setLatestSystemExceptions(systemExceptionInformationList);
-
 
         instanceStatusData.setNumWritten(functionStatus.getNumSuccessfullyProcessed());
         instanceStatusData.setLastReceivedTime(functionStatus.getLastInvocationTime());

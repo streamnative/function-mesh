@@ -42,7 +42,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static io.functionmesh.compute.util.KubernetesUtils.GRPC_TIMEOUT_SECS;
 
@@ -134,20 +133,6 @@ public class CommonUtil {
                 return FunctionConfig.ProcessingGuarantees.EFFECTIVELY_ONCE;
         }
         return null;
-    }
-
-    public static Map<String, String> transformedMapValueToString(Map<String, Object> map) {
-        if (map == null) {
-            return null;
-        }
-        return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())));
-    }
-
-    public static Map<String, Object> transformedMapValueToObject(Map<String, String> map) {
-        if (map == null) {
-            return null;
-        }
-        return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     // Return a CustomRuntimeOption if a json string is provided, otherwise an empty object is returned

@@ -222,10 +222,10 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 }
 
 func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
-	configs, _ := json.Marshal(source.Spec.SourceConfig)
+	configs := getUserConfig(source.Spec.SourceConfig)
 	return &proto.SourceSpec{
 		ClassName:     source.Spec.ClassName,
-		Configs:       string(configs), // TODO handle batch source
+		Configs:       configs, // TODO handle batch source
 		TypeClassName: source.Spec.Output.TypeClassName,
 	}
 }
@@ -298,10 +298,10 @@ func getSubscriptionType(retainOrdering bool, processingGuarantee v1alpha1.Proce
 }
 
 func generateSinkOutputSpec(sink *v1alpha1.Sink) *proto.SinkSpec {
-	configs, _ := json.Marshal(sink.Spec.SinkConfig)
+	configs := getUserConfig(sink.Spec.SinkConfig)
 	return &proto.SinkSpec{
 		ClassName:     sink.Spec.ClassName,
-		Configs:       string(configs),
+		Configs:       configs,
 		TypeClassName: sink.Spec.Input.TypeClassName,
 	}
 }

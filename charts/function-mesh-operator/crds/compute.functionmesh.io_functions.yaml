@@ -45,9 +45,8 @@ spec:
             forwardSourceMessageProperty:
               type: boolean
             funcConfig:
-              additionalProperties:
-                type: string
               type: object
+              x-kubernetes-preserve-unknown-fields: true
             golang:
               properties:
                 go:

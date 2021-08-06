@@ -126,8 +126,6 @@ public class SinksUtil {
             extractedSinkDetails.setSinkClassName(sinkConfig.getClassName());
         }
 
-
-
         V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
 
         for (Map.Entry<String, Function.ConsumerSpec> inputSpecs : functionDetails.getSource().getInputSpecsMap().entrySet()) {
@@ -260,7 +258,7 @@ public class SinksUtil {
 
         v1alpha1SinkSpec.setClusterName(clusterName);
 
-        v1alpha1SinkSpec.setSinkConfig(CommonUtil.transformedMapValueToString(sinkConfig.getConfigs()));
+        v1alpha1SinkSpec.setSinkConfig(sinkConfig.getConfigs());
 
         v1alpha1Sink.setSpec(v1alpha1SinkSpec);
 
@@ -376,7 +374,7 @@ public class SinksUtil {
         }
         sinkConfig.setClassName(v1alpha1SinkSpec.getClassName());
         if (v1alpha1SinkSpec.getSinkConfig() != null) {
-            sinkConfig.setConfigs(new HashMap<>(v1alpha1SinkSpec.getSinkConfig()));
+            sinkConfig.setConfigs((Map<String, Object>) v1alpha1SinkSpec.getSinkConfig());
         }
         // TODO: secretsMap
 

@@ -100,12 +100,13 @@ func main() {
 							topics = append(topics, k)
 						}
 					}
-					funcConfig := make(map[string]string)
+					funcConfig := make(map[string]interface{})
 					for key, value := range functionConfig.UserConfig {
 						strKey := fmt.Sprintf("%v", key)
 						strValue := fmt.Sprintf("%v", value)
 						funcConfig[strKey] = strValue
 					}
+					funcConfigData := v1alpha1.NewConfig(funcConfig)
 					maxMessageRetry := int32(0)
 					if functionConfig.MaxMessageRetries != nil {
 						maxMessageRetry = int32(*functionConfig.MaxMessageRetries)
@@ -150,7 +151,7 @@ func main() {
 								corev1.ResourceMemory: resource.MustParse(fmt.Sprintf("%d", functionConfig.Resources.RAM/1024/1024/1024)),
 							},
 						},
-						FuncConfig:      funcConfig,
+						FuncConfig:      &funcConfigData,
 						MaxMessageRetry: maxMessageRetry,
 					}
 					if functionConfig.ProcessingGuarantees != "" {

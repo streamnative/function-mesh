@@ -29,15 +29,18 @@ import (
 type SourceSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name                string                      `json:"name,omitempty"`
-	ClassName           string                      `json:"className,omitempty"`
-	Tenant              string                      `json:"tenant,omitempty"`
-	ClusterName         string                      `json:"clusterName,omitempty"`
-	SourceType          string                      `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
-	Replicas            *int32                      `json:"replicas,omitempty"`
-	MaxReplicas         *int32                      `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Output              OutputConf                  `json:"output,omitempty"`
-	SourceConfig        map[string]string           `json:"sourceConfig,omitempty"`
+	Name        string     `json:"name,omitempty"`
+	ClassName   string     `json:"className,omitempty"`
+	Tenant      string     `json:"tenant,omitempty"`
+	ClusterName string     `json:"clusterName,omitempty"`
+	SourceType  string     `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
+	Replicas    *int32     `json:"replicas,omitempty"`
+	MaxReplicas *int32     `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
+	Output      OutputConf `json:"output,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
+	SourceConfig        *Config                     `json:"sourceConfig,omitempty"`
 	Resources           corev1.ResourceRequirements `json:"resources,omitempty"`
 	SecretsMap          map[string]SecretRef        `json:"secretsMap,omitempty"`
 	ProcessingGuarantee ProcessGuarantee            `json:"processingGuarantee,omitempty"`

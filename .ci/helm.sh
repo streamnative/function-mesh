@@ -283,4 +283,29 @@ function ci::verify_mesh_worker_service_pulsar_admin() {
   RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks delete --name data-generator-sink)
   echo $RET
   ${KUBECTL} get pods -n ${NAMESPACE}
+  echo " === verify mesh worker service with empty connector config"
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources create --name data-generator-source --source-type data-generator --destination-topic-name persistent://public/default/random-data-topic --custom-runtime-options '{"outputTypeClassName": "org.apache.pulsar.io.datagenerator.Person"}')
+  echo $RET
+  if [[ $RET != *"successfully"* ]]; then
+   return 1
+  fi
+  WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-source" | wc -l)
+  while [[ ${WC} -lt 1 ]]; do
+    echo ${WC};
+    sleep 20
+    ${KUBECTL} get pods -n ${NAMESPACE}
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-source" | wc -l)
+  done
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources status --name data-generator-source
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources status --name data-generator-source)
+  if [[ $RET != *"true"* ]]; then
+    ${KUBECTL} logs -n ${NAMESPACE} data-generator-source-69865103-source-0
+    ${KUBECTL} get pods data-generator-source-69865103-source-0 -o yaml
+   return 1
+  fi
+  ${KUBECTL} get pods -n ${NAMESPACE}
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sources delete --name data-generator-source)
+  echo $RET
+  ${KUBECTL} get pods -n ${NAMESPACE}
+
 }
