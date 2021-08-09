@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+
 - id: pulsar-io-data-generator
   name: data-generator
   description: Test data generator connector

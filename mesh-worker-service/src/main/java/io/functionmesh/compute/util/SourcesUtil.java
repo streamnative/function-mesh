@@ -131,6 +131,7 @@ public class SourcesUtil {
         if (Strings.isNotEmpty(functionDetails.getSink().getSchemaType())) {
             v1alpha1SourceSpecOutput.setSinkSchemaType(functionDetails.getSink().getSchemaType());
         }
+        v1alpha1SourceSpec.setForwardSourceMessageProperty(functionDetails.getSink().getForwardSourceMessageProperty());
         // process ProducerConf
         V1alpha1SourceSpecOutputProducerConf v1alpha1SourceSpecOutputProducerConf
                 = new V1alpha1SourceSpecOutputProducerConf();
