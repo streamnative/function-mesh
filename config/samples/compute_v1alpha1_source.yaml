@@ -13,6 +13,7 @@ spec:
       useThreadLocalProducers: true
     topic: persistent://public/default/destination
     typeClassName: org.apache.pulsar.common.schema.KeyValue
+  forwardSourceMessageProperty: true
   resources:
     limits:
       cpu: "0.2"

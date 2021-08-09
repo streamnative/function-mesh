@@ -246,11 +246,12 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 		}
 	}
 	return &proto.SinkSpec{
-		TypeClassName:  source.Spec.Output.TypeClassName,
-		Topic:          source.Spec.Output.Topic,
-		ProducerSpec:   &producerSpec,
-		SerDeClassName: source.Spec.Output.SinkSerdeClassName,
-		SchemaType:     source.Spec.Output.SinkSchemaType,
+		TypeClassName:                source.Spec.Output.TypeClassName,
+		Topic:                        source.Spec.Output.Topic,
+		ProducerSpec:                 &producerSpec,
+		SerDeClassName:               source.Spec.Output.SinkSerdeClassName,
+		SchemaType:                   source.Spec.Output.SinkSchemaType,
+		ForwardSourceMessageProperty: *source.Spec.ForwardSourceMessageProperty,
 	}
 }
 

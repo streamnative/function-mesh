@@ -82,6 +82,11 @@ func (r *Source) Default() {
 		}
 	}
 
+	if r.Spec.ForwardSourceMessageProperty == nil {
+		trueVal := true
+		r.Spec.ForwardSourceMessageProperty = &trueVal
+	}
+
 	if r.Spec.Output.ProducerConf == nil {
 		producerConf := &ProducerConfig{
 			MaxPendingMessages:                 1000,

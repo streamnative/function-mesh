@@ -930,6 +930,11 @@ func (in *SourceSpec) DeepCopyInto(out *SourceSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.ForwardSourceMessageProperty != nil {
+		in, out := &in.ForwardSourceMessageProperty, &out.ForwardSourceMessageProperty
+		*out = new(bool)
+		**out = **in
+	}
 	in.Pod.DeepCopyInto(&out.Pod)
 	in.Messaging.DeepCopyInto(&out.Messaging)
 	in.Runtime.DeepCopyInto(&out.Runtime)
