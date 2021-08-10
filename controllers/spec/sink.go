@@ -18,6 +18,8 @@
 package spec
 
 import (
+	"encoding/json"
+
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -49,13 +51,25 @@ func MakeSinkServiceName(sink *v1alpha1.Sink) string {
 }
 
 func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
+	annotations := make(map[string]string, 1)
+	annotations[AnnotationFunctionMeshConfigsChecksum] = MakeSinkConfigsChecksums(sink.Spec)
 	return &metav1.ObjectMeta{
 		Name:      makeJobName(sink.Name, v1alpha1.SinkComponent),
 		Namespace: sink.Namespace,
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(sink, sink.GroupVersionKind()),
 		},
+		Annotations: annotations,
 	}
+}
+
+func MakeSinkConfigsChecksums(spec v1alpha1.SinkSpec) string {
+	buf, err := json.Marshal(spec)
+	if err != nil {
+		log.Error(err, "MakeSinkConfigsChecksums failed", "spec", spec)
+		return ""
+	}
+	return makeSpecConfigsChecksums(buf)
 }
 
 func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {

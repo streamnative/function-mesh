@@ -33,15 +33,12 @@ import (
 
 func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req ctrl.Request,
 	function *v1alpha1.Function) error {
-	condition, ok := function.Status.Conditions[v1alpha1.StatefulSet]
-	if !ok {
-		function.Status.Conditions[v1alpha1.StatefulSet] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.StatefulSetReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
-		return nil
+	condition := v1alpha1.ResourceCondition{
+		Condition: v1alpha1.StatefulSetReady,
+		Status:    metav1.ConditionFalse,
+		Action:    v1alpha1.NoAction,
 	}
+	expectedChecksum := spec.MakeFunctionConfigsChecksums(function.Spec)
 
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
@@ -51,10 +48,28 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 	if err != nil {
 		if errors.IsNotFound(err) {
 			r.Log.Info("function is not ready yet...")
+			condition.Action = v1alpha1.Create
+			function.Status.Conditions[v1alpha1.StatefulSet] = condition
 			return nil
 		}
+		function.Status.Conditions[v1alpha1.StatefulSet] = condition
 		return err
 	}
+
+	// statefulset created, waiting it to be ready
+	condition.Action = v1alpha1.Wait
+
+	if checksum, has := statefulSet.Annotations[spec.AnnotationFunctionMeshConfigsChecksum]; *statefulSet.Spec.Replicas != *function.Spec.Replicas ||
+		(!has || checksum != expectedChecksum) {
+		condition.Action = v1alpha1.Update
+	}
+
+	if checksum, has := statefulSet.Annotations[spec.AnnotationFunctionMeshConfigsChecksum]; statefulSet.Status.ReadyReplicas == *function.Spec.Replicas && has && checksum == expectedChecksum {
+		condition.Status = metav1.ConditionTrue
+	}
+
+	function.Status.Replicas = statefulSet.Status.Replicas
+	function.Status.Conditions[v1alpha1.StatefulSet] = condition
 
 	selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
 	if err != nil {
@@ -62,23 +77,6 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 		return err
 	}
 	function.Status.Selector = selector.String()
-
-	if *statefulSet.Spec.Replicas != *function.Spec.Replicas {
-		condition.Status = metav1.ConditionFalse
-		condition.Action = v1alpha1.Update
-		function.Status.Conditions[v1alpha1.StatefulSet] = condition
-		return nil
-	}
-
-	if statefulSet.Status.ReadyReplicas == *function.Spec.Replicas {
-		condition.Action = v1alpha1.NoAction
-		condition.Status = metav1.ConditionTrue
-	} else {
-		condition.Action = v1alpha1.Wait
-	}
-	function.Status.Replicas = *statefulSet.Spec.Replicas
-	function.Status.Conditions[v1alpha1.StatefulSet] = condition
-
 	return nil
 }
 

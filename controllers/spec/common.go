@@ -20,6 +20,7 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"strconv"
 	"strings"
 	"time"
@@ -57,6 +58,8 @@ const (
 	AnnotationPrometheusPort   = "prometheus.io/port"
 
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
+
+	AnnotationFunctionMeshConfigsChecksum = "compute.functionmesh.io/configs-checksum"
 )
 
 var GRPCPort = corev1.ContainerPort{
@@ -639,4 +642,10 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 		return DefaultJavaRunnerImage
 	}
 	return DefaultRunnerImage
+}
+
+func makeSpecConfigsChecksums(buf []byte) string {
+	h := fnv.New64()
+	h.Write(buf)
+	return fmt.Sprintf("%X", h.Sum(nil))
 }

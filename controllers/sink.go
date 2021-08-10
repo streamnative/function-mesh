@@ -37,6 +37,7 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 		Status:    metav1.ConditionFalse,
 		Action:    v1alpha1.NoAction,
 	}
+	expectedChecksum := spec.MakeSinkConfigsChecksums(sink.Spec)
 
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
@@ -58,11 +59,12 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 	// statefulset created, waiting it to be ready
 	condition.Action = v1alpha1.Wait
 
-	if *statefulSet.Spec.Replicas != *sink.Spec.Replicas {
+	if checksum, has := statefulSet.Annotations[spec.AnnotationFunctionMeshConfigsChecksum]; *statefulSet.Spec.Replicas != *sink.Spec.Replicas ||
+		(!has || checksum != expectedChecksum) {
 		condition.Action = v1alpha1.Update
 	}
 
-	if statefulSet.Status.ReadyReplicas == *sink.Spec.Replicas {
+	if checksum, has := statefulSet.Annotations[spec.AnnotationFunctionMeshConfigsChecksum]; statefulSet.Status.ReadyReplicas == *sink.Spec.Replicas && has && checksum == expectedChecksum {
 		condition.Status = metav1.ConditionTrue
 	}
 

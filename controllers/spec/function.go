@@ -18,6 +18,8 @@
 package spec
 
 import (
+	"encoding/json"
+
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -48,13 +50,25 @@ func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 }
 
 func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
+	annotations := make(map[string]string, 1)
+	annotations[AnnotationFunctionMeshConfigsChecksum] = MakeFunctionConfigsChecksums(function.Spec)
 	return &metav1.ObjectMeta{
 		Name:      makeJobName(function.Name, v1alpha1.FunctionComponent),
 		Namespace: function.Namespace,
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(function, function.GroupVersionKind()),
 		},
+		Annotations: annotations,
 	}
+}
+
+func MakeFunctionConfigsChecksums(spec v1alpha1.FunctionSpec) string {
+	buf, err := json.Marshal(spec)
+	if err != nil {
+		log.Error(err, "MakeFunctionConfigsChecksums failed", "spec", spec)
+		return ""
+	}
+	return makeSpecConfigsChecksums(buf)
 }
 
 func makeFunctionVolumes(function *v1alpha1.Function) []corev1.Volume {

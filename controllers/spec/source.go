@@ -18,6 +18,8 @@
 package spec
 
 import (
+	"encoding/json"
+
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -44,13 +46,25 @@ func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
 }
 
 func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {
+	annotations := make(map[string]string, 1)
+	annotations[AnnotationFunctionMeshConfigsChecksum] = MakeSourceConfigsChecksums(source.Spec)
 	return &metav1.ObjectMeta{
 		Name:      makeJobName(source.Name, v1alpha1.SourceComponent),
 		Namespace: source.Namespace,
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(source, source.GroupVersionKind()),
 		},
+		Annotations: annotations,
 	}
+}
+
+func MakeSourceConfigsChecksums(spec v1alpha1.SourceSpec) string {
+	buf, err := json.Marshal(spec)
+	if err != nil {
+		log.Error(err, "MakeSourceConfigsChecksums failed", "spec", spec)
+		return ""
+	}
+	return makeSpecConfigsChecksums(buf)
 }
 
 func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
