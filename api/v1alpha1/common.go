@@ -95,6 +95,10 @@ type PodPolicy struct {
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
+	// BuiltinAutoscaler refers to the built-in autoscaling rules
+	// +optional
+	BuiltinAutoscaler BuiltinAutoScaler `json:"builtinAutoscaler,omitempty"`
+
 	// AutoScalingMetrics contains the specifications for which to use to calculate the
 	// desired replica count (the maximum replica count across all metrics will
 	// be used).
