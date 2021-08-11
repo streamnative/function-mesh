@@ -36,6 +36,8 @@ spec:
               type: string
             clusterName:
               type: string
+            forwardSourceMessageProperty:
+              type: boolean
             golang:
               properties:
                 go:
