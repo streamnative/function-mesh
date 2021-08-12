@@ -20,6 +20,7 @@ package controllers
 import (
 	"context"
 	"reflect"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
