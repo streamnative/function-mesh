@@ -96,8 +96,11 @@ type PodPolicy struct {
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
 	// BuiltinAutoscaler refers to the built-in autoscaling rules
+	// Available values: AverageUtilizationCPUPercent80, AverageUtilizationCPUPercent50, AverageUtilizationCPUPercent20
+	// AverageUtilizationMemoryPercent80, AverageUtilizationMemoryPercent50, AverageUtilizationMemoryPercent20
 	// +optional
-	BuiltinAutoscaler BuiltinAutoScaler `json:"builtinAutoscaler,omitempty"`
+	// TODO: validate the rules, user may provide duplicate rules, should check with webhook
+	BuiltinAutoscaler []BuiltinHPARule `json:"builtinAutoscaler,omitempty"`
 
 	// AutoScalingMetrics contains the specifications for which to use to calculate the
 	// desired replica count (the maximum replica count across all metrics will

@@ -33,7 +33,9 @@ func MakeSourceHPA(source *v1alpha1.Source) *autov2beta2.HorizontalPodAutoscaler
 		Name:       source.Name,
 		APIVersion: source.APIVersion,
 	}
-	if !isDefaultHPAEnabled(source.Spec.Replicas, source.Spec.MaxReplicas, source.Spec.Pod) {
+	if isBuiltinHPAEnabled(source.Spec.Replicas, source.Spec.MaxReplicas, source.Spec.Pod) {
+		return makeBuiltinHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, targetRef, source.Spec.Pod.BuiltinAutoscaler)
+	} else if !isDefaultHPAEnabled(source.Spec.Replicas, source.Spec.MaxReplicas, source.Spec.Pod) {
 		return makeHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, source.Spec.Pod, targetRef)
 	}
 	return makeDefaultHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, targetRef)

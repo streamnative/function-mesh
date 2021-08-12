@@ -1,10 +1,13 @@
 package v1alpha1
 
-type BuiltinAutoScaler struct {
-	Type string `json:"type,omitempty"`
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Config *Config `json:"config,omitempty"`
-}
+type BuiltinHPARule string
 
-type
+const (
+	AverageUtilizationCPUPercent80 BuiltinHPARule = "AverageUtilizationCPUPercent80"
+	AverageUtilizationCPUPercent50 BuiltinHPARule = "AverageUtilizationCPUPercent50"
+	AverageUtilizationCPUPercent20 BuiltinHPARule = "AverageUtilizationCPUPercent20"
+
+	AverageUtilizationMemoryPercent80 BuiltinHPARule = "AverageUtilizationMemoryPercent80"
+	AverageUtilizationMemoryPercent50 BuiltinHPARule = "AverageUtilizationMemoryPercent50"
+	AverageUtilizationMemoryPercent20 BuiltinHPARule = "AverageUtilizationMemoryPercent20"
+)

@@ -104,3 +104,13 @@ jobs:
         run: |
           .ci/verify_function_mesh.sh compute_v1alpha1_function_hpa
           kubectl delete -f .ci/clusters/compute_v1alpha1_function_hpa.yaml
+
+      - name: Test Function Builtin HPA
+        run: |
+          kubectl apply -f .ci/clusters/compute_v1alpha1_function_builtin_hpa.yaml
+          kubectl get all
+
+      - name: Verify Function Builtin HPA
+        run: |
+          .ci/verify_function_mesh.sh compute_v1alpha1_function_builtin_hpa
+          kubectl delete -f .ci/clusters/compute_v1alpha1_function_builtin_hpa.yaml

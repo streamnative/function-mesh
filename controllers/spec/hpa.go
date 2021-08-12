@@ -24,14 +24,42 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func isDefaultHPAEnabled(minReplicas, maxReplicas *int32, podPolicy v1alpha1.PodPolicy) bool {
-	return minReplicas != nil && maxReplicas != nil && podPolicy.AutoScalingBehavior == nil && len(podPolicy.AutoScalingMetrics) == 0 && *maxReplicas > *minReplicas
+type BuiltinAutoScaler interface {
+	metrics() []autov2beta2.MetricSpec
 }
 
-// defaultHPAMetrics generates a default HPA metrics settings based on CPU usage and utilized on 80%.
-func defaultHPAMetrics() []autov2beta2.MetricSpec {
-	// TODO: configurable cpu percentage
-	cpuPercentage := int32(80)
+func isDefaultHPAEnabled(minReplicas, maxReplicas *int32, podPolicy v1alpha1.PodPolicy) bool {
+	return minReplicas != nil && maxReplicas != nil && podPolicy.AutoScalingBehavior == nil && len(podPolicy.AutoScalingMetrics) == 0 && len(podPolicy.BuiltinAutoscaler) == 0 && *maxReplicas > *minReplicas
+}
+
+func isBuiltinHPAEnabled(minReplicas, maxReplicas *int32, podPolicy v1alpha1.PodPolicy) bool {
+	return minReplicas != nil && maxReplicas != nil && podPolicy.AutoScalingBehavior == nil && len(podPolicy.AutoScalingMetrics) == 0 && len(podPolicy.BuiltinAutoscaler) > 0 && *maxReplicas > *minReplicas
+}
+
+type HPARuleAverageUtilizationCPUPercent struct {
+	cpuPercentage int32
+}
+
+type HPARuleAverageUtilizationResourceMemoryPercent struct {
+	memoryPercentage int32
+}
+
+func (H *HPARuleAverageUtilizationResourceMemoryPercent) metrics() []autov2beta2.MetricSpec {
+	return []autov2beta2.MetricSpec{
+		{
+			Type: autov2beta2.ResourceMetricSourceType,
+			Resource: &autov2beta2.ResourceMetricSource{
+				Name: corev1.ResourceMemory,
+				Target: autov2beta2.MetricTarget{
+					Type:               autov2beta2.UtilizationMetricType,
+					AverageUtilization: &H.memoryPercentage,
+				},
+			},
+		},
+	}
+}
+
+func (H *HPARuleAverageUtilizationCPUPercent) metrics() []autov2beta2.MetricSpec {
 	return []autov2beta2.MetricSpec{
 		{
 			Type: autov2beta2.ResourceMetricSourceType,
@@ -39,11 +67,47 @@ func defaultHPAMetrics() []autov2beta2.MetricSpec {
 				Name: corev1.ResourceCPU,
 				Target: autov2beta2.MetricTarget{
 					Type:               autov2beta2.UtilizationMetricType,
-					AverageUtilization: &cpuPercentage,
+					AverageUtilization: &H.cpuPercentage,
 				},
 			},
 		},
 	}
+}
+
+func NewHPARuleAverageUtilizationCPUPercent(cpuPercentage int32) BuiltinAutoScaler {
+	return &HPARuleAverageUtilizationCPUPercent{
+		cpuPercentage: cpuPercentage,
+	}
+}
+
+func NewHPARuleAverageUtilizationMemoryPercent(memoryPercentage int32) BuiltinAutoScaler {
+	return &HPARuleAverageUtilizationResourceMemoryPercent{
+		memoryPercentage: memoryPercentage,
+	}
+}
+
+func GetBuiltinAutoScaler(builtinRule v1alpha1.BuiltinHPARule) BuiltinAutoScaler {
+	switch builtinRule {
+	case v1alpha1.AverageUtilizationCPUPercent80:
+		return NewHPARuleAverageUtilizationCPUPercent(80)
+	case v1alpha1.AverageUtilizationCPUPercent50:
+		return NewHPARuleAverageUtilizationCPUPercent(50)
+	case v1alpha1.AverageUtilizationCPUPercent20:
+		return NewHPARuleAverageUtilizationCPUPercent(20)
+	case v1alpha1.AverageUtilizationMemoryPercent80:
+		return NewHPARuleAverageUtilizationMemoryPercent(80)
+	case v1alpha1.AverageUtilizationMemoryPercent50:
+		return NewHPARuleAverageUtilizationMemoryPercent(50)
+	case v1alpha1.AverageUtilizationMemoryPercent20:
+		return NewHPARuleAverageUtilizationMemoryPercent(20)
+	default:
+		return nil
+	}
+}
+
+// defaultHPAMetrics generates a default HPA metrics settings based on CPU usage and utilized on 80%.
+func defaultHPAMetrics() []autov2beta2.MetricSpec {
+	return NewHPARuleAverageUtilizationCPUPercent(80).metrics()
 }
 
 func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2beta2.CrossVersionObjectReference) *autov2beta2.HorizontalPodAutoscaler {
@@ -58,6 +122,29 @@ func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int3
 			MinReplicas:    &minReplicas,
 			MaxReplicas:    maxReplicas,
 			Metrics:        defaultHPAMetrics(),
+		},
+	}
+}
+
+func makeBuiltinHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2beta2.CrossVersionObjectReference, builtinRules []v1alpha1.BuiltinHPARule) *autov2beta2.HorizontalPodAutoscaler {
+	metrics := []autov2beta2.MetricSpec{}
+	for _, r := range builtinRules {
+		s := GetBuiltinAutoScaler(r)
+		if s != nil {
+			metrics = append(metrics, s.metrics()...)
+		}
+	}
+	return &autov2beta2.HorizontalPodAutoscaler{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "autoscaling/v2beta2",
+			Kind:       "HorizontalPodAutoscaler",
+		},
+		ObjectMeta: *objectMeta,
+		Spec: autov2beta2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: targetRef,
+			MinReplicas:    &minReplicas,
+			MaxReplicas:    maxReplicas,
+			Metrics:        metrics,
 		},
 	}
 }

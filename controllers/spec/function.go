@@ -37,7 +37,9 @@ func MakeFunctionHPA(function *v1alpha1.Function) *autov2beta2.HorizontalPodAuto
 		Name:       function.Name,
 		APIVersion: function.APIVersion,
 	}
-	if !isDefaultHPAEnabled(function.Spec.Replicas, function.Spec.MaxReplicas, function.Spec.Pod) {
+	if isBuiltinHPAEnabled(function.Spec.Replicas, function.Spec.MaxReplicas, function.Spec.Pod) {
+		return makeBuiltinHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, targetRef, function.Spec.Pod.BuiltinAutoscaler)
+	} else if !isDefaultHPAEnabled(function.Spec.Replicas, function.Spec.MaxReplicas, function.Spec.Pod) {
 		return makeHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, function.Spec.Pod, targetRef)
 	}
 	return makeDefaultHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, targetRef)

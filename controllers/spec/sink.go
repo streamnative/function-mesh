@@ -33,7 +33,9 @@ func MakeSinkHPA(sink *v1alpha1.Sink) *autov2beta2.HorizontalPodAutoscaler {
 		Name:       sink.Name,
 		APIVersion: sink.APIVersion,
 	}
-	if !isDefaultHPAEnabled(sink.Spec.Replicas, sink.Spec.MaxReplicas, sink.Spec.Pod) {
+	if isBuiltinHPAEnabled(sink.Spec.Replicas, sink.Spec.MaxReplicas, sink.Spec.Pod) {
+		return makeBuiltinHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, targetRef, sink.Spec.Pod.BuiltinAutoscaler)
+	} else if !isDefaultHPAEnabled(sink.Spec.Replicas, sink.Spec.MaxReplicas, sink.Spec.Pod) {
 		return makeHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, sink.Spec.Pod, targetRef)
 	}
 	return makeDefaultHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, targetRef)
