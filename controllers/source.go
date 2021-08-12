@@ -230,11 +230,17 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, req ctrl.Request,
 		if hpa.Spec.MaxReplicas != *source.Spec.MaxReplicas {
 			hpa.Spec.MaxReplicas = *source.Spec.MaxReplicas
 		}
-		if !reflect.DeepEqual(hpa.Spec.Metrics, source.Spec.Pod.AutoScalingMetrics) {
+		if len(source.Spec.Pod.AutoScalingMetrics) > 0 && !reflect.DeepEqual(hpa.Spec.Metrics, source.Spec.Pod.AutoScalingMetrics) {
 			hpa.Spec.Metrics = source.Spec.Pod.AutoScalingMetrics
 		}
 		if source.Spec.Pod.AutoScalingBehavior != nil {
 			hpa.Spec.Behavior = source.Spec.Pod.AutoScalingBehavior
+		}
+		if len(source.Spec.Pod.BuiltinAutoscaler) > 0 {
+			metrics := spec.MakeMetricsFromBuiltinHPARules(source.Spec.Pod.BuiltinAutoscaler)
+			if !reflect.DeepEqual(hpa.Spec.Metrics, metrics) {
+				hpa.Spec.Metrics = metrics
+			}
 		}
 		if err := r.Update(ctx, hpa); err != nil {
 			r.Log.Error(err, "failed to update pod autoscaler for source", "name", source.Name)

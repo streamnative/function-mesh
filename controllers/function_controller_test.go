@@ -21,6 +21,9 @@ import (
 	"context"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -32,6 +35,8 @@ import (
 	"github.com/streamnative/function-mesh/controllers/spec"
 	v1 "k8s.io/api/core/v1"
 )
+
+var log = logf.Log.WithName("function-resource-test")
 
 const (
 	timeout  = time.Second * 10
@@ -64,13 +69,23 @@ var _ = Describe("Function Controller (Batcher)", func() {
 
 var _ = Describe("Function Controller (HPA)", func() {
 	Context("Simple Function Item with HPA", func() {
-		function := makeFunctionSample(TestFunctionName)
-		cpuPercentage := int32(80)
+		function := makeFunctionSample(TestFunctionHPAName)
+		cpuPercentage := int32(20)
 		function.Spec.Pod.AutoScalingMetrics = []autov2beta2.MetricSpec{
 			{
 				Type: autov2beta2.ResourceMetricSourceType,
 				Resource: &autov2beta2.ResourceMetricSource{
 					Name: v1.ResourceCPU,
+					Target: autov2beta2.MetricTarget{
+						Type:               autov2beta2.UtilizationMetricType,
+						AverageUtilization: &cpuPercentage,
+					},
+				},
+			},
+			{
+				Type: autov2beta2.ResourceMetricSourceType,
+				Resource: &autov2beta2.ResourceMetricSource{
+					Name: v1.ResourceMemory,
 					Target: autov2beta2.MetricTarget{
 						Type:               autov2beta2.UtilizationMetricType,
 						AverageUtilization: &cpuPercentage,
@@ -83,10 +98,27 @@ var _ = Describe("Function Controller (HPA)", func() {
 	})
 })
 
+var _ = Describe("Function Controller (builtin HPA)", func() {
+	Context("Simple Function Item with builtin HPA", func() {
+		r := int32(100)
+		function := makeFunctionSample(TestFunctionBuiltinHPAName)
+		function.Spec.MaxReplicas = &r
+		function.Spec.Pod.BuiltinAutoscaler = []v1alpha1.BuiltinHPARule{
+			v1alpha1.AverageUtilizationCPUPercent20,
+			v1alpha1.AverageUtilizationMemoryPercent20,
+		}
+
+		createFunction(function)
+	})
+})
+
 func createFunction(function *v1alpha1.Function) {
 
 	It("Function should be created", func() {
-		Expect(k8sClient.Create(context.Background(), function)).Should(Succeed())
+		Eventually(func() bool {
+			err := k8sClient.Create(context.Background(), function)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
 	})
 
 	It("StatefulSet should be created", func() {
@@ -100,6 +132,7 @@ func createFunction(function *v1alpha1.Function) {
 			return err == nil
 		}, timeout, interval).Should(BeTrue())
 
+		Expect(statefulSet.Name).Should(Equal(spec.MakeFunctionObjectMeta(function).Name))
 		Expect(*statefulSet.Spec.Replicas).Should(Equal(int32(1)))
 	})
 
@@ -121,10 +154,68 @@ func createFunction(function *v1alpha1.Function) {
 					Name: spec.MakeFunctionObjectMeta(function).Name}, hpa)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
+
+			log.Info("HPA should be created", "hpa", hpa, "name", spec.MakeFunctionObjectMeta(function).Name)
+
+			if len(function.Spec.Pod.AutoScalingMetrics) > 0 {
+				Expect(len(hpa.Spec.Metrics)).Should(Equal(len(function.Spec.Pod.AutoScalingMetrics)))
+				for _, metric := range function.Spec.Pod.AutoScalingMetrics {
+					Expect(hpa.Spec.Metrics).Should(ContainElement(metric))
+				}
+			}
+
+			if len(function.Spec.Pod.BuiltinAutoscaler) > 0 {
+				Expect(len(hpa.Spec.Metrics)).Should(Equal(len(function.Spec.Pod.BuiltinAutoscaler)))
+				for _, rule := range function.Spec.Pod.BuiltinAutoscaler {
+					autoscaler := spec.GetBuiltinAutoScaler(rule)
+					Expect(autoscaler).Should(Not(BeNil()))
+					Expect(hpa.Spec.Metrics).Should(ContainElement(autoscaler.Metrics()[0]))
+				}
+			}
 		}
 	})
 
 	It("Function should be deleted", func() {
-		Expect(k8sClient.Delete(context.Background(), function)).Should(Succeed())
+		key, err := client.ObjectKeyFromObject(function)
+		Expect(err).To(Succeed())
+
+		log.Info("deleting resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+		Expect(k8sClient.Delete(context.Background(), function)).To(Succeed())
+
+		log.Info("waiting for resource to disappear", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+		Eventually(func() error {
+			return k8sClient.Get(context.Background(), key, function)
+		}, timeout, interval).Should(HaveOccurred())
+		log.Info("deleted resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+
+		statefulsets := new(appsv1.StatefulSetList)
+		err = k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
+		Expect(err).Should(BeNil())
+		for _, item := range statefulsets.Items {
+			log.Info("deleting statefulset resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+			Expect(k8sClient.Delete(context.Background(), &item)).To(Succeed())
+		}
+		log.Info("waiting for StatefulSet resource to disappear", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+		Eventually(func() bool {
+			err := k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
+			return err == nil && len(statefulsets.Items) == 0
+		}, timeout, interval).Should(BeTrue())
+		log.Info("StatefulSet resource deleted", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+
+		hpas := new(autov2beta2.HorizontalPodAutoscalerList)
+		err = k8sClient.List(context.Background(), hpas, client.InNamespace(function.Namespace))
+		Expect(err).Should(BeNil())
+		for _, item := range hpas.Items {
+			log.Info("deleting HPA resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+			log.Info("deleting HPA", "item", item)
+			Expect(k8sClient.Delete(context.Background(), &item)).To(Succeed())
+		}
+		log.Info("waiting for HPA resource to disappear", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+		Eventually(func() bool {
+			err := k8sClient.List(context.Background(), hpas, client.InNamespace(function.Namespace))
+			return err == nil && len(hpas.Items) == 0
+		}, timeout, interval).Should(BeTrue())
+		log.Info("HPA resource deleted", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+
 	})
 }

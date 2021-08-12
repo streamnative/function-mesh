@@ -20,6 +20,7 @@ package controllers
 import (
 	"context"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
@@ -235,6 +236,8 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, req ctrl.Requ
 			r.Log.Error(err, "failed to create pod autoscaler for function", "name", function.Name)
 			return err
 		}
+		key, _ := client.ObjectKeyFromObject(hpa)
+		r.Get(context.Background(), key, hpa)
 	case v1alpha1.Update:
 		hpa := &autov2beta2.HorizontalPodAutoscaler{}
 		err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace,
@@ -246,11 +249,17 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, req ctrl.Requ
 		if hpa.Spec.MaxReplicas != *function.Spec.MaxReplicas {
 			hpa.Spec.MaxReplicas = *function.Spec.MaxReplicas
 		}
-		if !reflect.DeepEqual(hpa.Spec.Metrics, function.Spec.Pod.AutoScalingMetrics) {
+		if len(function.Spec.Pod.AutoScalingMetrics) > 0 && !reflect.DeepEqual(hpa.Spec.Metrics, function.Spec.Pod.AutoScalingMetrics) {
 			hpa.Spec.Metrics = function.Spec.Pod.AutoScalingMetrics
 		}
 		if function.Spec.Pod.AutoScalingBehavior != nil {
 			hpa.Spec.Behavior = function.Spec.Pod.AutoScalingBehavior
+		}
+		if len(function.Spec.Pod.BuiltinAutoscaler) > 0 {
+			metrics := spec.MakeMetricsFromBuiltinHPARules(function.Spec.Pod.BuiltinAutoscaler)
+			if !reflect.DeepEqual(hpa.Spec.Metrics, metrics) {
+				hpa.Spec.Metrics = metrics
+			}
 		}
 		if err := r.Update(ctx, hpa); err != nil {
 			r.Log.Error(err, "failed to update pod autoscaler for function", "name", function.Name)
