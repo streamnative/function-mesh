@@ -43,7 +43,7 @@ spec:
   autoAck: true
   pod:
     builtinAutoscaler:
-      - "AverageUtilizationCPUPercent80"
+      - "AverageUtilizationCPUPercent20"
       - "AverageUtilizationMemoryPercent20"
 ---
 apiVersion: v1
