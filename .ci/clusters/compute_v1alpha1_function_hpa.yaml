@@ -41,13 +41,14 @@ spec:
   # to be delete & use admission hook
   clusterName: test
   autoAck: true
-  autoScalingMetrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 50
+  pod:
+    autoScalingMetrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
 ---
 apiVersion: v1
 kind: ConfigMap

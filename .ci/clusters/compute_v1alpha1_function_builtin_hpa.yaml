@@ -41,9 +41,10 @@ spec:
   # to be delete & use admission hook
   clusterName: test
   autoAck: true
-  builtinAutoscaler:
-    - "AverageUtilizationCPUPercent80"
-    - "AverageUtilizationMemoryPercent20"
+  pod:
+    builtinAutoscaler:
+      - "AverageUtilizationCPUPercent80"
+      - "AverageUtilizationMemoryPercent20"
 ---
 apiVersion: v1
 kind: ConfigMap
