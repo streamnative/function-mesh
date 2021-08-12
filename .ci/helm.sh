@@ -142,6 +142,8 @@ function ci::verify_function_mesh() {
 
 function ci::verify_hpa() {
     FUNCTION_NAME=$1
+    ${KUBECTL} get function
+    ${KUBECTL} get function ${FUNCTION_NAME} -o yaml
     ${KUBECTL} get hpa.v2beta2.autoscaling
     ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o yaml
     ${KUBECTL} describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
