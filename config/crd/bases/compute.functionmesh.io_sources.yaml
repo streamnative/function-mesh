@@ -637,6 +637,10 @@ spec:
                     - type
                     type: object
                   type: array
+                builtinAutoscaler:
+                  items:
+                    type: string
+                  type: array
                 imagePullSecrets:
                   items:
                     properties:

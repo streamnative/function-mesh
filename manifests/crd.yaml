@@ -723,6 +723,10 @@ spec:
                           - type
                           type: object
                         type: array
+                      builtinAutoscaler:
+                        items:
+                          type: string
+                        type: array
                       imagePullSecrets:
                         items:
                           properties:
@@ -3143,6 +3147,10 @@ spec:
                           - type
                           type: object
                         type: array
+                      builtinAutoscaler:
+                        items:
+                          type: string
+                        type: array
                       imagePullSecrets:
                         items:
                           properties:
@@ -5542,6 +5550,10 @@ spec:
                           required:
                           - type
                           type: object
+                        type: array
+                      builtinAutoscaler:
+                        items:
+                          type: string
                         type: array
                       imagePullSecrets:
                         items:
@@ -8102,6 +8114,10 @@ spec:
                     - type
                     type: object
                   type: array
+                builtinAutoscaler:
+                  items:
+                    type: string
+                  type: array
                 imagePullSecrets:
                   items:
                     properties:
@@ -10586,6 +10602,10 @@ spec:
                     - type
                     type: object
                   type: array
+                builtinAutoscaler:
+                  items:
+                    type: string
+                  type: array
                 imagePullSecrets:
                   items:
                     properties:
@@ -13049,6 +13069,10 @@ spec:
                     required:
                     - type
                     type: object
+                  type: array
+                builtinAutoscaler:
+                  items:
+                    type: string
                   type: array
                 imagePullSecrets:
                   items:
