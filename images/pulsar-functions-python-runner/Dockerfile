@@ -11,7 +11,7 @@ COPY --from=pulsar /pulsar/pulsar-client /pulsar/pulsar-client
 # to make this Dockerfile compalicate with different Pulsar versions
 # Below is a hacky way to copy /pulsar/cpp-client if exist in pulsar image
 COPY --from=pulsar /pulsar/README /pulsar/cpp-clien* /tmp/pulsar/
-RUN mv /tmp/pulsar/cpp-client /pulsar/cpp-client || true
+RUN if [ -d "/tmp/pulsar/cpp-client" ]; then mv /tmp/pulsar/cpp-client /pulsar/cpp-client || true ; fi
 
 # Install some utilities
 RUN apt-get update \
