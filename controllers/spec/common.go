@@ -177,7 +177,7 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, detai
 			memory, extraDependenciesDir, authProvided, tlsProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -190,7 +190,7 @@ func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, det
 			details, authProvided, tlsProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -201,39 +201,58 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath, function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != ""), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
 }
 
-func getDownloadCommand(downloadPath, componentPackage string) []string {
+func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool) []string {
 	// The download path is the path that the package saved in the pulsar.
 	// By default, it's the path that the package saved in the pulsar, we can use package name
 	// to replace it for downloading packages from packages management service.
+	args := []string{
+		PulsarAdminExecutableFile,
+		"--admin-url",
+		"$webServiceURL",
+	}
+	if authProvided {
+		args = append(args, []string{
+			"--auth-plugin",
+			"$clientAuthenticationPlugin",
+			"--auth-params",
+			"$clientAuthenticationParameters"}...)
+	}
+
+	if tlsProvided {
+		args = append(args, []string{
+			"--tls-allow-insecure",
+			"$tlsAllowInsecureConnection",
+			"--tls-enable-hostname-verification",
+			"$tlsHostnameVerificationEnable",
+			"--tls-trust-cert-path",
+			"$tlsTrustCertsFilePath",
+		}...)
+	}
 	if hasPackageNamePrefix(downloadPath) {
-		return []string{
-			PulsarAdminExecutableFile,
-			"--admin-url",
-			"$webServiceURL",
+		args = append(args, []string{
 			"packages",
 			"download",
 			downloadPath,
 			"--path",
 			componentPackage,
-		}
+		}...)
+		return args
 	}
-	return []string{
-		PulsarAdminExecutableFile, // TODO configurable pulsar ROOTDIR and adminCLI
-		"--admin-url",
-		"$webServiceURL",
+	args = append(args, []string{
 		"functions",
 		"download",
 		"--path",
 		downloadPath,
 		"--destination-file",
 		componentPackage,
-	}
+	}...)
+	return args
 }
 
 // TODO: do a more strict check for the package name https://github.com/streamnative/function-mesh/issues/49
