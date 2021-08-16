@@ -43,7 +43,6 @@ const (
 	DefaultPythonRunnerImage   = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
 	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
-	PulsarDownloadRootDir      = "/pulsar"
 
 	ComponentSource   = "source"
 	ComponentSink     = "sink"
