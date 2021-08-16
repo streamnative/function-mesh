@@ -221,7 +221,7 @@ func getDownloadCommand(downloadPath, componentPackage string) []string {
 			"download",
 			downloadPath,
 			"--path",
-			PulsarDownloadRootDir + "/" + componentPackage,
+			componentPackage,
 		}
 	}
 	return []string{
@@ -233,7 +233,7 @@ func getDownloadCommand(downloadPath, componentPackage string) []string {
 		"--path",
 		downloadPath,
 		"--destination-file",
-		PulsarDownloadRootDir + "/" + componentPackage,
+		componentPackage,
 	}
 }
 
