@@ -21,14 +21,24 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
-	autov1 "k8s.io/api/autoscaling/v1"
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func MakeSourceHPA(source *v1alpha1.Source) *autov1.HorizontalPodAutoscaler {
+func MakeSourceHPA(source *v1alpha1.Source) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeSourceObjectMeta(source)
-	return MakeHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, source.Kind)
+	targetRef := autov2beta2.CrossVersionObjectReference{
+		Kind:       source.Kind,
+		Name:       source.Name,
+		APIVersion: source.APIVersion,
+	}
+	if isBuiltinHPAEnabled(source.Spec.Replicas, source.Spec.MaxReplicas, source.Spec.Pod) {
+		return makeBuiltinHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, targetRef, source.Spec.Pod.BuiltinAutoscaler)
+	} else if !isDefaultHPAEnabled(source.Spec.Replicas, source.Spec.MaxReplicas, source.Spec.Pod) {
+		return makeHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, source.Spec.Pod, targetRef)
+	}
+	return makeDefaultHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, targetRef)
 }
 
 func MakeSourceService(source *v1alpha1.Source) *corev1.Service {

@@ -20,6 +20,7 @@ package v1alpha1
 import (
 	"encoding/json"
 
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -93,6 +94,26 @@ type PodPolicy struct {
 	// ServiceAccountName is the name of the ServiceAccount to use to run this pod.
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// BuiltinAutoscaler refers to the built-in autoscaling rules
+	// Available values: AverageUtilizationCPUPercent80, AverageUtilizationCPUPercent50, AverageUtilizationCPUPercent20
+	// AverageUtilizationMemoryPercent80, AverageUtilizationMemoryPercent50, AverageUtilizationMemoryPercent20
+	// +optional
+	// TODO: validate the rules, user may provide duplicate rules, should check with webhook
+	BuiltinAutoscaler []BuiltinHPARule `json:"builtinAutoscaler,omitempty"`
+
+	// AutoScalingMetrics contains the specifications for which to use to calculate the
+	// desired replica count (the maximum replica count across all metrics will
+	// be used).
+	// More info: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#metricspec-v2beta2-autoscaling
+	// +optional
+	AutoScalingMetrics []autov2beta2.MetricSpec `json:"autoScalingMetrics,omitempty"`
+
+	// AutoScalingBehavior configures the scaling behavior of the target
+	// in both Up and Down directions (scaleUp and scaleDown fields respectively).
+	// If not set, the default HPAScalingRules for scale up and scale down are used.
+	// +optional
+	AutoScalingBehavior *autov2beta2.HorizontalPodAutoscalerBehavior `json:"autoScalingBehavior,omitempty"`
 }
 
 type Runtime struct {
