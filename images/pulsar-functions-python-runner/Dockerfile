@@ -31,4 +31,4 @@ RUN if [ -d "/pulsar/cpp-client" ]; then apt-get update \
 
 WORKDIR /pulsar
 
-RUN if [ -d "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh ; fi
+RUN if [ -f "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh ; fi
