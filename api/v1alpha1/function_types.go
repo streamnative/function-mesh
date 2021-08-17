@@ -32,10 +32,10 @@ type FunctionSpec struct {
 	Name      string `json:"name,omitempty"`
 	ClassName string `json:"className,omitempty"`
 
-	// +kubebuilder:default="public"
+	// +kubebuilder:default=public
 	Tenant string `json:"tenant,omitempty"`
 
-	// +kubebuilder:default="default"
+	// +kubebuilder:default=default
 	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	Replicas    *int32 `json:"replicas,omitempty"`

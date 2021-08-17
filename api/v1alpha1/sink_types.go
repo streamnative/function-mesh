@@ -33,10 +33,10 @@ type SinkSpec struct {
 	ClassName   string `json:"className,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 
-	// +kubebuilder:default="public"
+	// +kubebuilder:default=public
 	Tenant string `json:"tenant,omitempty"`
 
-	// +kubebuilder:default="default"
+	// +kubebuilder:default=default
 	Namespace string `json:"namespace,omitempty"`
 	SinkType  string `json:"sinkType,omitempty"` // refer to `--sink-type` as builtin connector
 	Replicas  *int32 `json:"replicas,omitempty"`
