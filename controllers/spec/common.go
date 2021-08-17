@@ -44,7 +44,6 @@ const (
 	DefaultPythonRunnerImage   = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
 	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
-	PulsarDownloadRootDir      = "/pulsar"
 
 	ComponentSource   = "source"
 	ComponentSink     = "sink"
@@ -224,7 +223,7 @@ func getDownloadCommand(downloadPath, componentPackage string) []string {
 			"download",
 			downloadPath,
 			"--path",
-			PulsarDownloadRootDir + "/" + componentPackage,
+			componentPackage,
 		}
 	}
 	return []string{
@@ -236,7 +235,7 @@ func getDownloadCommand(downloadPath, componentPackage string) []string {
 		"--path",
 		downloadPath,
 		"--destination-file",
-		PulsarDownloadRootDir + "/" + componentPackage,
+		componentPackage,
 	}
 }
 
