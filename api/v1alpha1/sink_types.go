@@ -32,14 +32,10 @@ type SinkSpec struct {
 	Name        string `json:"name,omitempty"`
 	ClassName   string `json:"className,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
-
-	// +kubebuilder:default=public
-	Tenant string `json:"tenant,omitempty"`
-
-	// +kubebuilder:default=default
-	Namespace string `json:"namespace,omitempty"`
-	SinkType  string `json:"sinkType,omitempty"` // refer to `--sink-type` as builtin connector
-	Replicas  *int32 `json:"replicas,omitempty"`
+	Tenant      string `json:"tenant,omitempty"`
+	Namespace   string `json:"namespace,omitempty"`
+	SinkType    string `json:"sinkType,omitempty"` // refer to `--sink-type` as builtin connector
+	Replicas    *int32 `json:"replicas,omitempty"`
 
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
 	// If provided, a default HPA with CPU at average of 80% will be used.
