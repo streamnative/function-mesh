@@ -149,6 +149,8 @@ spec:
                     type: integer
                   name:
                     type: string
+                  namespace:
+                    type: string
                   output:
                     properties:
                       customSchemaSinks:
@@ -2629,6 +2631,8 @@ spec:
                     type: integer
                   name:
                     type: string
+                  namespace:
+                    type: string
                   negativeAckRedeliveryDelayMs:
                     format: int32
                     type: integer
@@ -4976,6 +4980,8 @@ spec:
                     format: int32
                     type: integer
                   name:
+                    type: string
+                  namespace:
                     type: string
                   output:
                     properties:
@@ -7540,6 +7546,8 @@ spec:
               type: integer
             name:
               type: string
+            namespace:
+              type: string
             output:
               properties:
                 customSchemaSinks:
@@ -10084,6 +10092,8 @@ spec:
               type: integer
             name:
               type: string
+            namespace:
+              type: string
             negativeAckRedeliveryDelayMs:
               format: int32
               type: integer
@@ -12495,6 +12505,8 @@ spec:
               format: int32
               type: integer
             name:
+              type: string
+            namespace:
               type: string
             output:
               properties:

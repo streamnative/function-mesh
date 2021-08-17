@@ -32,6 +32,7 @@ type SourceSpec struct {
 	Name        string `json:"name,omitempty"`
 	ClassName   string `json:"className,omitempty"`
 	Tenant      string `json:"tenant,omitempty"`
+	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	SourceType  string `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
 	Replicas    *int32 `json:"replicas,omitempty"`
