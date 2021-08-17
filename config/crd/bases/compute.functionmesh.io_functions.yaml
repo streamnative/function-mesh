@@ -153,6 +153,7 @@ spec:
             name:
               type: string
             namespace:
+              default: default
               type: string
             output:
               properties:
@@ -2495,6 +2496,7 @@ spec:
             subscriptionPosition:
               type: string
             tenant:
+              default: public
               type: string
             timeout:
               format: int32

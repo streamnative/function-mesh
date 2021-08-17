@@ -150,6 +150,7 @@ spec:
                   name:
                     type: string
                   namespace:
+                    default: default
                     type: string
                   output:
                     properties:
@@ -2492,6 +2493,7 @@ spec:
                   subscriptionPosition:
                     type: string
                   tenant:
+                    default: public
                     type: string
                   timeout:
                     format: int32
@@ -2632,6 +2634,7 @@ spec:
                   name:
                     type: string
                   namespace:
+                    default: default
                     type: string
                   negativeAckRedeliveryDelayMs:
                     format: int32
@@ -4921,6 +4924,7 @@ spec:
                   subscriptionPosition:
                     type: string
                   tenant:
+                    default: public
                     type: string
                   timeout:
                     format: int32
@@ -4982,6 +4986,7 @@ spec:
                   name:
                     type: string
                   namespace:
+                    default: default
                     type: string
                   output:
                     properties:
@@ -7321,6 +7326,7 @@ spec:
                   sourceType:
                     type: string
                   tenant:
+                    default: public
                     type: string
                   volumeMounts:
                     items:
@@ -7547,6 +7553,7 @@ spec:
             name:
               type: string
             namespace:
+              default: default
               type: string
             output:
               properties:
@@ -9889,6 +9896,7 @@ spec:
             subscriptionPosition:
               type: string
             tenant:
+              default: public
               type: string
             timeout:
               format: int32
@@ -10093,6 +10101,7 @@ spec:
             name:
               type: string
             namespace:
+              default: default
               type: string
             negativeAckRedeliveryDelayMs:
               format: int32
@@ -12382,6 +12391,7 @@ spec:
             subscriptionPosition:
               type: string
             tenant:
+              default: public
               type: string
             timeout:
               format: int32
@@ -12507,6 +12517,7 @@ spec:
             name:
               type: string
             namespace:
+              default: default
               type: string
             output:
               properties:
@@ -14846,6 +14857,7 @@ spec:
             sourceType:
               type: string
             tenant:
+              default: public
               type: string
             volumeMounts:
               items:

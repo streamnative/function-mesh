@@ -72,6 +72,10 @@ func (r *Sink) Default() {
 		r.Spec.Tenant = DefaultTenant
 	}
 
+	if r.Spec.Namespace == "" {
+		r.Spec.Namespace = DefaultNamespace
+	}
+
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
 			r.Spec.Resources.Requests.Cpu().Set(int64(1))

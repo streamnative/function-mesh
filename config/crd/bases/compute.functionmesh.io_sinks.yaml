@@ -143,6 +143,7 @@ spec:
             name:
               type: string
             namespace:
+              default: default
               type: string
             negativeAckRedeliveryDelayMs:
               format: int32
@@ -2432,6 +2433,7 @@ spec:
             subscriptionPosition:
               type: string
             tenant:
+              default: public
               type: string
             timeout:
               format: int32

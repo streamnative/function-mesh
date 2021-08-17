@@ -246,8 +246,9 @@ const (
 	AtmostOnce      ProcessGuarantee = "atmost_once"
 	EffectivelyOnce ProcessGuarantee = "effectively_once"
 
-	DefaultTenant  string = "public"
-	DefaultCluster string = "kubernetes"
+	DefaultTenant    string = "public"
+	DefaultNamespace string = "default"
+	DefaultCluster   string = "kubernetes"
 )
 
 func validResourceRequirement(requirements corev1.ResourceRequirements) bool {

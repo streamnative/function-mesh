@@ -64,6 +64,7 @@ spec:
             name:
               type: string
             namespace:
+              default: default
               type: string
             output:
               properties:
@@ -2403,6 +2404,7 @@ spec:
             sourceType:
               type: string
             tenant:
+              default: public
               type: string
             volumeMounts:
               items:

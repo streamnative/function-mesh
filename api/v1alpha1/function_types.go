@@ -29,9 +29,13 @@ import (
 type FunctionSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name        string `json:"name,omitempty"`
-	ClassName   string `json:"className,omitempty"`
-	Tenant      string `json:"tenant,omitempty"`
+	Name      string `json:"name,omitempty"`
+	ClassName string `json:"className,omitempty"`
+
+	// +kubebuilder:default="public"
+	Tenant string `json:"tenant,omitempty"`
+
+	// +kubebuilder:default="default"
 	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	Replicas    *int32 `json:"replicas,omitempty"`
