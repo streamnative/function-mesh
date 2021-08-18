@@ -21,18 +21,28 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
-	autov1 "k8s.io/api/autoscaling/v1"
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // log is for logging in this package.
-var log = logf.Log.WithName("sink-resource")
+var log = logf.Log.WithName("function-resource")
 
-func MakeFunctionHPA(function *v1alpha1.Function) *autov1.HorizontalPodAutoscaler {
+func MakeFunctionHPA(function *v1alpha1.Function) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeFunctionObjectMeta(function)
-	return MakeHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, function.Kind)
+	targetRef := autov2beta2.CrossVersionObjectReference{
+		Kind:       function.Kind,
+		Name:       function.Name,
+		APIVersion: function.APIVersion,
+	}
+	if isBuiltinHPAEnabled(function.Spec.Replicas, function.Spec.MaxReplicas, function.Spec.Pod) {
+		return makeBuiltinHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, targetRef, function.Spec.Pod.BuiltinAutoscaler)
+	} else if !isDefaultHPAEnabled(function.Spec.Replicas, function.Spec.MaxReplicas, function.Spec.Pod) {
+		return makeHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, function.Spec.Pod, targetRef)
+	}
+	return makeDefaultHPA(objectMeta, *function.Spec.Replicas, *function.Spec.MaxReplicas, targetRef)
 }
 
 func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {

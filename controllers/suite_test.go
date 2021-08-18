@@ -67,6 +67,7 @@ var _ = BeforeSuite(func(done Done) {
 				Paths: []string{filepath.Join("..", "config", "crd", "bases")},
 			},
 			AttachControlPlaneOutput: true,
+			ErrorIfCRDPathMissing:    true,
 		}
 	}
 	var err error

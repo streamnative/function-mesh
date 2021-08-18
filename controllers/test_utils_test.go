@@ -18,13 +18,20 @@
 package controllers
 
 import (
+	"fmt"
+
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const TestClusterName string = "test-pulsar"
 const TestFunctionName string = "test-function"
+const TestFunctionE2EName string = "test-function-e2e"
+const TestFunctionKeyBatcherName string = "test-function-key-batcher"
+const TestFunctionHPAName string = "test-function-hpa"
+const TestFunctionBuiltinHPAName string = "test-function-builtin-hpa"
 const TestFunctionMeshName = "test-function-mesh"
 const TestSinkName string = "test-sink"
 const TestSourceName string = "test-source"
@@ -34,7 +41,7 @@ func makeSampleObjectMeta(name string) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
 		Name:      name,
 		Namespace: TestNameSpace,
-		UID:       "dead-beef", // uid not generate automatically with fake k8s
+		UID:       types.UID(fmt.Sprintf("dead-beef-%s", name)), // uid not generate automatically with fake k8s
 	}
 }
 
@@ -102,7 +109,7 @@ func makeFunctionSample(functionName string) *v1alpha1.Function {
 }
 
 func makeFunctionSampleWithCryptoEnabled() *v1alpha1.Function {
-	function := makeFunctionSample(TestFunctionName)
+	function := makeFunctionSample(TestFunctionE2EName)
 	function.Spec.Input = v1alpha1.InputConf{
 		Topics: []string{
 			"persistent://public/default/java-function-input-topic",
@@ -137,7 +144,7 @@ func makeFunctionSampleWithCryptoEnabled() *v1alpha1.Function {
 }
 
 func makeFunctionSampleWithKeyBasedBatcher() *v1alpha1.Function {
-	function := makeFunctionSample(TestFunctionName)
+	function := makeFunctionSample(TestFunctionKeyBatcherName)
 	function.Spec.Output = v1alpha1.OutputConf{
 		Topic: "persistent://public/default/java-function-output-topic",
 		ProducerConf: &v1alpha1.ProducerConfig{

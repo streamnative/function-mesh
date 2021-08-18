@@ -19,107 +19,203 @@ package controllers
 
 import (
 	"context"
+	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/types"
+
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var log = logf.Log.WithName("function-resource-test")
+
+const (
+	timeout  = time.Second * 10
+	interval = time.Millisecond * 250
 )
 
 var _ = Describe("Function Controller", func() {
 	Context("Simple Function Item", func() {
-		configs := makeSamplePulsarConfig()
 		function := makeFunctionSample(TestFunctionName)
 
-		createFunctionConfigMap(configs)
 		createFunction(function)
-		deleteFunction(function)
-		deleteFunctionConfigMap(configs)
 	})
 })
 
 var _ = Describe("Function Controller (E2E)", func() {
 	Context("Function With E2E Crypto Item", func() {
-		cryptosecrets := &v1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Secret",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "java-function-crypto-sample-crypto-secret",
-				Namespace: "default",
-				UID:       "dead-beef-secret",
-			},
-			Data: map[string][]byte{
-				"test_ecdsa_privkey.pem": []byte{0x00, 0x01, 0x02},
-				"test_ecdsa_pubkey.pem":  []byte{0x02, 0x01, 0x00},
-			},
-			Type: "Opaque",
-		}
-		configs := makeSamplePulsarConfig()
 		function := makeFunctionSampleWithCryptoEnabled()
 
-		createFunctionConfigMap(configs)
-		createFunctionSecret(cryptosecrets)
 		createFunction(function)
-		deleteFunction(function)
-		deleteFunctionSecret(cryptosecrets)
-		deleteFunctionConfigMap(configs)
 	})
 })
 
 var _ = Describe("Function Controller (Batcher)", func() {
 	Context("Function With Batcher Item", func() {
-		configs := makeSamplePulsarConfig()
 		function := makeFunctionSampleWithKeyBasedBatcher()
 
-		createFunctionConfigMap(configs)
 		createFunction(function)
-		deleteFunction(function)
-		deleteFunctionConfigMap(configs)
+	})
+})
+
+var _ = Describe("Function Controller (HPA)", func() {
+	Context("Simple Function Item with HPA", func() {
+		function := makeFunctionSample(TestFunctionHPAName)
+		cpuPercentage := int32(20)
+		function.Spec.Pod.AutoScalingMetrics = []autov2beta2.MetricSpec{
+			{
+				Type: autov2beta2.ResourceMetricSourceType,
+				Resource: &autov2beta2.ResourceMetricSource{
+					Name: v1.ResourceCPU,
+					Target: autov2beta2.MetricTarget{
+						Type:               autov2beta2.UtilizationMetricType,
+						AverageUtilization: &cpuPercentage,
+					},
+				},
+			},
+			{
+				Type: autov2beta2.ResourceMetricSourceType,
+				Resource: &autov2beta2.ResourceMetricSource{
+					Name: v1.ResourceMemory,
+					Target: autov2beta2.MetricTarget{
+						Type:               autov2beta2.UtilizationMetricType,
+						AverageUtilization: &cpuPercentage,
+					},
+				},
+			},
+		}
+
+		createFunction(function)
+	})
+})
+
+var _ = Describe("Function Controller (builtin HPA)", func() {
+	Context("Simple Function Item with builtin HPA", func() {
+		r := int32(100)
+		function := makeFunctionSample(TestFunctionBuiltinHPAName)
+		function.Spec.MaxReplicas = &r
+		function.Spec.Pod.BuiltinAutoscaler = []v1alpha1.BuiltinHPARule{
+			v1alpha1.AverageUtilizationCPUPercent20,
+			v1alpha1.AverageUtilizationMemoryPercent20,
+		}
+
+		createFunction(function)
 	})
 })
 
 func createFunction(function *v1alpha1.Function) {
-	if function.Status.Conditions == nil {
-		function.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
-	}
+
+	It("Function should be created", func() {
+		Eventually(func() bool {
+			err := k8sClient.Create(context.Background(), function)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
+	})
 
 	It("StatefulSet should be created", func() {
-		statefulSet := spec.MakeFunctionStatefulSet(function)
-		Expect(k8sClient.Create(context.Background(), statefulSet)).Should(Succeed())
-	})
-}
+		statefulSet := &appsv1.StatefulSet{}
 
-func createFunctionConfigMap(configs *v1.ConfigMap) {
-	It("Should create pulsar configmap successfully", func() {
-		Expect(k8sClient.Create(context.Background(), configs)).Should(Succeed())
-	})
-}
+		Eventually(func() bool {
+			err := k8sClient.Get(context.Background(), types.NamespacedName{
+				Namespace: function.Namespace,
+				Name:      spec.MakeFunctionObjectMeta(function).Name,
+			}, statefulSet)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
 
-func createFunctionSecret(secret *v1.Secret) {
-	It("Should create crypto secret successfully", func() {
-		Expect(k8sClient.Create(context.Background(), secret)).Should(Succeed())
+		Expect(statefulSet.Name).Should(Equal(spec.MakeFunctionObjectMeta(function).Name))
+		Expect(*statefulSet.Spec.Replicas).Should(Equal(int32(1)))
 	})
-}
 
-func deleteFunction(function *v1alpha1.Function) {
-	It("StatefulSet should be deleted", func() {
-		statefulSet := spec.MakeFunctionStatefulSet(function)
-		Expect(k8sClient.Delete(context.Background(), statefulSet)).Should(Succeed())
+	It("Service should be created", func() {
+		srv := &v1.Service{}
+		svcName := spec.MakeHeadlessServiceName(spec.MakeFunctionObjectMeta(function).Name)
+		Eventually(func() bool {
+			err := k8sClient.Get(context.Background(), types.NamespacedName{Namespace: function.Namespace,
+				Name: svcName}, srv)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
 	})
-}
 
-func deleteFunctionConfigMap(configs *v1.ConfigMap) {
-	It("Should create pulsar configmap successfully", func() {
-		Expect(k8sClient.Delete(context.Background(), configs)).Should(Succeed())
+	It("HPA should be created", func() {
+		if function.Spec.MaxReplicas != nil {
+			hpa := &autov2beta2.HorizontalPodAutoscaler{}
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Namespace: function.Namespace,
+					Name: spec.MakeFunctionObjectMeta(function).Name}, hpa)
+				return err == nil
+			}, timeout, interval).Should(BeTrue())
+
+			log.Info("HPA should be created", "hpa", hpa, "name", spec.MakeFunctionObjectMeta(function).Name)
+
+			if len(function.Spec.Pod.AutoScalingMetrics) > 0 {
+				Expect(len(hpa.Spec.Metrics)).Should(Equal(len(function.Spec.Pod.AutoScalingMetrics)))
+				for _, metric := range function.Spec.Pod.AutoScalingMetrics {
+					Expect(hpa.Spec.Metrics).Should(ContainElement(metric))
+				}
+			}
+
+			if len(function.Spec.Pod.BuiltinAutoscaler) > 0 {
+				Expect(len(hpa.Spec.Metrics)).Should(Equal(len(function.Spec.Pod.BuiltinAutoscaler)))
+				for _, rule := range function.Spec.Pod.BuiltinAutoscaler {
+					autoscaler := spec.GetBuiltinAutoScaler(rule)
+					Expect(autoscaler).Should(Not(BeNil()))
+					Expect(hpa.Spec.Metrics).Should(ContainElement(autoscaler.Metrics()[0]))
+				}
+			}
+		}
 	})
-}
 
-func deleteFunctionSecret(secret *v1.Secret) {
-	It("Should delete crypto secret successfully", func() {
-		Expect(k8sClient.Delete(context.Background(), secret)).Should(Succeed())
+	It("Function should be deleted", func() {
+		key, err := client.ObjectKeyFromObject(function)
+		Expect(err).To(Succeed())
+
+		log.Info("deleting resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+		Expect(k8sClient.Delete(context.Background(), function)).To(Succeed())
+
+		log.Info("waiting for resource to disappear", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+		Eventually(func() error {
+			return k8sClient.Get(context.Background(), key, function)
+		}, timeout, interval).Should(HaveOccurred())
+		log.Info("deleted resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+
+		statefulsets := new(appsv1.StatefulSetList)
+		err = k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
+		Expect(err).Should(BeNil())
+		for _, item := range statefulsets.Items {
+			log.Info("deleting statefulset resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+			Expect(k8sClient.Delete(context.Background(), &item)).To(Succeed())
+		}
+		log.Info("waiting for StatefulSet resource to disappear", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+		Eventually(func() bool {
+			err := k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
+			return err == nil && len(statefulsets.Items) == 0
+		}, timeout, interval).Should(BeTrue())
+		log.Info("StatefulSet resource deleted", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+
+		hpas := new(autov2beta2.HorizontalPodAutoscalerList)
+		err = k8sClient.List(context.Background(), hpas, client.InNamespace(function.Namespace))
+		Expect(err).Should(BeNil())
+		for _, item := range hpas.Items {
+			log.Info("deleting HPA resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+			log.Info("deleting HPA", "item", item)
+			Expect(k8sClient.Delete(context.Background(), &item)).To(Succeed())
+		}
+		log.Info("waiting for HPA resource to disappear", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+		Eventually(func() bool {
+			err := k8sClient.List(context.Background(), hpas, client.InNamespace(function.Namespace))
+			return err == nil && len(hpas.Items) == 0
+		}, timeout, interval).Should(BeTrue())
+		log.Info("HPA resource deleted", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
+
 	})
 }

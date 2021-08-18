@@ -63,6 +63,7 @@ jobs:
       - name: Verify Function kind - Java Function
         run: |
           .ci/verify_function_mesh.sh compute_v1alpha1_function
+          kubectl delete -f .ci/clusters/compute_v1alpha1_function.yaml
 
       - name: Test Function kind - Python Function
         run: |
@@ -72,6 +73,7 @@ jobs:
       - name: Verify Function kind - Python Function
         run: |
           .ci/verify_function_mesh.sh compute_v1alpha1_py_function
+          kubectl delete -f .ci/clusters/compute_v1alpha1_py_function.yaml
 
       - name: Test Function kind - Go Function
         run: |
@@ -81,6 +83,7 @@ jobs:
       - name: Verify Function kind - Go Function
         run: |
           .ci/verify_function_mesh.sh compute_v1alpha1_go_function
+          kubectl delete -f .ci/clusters/compute_v1alpha1_go_function.yaml
 
       - name: Test Mesh kind
         run: |
@@ -90,3 +93,24 @@ jobs:
       - name: Verify Mesh kind
         run: |
           .ci/verify_function_mesh.sh compute_v1alpha1_functionmesh
+          kubectl delete -f .ci/clusters/compute_v1alpha1_functionmesh.yaml
+
+      - name: Test Function HPA
+        run: |
+          kubectl apply -f .ci/clusters/compute_v1alpha1_function_hpa.yaml
+          kubectl get all
+
+      - name: Verify Function HPA
+        run: |
+          .ci/verify_function_mesh.sh compute_v1alpha1_function_hpa
+          kubectl delete -f .ci/clusters/compute_v1alpha1_function_hpa.yaml
+
+      - name: Test Function Builtin HPA
+        run: |
+          kubectl apply -f .ci/clusters/compute_v1alpha1_function_builtin_hpa.yaml
+          kubectl get all
+
+      - name: Verify Function Builtin HPA
+        run: |
+          .ci/verify_function_mesh.sh compute_v1alpha1_function_builtin_hpa
+          kubectl delete -f .ci/clusters/compute_v1alpha1_function_builtin_hpa.yaml

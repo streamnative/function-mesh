@@ -64,6 +64,20 @@ function ci::install_storage_provisioner() {
     echo "Successfully installed the local storage provisioner."
 }
 
+function ci::install_metrics_server() {
+    echo "install metrics-server"
+    ${KUBECTL} apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.7/components.yaml
+    ${KUBECTL} patch deployment metrics-server -n kube-system -p '{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","args":["--cert-dir=/tmp", "--secure-port=4443", "--kubelet-insecure-tls","--kubelet-preferred-address-types=InternalIP"]}]}}}}'
+    echo "Successfully installed the metrics-server."
+    WC=$(${KUBECTL} get pods -n kube-system --field-selector=status.phase=Running | grep metrics-server | wc -l)
+    while [[ ${WC} -lt 1 ]]; do
+      echo ${WC};
+      sleep 20
+      ${KUBECTL} get pods -n kube-system
+      WC=$(${KUBECTL} get pods -n kube-system --field-selector=status.phase=Running | grep metrics-server | wc -l)
+    done
+}
+
 function ci::install_pulsar_charts() {
     echo "Installing the pulsar charts ..."
     values=${1:-".ci/clusters/values.yaml"}
@@ -124,6 +138,24 @@ function ci::verify_function_mesh() {
       WC=$(${KUBECTL} get pods -lname=${FUNCTION_NAME} --field-selector=status.phase=Running | wc -l)
     done
     ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
+}
+
+function ci::verify_hpa() {
+    FUNCTION_NAME=$1
+    ${KUBECTL} get function
+    ${KUBECTL} get function ${FUNCTION_NAME} -o yaml
+    ${KUBECTL} get hpa.v2beta2.autoscaling
+    ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o yaml
+    ${KUBECTL} describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
+    WC=$(${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}' | grep False | wc -l)
+    while [[ ${WC} -lt 0 ]]; do
+      echo ${WC};
+      sleep 20
+      ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o yaml
+      ${KUBECTL} describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
+      ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}'
+      WC=$(${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}' | grep False | wc -l)
+    done
 }
 
 function ci::test_function_runners() {

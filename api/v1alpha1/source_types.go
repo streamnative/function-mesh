@@ -29,12 +29,17 @@ import (
 type SourceSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name        string     `json:"name,omitempty"`
-	ClassName   string     `json:"className,omitempty"`
-	Tenant      string     `json:"tenant,omitempty"`
-	ClusterName string     `json:"clusterName,omitempty"`
-	SourceType  string     `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
-	Replicas    *int32     `json:"replicas,omitempty"`
+	Name        string `json:"name,omitempty"`
+	ClassName   string `json:"className,omitempty"`
+	Tenant      string `json:"tenant,omitempty"`
+	Namespace   string `json:"namespace,omitempty"`
+	ClusterName string `json:"clusterName,omitempty"`
+	SourceType  string `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
+	Replicas    *int32 `json:"replicas,omitempty"`
+
+	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
+	// If provided, a default HPA with CPU at average of 80% will be used.
+	// For complex HPA strategies, please refer to Pod.HPAutoscaler.
 	MaxReplicas *int32     `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
 	Output      OutputConf `json:"output,omitempty"`
 
