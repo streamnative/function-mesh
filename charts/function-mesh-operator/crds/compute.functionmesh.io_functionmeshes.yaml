@@ -725,6 +725,10 @@ spec:
                           - type
                           type: object
                         type: array
+                      builtinAutoscaler:
+                        items:
+                          type: string
+                        type: array
                       imagePullSecrets:
                         items:
                           properties:
@@ -3145,6 +3149,10 @@ spec:
                           - type
                           type: object
                         type: array
+                      builtinAutoscaler:
+                        items:
+                          type: string
+                        type: array
                       imagePullSecrets:
                         items:
                           properties:
@@ -4944,6 +4952,8 @@ spec:
                     type: string
                   clusterName:
                     type: string
+                  forwardSourceMessageProperty:
+                    type: boolean
                   golang:
                     properties:
                       go:
@@ -5542,6 +5552,10 @@ spec:
                           required:
                           - type
                           type: object
+                        type: array
+                      builtinAutoscaler:
+                        items:
+                          type: string
                         type: array
                       imagePullSecrets:
                         items:

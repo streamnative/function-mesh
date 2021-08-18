@@ -32,6 +32,7 @@ type FunctionSpec struct {
 	Name        string `json:"name,omitempty"`
 	ClassName   string `json:"className,omitempty"`
 	Tenant      string `json:"tenant,omitempty"`
+	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	Replicas    *int32 `json:"replicas,omitempty"`
 
