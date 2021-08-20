@@ -319,6 +319,7 @@ public class FunctionsImplTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.getFunctionsWorkerServiceCustomConfigs()).thenReturn(Collections.emptyMap());
         PulsarAdmin pulsarAdmin = PowerMockito.mock(PulsarAdmin.class);
         PowerMockito.when(meshWorkerService.getBrokerAdmin()).thenReturn(pulsarAdmin);
         Tenants tenants = PowerMockito.mock(Tenants.class);
@@ -341,7 +342,7 @@ public class FunctionsImplTest {
         PowerMockito.when(tenants.getTenantInfo(tenant)).thenReturn(null);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group,
-                version, functionName, null, functionConfig, Collections.emptyMap(), null);
+                version, functionName, null, functionConfig, null, meshWorkerService);
 
         String clusterName = "test-pulsar";
         Map<String, String> customLabels = Maps.newHashMap();

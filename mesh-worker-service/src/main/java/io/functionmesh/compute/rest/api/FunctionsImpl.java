@@ -42,6 +42,7 @@ import okhttp3.Call;
 import org.apache.commons.lang.StringUtils;
 import org.apache.pulsar.broker.authentication.AuthenticationDataHttps;
 import org.apache.pulsar.broker.authentication.AuthenticationDataSource;
+import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.UpdateOptionsImpl;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
@@ -50,12 +51,18 @@ import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
 import org.apache.pulsar.functions.proto.InstanceControlGrpc;
 import org.apache.pulsar.functions.utils.ComponentTypeUtils;
+import org.apache.pulsar.functions.worker.PulsarWorkerService;
 import org.apache.pulsar.functions.worker.service.api.Functions;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import javax.ws.rs.core.Response;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -142,8 +149,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 functionName,
                 functionPkgUrl,
                 functionConfig,
-                worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(),
-                cluster
+                cluster,
+                worker()
         );
         // override namespace by configuration file
         v1alpha1Function.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
@@ -211,8 +218,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                     functionName,
                     functionPkgUrl,
                     functionConfig,
-                    worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(),
-                    cluster
+                    cluster,
+                    worker()
             );
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
@@ -611,4 +618,5 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             }
         }
     }
+
 }

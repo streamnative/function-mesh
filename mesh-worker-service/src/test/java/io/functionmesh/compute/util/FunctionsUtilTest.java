@@ -18,13 +18,20 @@
  */
 package io.functionmesh.compute.util;
 
+import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpec;
 import io.functionmesh.compute.testdata.Generate;
 import java.util.Collections;
+import java.util.function.Supplier;
+
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.common.functions.FunctionConfig;
+import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.junit.Assert;
 import org.junit.Test;
+import org.powermock.api.mockito.PowerMockito;
 
 public class FunctionsUtilTest {
     @Test
@@ -43,10 +50,22 @@ public class FunctionsUtilTest {
         String clusterName = "test-pulsar";
         String jar = "word-count.jar";
 
+        MeshWorkerService meshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier = () -> meshWorkerService;
+        CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.getFunctionsWorkerServiceCustomConfigs()).thenReturn(Collections.emptyMap());
+        PulsarAdmin pulsarAdmin = PowerMockito.mock(PulsarAdmin.class);
+        PowerMockito.when(meshWorkerService.getBrokerAdmin()).thenReturn(pulsarAdmin);
+
         FunctionConfig functionConfig = Generate.CreateJavaFunctionConfig(tenant, namespace, functionName);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group, version,
-                functionName, null, functionConfig, Collections.emptyMap(), null);
+                functionName, null, functionConfig, null, meshWorkerService);
 
         Assert.assertEquals(v1alpha1Function.getKind(), kind);
 
@@ -73,10 +92,22 @@ public class FunctionsUtilTest {
         String version = "v1alpha1";
         String kind = "Function";
 
+        MeshWorkerService meshWorkerService = PowerMockito.mock(MeshWorkerService.class);
+        Supplier<MeshWorkerService> meshWorkerServiceSupplier = () -> meshWorkerService;
+        CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
+        PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
+        WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        PowerMockito.when(workerConfig.getFunctionsWorkerServiceCustomConfigs()).thenReturn(Collections.emptyMap());
+        PulsarAdmin pulsarAdmin = PowerMockito.mock(PulsarAdmin.class);
+        PowerMockito.when(meshWorkerService.getBrokerAdmin()).thenReturn(pulsarAdmin);
+
         FunctionConfig functionConfig = Generate.CreateJavaFunctionConfig(tenant, namespace, functionName);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group, version,
-                functionName, null, functionConfig, Collections.emptyMap(), null);
+                functionName, null, functionConfig, null, meshWorkerService);
 
         FunctionConfig newFunctionConfig = FunctionsUtil.createFunctionConfigFromV1alpha1Function(tenant, namespace,
                 functionName, v1alpha1Function);
