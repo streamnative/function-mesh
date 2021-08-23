@@ -234,6 +234,7 @@ function ci::verify_mesh_function() {
 function ci::print_function_log() {
     FUNCTION_NAME=$1
     ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
+    sleep 120
     ${KUBECTL} logs -lname=${FUNCTION_NAME}  --all-containers=true
 }
 
