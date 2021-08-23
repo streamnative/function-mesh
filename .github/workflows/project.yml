@@ -26,10 +26,9 @@ jobs:
         uses: actions/checkout@v1
 
       - name: InstallKubebuilder
-        run: |
-          curl -L https://go.kubebuilder.io/dl/2.3.1/linux/amd64 | tar -xz -C /tmp/
-          sudo mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
-          export PATH=$PATH:/usr/local/kubebuilder/bin
+        uses: RyanSiu1995/kubebuilder-action@v1.1
+        with:
+          version: 2.3.1
 
       - name: InstallTool
         run: |
