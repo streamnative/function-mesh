@@ -114,7 +114,6 @@ public class FunctionsUtilTest {
         String kind = "Function";
 
         MeshWorkerService meshWorkerService = PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> meshWorkerServiceSupplier = () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
         WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
