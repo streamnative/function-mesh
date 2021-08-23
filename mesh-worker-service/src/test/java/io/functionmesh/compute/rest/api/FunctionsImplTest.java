@@ -44,6 +44,7 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.internal.http.RealResponseBody;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.pulsar.client.admin.Packages;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.admin.Tenants;
@@ -51,6 +52,7 @@ import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
 import org.apache.pulsar.functions.proto.InstanceControlGrpc;
+import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
 import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.junit.Assert;
 import org.junit.Test;
@@ -60,6 +62,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,6 +81,7 @@ import static org.powermock.api.mockito.PowerMockito.spy;
         Response.class,
         RealResponseBody.class,
         CommonUtil.class,
+        FunctionsUtil.class,
         InstanceControlGrpc.InstanceControlFutureStub.class})
 @PowerMockIgnore({"javax.management.*"})
 public class FunctionsImplTest {
@@ -316,7 +320,10 @@ public class FunctionsImplTest {
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
         WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);
+        KubernetesRuntimeFactoryConfig factoryConfig = PowerMockito.mock(KubernetesRuntimeFactoryConfig.class);
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
+        PowerMockito.when(meshWorkerService.getFactoryConfig()).thenReturn(factoryConfig);
+        PowerMockito.when(factoryConfig.getExtraFunctionDependenciesDir()).thenReturn("");
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.getFunctionsWorkerServiceCustomConfigs()).thenReturn(Collections.emptyMap());
@@ -328,6 +335,7 @@ public class FunctionsImplTest {
         Response response = PowerMockito.mock(Response.class);
         ResponseBody responseBody = PowerMockito.mock(RealResponseBody.class);
         ApiClient apiClient = PowerMockito.mock(ApiClient.class);
+        PowerMockito.stub(PowerMockito.method(FunctionsUtil.class, "downloadPackageFile")).toReturn(null);
 
         String tenant = "public";
         String namespace = "default";
@@ -337,12 +345,12 @@ public class FunctionsImplTest {
         String version = "v1alpha1";
         String kind = "Function";
 
-        FunctionConfig functionConfig = Generate.CreateJavaFunctionConfig(tenant, namespace, functionName);
+        FunctionConfig functionConfig = Generate.CreateJavaFunctionWithPackageURLConfig(tenant, namespace, functionName);
 
         PowerMockito.when(tenants.getTenantInfo(tenant)).thenReturn(null);
 
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(kind, group,
-                version, functionName, null, functionConfig, null, meshWorkerService);
+                version, functionName, functionConfig.getJar(), functionConfig, null, meshWorkerService);
 
         String clusterName = "test-pulsar";
         Map<String, String> customLabels = Maps.newHashMap();
@@ -381,7 +389,7 @@ public class FunctionsImplTest {
                     functionName,
                     null,
                     null,
-                    null,
+                    functionConfig.getJar(),
                     functionConfig,
                     null,
                     null);
@@ -508,6 +516,9 @@ public class FunctionsImplTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        KubernetesRuntimeFactoryConfig factoryConfig = PowerMockito.mock(KubernetesRuntimeFactoryConfig.class);
+        PowerMockito.when(meshWorkerService.getFactoryConfig()).thenReturn(factoryConfig);
+        PowerMockito.when(factoryConfig.getExtraFunctionDependenciesDir()).thenReturn("");
 
         Call getCall = PowerMockito.mock(Call.class);
         Response getResponse = PowerMockito.mock(Response.class);
@@ -541,7 +552,9 @@ public class FunctionsImplTest {
                         null
                 )).thenReturn(getCall);
 
-        FunctionConfig functionConfig = Generate.CreateJavaFunctionConfig(tenant, namespace, functionName);
+        PowerMockito.stub(PowerMockito.method(FunctionsUtil.class, "downloadPackageFile")).toReturn(null);
+
+        FunctionConfig functionConfig = Generate.CreateJavaFunctionWithPackageURLConfig(tenant, namespace, functionName);
 
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()
                 .replaceNamespacedCustomObjectCall(
@@ -565,12 +578,13 @@ public class FunctionsImplTest {
                     functionName,
                     null,
                     null,
-                    null,
+                    functionConfig.getJar(),
                     functionConfig,
                     null,
                     null,
                     null);
         } catch (Exception exception) {
+            exception.printStackTrace();
             Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
     }

@@ -264,6 +264,7 @@ public class FunctionsUtil {
             }
         } catch (Exception e) {
             log.error("Invalid register function request {}: {}", functionName, e);
+            e.printStackTrace();
             throw new RestException(Response.Status.BAD_REQUEST, e.getMessage());
         }
         Class<?>[] typeArgs = null;
@@ -557,7 +558,7 @@ public class FunctionsUtil {
         functionInstanceStatusData.setLastInvocationTime(functionStatus.getLastInvocationTime());
     }
 
-    static File downloadPackageFile(MeshWorkerService worker, String packageName) throws IOException, PulsarAdminException {
+    private static File downloadPackageFile(MeshWorkerService worker, String packageName) throws IOException, PulsarAdminException {
         Path tempDirectory;
         if (worker.getWorkerConfig().getDownloadDirectory() != null) {
             tempDirectory = Paths.get(worker.getWorkerConfig().getDownloadDirectory());
@@ -572,8 +573,11 @@ public class FunctionsUtil {
 
     private static Class<?>[] extractTypeArgs(final FunctionConfig functionConfig,
                                              final File componentPackageFile) {
-        ClassLoader clsLoader = FunctionConfigUtils.validate(functionConfig, componentPackageFile);
         Class<?>[] typeArgs = null;
+        if (componentPackageFile == null) {
+            return null;
+        }
+        ClassLoader clsLoader = FunctionConfigUtils.validate(functionConfig, componentPackageFile);
         if (functionConfig.getRuntime() == FunctionConfig.Runtime.JAVA) {
             if (clsLoader != null) {
                 try {
