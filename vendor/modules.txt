@@ -7,9 +7,6 @@ github.com/apache/pulsar-client-go/oauth2
 github.com/apache/pulsar-client-go/oauth2/cache
 github.com/apache/pulsar-client-go/oauth2/clock
 github.com/apache/pulsar-client-go/oauth2/store
-# github.com/apache/pulsar/pulsar-function-go v0.0.0-20210430070253-eff09f1072cb
-github.com/apache/pulsar/pulsar-function-go/conf
-github.com/apache/pulsar/pulsar-function-go/logutil
 # github.com/beorn7/perks v1.0.1
 github.com/beorn7/perks/quantile
 # github.com/cespare/xxhash/v2 v2.1.1
@@ -83,8 +80,6 @@ github.com/inconshreveable/mousetrap
 github.com/json-iterator/go
 # github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d
 github.com/keybase/go-keychain
-# github.com/konsorten/go-windows-terminal-sequences v1.0.1
-github.com/konsorten/go-windows-terminal-sequences
 # github.com/kris-nova/logger v0.0.0-20181127235838-fd0d87064b06
 github.com/kris-nova/logger
 # github.com/kris-nova/lolgopher v0.0.0-20180921204813-313b3abb0d9b
@@ -164,8 +159,6 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
-# github.com/sirupsen/logrus v1.4.2
-github.com/sirupsen/logrus
 # github.com/spf13/cobra v0.0.5
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
@@ -199,7 +192,7 @@ go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
 # golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
+# golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/html
@@ -215,11 +208,11 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
+# golang.org/x/sys v0.0.0-20210423082822-04245dca01da
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.3.3
+# golang.org/x/text v0.3.6
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -379,6 +372,7 @@ k8s.io/apimachinery/pkg/util/json
 k8s.io/apimachinery/pkg/util/mergepatch
 k8s.io/apimachinery/pkg/util/naming
 k8s.io/apimachinery/pkg/util/net
+k8s.io/apimachinery/pkg/util/rand
 k8s.io/apimachinery/pkg/util/runtime
 k8s.io/apimachinery/pkg/util/sets
 k8s.io/apimachinery/pkg/util/strategicpatch

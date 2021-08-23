@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/streamnative/function-mesh/controllers/spec"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
@@ -60,13 +61,21 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		r.Log.Error(err, "failed to get function")
 		return reconcile.Result{}, err
 	}
+	var configHash string
+	if function.Spec.FuncConfig != nil {
+		configHash, err = spec.ComputeConfigHash(function.Spec.FuncConfig.Data)
+	}
+	if err != nil {
+		r.Log.Error(err, "fail to compute source config hash")
+		return reconcile.Result{}, err
+	}
 
 	// initialize component status map
 	if function.Status.Conditions == nil {
 		function.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 	}
 
-	err = r.ObserveFunctionStatefulSet(ctx, req, function)
+	err = r.ObserveFunctionStatefulSet(ctx, req, function, configHash)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -85,7 +94,7 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	err = r.ApplyFunctionStatefulSet(ctx, req, function)
+	err = r.ApplyFunctionStatefulSet(ctx, req, function, configHash)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

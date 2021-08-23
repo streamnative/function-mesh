@@ -18,6 +18,7 @@
 package spec
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
+	"k8s.io/apimachinery/pkg/util/rand"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -51,8 +53,9 @@ const (
 	PackageNameSinkPrefix     = "sink://"
 	PackageNameSourcePrefix   = "source://"
 
-	AnnotationPrometheusScrape = "prometheus.io/scrape"
-	AnnotationPrometheusPort   = "prometheus.io/port"
+	AnnotationPrometheusScrape  = "prometheus.io/scrape"
+	AnnotationPrometheusPort    = "prometheus.io/port"
+	AnnotationAppliedConfigHash = "config.functionmesh.io/applied"
 
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
 )
@@ -181,6 +184,15 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
+}
+
+func ComputeConfigHash(config map[string]interface{}) (string, error) {
+	buf, err := json.Marshal(config)
+	if err != nil {
+		return "", err
+	}
+	hex := fmt.Sprintf("%x", sha256.Sum256([]byte(buf)))
+	return rand.SafeEncodeString(string(hex)), nil
 }
 
 func getDownloadCommand(downloadPath, componentPackage string) []string {

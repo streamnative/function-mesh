@@ -42,6 +42,9 @@ import (
 
 var cfg *rest.Config
 var k8sClient client.Client
+var sourceReconciler *SourceReconciler
+var sinkReconciler *SinkReconciler
+var funcReconciler *FunctionReconciler
 var testEnv *envtest.Environment
 
 func TestAPIs(t *testing.T) {
@@ -96,25 +99,28 @@ var _ = BeforeSuite(func(done Done) {
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&FunctionReconciler{
+	funcReconciler = &FunctionReconciler{
 		Client: k8sManager.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Function"),
 		Scheme: k8sManager.GetScheme(),
-	}).SetupWithManager(k8sManager)
+	}
+	err = funcReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&SourceReconciler{
+	sourceReconciler = &SourceReconciler{
 		Client: k8sManager.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Source"),
 		Scheme: k8sManager.GetScheme(),
-	}).SetupWithManager(k8sManager)
+	}
+	err = sourceReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&SinkReconciler{
+	sinkReconciler = &SinkReconciler{
 		Client: k8sManager.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Sink"),
 		Scheme: k8sManager.GetScheme(),
-	}).SetupWithManager(k8sManager)
+	}
+	err = sinkReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

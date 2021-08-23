@@ -19,13 +19,16 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"regexp"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"strings"
 	"time"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 
@@ -48,6 +51,63 @@ var _ = Describe("Function Controller", func() {
 		function := makeFunctionSample(TestFunctionName)
 
 		createFunction(function)
+	})
+
+	Context("FunctionConfig", func() {
+		function := makeFunctionSample(fmt.Sprintf("%s-streamnative", TestFunctionName))
+
+		It("Should update function statefulset container command", func() {
+			err := k8sClient.Create(context.Background(), function)
+			Expect(err).NotTo(HaveOccurred())
+			function := &v1alpha1.Function{}
+
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
+					Namespace: TestNameSpace,
+				}, function)
+				return err == nil && len(function.Annotations) > 0
+			}, 10*time.Second, 1*time.Second).Should(BeTrue())
+
+			Expect(function.Annotations[spec.AnnotationAppliedConfigHash]).To(Equal(""))
+
+			oldFunctionConfig := &v1alpha1.Config{}
+			oldFunctionConfig.Data = map[string]interface{}{
+				"configkey1": "configvalue1",
+				"configkey2": "configvalue2",
+				"configkey3": "configvalue3",
+			}
+			newConfigHash, _ := spec.ComputeConfigHash(oldFunctionConfig.Data)
+			function.Spec.FuncConfig = oldFunctionConfig
+
+			err = k8sClient.Update(context.Background(), function)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func() bool {
+				funcReconciler.Reconcile(ctrl.Request{
+					types.NamespacedName{
+						Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
+						Namespace: TestNameSpace,
+					},
+				})
+				err := k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
+					Namespace: TestNameSpace,
+				}, function)
+				fmt.Println(function)
+				return err == nil && function.Annotations[spec.AnnotationAppliedConfigHash] != ""
+			}, 10*time.Second, 1*time.Second).Should(BeTrue())
+			Expect(function.Annotations[spec.AnnotationAppliedConfigHash]).To(Equal(newConfigHash))
+			statefulSet := &appsv1.StatefulSet{}
+			err = k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      fmt.Sprintf("%s-function", fmt.Sprintf("%s-streamnative", TestFunctionName)),
+				Namespace: TestNameSpace,
+			}, statefulSet)
+			Expect(err).NotTo(HaveOccurred())
+			re := regexp.MustCompile("{\"configkey1\":\"configvalue1\",\"configkey2\":\"configvalue2\",\"configkey3\":\"configvalue3\"}")
+			// Verify new config synced to pod spec
+			Expect(len(re.FindAllString(strings.ReplaceAll(statefulSet.Spec.Template.Spec.Containers[0].Command[2], "\\", ""), -1))).To(Equal(1))
+		})
 	})
 })
 

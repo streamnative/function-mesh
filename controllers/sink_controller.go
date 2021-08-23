@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/streamnative/function-mesh/controllers/spec"
 
 	"github.com/go-logr/logr"
 	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
@@ -59,12 +60,20 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		r.Log.Error(err, "failed to get sink")
 		return reconcile.Result{}, err
 	}
+	var configHash string
+	if sink.Spec.SinkConfig != nil {
+		configHash, err = spec.ComputeConfigHash(sink.Spec.SinkConfig.Data)
+	}
+	if err != nil {
+		r.Log.Error(err, "fail to compute source config hash")
+		return reconcile.Result{}, err
+	}
 
 	if sink.Status.Conditions == nil {
 		sink.Status.Conditions = make(map[computev1alpha1.Component]computev1alpha1.ResourceCondition)
 	}
 
-	err = r.ObserveSinkStatefulSet(ctx, req, sink)
+	err = r.ObserveSinkStatefulSet(ctx, req, sink, configHash)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -83,7 +92,7 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	err = r.ApplySinkStatefulSet(ctx, req, sink)
+	err = r.ApplySinkStatefulSet(ctx, req, sink, configHash)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

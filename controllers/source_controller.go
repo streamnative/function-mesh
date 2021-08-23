@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/streamnative/function-mesh/controllers/spec"
 
 	"github.com/go-logr/logr"
 	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
@@ -59,12 +60,20 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		r.Log.Error(err, "failed to get source")
 		return reconcile.Result{}, err
 	}
+	var configHash string
+	if source.Spec.SourceConfig != nil {
+		configHash, err = spec.ComputeConfigHash(source.Spec.SourceConfig.Data)
+	}
+	if err != nil {
+		r.Log.Error(err, "fail to compute source config hash")
+		return reconcile.Result{}, err
+	}
 
 	if source.Status.Conditions == nil {
 		source.Status.Conditions = make(map[computev1alpha1.Component]computev1alpha1.ResourceCondition)
 	}
 
-	err = r.ObserveSourceStatefulSet(ctx, req, source)
+	err = r.ObserveSourceStatefulSet(ctx, req, source, configHash)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -83,7 +92,7 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	err = r.ApplySourceStatefulSet(ctx, req, source)
+	err = r.ApplySourceStatefulSet(ctx, req, source, configHash)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

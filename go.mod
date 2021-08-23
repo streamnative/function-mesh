@@ -14,6 +14,7 @@ require (
 	github.com/prometheus/client_golang v1.7.1 // indirect
 	github.com/streamnative/pulsarctl v0.5.0
 	github.com/stretchr/testify v1.6.1
+	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
 	google.golang.org/protobuf v1.25.0
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6
