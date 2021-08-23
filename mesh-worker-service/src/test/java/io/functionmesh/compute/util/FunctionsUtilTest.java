@@ -23,7 +23,6 @@ import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpec;
 import io.functionmesh.compute.testdata.Generate;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.function.Supplier;
 
@@ -69,7 +68,6 @@ public class FunctionsUtilTest {
         String jar = "/pulsar/function-executable";
 
         MeshWorkerService meshWorkerService = PowerMockito.mock(MeshWorkerService.class);
-        Supplier<MeshWorkerService> meshWorkerServiceSupplier = () -> meshWorkerService;
         CustomObjectsApi customObjectsApi = PowerMockito.mock(CustomObjectsApi.class);
         PowerMockito.when(meshWorkerService.getCustomObjectsApi()).thenReturn(customObjectsApi);
         WorkerConfig workerConfig = PowerMockito.mock(WorkerConfig.class);

@@ -48,10 +48,8 @@ import org.apache.pulsar.common.policies.data.FunctionStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
-import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.utils.FunctionCommon;
 import org.apache.pulsar.functions.utils.FunctionConfigUtils;
-import org.apache.pulsar.functions.worker.PulsarWorkerService;
 
 import javax.ws.rs.core.Response;
 import java.io.File;
@@ -578,14 +576,12 @@ public class FunctionsUtil {
             return null;
         }
         ClassLoader clsLoader = FunctionConfigUtils.validate(functionConfig, componentPackageFile);
-        if (functionConfig.getRuntime() == FunctionConfig.Runtime.JAVA) {
-            if (clsLoader != null) {
-                try {
-                    typeArgs = FunctionCommon.getFunctionTypes(functionConfig, clsLoader);
-                } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                    throw new IllegalArgumentException(
-                            String.format("Function class %s must be in class path", functionConfig.getClassName()), e);
-                }
+        if (functionConfig.getRuntime() == FunctionConfig.Runtime.JAVA && clsLoader != null) {
+            try {
+                typeArgs = FunctionCommon.getFunctionTypes(functionConfig, clsLoader);
+            } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                throw new IllegalArgumentException(
+                        String.format("Function class %s must be in class path", functionConfig.getClassName()), e);
             }
         }
         return typeArgs;
