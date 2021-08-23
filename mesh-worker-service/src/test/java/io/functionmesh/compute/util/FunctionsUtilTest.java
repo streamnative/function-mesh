@@ -24,7 +24,6 @@ import io.functionmesh.compute.functions.models.V1alpha1FunctionSpec;
 import io.functionmesh.compute.testdata.Generate;
 
 import java.util.Collections;
-import java.util.function.Supplier;
 
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import okhttp3.Response;
