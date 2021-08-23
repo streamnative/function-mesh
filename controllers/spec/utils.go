@@ -34,7 +34,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 
 	return &proto.FunctionDetails{
 		Tenant:               function.Spec.Tenant,
-		Namespace:            function.Namespace,
+		Namespace:            function.Spec.Namespace,
 		Name:                 function.Spec.Name,
 		ClassName:            function.Spec.ClassName,
 		LogTopic:             function.Spec.LogTopic,
@@ -67,7 +67,7 @@ func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 		Port:                 int(GRPCPort.ContainerPort),
 		ClusterName:          function.Spec.ClusterName,
 		Tenant:               function.Spec.Tenant,
-		NameSpace:            function.Namespace,
+		NameSpace:            function.Spec.Namespace,
 		Name:                 function.Spec.Name,
 		LogTopic:             function.Spec.LogTopic,
 		ProcessingGuarantees: int32(convertProcessingGuarantee(function.Spec.ProcessingGuarantee)),
@@ -204,7 +204,7 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 	return &proto.FunctionDetails{
 		Tenant:               source.Spec.Tenant,
-		Namespace:            source.Namespace,
+		Namespace:            source.Spec.Namespace,
 		Name:                 source.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
 		ProcessingGuarantees: convertProcessingGuarantee(source.Spec.ProcessingGuarantee),
@@ -262,7 +262,7 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 	return &proto.FunctionDetails{
 		Tenant:               sink.Spec.Tenant,
-		Namespace:            sink.Namespace,
+		Namespace:            sink.Spec.Namespace,
 		Name:                 sink.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
 		ProcessingGuarantees: convertProcessingGuarantee(sink.Spec.ProcessingGuarantee),

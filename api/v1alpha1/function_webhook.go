@@ -72,6 +72,10 @@ func (r *Function) Default() {
 		r.Spec.Tenant = DefaultTenant
 	}
 
+	if r.Spec.Namespace == "" {
+		r.Spec.Namespace = DefaultNamespace
+	}
+
 	if r.Spec.MaxPendingAsyncRequests == nil {
 		maxPending := int32(1000)
 		r.Spec.MaxPendingAsyncRequests = &maxPending

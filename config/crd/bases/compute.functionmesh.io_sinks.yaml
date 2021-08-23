@@ -142,6 +142,8 @@ spec:
               type: integer
             name:
               type: string
+            namespace:
+              type: string
             negativeAckRedeliveryDelayMs:
               format: int32
               type: integer
