@@ -29,11 +29,10 @@ jobs:
         run: |
           wget "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-1.19.2-$(go env GOOS)-$(go env GOARCH).tar.gz" -O envtest-bins.tar.gz
           tar xzf envtest-bins.tar.gz
-          mv "kubebuilder" "/usr/local/kubebuilder"
           wget "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v3.1.0/kubebuilder_${go env GOOS}_${go env GOARCH}" -O kubebuilder
           chmod +x kubebuilder
-          mv "kubebuilder" "/usr/local/kubebuilder/bin"
-          export PATH=$PATH:/usr/local/kubebuilder/bin
+          mv "kubebuilder" "./kubebuilder/bin"
+          export PATH=$PATH:./kubebuilder/bin
 
       - name: InstallTool
         run: |
