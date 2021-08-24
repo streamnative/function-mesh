@@ -19,6 +19,7 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
+import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpec;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecGolang;
@@ -36,18 +37,24 @@ import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
+import org.apache.pulsar.common.functions.Utils;
 import org.apache.pulsar.common.policies.data.ExceptionInformation;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
+import org.apache.pulsar.functions.utils.FunctionCommon;
 import org.apache.pulsar.functions.utils.FunctionConfigUtils;
 
 import javax.ws.rs.core.Response;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -66,7 +73,8 @@ public class FunctionsUtil {
 
     public static V1alpha1Function createV1alpha1FunctionFromFunctionConfig(String kind, String group, String version
             , String functionName, String functionPkgUrl, FunctionConfig functionConfig
-            , Map<String, Object> customConfigs, String cluster) {
+            , String cluster, MeshWorkerService worker) {
+        Map<String, Object> customConfigs = worker.getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
         CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(functionConfig.getCustomRuntimeOptions());
         String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
 
@@ -236,28 +244,70 @@ public class FunctionsUtil {
         // v1alpha1FunctionSpecPulsar.setAuthConfig(CommonUtil.getPulsarClusterAuthConfigMapName(clusterName));
         v1alpha1FunctionSpec.setPulsar(v1alpha1FunctionSpecPulsar);
 
-        String location = String.format("%s/%s/%s", functionConfig.getTenant(), functionConfig.getNamespace(),
-                functionName);
-        if (StringUtils.isNotEmpty(functionPkgUrl)) {
-            location = functionPkgUrl;
+        // TODO: dynamic file name to function CRD
+        String fileName = "/pulsar/function-executable";
+        boolean isPkgUrlProvided = StringUtils.isNotEmpty(functionPkgUrl);
+        File componentPackageFile = null;
+        try {
+            if (isPkgUrlProvided) {
+                if (Utils.hasPackageTypePrefix(functionPkgUrl)) {
+                    componentPackageFile = downloadPackageFile(worker, functionPkgUrl);
+                } else {
+                    log.warn("get unsupported function package url {}", functionPkgUrl);
+                    throw new IllegalArgumentException("Function Package url is not valid. supported url (function/sink/source)");
+                }
+            } else {
+                // TODO: support upload JAR to bk
+                throw new IllegalArgumentException("uploading package to mesh worker service is not supported yet.");
+            }
+        } catch (Exception e) {
+            log.error("Invalid register function request {}: {}", functionName, e);
+            e.printStackTrace();
+            throw new RestException(Response.Status.BAD_REQUEST, e.getMessage());
+        }
+        Class<?>[] typeArgs = null;
+        if (componentPackageFile != null) {
+            typeArgs = extractTypeArgs(functionConfig, componentPackageFile);
         }
         if (StringUtils.isNotEmpty(functionConfig.getJar())) {
             V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
-            Path path = Paths.get(functionConfig.getJar());
-            v1alpha1FunctionSpecJava.setJar(path.getFileName().toString());
-            v1alpha1FunctionSpecJava.setJarLocation(location);
+            v1alpha1FunctionSpecJava.setJar(fileName);
+            if (isPkgUrlProvided) {
+                v1alpha1FunctionSpecJava.setJarLocation(functionPkgUrl);
+            }
+            String extraDependenciesDir = "";
+            if (StringUtils.isNotEmpty(worker.getFactoryConfig().getExtraFunctionDependenciesDir())) {
+                if (Paths.get(worker.getFactoryConfig().getExtraFunctionDependenciesDir()).isAbsolute()) {
+                    extraDependenciesDir = worker.getFactoryConfig().getExtraFunctionDependenciesDir();
+                } else {
+                    extraDependenciesDir = "/pulsar/" + worker.getFactoryConfig().getExtraFunctionDependenciesDir();
+                }
+            } else {
+                extraDependenciesDir = "/pulsar/instances/deps";
+            }
+            v1alpha1FunctionSpecJava.setExtraDependenciesDir(extraDependenciesDir);
             v1alpha1FunctionSpec.setJava(v1alpha1FunctionSpecJava);
+            if (typeArgs != null) {
+                if (typeArgs.length == 2 && typeArgs[0] != null) {
+                    v1alpha1FunctionSpecInput.setTypeClassName(typeArgs[0].getName());
+                }
+                if (typeArgs.length == 2 && typeArgs[1] != null) {
+                    v1alpha1FunctionSpecOutput.setTypeClassName(typeArgs[1].getName());
+                }
+            }
         } else if (StringUtils.isNotEmpty(functionConfig.getPy())) {
             V1alpha1FunctionSpecPython v1alpha1FunctionSpecPython = new V1alpha1FunctionSpecPython();
-            Path path = Paths.get(functionConfig.getPy());
-            v1alpha1FunctionSpecPython.setPy(path.getFileName().toString());
-            v1alpha1FunctionSpecPython.setPyLocation(location);
+            v1alpha1FunctionSpecPython.setPy(fileName);
+            if (isPkgUrlProvided) {
+                v1alpha1FunctionSpecPython.setPyLocation(functionPkgUrl);
+            }
             v1alpha1FunctionSpec.setPython(v1alpha1FunctionSpecPython);
         } else if (StringUtils.isNotEmpty(functionConfig.getGo())) {
             V1alpha1FunctionSpecGolang v1alpha1FunctionSpecGolang = new V1alpha1FunctionSpecGolang();
-            Path path = Paths.get(functionConfig.getGo());
-            v1alpha1FunctionSpecGolang.setGo(path.getFileName().toString());
-            v1alpha1FunctionSpecGolang.setGoLocation(location);
+            v1alpha1FunctionSpecGolang.setGo(fileName);
+            if (isPkgUrlProvided) {
+                v1alpha1FunctionSpecGolang.setGoLocation(functionPkgUrl);
+            }
             v1alpha1FunctionSpec.setGolang(v1alpha1FunctionSpecGolang);
         }
 
@@ -422,12 +472,21 @@ public class FunctionsUtil {
         if (v1alpha1FunctionSpec.getJava() != null) {
             functionConfig.setRuntime(FunctionConfig.Runtime.JAVA);
             functionConfig.setJar(v1alpha1FunctionSpec.getJava().getJar());
+            if (Strings.isNotEmpty(v1alpha1FunctionSpec.getJava().getJarLocation())) {
+                functionConfig.setJar(v1alpha1FunctionSpec.getJava().getJarLocation());
+            }
         } else if (v1alpha1FunctionSpec.getPython() != null) {
             functionConfig.setRuntime(FunctionConfig.Runtime.PYTHON);
             functionConfig.setPy(v1alpha1FunctionSpec.getPython().getPy());
+            if (Strings.isNotEmpty(v1alpha1FunctionSpec.getPython().getPyLocation())) {
+                functionConfig.setJar(v1alpha1FunctionSpec.getPython().getPyLocation());
+            }
         } else if (v1alpha1FunctionSpec.getGolang() != null) {
             functionConfig.setRuntime(FunctionConfig.Runtime.GO);
             functionConfig.setGo(v1alpha1FunctionSpec.getGolang().getGo());
+            if (Strings.isNotEmpty(v1alpha1FunctionSpec.getGolang().getGoLocation())) {
+                functionConfig.setJar(v1alpha1FunctionSpec.getGolang().getGoLocation());
+            }
         }
         if (v1alpha1FunctionSpec.getMaxMessageRetry() != null) {
             functionConfig.setMaxMessageRetries(v1alpha1FunctionSpec.getMaxMessageRetry());
@@ -495,6 +554,37 @@ public class FunctionsUtil {
 
         functionInstanceStatusData.setAverageLatency(functionStatus.getAverageLatency());
         functionInstanceStatusData.setLastInvocationTime(functionStatus.getLastInvocationTime());
+    }
+
+    private static File downloadPackageFile(MeshWorkerService worker, String packageName) throws IOException, PulsarAdminException {
+        Path tempDirectory;
+        if (worker.getWorkerConfig().getDownloadDirectory() != null) {
+            tempDirectory = Paths.get(worker.getWorkerConfig().getDownloadDirectory());
+        } else {
+            // use the Nar extraction directory as a temporary directory for downloaded files
+            tempDirectory = Paths.get(worker.getWorkerConfig().getNarExtractionDirectory());
+        }
+        File file = Files.createTempFile(tempDirectory, "function", ".tmp").toFile();
+        worker.getBrokerAdmin().packages().download(packageName, file.toString());
+        return file;
+    }
+
+    private static Class<?>[] extractTypeArgs(final FunctionConfig functionConfig,
+                                             final File componentPackageFile) {
+        Class<?>[] typeArgs = null;
+        if (componentPackageFile == null) {
+            return null;
+        }
+        ClassLoader clsLoader = FunctionConfigUtils.validate(functionConfig, componentPackageFile);
+        if (functionConfig.getRuntime() == FunctionConfig.Runtime.JAVA && clsLoader != null) {
+            try {
+                typeArgs = FunctionCommon.getFunctionTypes(functionConfig, clsLoader);
+            } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                throw new IllegalArgumentException(
+                        String.format("Function class %s must be in class path", functionConfig.getClassName()), e);
+            }
+        }
+        return typeArgs;
     }
 
 }

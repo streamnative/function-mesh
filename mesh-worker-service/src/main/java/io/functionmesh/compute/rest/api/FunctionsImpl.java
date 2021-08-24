@@ -142,8 +142,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 functionName,
                 functionPkgUrl,
                 functionConfig,
-                worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(),
-                cluster
+                cluster,
+                worker()
         );
         // override namespace by configuration file
         v1alpha1Function.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
@@ -211,8 +211,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                     functionName,
                     functionPkgUrl,
                     functionConfig,
-                    worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(),
-                    cluster
+                    cluster,
+                    worker()
             );
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
@@ -246,6 +246,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             executeCall(replaceCall, V1alpha1Function.class);
         } catch (Exception e) {
             log.error("update {}/{}/{} function failed, error message: {}", tenant, namespace, functionName, e);
+            e.printStackTrace();
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
@@ -611,4 +612,5 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             }
         }
     }
+
 }
