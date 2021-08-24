@@ -32,10 +32,11 @@ jobs:
           go-version: 1.13
         id: go
 
-      - name: setup kubebuilder 2.3.1
-        uses: RyanSiu1995/kubebuilder-action@v1.1
-        with:
-          version: 2.3.1
+      - name: InstallKubebuilder
+        run: |
+          curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz | tar -xz -C /tmp/
+          sudo mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
+          export PATH=$PATH:/usr/local/kubebuilder/bin
 
       - name: Install operator-sdk
         run: |
