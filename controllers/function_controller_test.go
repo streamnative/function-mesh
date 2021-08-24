@@ -21,9 +21,10 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
 	"time"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -84,12 +85,13 @@ var _ = Describe("Function Controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() bool {
-				funcReconciler.Reconcile(ctrl.Request{
-					types.NamespacedName{
-						Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
-						Namespace: TestNameSpace,
-					},
-				})
+				funcReconciler.Reconcile(
+					ctrl.Request{
+						NamespacedName: types.NamespacedName{
+							Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
+							Namespace: TestNameSpace,
+						},
+					})
 				err := k8sClient.Get(context.Background(), types.NamespacedName{
 					Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
 					Namespace: TestNameSpace,

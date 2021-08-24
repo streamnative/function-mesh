@@ -20,12 +20,13 @@ package controllers
 import (
 	"context"
 	"fmt"
-	appv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"regexp"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
 	"time"
+
+	appv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -92,7 +93,7 @@ var _ = Describe("Sink Controller", func() {
 
 			Eventually(func() bool {
 				sinkReconciler.Reconcile(ctrl.Request{
-					types.NamespacedName{
+					NamespacedName: types.NamespacedName{
 						Name:      TestSinkName,
 						Namespace: TestNameSpace,
 					},

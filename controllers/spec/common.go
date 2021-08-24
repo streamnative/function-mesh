@@ -191,8 +191,8 @@ func ComputeConfigHash(config map[string]interface{}) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	hex := fmt.Sprintf("%x", sha256.Sum256([]byte(buf)))
-	return rand.SafeEncodeString(string(hex)), nil
+	hex := fmt.Sprintf("%x", sha256.Sum256(buf))
+	return rand.SafeEncodeString(hex), nil
 }
 
 func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool) []string {

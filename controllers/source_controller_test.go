@@ -20,16 +20,17 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"regexp"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"strings"
-	"time"
 )
 
 var _ = Describe("Source Controller", func() {
@@ -91,7 +92,7 @@ var _ = Describe("Source Controller", func() {
 
 			Eventually(func() bool {
 				sourceReconciler.Reconcile(ctrl.Request{
-					types.NamespacedName{
+					NamespacedName: types.NamespacedName{
 						Name:      TestSourceName,
 						Namespace: TestNameSpace,
 					},
