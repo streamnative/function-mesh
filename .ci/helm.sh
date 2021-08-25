@@ -349,12 +349,18 @@ function ci::upload_java_package() {
     echo "${RET}"
     return 1
   fi
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages download function://public/default/java-function@1.0 --path /pulsar/api-examples.jar)
+  if [[ $RET != *"successfully"* ]]; then
+    echo "${RET}"
+    return 1
+  fi
 }
 
 function ci::verify_java_package() {
   RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --jar function://public/default/java-function@1.0 --name package-java-fn --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/package-java-fn-input --cpu 0.1)
   if [[ $RET != *"successfully"* ]]; then
     echo "${RET}"
+    ${KUBECTL} logs -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0
     return 1
   fi
   sleep 15
