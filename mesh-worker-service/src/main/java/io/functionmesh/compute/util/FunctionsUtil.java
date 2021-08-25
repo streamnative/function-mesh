@@ -268,7 +268,7 @@ public class FunctionsUtil {
         }
         Class<?>[] typeArgs = null;
         if (componentPackageFile != null) {
-            typeArgs = extractTypeArgs(functionConfig, componentPackageFile);
+            typeArgs = extractTypeArgs(functionConfig, componentPackageFile, worker.getWorkerConfig().isForwardSourceMessageProperty());
         }
         if (StringUtils.isNotEmpty(functionConfig.getJar())) {
             V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
@@ -577,8 +577,11 @@ public class FunctionsUtil {
     }
 
     private static Class<?>[] extractTypeArgs(final FunctionConfig functionConfig,
-                                             final File componentPackageFile) {
+                                             final File componentPackageFile,
+                                              final boolean isForwardSourceMessageProperty) {
         Class<?>[] typeArgs = null;
+        FunctionConfigUtils.inferMissingArguments(
+                functionConfig, isForwardSourceMessageProperty);
         if (componentPackageFile == null) {
             return null;
         }
