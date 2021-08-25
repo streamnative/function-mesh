@@ -568,12 +568,11 @@ public class FunctionsUtil {
         if (Files.notExists(tempDirectory)) {
             Files.createDirectories(tempDirectory);
         }
-        File file = Files.createTempFile(tempDirectory, "function", ".tmp").toFile();
         String fileName = String.format("function-%s.tmp", RandomStringUtils.random(5, true, true).toLowerCase());
         Path filePath = Paths.get(tempDirectory.toString(), fileName);
         Files.deleteIfExists(filePath);
         worker.getBrokerAdmin().packages().download(packageName, filePath.toString());
-        return file;
+        return filePath.toFile();
     }
 
     private static Class<?>[] extractTypeArgs(final FunctionConfig functionConfig,
