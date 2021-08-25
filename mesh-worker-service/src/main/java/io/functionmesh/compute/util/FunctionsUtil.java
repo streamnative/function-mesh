@@ -35,6 +35,7 @@ import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPython;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.client.admin.PulsarAdminException;
@@ -568,7 +569,10 @@ public class FunctionsUtil {
             Files.createDirectories(tempDirectory);
         }
         File file = Files.createTempFile(tempDirectory, "function", ".tmp").toFile();
-        worker.getBrokerAdmin().packages().download(packageName, file.toString());
+        String fileName = String.format("function-%s.tmp", RandomStringUtils.random(5, true, true).toLowerCase());
+        Path filePath = Paths.get(tempDirectory.toString(), fileName);
+        Files.deleteIfExists(filePath);
+        worker.getBrokerAdmin().packages().download(packageName, filePath.toString());
         return file;
     }
 
