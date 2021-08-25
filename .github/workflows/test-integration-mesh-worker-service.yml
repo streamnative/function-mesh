@@ -81,3 +81,7 @@ jobs:
       - name: verify mesh-worker-service
         run: |
           .ci/verify_mesh_worker_service.sh
+
+      - name: verify package management service
+        run: |
+          .ci/verify_package_management_service.sh

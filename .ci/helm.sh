@@ -342,3 +342,95 @@ function ci::verify_mesh_worker_service_pulsar_admin() {
   ${KUBECTL} get pods -n ${NAMESPACE}
 
 }
+
+function ci::upload_java_package() {
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/java-function@1.0 --path /pulsar/examples/api-examples.jar --description java-function@1.0)
+  if [[ $RET != *"successfully"* ]]; then
+    echo "${RET}"
+    return 1
+  fi
+}
+
+function ci::verify_java_package() {
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --jar function://public/default/java-function@1.0 --name package-java-fn --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/package-java-fn-input --cpu 0.1)
+  if [[ $RET != *"successfully"* ]]; then
+    echo "${RET}"
+    return 1
+  fi
+  sleep 15
+  ${KUBECTL} get pods -A
+  sleep 5
+  WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "package-java-fn" | wc -l)
+  while [[ ${WC} -lt 1 ]]; do
+    echo ${WC};
+    sleep 20
+    ${KUBECTL} get pods -n ${NAMESPACE}
+    ${KUBECTL} describe pod package-java-fn-function-0
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "package-java-fn" | wc -l)
+  done
+  echo "java function test done"
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --name package-java-fn)
+  echo "${RET}"
+}
+
+function ci::upload_python_package() {
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/python-function@1.0 --path /pulsar/examples/python-examples/exclamation_function.py --description python-function@1.0)
+  if [[ $RET != *"successfully"* ]]; then
+    echo "${RET}"
+    return 1
+  fi
+}
+
+function ci::verify_python_package() {
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --py function://public/default/python-function@1.0 --name package-python-fn --classname exclamation_function.ExclamationFunction --inputs persistent://public/default/package-python-fn-input --cpu 0.1)
+  if [[ $RET != *"successfully"* ]]; then
+    echo "${RET}"
+    return 1
+  fi
+  sleep 15
+  ${KUBECTL} get pods -A
+  sleep 5
+  WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "package-python-fn" | wc -l)
+  while [[ ${WC} -lt 1 ]]; do
+    echo ${WC};
+    sleep 20
+    ${KUBECTL} get pods -n ${NAMESPACE}
+    ${KUBECTL} describe pod package-python-fn-function-0
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "package-python-fn" | wc -l)
+  done
+  echo "python function test done"
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --name package-python-fn)
+  echo "${RET}"
+}
+
+function ci::upload_go_package() {
+  ${KUBECTL} cp "${FUNCTION_MESH_HOME}/.ci/examples/go-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-0:/pulsar/examples"
+  sleep 1
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/go-function@1.0 --path /pulsar/examples/go-examples --description go-function@1.0)
+  if [[ $RET != *"successfully"* ]]; then
+    echo "${RET}"
+    return 1
+  fi
+}
+
+function ci::verify_go_package() {
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --go function://public/default/go-function@1.0 --name package-go-fn --inputs persistent://public/default/package-go-fn-input --cpu 0.1)
+  if [[ $RET != *"successfully"* ]]; then
+    echo "${RET}"
+    return 1
+  fi
+  sleep 15
+  ${KUBECTL} get pods -A
+  sleep 5
+  WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "package-go-fn" | wc -l)
+  while [[ ${WC} -lt 1 ]]; do
+    echo ${WC};
+    sleep 20
+    ${KUBECTL} get pods -n ${NAMESPACE}
+    ${KUBECTL} describe pod package-go-fn-function-0
+    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "package-go-fn" | wc -l)
+  done
+  echo "go function test done"
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --name package-go-fn)
+  echo "${RET}"
+}
