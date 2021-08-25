@@ -358,11 +358,9 @@ function ci::upload_java_package() {
 
 function ci::verify_java_package() {
   RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --jar function://public/default/java-function@1.0 --name package-java-fn --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/package-java-fn-input --cpu 0.1)
-  if [[ $RET != *"successfully"* ]]; then
-    echo "${RET}"
-    ${KUBECTL} logs -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0
-    return 1
-  fi
+  sleep 15
+  echo "${RET}"
+  ${KUBECTL} logs -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0
   sleep 15
   ${KUBECTL} get pods -A
   sleep 5

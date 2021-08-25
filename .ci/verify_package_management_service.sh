@@ -31,8 +31,8 @@ source ${PULSAR_HOME}/.ci/helm.sh
 ci::upload_java_package
 ci::verify_java_package
 
-ci::upload_python_package
-ci::verify_python_package
+#ci::upload_python_package
+#ci::verify_python_package
 
-ci::upload_go_package
-ci::verify_go_package
+#ci::upload_go_package
+#ci::verify_go_package
