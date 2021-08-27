@@ -286,6 +286,7 @@ function ci::verify_mesh_worker_service_pulsar_admin() {
   fi
   ${KUBECTL} get pods -n ${NAMESPACE}
   sleep 120
+  ${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-source"
   WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-sink" | wc -l)
   while [[ ${WC} -lt 1 ]]; do
     echo ${WC};
@@ -293,6 +294,7 @@ function ci::verify_mesh_worker_service_pulsar_admin() {
     ${KUBECTL} get pods -n ${NAMESPACE}
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-sink" | wc -l)
   done
+  ${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-source"
   WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-source" | wc -l)
   while [[ ${WC} -lt 1 ]]; do
     echo ${WC};
@@ -300,6 +302,7 @@ function ci::verify_mesh_worker_service_pulsar_admin() {
     ${KUBECTL} get pods -n ${NAMESPACE}
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "data-generator-source" | wc -l)
   done
+  sleep 120
   ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks status --name data-generator-sink
   RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin sinks status --name data-generator-sink)
   if [[ $RET != *"true"* ]]; then
