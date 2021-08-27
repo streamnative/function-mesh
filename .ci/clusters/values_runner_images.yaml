@@ -40,27 +40,27 @@ monitoring:
 images:
   zookeeper:
     repository: streamnative/pulsar-all
-    tag: 2.8.0.13
+    tag: 2.8.0.14
     pullPolicy: IfNotPresent
   bookie:
     repository: streamnative/pulsar-all
-    tag: 2.8.0.13
+    tag: 2.8.0.14
     pullPolicy: IfNotPresent
   autorecovery:
     repository: streamnative/pulsar-all
-    tag: 2.8.0.13
+    tag: 2.8.0.14
     pullPolicy: IfNotPresent
   broker:
     repository: streamnative/pulsar-all
-    tag: 2.8.0.13
+    tag: 2.8.0.14
     pullPolicy: IfNotPresent
   proxy:
     repository: streamnative/pulsar-all
-    tag: 2.8.0.13
+    tag: 2.8.0.14
     pullPolicy: IfNotPresent
   functions:
     repository: streamnative/pulsar-all
-    tag: 2.8.0.13
+    tag: 2.8.0.14
     pullPolicy: IfNotPresent
 
 zookeeper:
@@ -101,7 +101,7 @@ bookkeeper:
 pulsar_metadata:
   image:
     repository: streamnative/pulsar-all
-    tag: 2.8.0.13
+    tag: 2.8.0.14
     pullPolicy: IfNotPresent
 
 broker:
@@ -161,9 +161,9 @@ functions:
     disk: 1048576000
   functionRuntimeFactoryConfigs:
     functionDockerImages:
-      JAVA: "streamnative/pulsar-functions-java-runner:2.8.0.13"
-      PYTHON: "streamnative/pulsar-functions-python-runner:2.8.0.13"
-      GO: "streamnative/pulsar-functions-go-runner:2.8.0.13"
+      JAVA: "streamnative/pulsar-functions-java-runner:2.8.0.14"
+      PYTHON: "streamnative/pulsar-functions-python-runner:2.8.0.14"
+      GO: "streamnative/pulsar-functions-go-runner:2.8.0.14"
     functionInstanceMinResources:
       cpu: 0.1
       ram: 10485760
