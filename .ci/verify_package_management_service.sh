@@ -28,9 +28,6 @@ FUNCTION=${FUNCTION:-"false"}
 
 source ${PULSAR_HOME}/.ci/helm.sh
 
-ci::ensure_mesh_worker_service_role
-ci::ensure_function_mesh_config
-
 ci::upload_java_package
 ci::verify_java_package
 
