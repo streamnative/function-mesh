@@ -25,10 +25,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerateFunctionDetailsInJSON(t *testing.T) {
+func TestGenerateFunctionDetailsEarliestInJSON(t *testing.T) {
 	function := makeGoFunctionSample("test")
 	function.Spec.SubscriptionPosition = v1alpha1.Earliest
 	j := generateFunctionDetailsInJSON(function)
 	assert.True(t, strings.Contains(j, "subscriptionPosition"))
 	assert.True(t, strings.Contains(j, "EARLIEST"))
+}
+
+func TestGenerateFunctionDetailsLatestInJSON(t *testing.T) {
+	function := makeGoFunctionSample("test")
+	function.Spec.SubscriptionPosition = v1alpha1.Latest
+	j := generateFunctionDetailsInJSON(function)
+	assert.True(t, strings.Contains(j, "subscriptionPosition"))
+	assert.True(t, strings.Contains(j, "LATEST"))
 }
