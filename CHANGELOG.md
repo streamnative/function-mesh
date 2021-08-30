@@ -1,3 +1,20 @@
+# Function Mesh v0.1.7 Release Notes
+
+## v0.1.7 What's New
+
+- [mesh-worker-service] add sink/source typeClassName in connector definition ([#247](https://github.com/streamnative/function-mesh/pull/247))
+- [tests] add integration tests for mesh-worker-service ([#246](https://github.com/streamnative/function-mesh/pull/246))
+- [controller] use untyped yaml configuration as function or connector config ([#233](https://github.com/streamnative/function-mesh/pull/233))
+- [controller] enable source connector to set ForwardMessageProperty ([#250](https://github.com/streamnative/function-mesh/pull/250))
+- [runner-image] fix build python runner image based on the latest pulsar image ([#253](https://github.com/streamnative/function-mesh/pull/253)) ([#254](https://github.com/streamnative/function-mesh/pull/254))
+- [controller] fix package download path not same as the executing command path ([#256](https://github.com/streamnative/function-mesh/pull/256))
+- [controller] support metrics based HPA by upgrade apis to k8s.io/api/autoscaling/v2beta2 ([#245](https://github.com/streamnative/function-mesh/pull/245))
+- [controller] fix misuse of kubernetes namespace in controller ([#259](https://github.com/streamnative/function-mesh/pull/259))
+- [controller] support download package with auth/tls ([#257](https://github.com/streamnative/function-mesh/pull/257))
+- [mesh-worker-service] support create function with package URL ([#261](https://github.com/streamnative/function-mesh/pull/261))
+- [tests] add integration tests for pulsar's package management service ([#268](https://github.com/streamnative/function-mesh/pull/268))
+- [code-base] remove vendor folder in codebase ([#267](https://github.com/streamnative/function-mesh/pull/267))
+
 # Function Mesh v0.1.6 Release Notes
 
 ## v0.1.6 What's New
