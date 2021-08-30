@@ -347,14 +347,19 @@ function ci::verify_mesh_worker_service_pulsar_admin() {
 }
 
 function ci::upload_java_package() {
+
   RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/java-function@1.0 --path /pulsar/examples/api-examples.jar --description java-function@1.0)
   if [[ $RET != *"successfully"* ]]; then
     echo "${RET}"
+    ${KUBECTL} logs -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0
+    sleep 60
     return 1
   fi
   RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages download function://public/default/java-function@1.0 --path /pulsar/api-examples.jar)
   if [[ $RET != *"successfully"* ]]; then
     echo "${RET}"
+    ${KUBECTL} logs -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0
+    sleep 60
     return 1
   fi
 }
