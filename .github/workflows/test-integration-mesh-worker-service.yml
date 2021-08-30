@@ -78,6 +78,14 @@ jobs:
           make install
           nohup make run &
 
+      - name: Build runner images
+        run: |
+          PULSAR_IMAGE_TAG=2.8.0.14 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=true images/build.sh
+
       - name: verify mesh-worker-service
         run: |
           .ci/verify_mesh_worker_service.sh
+
+      - name: verify package management service
+        run: |
+          .ci/verify_package_management_service.sh

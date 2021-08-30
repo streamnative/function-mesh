@@ -35,6 +35,7 @@ import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPython;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.client.admin.PulsarAdminException;
@@ -267,7 +268,7 @@ public class FunctionsUtil {
         }
         Class<?>[] typeArgs = null;
         if (componentPackageFile != null) {
-            typeArgs = extractTypeArgs(functionConfig, componentPackageFile);
+            typeArgs = extractTypeArgs(functionConfig, componentPackageFile, worker.getWorkerConfig().isForwardSourceMessageProperty());
         }
         if (StringUtils.isNotEmpty(functionConfig.getJar())) {
             V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
@@ -564,14 +565,22 @@ public class FunctionsUtil {
             // use the Nar extraction directory as a temporary directory for downloaded files
             tempDirectory = Paths.get(worker.getWorkerConfig().getNarExtractionDirectory());
         }
-        File file = Files.createTempFile(tempDirectory, "function", ".tmp").toFile();
-        worker.getBrokerAdmin().packages().download(packageName, file.toString());
-        return file;
+        if (Files.notExists(tempDirectory)) {
+            Files.createDirectories(tempDirectory);
+        }
+        String fileName = String.format("function-%s.tmp", RandomStringUtils.random(5, true, true).toLowerCase());
+        Path filePath = Paths.get(tempDirectory.toString(), fileName);
+        Files.deleteIfExists(filePath);
+        worker.getBrokerAdmin().packages().download(packageName, filePath.toString());
+        return filePath.toFile();
     }
 
     private static Class<?>[] extractTypeArgs(final FunctionConfig functionConfig,
-                                             final File componentPackageFile) {
+                                             final File componentPackageFile,
+                                              final boolean isForwardSourceMessageProperty) {
         Class<?>[] typeArgs = null;
+        FunctionConfigUtils.inferMissingArguments(
+                functionConfig, isForwardSourceMessageProperty);
         if (componentPackageFile == null) {
             return null;
         }
