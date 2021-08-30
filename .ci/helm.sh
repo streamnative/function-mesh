@@ -419,7 +419,9 @@ function ci::verify_python_package() {
 function ci::upload_go_package() {
   ${KUBECTL} cp "${FUNCTION_MESH_HOME}/.ci/examples/go-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-0:/pulsar/examples"
   sleep 1
-  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/go-function@1.0 --path /pulsar/examples/go-examples --description go-function@1.0)
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- ls -l /pulsar/examples/go-examples
+  sleep 1
+  RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/go-function@1.0 --path /pulsar/examples/go-examples/exclamationFunc --description go-function@1.0)
   if [[ $RET != *"successfully"* ]]; then
     echo "${RET}"
     return 1
