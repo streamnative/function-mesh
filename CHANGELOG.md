@@ -9,7 +9,7 @@
 - [Runner image] Find the issue that the Python runner image cannot be built based on the latest Pulsar image ([#253](https://github.com/streamnative/function-mesh/pull/253)) ([#254](https://github.com/streamnative/function-mesh/pull/254))
 - [controller] fix package download path not same as the executing command path ([#256](https://github.com/streamnative/function-mesh/pull/256))
 - [controller] support metrics based HPA by upgrade apis to k8s.io/api/autoscaling/v2beta2 ([#245](https://github.com/streamnative/function-mesh/pull/245))
-- [controller] fix misuse of kubernetes namespace in controller ([#259](https://github.com/streamnative/function-mesh/pull/259))
+- [Controller] Fix misuse of Kubernetes namespace in Controller ([#259](https://github.com/streamnative/function-mesh/pull/259))
 - [controller] support download package with auth/tls ([#257](https://github.com/streamnative/function-mesh/pull/257))
 - [mesh-worker-service] support create function with package URL ([#261](https://github.com/streamnative/function-mesh/pull/261))
 - [tests] add integration tests for pulsar's package management service ([#268](https://github.com/streamnative/function-mesh/pull/268))
