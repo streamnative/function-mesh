@@ -13,7 +13,7 @@
 - [Controller] Support downloading the package with authentication or TLS ([#257](https://github.com/streamnative/function-mesh/pull/257))
 - [Function Mesh Worker service] Support creating a function with the package URL ([#261](https://github.com/streamnative/function-mesh/pull/261))
 - [Test] Add integration tests for Pulsar package management service ([#268](https://github.com/streamnative/function-mesh/pull/268))
-- [code-base] remove vendor folder in codebase ([#267](https://github.com/streamnative/function-mesh/pull/267))
+- [Codebase] Remove the vendor folder in the codebase ([#267](https://github.com/streamnative/function-mesh/pull/267))
 
 # Function Mesh v0.1.6 Release Notes
 
