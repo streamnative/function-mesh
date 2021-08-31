@@ -135,7 +135,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 
 func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
 	functionDetails := convertFunctionDetails(function)
-	marshaler := &jsonpb.Marshaler{EmitDefaults: true, EnumsAsInts: false}
+	marshaler := &jsonpb.Marshaler{EnumsAsInts: false}
 	jsonString, err := marshaler.MarshalToString(functionDetails)
 	if err != nil {
 		// TODO

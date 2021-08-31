@@ -18,6 +18,7 @@
 package spec
 
 import (
+	"github.com/streamnative/function-mesh/controllers/proto"
 	"strings"
 	"testing"
 
@@ -245,4 +246,16 @@ func makeGoFunctionSample(functionName string) *v1alpha1.Function {
 			},
 		},
 	}
+}
+
+func TestConvertSubPosition(t *testing.T) {
+	validSubscribePosition := "earliest"
+	ret := convertSubPosition(v1alpha1.SubscribePosition(validSubscribePosition))
+	assert.Equal(t, ret, proto.SubscriptionPosition_EARLIEST)
+	upperSubscribePosition := "LATEST"
+	ret = convertSubPosition(v1alpha1.SubscribePosition(upperSubscribePosition))
+	assert.Equal(t, ret, proto.SubscriptionPosition_LATEST)
+	invalidSubscribePosition := "foo"
+	ret = convertSubPosition(v1alpha1.SubscribePosition(invalidSubscribePosition))
+	assert.Equal(t, ret, proto.SubscriptionPosition_EARLIEST)
 }

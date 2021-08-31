@@ -389,7 +389,8 @@ func convertProcessingGuarantee(input v1alpha1.ProcessGuarantee) proto.Processin
 }
 
 func convertSubPosition(pos v1alpha1.SubscribePosition) proto.SubscriptionPosition {
-	switch pos {
+	convertedPos := v1alpha1.SubscribePosition(strings.ToLower(string(pos)))
+	switch convertedPos {
 	case v1alpha1.Earliest:
 		return proto.SubscriptionPosition_EARLIEST
 	case v1alpha1.Latest:

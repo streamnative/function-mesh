@@ -55,6 +55,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		Builtin:              "",
 		RetainOrdering:       function.Spec.RetainOrdering,
 		RetainKeyOrdering:    function.Spec.RetainKeyOrdering,
+		SubscriptionPosition: convertSubPosition(function.Spec.SubscriptionPosition),
 	}
 }
 
