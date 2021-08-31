@@ -4,7 +4,7 @@
 
 - [Function Mesh Worker service] Add `typeClassName` in the source and sink connector definition ([#247](https://github.com/streamnative/function-mesh/pull/247))
 - [Test] Add integration tests for Function Mesh Worker service ([#246](https://github.com/streamnative/function-mesh/pull/246))
-- [controller] use untyped yaml configuration as function or connector config ([#233](https://github.com/streamnative/function-mesh/pull/233))
+- [Controller] Use untyped YAML configuration as function or connector configuration ([#233](https://github.com/streamnative/function-mesh/pull/233))
 - [controller] enable source connector to set ForwardMessageProperty ([#250](https://github.com/streamnative/function-mesh/pull/250))
 - [runner-image] fix build python runner image based on the latest pulsar image ([#253](https://github.com/streamnative/function-mesh/pull/253)) ([#254](https://github.com/streamnative/function-mesh/pull/254))
 - [controller] fix package download path not same as the executing command path ([#256](https://github.com/streamnative/function-mesh/pull/256))
