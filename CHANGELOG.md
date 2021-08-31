@@ -2,7 +2,7 @@
 
 ## v0.1.7 What's New
 
-- [mesh-worker-service] add sink/source typeClassName in connector definition ([#247](https://github.com/streamnative/function-mesh/pull/247))
+- [Function Mesh Worker service] Add `typeClassName` in the source and sink connector definition ([#247](https://github.com/streamnative/function-mesh/pull/247))
 - [tests] add integration tests for mesh-worker-service ([#246](https://github.com/streamnative/function-mesh/pull/246))
 - [controller] use untyped yaml configuration as function or connector config ([#233](https://github.com/streamnative/function-mesh/pull/233))
 - [controller] enable source connector to set ForwardMessageProperty ([#250](https://github.com/streamnative/function-mesh/pull/250))
