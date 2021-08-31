@@ -33,4 +33,3 @@ func TestGenerateFunctionDetailsEarliestInJSON(t *testing.T) {
 	assert.True(t, strings.Contains(j, "subscriptionPosition"))
 	assert.True(t, strings.Contains(j, "EARLIEST"))
 }
-

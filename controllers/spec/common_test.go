@@ -18,9 +18,10 @@
 package spec
 
 import (
-	"github.com/streamnative/function-mesh/controllers/proto"
 	"strings"
 	"testing"
+
+	"github.com/streamnative/function-mesh/controllers/proto"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
