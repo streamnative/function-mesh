@@ -19,6 +19,7 @@
 package io.functionmesh.compute.util;
 
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpec;
 import io.functionmesh.compute.testdata.Generate;
@@ -88,7 +89,7 @@ public class SinksUtilTest {
         V1alpha1Sink actualV1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null,
-                        Collections.emptyMap(), null);
+                        new MeshWorkerServiceCustomConfig(), null);
 
         Assert.assertEquals(actualV1alpha1Sink.getKind(), kind);
         V1alpha1SinkSpec v1alpha1SinkSpec = actualV1alpha1Sink.getSpec();
@@ -131,7 +132,7 @@ public class SinksUtilTest {
         V1alpha1Sink actualV1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null,
-                        Collections.emptyMap(), null);
+                        new MeshWorkerServiceCustomConfig(), null);
 
         SinkConfig newSinkConfig = SinksUtil.createSinkConfigFromV1alpha1Sink(tenant, namespace, componentName, actualV1alpha1Sink);
 
@@ -181,7 +182,7 @@ public class SinksUtilTest {
         V1alpha1Sink actualV1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, null, sinkConfig, connectorsManager,
-                        Collections.emptyMap(), null);
+                        new MeshWorkerServiceCustomConfig(), null);
 
         Assert.assertEquals(actualV1alpha1Sink.getKind(), kind);
         V1alpha1SinkSpec v1alpha1SinkSpec = actualV1alpha1Sink.getSpec();

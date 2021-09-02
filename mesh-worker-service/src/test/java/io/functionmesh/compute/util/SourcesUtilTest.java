@@ -19,6 +19,7 @@
 package io.functionmesh.compute.util;
 
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpec;
 import io.functionmesh.compute.testdata.Generate;
@@ -85,7 +86,7 @@ public class SourcesUtilTest {
 
         V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
                 componentName, null, uploadedInputStream, sourceConfig, null,
-                Collections.emptyMap(), null);
+                new MeshWorkerServiceCustomConfig(), null);
 
         Assert.assertEquals(v1alpha1Source.getKind(), kind);
         V1alpha1SourceSpec v1alpha1SourceSpec = v1alpha1Source.getSpec();
@@ -124,7 +125,7 @@ public class SourcesUtilTest {
 
         V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
                 componentName, null, uploadedInputStream, sourceConfig, null,
-                Collections.emptyMap(), null);
+                new MeshWorkerServiceCustomConfig(), null);
 
         SourceConfig newSourceConfig = SourcesUtil.createSourceConfigFromV1alpha1Source(tenant, namespace,
                 componentName, v1alpha1Source);
@@ -172,7 +173,7 @@ public class SourcesUtilTest {
         V1alpha1Source v1alpha1Source =
                 SourcesUtil.createV1alpha1SourceFromSourceConfig(
                         kind, group, version, componentName, null, null, sourceConfig, connectorsManager,
-                        Collections.emptyMap(), null);
+                        new MeshWorkerServiceCustomConfig(), null);
 
         Assert.assertEquals(v1alpha1Source.getKind(), kind);
         V1alpha1SourceSpec v1alpha1SourceSpec = v1alpha1Source.getSpec();

@@ -20,6 +20,7 @@ package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
 import io.functionmesh.compute.util.CommonUtil;
@@ -249,7 +250,7 @@ public class SourcesImpTest {
                         uploadedInputStream,
                         sourceConfig,
                         null,
-                        Collections.emptyMap(), null);
+                        new MeshWorkerServiceCustomConfig(), null);
         Map<String, String> customLabels = Maps.newHashMap();
         customLabels.put("pulsar-cluster", clusterName);
         customLabels.put("pulsar-tenant", tenant);

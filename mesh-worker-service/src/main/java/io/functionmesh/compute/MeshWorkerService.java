@@ -18,6 +18,7 @@
  */
 package io.functionmesh.compute;
 
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.rest.api.FunctionsImpl;
 import io.functionmesh.compute.rest.api.SinksImpl;
 import io.functionmesh.compute.rest.api.SourcesImpl;
@@ -74,6 +75,7 @@ public class MeshWorkerService implements WorkerService {
     private ApiClient apiClient;
     private PulsarAdmin brokerAdmin;
     private KubernetesRuntimeFactoryConfig factoryConfig;
+    private MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig;
 
     private AuthenticationService authenticationService;
     private AuthorizationService authorizationService;
@@ -139,6 +141,8 @@ public class MeshWorkerService implements WorkerService {
         this.sinks = new SinksImpl(() -> MeshWorkerService.this);
         this.factoryConfig = RuntimeUtils.getRuntimeFunctionConfig(
                 workerConfig.getFunctionRuntimeFactoryConfigs(), KubernetesRuntimeFactoryConfig.class);
+        this.meshWorkerServiceCustomConfig = RuntimeUtils.getRuntimeFunctionConfig(
+                workerConfig.getFunctionsWorkerServiceCustomConfigs(), MeshWorkerServiceCustomConfig.class);
     }
 
     private void initKubernetesClient() throws IOException {

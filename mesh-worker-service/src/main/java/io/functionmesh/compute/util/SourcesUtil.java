@@ -21,12 +21,14 @@ package io.functionmesh.compute.util;
 import com.google.gson.Gson;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpec;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecJava;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutput;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerConf;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerConfCryptoConfig;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodResources;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
@@ -63,9 +65,11 @@ public class SourcesUtil {
                                                                       InputStream uploadedInputStream,
                                                                       SourceConfig sourceConfig,
                                                                       MeshConnectorsManager connectorsManager,
-                                                                      Map<String, Object> customConfigs, String cluster) {
+                                                                      MeshWorkerServiceCustomConfig customConfigs,
+                                                                      String cluster) {
         CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(sourceConfig.getCustomRuntimeOptions());
         String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
+        String serviceAccountName = customRuntimeOptions.getServiceAccountName();
 
         String location = String.format("%s/%s/%s", sourceConfig.getTenant(), sourceConfig.getNamespace(),
                 sourceConfig.getName());
@@ -216,6 +220,12 @@ public class SourcesUtil {
 
         v1alpha1SourceSpec.setSourceConfig(sourceConfig.getConfigs());
 
+        V1alpha1SourceSpecPod specPod = new V1alpha1SourceSpecPod();
+        if (StringUtils.isNotEmpty(serviceAccountName)) {
+            specPod.setServiceAccountName(serviceAccountName);
+            v1alpha1SourceSpec.setPod(specPod);
+        }
+
         v1alpha1Source.setSpec(v1alpha1SourceSpec);
 
         return v1alpha1Source;
@@ -282,6 +292,11 @@ public class SourcesUtil {
 
         if (v1alpha1SourceSpec.getMaxReplicas() != null && v1alpha1SourceSpec.getMaxReplicas() > 0) {
             customRuntimeOptions.setMaxReplicas(v1alpha1SourceSpec.getMaxReplicas());
+        }
+
+        if (v1alpha1SourceSpec.getPod() != null &&
+                Strings.isNotEmpty(v1alpha1SourceSpec.getPod().getServiceAccountName())) {
+            customRuntimeOptions.setServiceAccountName(v1alpha1SourceSpec.getPod().getServiceAccountName());
         }
 
         if (v1alpha1SourceSpec.getSourceConfig() != null) {

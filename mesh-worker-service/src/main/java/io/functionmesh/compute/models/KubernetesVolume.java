@@ -18,19 +18,7 @@
  */
 package io.functionmesh.compute.models;
 
-import lombok.Data;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumes;
+import io.kubernetes.client.openapi.models.V1Volume;
 
-@Data
-public class CustomRuntimeOptions {
-    public final static String clusterNameKey = "clusterName";
-    public final static String inputTypeClassNameKey = "inputTypeClassName";
-    public final static String outputTypeClassNameKey = "outputTypeClassName";
-    public final static String maxReplicasKey = "maxReplicas";
-    public final static String serviceAccountNameKey = "serviceAccountName";
 
-    private String clusterName;
-    private String inputTypeClassName;
-    private String outputTypeClassName;
-    private int maxReplicas;
-    private String serviceAccountName;
-}
