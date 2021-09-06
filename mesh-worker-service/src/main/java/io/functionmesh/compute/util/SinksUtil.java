@@ -19,6 +19,7 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
+import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
@@ -65,8 +66,8 @@ public class SinksUtil {
     public static V1alpha1Sink createV1alpha1SkinFromSinkConfig(String kind, String group, String version
             , String sinkName, String sinkPkgUrl, InputStream uploadedInputStream, SinkConfig sinkConfig,
                                                                 MeshConnectorsManager connectorsManager,
-                                                                MeshWorkerServiceCustomConfig customConfigs,
-                                                                String cluster) {
+                                                                String cluster, MeshWorkerService worker) {
+        MeshWorkerServiceCustomConfig customConfigs = worker.getMeshWorkerServiceCustomConfig();
         CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(sinkConfig.getCustomRuntimeOptions());
         String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
         String serviceAccountName = customRuntimeOptions.getServiceAccountName();
@@ -265,7 +266,8 @@ public class SinksUtil {
         v1alpha1SinkSpec.setSinkConfig(sinkConfig.getConfigs());
 
         V1alpha1SinkSpecPod specPod = new V1alpha1SinkSpecPod();
-        if (StringUtils.isNotEmpty(serviceAccountName)) {
+        if (worker.getMeshWorkerServiceCustomConfig().isAllowUserDefinedServiceAccountName() &&
+                StringUtils.isNotEmpty(serviceAccountName)) {
             specPod.setServiceAccountName(serviceAccountName);
             v1alpha1SinkSpec.setPod(specPod);
         }

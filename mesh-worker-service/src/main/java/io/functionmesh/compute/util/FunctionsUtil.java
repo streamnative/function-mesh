@@ -319,7 +319,8 @@ public class FunctionsUtil {
         v1alpha1FunctionSpec.setAutoAck(functionConfig.getAutoAck());
 
         V1alpha1FunctionSpecPod specPod = new V1alpha1FunctionSpecPod();
-        if (StringUtils.isNotEmpty(serviceAccountName)) {
+        if (worker.getMeshWorkerServiceCustomConfig().isAllowUserDefinedServiceAccountName() &&
+                StringUtils.isNotEmpty(serviceAccountName)) {
             specPod.setServiceAccountName(serviceAccountName);
             v1alpha1FunctionSpec.setPod(specPod);
         }

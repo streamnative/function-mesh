@@ -184,6 +184,7 @@ public class SourcesImpTest {
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         PulsarAdmin pulsarAdmin = PowerMockito.mock(PulsarAdmin.class);
         PowerMockito.when(meshWorkerService.getBrokerAdmin()).thenReturn(pulsarAdmin);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(new MeshWorkerServiceCustomConfig());
         Tenants tenants = PowerMockito.mock(Tenants.class);
         PowerMockito.when(pulsarAdmin.tenants()).thenReturn(tenants);
         Call call = PowerMockito.mock(Call.class);
@@ -250,7 +251,7 @@ public class SourcesImpTest {
                         uploadedInputStream,
                         sourceConfig,
                         null,
-                        new MeshWorkerServiceCustomConfig(), null);
+                        null, meshWorkerService);
         Map<String, String> customLabels = Maps.newHashMap();
         customLabels.put("pulsar-cluster", clusterName);
         customLabels.put("pulsar-tenant", tenant);

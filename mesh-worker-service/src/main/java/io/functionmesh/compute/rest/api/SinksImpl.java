@@ -147,7 +147,7 @@ public class SinksImpl extends MeshComponentImpl
                         uploadedInputStream,
                         sinkConfig,
                         this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                        worker().getMeshWorkerServiceCustomConfig(), cluster);
+                        cluster, worker());
         // override namesapce by configuration
         v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
         try {
@@ -227,7 +227,7 @@ public class SinksImpl extends MeshComponentImpl
                             sinkPkgUrl,
                             uploadedInputStream,
                             sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                            worker().getMeshWorkerServiceCustomConfig(), cluster);
+                            cluster, worker());
             CustomObjectsApi customObjectsApi = worker().getCustomObjectsApi();
             Call getCall =
                     customObjectsApi.getNamespacedCustomObjectCall(

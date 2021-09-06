@@ -154,7 +154,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                         uploadedInputStream,
                         sourceConfig,
                         this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                        worker().getMeshWorkerServiceCustomConfig(), cluster);
+                        cluster, worker());
         try {
 
             // override namesapce by configuration
@@ -224,7 +224,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                             uploadedInputStream,
                             sourceConfig,
                             this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                            worker().getMeshWorkerServiceCustomConfig(), cluster);
+                            cluster, worker());
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,

@@ -19,6 +19,7 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
+import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
@@ -65,8 +66,8 @@ public class SourcesUtil {
                                                                       InputStream uploadedInputStream,
                                                                       SourceConfig sourceConfig,
                                                                       MeshConnectorsManager connectorsManager,
-                                                                      MeshWorkerServiceCustomConfig customConfigs,
-                                                                      String cluster) {
+                                                                      String cluster, MeshWorkerService worker) {
+        MeshWorkerServiceCustomConfig customConfigs = worker.getMeshWorkerServiceCustomConfig();
         CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(sourceConfig.getCustomRuntimeOptions());
         String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
         String serviceAccountName = customRuntimeOptions.getServiceAccountName();
@@ -221,7 +222,8 @@ public class SourcesUtil {
         v1alpha1SourceSpec.setSourceConfig(sourceConfig.getConfigs());
 
         V1alpha1SourceSpecPod specPod = new V1alpha1SourceSpecPod();
-        if (StringUtils.isNotEmpty(serviceAccountName)) {
+        if (worker.getMeshWorkerServiceCustomConfig().isAllowUserDefinedServiceAccountName() &&
+                StringUtils.isNotEmpty(serviceAccountName)) {
             specPod.setServiceAccountName(serviceAccountName);
             v1alpha1SourceSpec.setPod(specPod);
         }

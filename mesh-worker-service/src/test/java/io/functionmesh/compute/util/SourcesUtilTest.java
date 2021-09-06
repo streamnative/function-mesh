@@ -18,6 +18,7 @@
  */
 package io.functionmesh.compute.util;
 
+import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
 import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
@@ -84,9 +85,12 @@ public class SourcesUtilTest {
 
         SourceConfig sourceConfig = Generate.CreateSourceConfig(tenant, namespace, componentName);
 
+        MeshWorkerService meshWorkerService =
+                PowerMockito.mock(MeshWorkerService.class);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(new MeshWorkerServiceCustomConfig());
         V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
                 componentName, null, uploadedInputStream, sourceConfig, null,
-                new MeshWorkerServiceCustomConfig(), null);
+                null, meshWorkerService);
 
         Assert.assertEquals(v1alpha1Source.getKind(), kind);
         V1alpha1SourceSpec v1alpha1SourceSpec = v1alpha1Source.getSpec();
@@ -123,9 +127,13 @@ public class SourcesUtilTest {
 
         SourceConfig sourceConfig = Generate.CreateSourceConfig(tenant, namespace, componentName);
 
+        MeshWorkerService meshWorkerService =
+                PowerMockito.mock(MeshWorkerService.class);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(new MeshWorkerServiceCustomConfig());
+
         V1alpha1Source v1alpha1Source = SourcesUtil.createV1alpha1SourceFromSourceConfig(kind, group, version,
                 componentName, null, uploadedInputStream, sourceConfig, null,
-                new MeshWorkerServiceCustomConfig(), null);
+                null, meshWorkerService);
 
         SourceConfig newSourceConfig = SourcesUtil.createSourceConfigFromV1alpha1Source(tenant, namespace,
                 componentName, v1alpha1Source);
@@ -170,10 +178,14 @@ public class SourcesUtilTest {
 
         SourceConfig sourceConfig = Generate.CreateSourceConfigBuiltin(tenant, namespace, componentName);
 
+        MeshWorkerService meshWorkerService =
+                PowerMockito.mock(MeshWorkerService.class);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(new MeshWorkerServiceCustomConfig());
+
         V1alpha1Source v1alpha1Source =
                 SourcesUtil.createV1alpha1SourceFromSourceConfig(
                         kind, group, version, componentName, null, null, sourceConfig, connectorsManager,
-                        new MeshWorkerServiceCustomConfig(), null);
+                        null, meshWorkerService);
 
         Assert.assertEquals(v1alpha1Source.getKind(), kind);
         V1alpha1SourceSpec v1alpha1SourceSpec = v1alpha1Source.getSpec();
