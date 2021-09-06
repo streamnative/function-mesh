@@ -34,7 +34,6 @@ import lombok.experimental.Accessors;
 import org.apache.pulsar.common.configuration.FieldContext;
 import org.apache.pulsar.common.util.ObjectMapperFactory;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

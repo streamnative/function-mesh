@@ -106,10 +106,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
 
     private void validateFunctionEnabled() {
         MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
-        if (customConfig != null) {
-            if (!customConfig.isFunctionEnabled()) {
-                throw new RestException(Response.Status.BAD_REQUEST, "Function API is disabled");
-            }
+        if (customConfig != null && !customConfig.isFunctionEnabled()) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Function API is disabled");
         }
     }
 
