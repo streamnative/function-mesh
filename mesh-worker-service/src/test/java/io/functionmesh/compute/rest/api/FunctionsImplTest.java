@@ -22,6 +22,7 @@ import com.google.common.collect.Maps;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.testdata.Generate;
 import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.FunctionsUtil;
@@ -335,6 +336,11 @@ public class FunctionsImplTest {
         ApiClient apiClient = PowerMockito.mock(ApiClient.class);
         PowerMockito.stub(PowerMockito.method(FunctionsUtil.class, "downloadPackageFile")).toReturn(null);
 
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isFunctionEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
+
         String tenant = "public";
         String namespace = "default";
         String functionName = "word-count";
@@ -549,6 +555,11 @@ public class FunctionsImplTest {
                         "word-count-640ae9e6",
                         null
                 )).thenReturn(getCall);
+
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isFunctionEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
 
         PowerMockito.stub(PowerMockito.method(FunctionsUtil.class, "downloadPackageFile")).toReturn(null);
 

@@ -191,6 +191,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
             throw restException;
         } catch (Exception e) {
             log.error("register {}/{}/{} source failed, error message: {}", tenant, namespace, sourceConfig, e);
+            e.printStackTrace();
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }

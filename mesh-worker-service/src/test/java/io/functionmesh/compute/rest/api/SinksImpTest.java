@@ -244,6 +244,11 @@ public class SinksImpTest {
 
         PowerMockito.when(tenants.getTenantInfo(tenant)).thenReturn(null);
 
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isSinkEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
+
         V1alpha1Sink v1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null,
@@ -440,6 +445,10 @@ public class SinksImpTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isSinkEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
 
         Call getCall = PowerMockito.mock(Call.class);
         Response getResponse = PowerMockito.mock(Response.class);

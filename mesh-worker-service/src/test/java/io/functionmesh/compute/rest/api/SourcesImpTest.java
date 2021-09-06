@@ -265,15 +265,15 @@ public class SourcesImpTest {
                 meshWorkerService
                         .getCustomObjectsApi()
                         .createNamespacedCustomObjectCall(
-                                group,
-                                version,
-                                KubernetesUtils.getNamespace(),
-                                plural,
-                                v1alpha1Source,
-                                null,
-                                null,
-                                null,
-                                null))
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any()))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -282,6 +282,11 @@ public class SourcesImpTest {
         PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
+
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isSourceEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
 
         SourcesImpl sources = spy(new SourcesImpl(meshWorkerServiceSupplier));
         try {
@@ -296,6 +301,7 @@ public class SourcesImpTest {
                     null,
                     null);
         } catch (Exception exception) {
+            exception.printStackTrace();
             Assert.fail("No exception, but got exception: " + exception);
         }
     }
@@ -474,6 +480,11 @@ public class SourcesImpTest {
         PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
+
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isSourceEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
 
         PowerMockito.when(
                 meshWorkerService
