@@ -15,4 +15,8 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o exclamat
 
 FROM streamnative/pulsar-functions-go-runner:${PULSAR_IMAGE_TAG}
 COPY --from=builder /workspace/exclamationFunc /pulsar/examples/go-exclamation-func
+
+USER root
 RUN chmod +x /pulsar/examples/go-exclamation-func
+
+USER pulsar
