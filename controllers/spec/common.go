@@ -37,7 +37,7 @@ import (
 const (
 	EnvShardID                 = "SHARD_ID"
 	FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
-	DefaultRunnerTag           = "2.8.0.7"
+	DefaultRunnerTag           = "2.8.0.14"
 	DefaultRunnerPrefix        = "streamnative/"
 	DefaultRunnerImage         = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
 	DefaultJavaRunnerImage     = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag

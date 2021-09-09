@@ -4,7 +4,7 @@ metadata:
   name: py-function-sample
   namespace: default
 spec:
-  image: streamnative/pulsar-functions-python-sample:2.8.0.7
+  image: streamnative/pulsar-functions-python-sample:2.8.0.14
   className: exclamation_function.ExclamationFunction
   forwardSourceMessageProperty: true
   MaxPendingAsyncRequests: 1000

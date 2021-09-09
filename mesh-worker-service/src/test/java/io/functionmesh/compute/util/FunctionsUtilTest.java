@@ -21,6 +21,7 @@ package io.functionmesh.compute.util;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpec;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.testdata.Generate;
 
 import java.util.Collections;
@@ -81,6 +82,11 @@ public class FunctionsUtilTest {
         PowerMockito.when(meshWorkerService.getBrokerAdmin()).thenReturn(pulsarAdmin);
         PowerMockito.stub(PowerMockito.method(FunctionsUtil.class, "downloadPackageFile")).toReturn(null);
 
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isFunctionEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isAllowUserDefinedServiceAccountName()).thenReturn(false);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
 
         FunctionConfig functionConfig = Generate.CreateJavaFunctionWithPackageURLConfig(tenant, namespace, functionName);
 
@@ -126,6 +132,11 @@ public class FunctionsUtilTest {
         PulsarAdmin pulsarAdmin = PowerMockito.mock(PulsarAdmin.class);
         PowerMockito.when(meshWorkerService.getBrokerAdmin()).thenReturn(pulsarAdmin);
         PowerMockito.stub(PowerMockito.method(FunctionsUtil.class, "downloadPackageFile")).toReturn(null);
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isFunctionEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isAllowUserDefinedServiceAccountName()).thenReturn(false);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
 
         FunctionConfig functionConfig = Generate.CreateJavaFunctionWithPackageURLConfig(tenant, namespace, functionName);
 

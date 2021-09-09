@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,7 +18,21 @@
 # under the License.
 #
 
-FROM streamnative/pulsar:2.8.0.14
-COPY ./target/mesh-worker-service*.nar /pulsar/mesh-worker-service.nar
-COPY ./integration-tests/docker/connectors.yaml /pulsar/conf/connectors.yaml
-RUN mkdir -p /pulsar-nar
+set -e
+
+BINDIR=`dirname "$0"`
+PULSAR_HOME=`cd ${BINDIR}/..;pwd`
+TLS=${TLS:-"false"}
+SYMMETRIC=${SYMMETRIC:-"false"}
+FUNCTION=${FUNCTION:-"false"}
+
+source ${PULSAR_HOME}/.ci/helm.sh
+
+ci::upload_java_package
+ci::verify_java_package
+
+ci::upload_python_package
+ci::verify_python_package
+
+ci::upload_go_package
+ci::verify_go_package

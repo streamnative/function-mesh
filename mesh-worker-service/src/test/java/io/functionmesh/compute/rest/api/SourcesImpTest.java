@@ -20,6 +20,7 @@ package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
 import io.functionmesh.compute.util.CommonUtil;
@@ -183,6 +184,7 @@ public class SourcesImpTest {
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         PulsarAdmin pulsarAdmin = PowerMockito.mock(PulsarAdmin.class);
         PowerMockito.when(meshWorkerService.getBrokerAdmin()).thenReturn(pulsarAdmin);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(new MeshWorkerServiceCustomConfig());
         Tenants tenants = PowerMockito.mock(Tenants.class);
         PowerMockito.when(pulsarAdmin.tenants()).thenReturn(tenants);
         Call call = PowerMockito.mock(Call.class);
@@ -249,7 +251,7 @@ public class SourcesImpTest {
                         uploadedInputStream,
                         sourceConfig,
                         null,
-                        Collections.emptyMap(), null);
+                        null, meshWorkerService);
         Map<String, String> customLabels = Maps.newHashMap();
         customLabels.put("pulsar-cluster", clusterName);
         customLabels.put("pulsar-tenant", tenant);
@@ -263,15 +265,15 @@ public class SourcesImpTest {
                 meshWorkerService
                         .getCustomObjectsApi()
                         .createNamespacedCustomObjectCall(
-                                group,
-                                version,
-                                KubernetesUtils.getNamespace(),
-                                plural,
-                                v1alpha1Source,
-                                null,
-                                null,
-                                null,
-                                null))
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any(),
+                                any()))
                 .thenReturn(call);
         PowerMockito.when(call.execute()).thenReturn(response);
         PowerMockito.when(response.isSuccessful()).thenReturn(true);
@@ -280,6 +282,11 @@ public class SourcesImpTest {
         PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
+
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isSourceEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
 
         SourcesImpl sources = spy(new SourcesImpl(meshWorkerServiceSupplier));
         try {
@@ -472,6 +479,11 @@ public class SourcesImpTest {
         PowerMockito.when(meshWorkerService.getApiClient()).thenReturn(apiClient);
         JSON json = new JSON();
         PowerMockito.when(apiClient.getJSON()).thenReturn(json);
+
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isSourceEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
 
         PowerMockito.when(
                 meshWorkerService

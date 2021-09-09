@@ -29,12 +29,15 @@ import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecInputSourceS
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecJava;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecOutput;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecOutputProducerConf;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodResources;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPulsar;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPython;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.client.admin.PulsarAdminException;
@@ -74,9 +77,10 @@ public class FunctionsUtil {
     public static V1alpha1Function createV1alpha1FunctionFromFunctionConfig(String kind, String group, String version
             , String functionName, String functionPkgUrl, FunctionConfig functionConfig
             , String cluster, MeshWorkerService worker) {
-        Map<String, Object> customConfigs = worker.getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
+        MeshWorkerServiceCustomConfig customConfig = worker.getMeshWorkerServiceCustomConfig();
         CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(functionConfig.getCustomRuntimeOptions());
         String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
+        String serviceAccountName = customRuntimeOptions.getServiceAccountName();
 
         Function.FunctionDetails functionDetails;
         try {
@@ -94,7 +98,7 @@ public class FunctionsUtil {
                 functionDetails.getNamespace(),
                 functionDetails.getTenant(),
                 clusterName,
-                CommonUtil.getOwnerReferenceFromCustomConfigs(customConfigs)));
+                CommonUtil.getOwnerReferenceFromCustomConfigs(customConfig)));
 
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
         v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());
@@ -262,12 +266,11 @@ public class FunctionsUtil {
             }
         } catch (Exception e) {
             log.error("Invalid register function request {}: {}", functionName, e);
-            e.printStackTrace();
             throw new RestException(Response.Status.BAD_REQUEST, e.getMessage());
         }
         Class<?>[] typeArgs = null;
         if (componentPackageFile != null) {
-            typeArgs = extractTypeArgs(functionConfig, componentPackageFile);
+            typeArgs = extractTypeArgs(functionConfig, componentPackageFile, worker.getWorkerConfig().isForwardSourceMessageProperty());
         }
         if (StringUtils.isNotEmpty(functionConfig.getJar())) {
             V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
@@ -313,6 +316,13 @@ public class FunctionsUtil {
 
         v1alpha1FunctionSpec.setClusterName(clusterName);
         v1alpha1FunctionSpec.setAutoAck(functionConfig.getAutoAck());
+
+        V1alpha1FunctionSpecPod specPod = new V1alpha1FunctionSpecPod();
+        if (worker.getMeshWorkerServiceCustomConfig().isAllowUserDefinedServiceAccountName() &&
+                StringUtils.isNotEmpty(serviceAccountName)) {
+            specPod.setServiceAccountName(serviceAccountName);
+            v1alpha1FunctionSpec.setPod(specPod);
+        }
 
         v1alpha1Function.setSpec(v1alpha1FunctionSpec);
 
@@ -361,6 +371,11 @@ public class FunctionsUtil {
 
         if (v1alpha1FunctionSpec.getMaxReplicas() != null && v1alpha1FunctionSpec.getMaxReplicas() > 0) {
             customRuntimeOptions.setMaxReplicas(v1alpha1FunctionSpec.getMaxReplicas());
+        }
+
+        if (v1alpha1FunctionSpec.getPod() != null &&
+                Strings.isNotEmpty(v1alpha1FunctionSpec.getPod().getServiceAccountName())) {
+            customRuntimeOptions.setServiceAccountName(v1alpha1FunctionSpec.getPod().getServiceAccountName());
         }
 
         if (v1alpha1FunctionSpecInput.getTopics() != null) {
@@ -564,14 +579,22 @@ public class FunctionsUtil {
             // use the Nar extraction directory as a temporary directory for downloaded files
             tempDirectory = Paths.get(worker.getWorkerConfig().getNarExtractionDirectory());
         }
-        File file = Files.createTempFile(tempDirectory, "function", ".tmp").toFile();
-        worker.getBrokerAdmin().packages().download(packageName, file.toString());
-        return file;
+        if (Files.notExists(tempDirectory)) {
+            Files.createDirectories(tempDirectory);
+        }
+        String fileName = String.format("function-%s.tmp", RandomStringUtils.random(5, true, true).toLowerCase());
+        Path filePath = Paths.get(tempDirectory.toString(), fileName);
+        Files.deleteIfExists(filePath);
+        worker.getBrokerAdmin().packages().download(packageName, filePath.toString());
+        return filePath.toFile();
     }
 
     private static Class<?>[] extractTypeArgs(final FunctionConfig functionConfig,
-                                             final File componentPackageFile) {
+                                             final File componentPackageFile,
+                                              final boolean isForwardSourceMessageProperty) {
         Class<?>[] typeArgs = null;
+        FunctionConfigUtils.inferMissingArguments(
+                functionConfig, isForwardSourceMessageProperty);
         if (componentPackageFile == null) {
             return null;
         }
