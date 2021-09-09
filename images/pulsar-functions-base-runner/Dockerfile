@@ -10,6 +10,7 @@ RUN mkdir -p /pulsar/instances/
 RUN mkdir -p /pulsar/connectors/
 RUN mkdir -p /pulsar/logs/
 RUN mkdir -p /pulsar/tmp/
+RUN mkdir -p /pulsar/examples/
 
 RUN chmod -R g=u /pulsar
 
