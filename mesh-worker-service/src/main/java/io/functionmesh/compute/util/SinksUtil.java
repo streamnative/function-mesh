@@ -19,14 +19,17 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
+import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpec;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInput;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInputCryptoConfig;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInputSourceSpecs;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPulsar;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodResources;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
@@ -63,9 +66,11 @@ public class SinksUtil {
     public static V1alpha1Sink createV1alpha1SkinFromSinkConfig(String kind, String group, String version
             , String sinkName, String sinkPkgUrl, InputStream uploadedInputStream, SinkConfig sinkConfig,
                                                                 MeshConnectorsManager connectorsManager,
-                                                                Map<String, Object> customConfigs, String cluster) {
+                                                                String cluster, MeshWorkerService worker) {
+        MeshWorkerServiceCustomConfig customConfigs = worker.getMeshWorkerServiceCustomConfig();
         CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(sinkConfig.getCustomRuntimeOptions());
         String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
+        String serviceAccountName = customRuntimeOptions.getServiceAccountName();
 
         String location =
                 String.format(
@@ -260,6 +265,13 @@ public class SinksUtil {
 
         v1alpha1SinkSpec.setSinkConfig(sinkConfig.getConfigs());
 
+        V1alpha1SinkSpecPod specPod = new V1alpha1SinkSpecPod();
+        if (worker.getMeshWorkerServiceCustomConfig().isAllowUserDefinedServiceAccountName() &&
+                StringUtils.isNotEmpty(serviceAccountName)) {
+            specPod.setServiceAccountName(serviceAccountName);
+            v1alpha1SinkSpec.setPod(specPod);
+        }
+
         v1alpha1Sink.setSpec(v1alpha1SinkSpec);
 
         return v1alpha1Sink;
@@ -298,6 +310,10 @@ public class SinksUtil {
         }
         if (v1alpha1SinkSpec.getMaxReplicas() != null && v1alpha1SinkSpec.getMaxReplicas() > 0) {
             customRuntimeOptions.setMaxReplicas(v1alpha1SinkSpec.getMaxReplicas());
+        }
+        if (v1alpha1SinkSpec.getPod() != null &&
+                Strings.isNotEmpty(v1alpha1SinkSpec.getPod().getServiceAccountName())) {
+            customRuntimeOptions.setServiceAccountName(v1alpha1SinkSpec.getPod().getServiceAccountName());
         }
 
         if (v1alpha1SinkSpecInput.getTopics() != null) {

@@ -19,6 +19,7 @@
 package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
@@ -82,12 +83,9 @@ public class SinksImpl extends MeshComponentImpl
     }
 
     private void validateSinkEnabled() {
-        Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-        if (customConfig != null) {
-            Boolean sinkEnabled = (Boolean) customConfig.get("sinkEnabled");
-            if (sinkEnabled != null && !sinkEnabled) {
-                throw new RestException(Response.Status.BAD_REQUEST, "Sink API is disabled");
-            }
+        MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
+        if (customConfig != null && !customConfig.isSinkEnabled()) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Sink API is disabled");
         }
     }
 
@@ -105,9 +103,8 @@ public class SinksImpl extends MeshComponentImpl
         if (sinkConfig == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Sink config is not provided");
         }
-        Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-        if (jarUploaded &&  customConfig != null && customConfig.get("uploadEnabled") != null &&
-                ! (Boolean) customConfig.get("uploadEnabled") ) {
+        MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
+        if (jarUploaded &&  customConfig != null && !customConfig.isUploadEnabled()) {
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
         }
         Resources sinkResources = sinkConfig.getResources();
@@ -150,7 +147,7 @@ public class SinksImpl extends MeshComponentImpl
                         uploadedInputStream,
                         sinkConfig,
                         this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                        worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(), cluster);
+                        cluster, worker());
         // override namesapce by configuration
         v1alpha1Sink.getMetadata().setNamespace(KubernetesUtils.getNamespace(worker().getFactoryConfig()));
         try {
@@ -189,7 +186,6 @@ public class SinksImpl extends MeshComponentImpl
                     restException.getMessage());
             throw restException;
         } catch (Exception e) {
-            e.printStackTrace();
             log.error(
                     "register {}/{}/{} sink failed, error message: {}",
                     tenant,
@@ -230,7 +226,7 @@ public class SinksImpl extends MeshComponentImpl
                             sinkPkgUrl,
                             uploadedInputStream,
                             sinkConfig, this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                            worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(), cluster);
+                            cluster, worker());
             CustomObjectsApi customObjectsApi = worker().getCustomObjectsApi();
             Call getCall =
                     customObjectsApi.getNamespacedCustomObjectCall(
@@ -604,27 +600,33 @@ public class SinksImpl extends MeshComponentImpl
         if (worker().getWorkerConfig().isAuthenticationEnabled()) {
             if (clientAuthenticationDataHttps != null) {
                 try {
-                    Map<String, Object>  functionsWorkerServiceCustomConfigs = worker()
-                            .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-                    Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
-                    if (functionsWorkerServiceCustomConfigs.get("extraDependenciesDir") != null) {
-                        V1alpha1SinkSpecJava v1alpha1SinkSpecJava;
+                    V1alpha1SinkSpecPod podPolicy = v1alpha1Sink.getSpec().getPod();
+                    if (podPolicy == null) {
+                        podPolicy = new V1alpha1SinkSpecPod();
+                        v1alpha1Sink.getSpec().setPod(podPolicy);
+                    }
+                    MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
+                    if (customConfig != null && StringUtils.isNotEmpty(customConfig.getExtraDependenciesDir())) {
+                        V1alpha1SinkSpecJava v1alpha1SinkSpecJava = null;
                         if (v1alpha1Sink.getSpec() != null && v1alpha1Sink.getSpec().getJava() != null) {
                             v1alpha1SinkSpecJava = v1alpha1Sink.getSpec().getJava();
-                        } else {
+                        } else if (v1alpha1Sink.getSpec() != null && v1alpha1Sink.getSpec().getJava() == null &&
+                                v1alpha1Sink.getSpec().getPython() == null &&
+                                v1alpha1Sink.getSpec().getGolang() == null){
                             v1alpha1SinkSpecJava = new V1alpha1SinkSpecJava();
                         }
-                        v1alpha1SinkSpecJava.setExtraDependenciesDir(
-                                (String)functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
-                        v1alpha1Sink.getSpec().setJava(v1alpha1SinkSpecJava);
+                        if (v1alpha1SinkSpecJava != null) {
+                            v1alpha1SinkSpecJava.setExtraDependenciesDir(customConfig.getExtraDependenciesDir());
+                            v1alpha1Sink.getSpec().setJava(v1alpha1SinkSpecJava);
+                        }
                     }
-                    if (volumes != null) {
-                        List<V1alpha1SinkSpecPodVolumes> volumesList = (List<V1alpha1SinkSpecPodVolumes>) volumes;
+                    List<V1alpha1SinkSpecPodVolumes> volumesList = customConfig.asV1alpha1SinkSpecPodVolumesList();
+                    if (volumesList != null && !volumesList.isEmpty()) {
                         v1alpha1Sink.getSpec().getPod().setVolumes(volumesList);
                     }
-                    Object volumeMounts = functionsWorkerServiceCustomConfigs.get("volumeMounts");
-                    if (volumeMounts != null) {
-                        List<V1alpha1SinkSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1SinkSpecPodVolumeMounts>) volumeMounts;
+                    List<V1alpha1SinkSpecPodVolumeMounts> volumeMountsList =
+                            customConfig.asV1alpha1SinkSpecPodVolumeMountsList();
+                    if (volumeMountsList != null && !volumeMountsList.isEmpty()) {
                         v1alpha1Sink.getSpec().setVolumeMounts(volumeMountsList);
                     }
                     if (!StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationPlugin())
@@ -639,6 +641,11 @@ public class SinksImpl extends MeshComponentImpl
                                 v1alpha1Sink.getSpec().getClusterName(), tenant, namespace, sinkName,
                                 worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
                         v1alpha1Sink.getSpec().getPulsar().setTlsSecret(tlsSecretName);
+                    }
+                    if (!StringUtils.isEmpty(customConfig.getDefaultServiceAccountName())
+                            && StringUtils.isEmpty(v1alpha1Sink.getSpec().getPod().getServiceAccountName())) {
+                        v1alpha1Sink.getSpec().getPod().setServiceAccountName(
+                                customConfig.getDefaultServiceAccountName());
                     }
                 } catch (Exception e) {
                     log.error("Error create or update auth or tls secret data for {} {}/{}/{}",

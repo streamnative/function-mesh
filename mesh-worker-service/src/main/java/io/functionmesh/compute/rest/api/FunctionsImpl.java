@@ -26,6 +26,7 @@ import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumeMounts;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumes;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionStatus;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.FunctionsUtil;
 import io.functionmesh.compute.util.KubernetesUtils;
@@ -86,9 +87,8 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
         if (functionConfig == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Function config is not provided");
         }
-        Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-        if (jarUploaded && customConfig != null && customConfig.get("uploadEnabled") != null &&
-                !(Boolean) customConfig.get("uploadEnabled")) {
+        MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
+        if (jarUploaded && customConfig != null && customConfig.isUploadEnabled()) {
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
         }
         this.validateResources(functionConfig.getResources(), worker().getWorkerConfig().getFunctionInstanceMinResources(),
@@ -105,12 +105,9 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
     }
 
     private void validateFunctionEnabled() {
-        Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-        if (customConfig != null) {
-            Boolean functionEnabled = (Boolean) customConfig.get("functionEnabled");
-            if (functionEnabled != null && !functionEnabled) {
-                throw new RestException(Response.Status.BAD_REQUEST, "Function API is disabled");
-            }
+        MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
+        if (customConfig != null && !customConfig.isFunctionEnabled()) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Function API is disabled");
         }
     }
 
@@ -246,7 +243,6 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             executeCall(replaceCall, V1alpha1Function.class);
         } catch (Exception e) {
             log.error("update {}/{}/{} function failed, error message: {}", tenant, namespace, functionName, e);
-            e.printStackTrace();
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
@@ -563,29 +559,34 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
         if (worker().getWorkerConfig().isAuthenticationEnabled()) {
             if (clientAuthenticationDataHttps != null) {
                 try {
-
-                    Map<String, Object> functionsWorkerServiceCustomConfigs = worker()
-                            .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-                    Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
-                    if (volumes != null) {
-                        List<V1alpha1FunctionSpecPodVolumes> volumesList = (List<V1alpha1FunctionSpecPodVolumes>) volumes;
+                    V1alpha1FunctionSpecPod podPolicy = v1alpha1Function.getSpec().getPod();
+                    if (podPolicy == null) {
+                        podPolicy = new V1alpha1FunctionSpecPod();
+                        v1alpha1Function.getSpec().setPod(podPolicy);
+                    }
+                    MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
+                    List<V1alpha1FunctionSpecPodVolumes> volumesList = customConfig.asV1alpha1FunctionSpecPodVolumesList();
+                    if (volumesList != null && !volumesList.isEmpty()) {
                         v1alpha1Function.getSpec().getPod().setVolumes(volumesList);
                     }
-                    Object volumeMounts = functionsWorkerServiceCustomConfigs.get("volumeMounts");
-                    if (volumeMounts != null) {
-                        List<V1alpha1FunctionSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1FunctionSpecPodVolumeMounts>) volumeMounts;
+                    List<V1alpha1FunctionSpecPodVolumeMounts> volumeMountsList =
+                            customConfig.asV1alpha1FunctionSpecPodVolumeMounts();
+                    if (volumeMountsList != null && !volumeMountsList.isEmpty()) {
                         v1alpha1Function.getSpec().setVolumeMounts(volumeMountsList);
                     }
-                    if (functionsWorkerServiceCustomConfigs.get("extraDependenciesDir") != null) {
-                        V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava;
+                    if (StringUtils.isNotEmpty(customConfig.getExtraDependenciesDir())) {
+                        V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = null;
                         if (v1alpha1Function.getSpec() != null && v1alpha1Function.getSpec().getJava() != null) {
                             v1alpha1FunctionSpecJava = v1alpha1Function.getSpec().getJava();
-                        } else {
+                        } else if (v1alpha1Function.getSpec() != null && v1alpha1Function.getSpec().getJava() == null &&
+                                v1alpha1Function.getSpec().getPython() == null &&
+                                v1alpha1Function.getSpec().getGolang() == null){
                             v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
                         }
-                        v1alpha1FunctionSpecJava.setExtraDependenciesDir(
-                                (String) functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
-                        v1alpha1Function.getSpec().setJava(v1alpha1FunctionSpecJava);
+                        if (v1alpha1FunctionSpecJava != null) {
+                            v1alpha1FunctionSpecJava.setExtraDependenciesDir(customConfig.getExtraDependenciesDir());
+                            v1alpha1Function.getSpec().setJava(v1alpha1FunctionSpecJava);
+                        }
                     }
                     if (!StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationPlugin())
                             && !StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationParameters())) {
@@ -599,6 +600,11 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                                 v1alpha1Function.getSpec().getClusterName(), tenant, namespace, functionName,
                                 worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
                         v1alpha1Function.getSpec().getPulsar().setTlsSecret(tlsSecretName);
+                    }
+                    if (!StringUtils.isEmpty(customConfig.getDefaultServiceAccountName())
+                            && StringUtils.isEmpty(v1alpha1Function.getSpec().getPod().getServiceAccountName())) {
+                        v1alpha1Function.getSpec().getPod().setServiceAccountName(
+                                customConfig.getDefaultServiceAccountName());
                     }
                 } catch (Exception e) {
                     log.error("Error create or update auth or tls secret for {} {}/{}/{}",

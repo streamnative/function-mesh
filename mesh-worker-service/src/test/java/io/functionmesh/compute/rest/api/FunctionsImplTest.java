@@ -22,6 +22,7 @@ import com.google.common.collect.Maps;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.functions.models.V1alpha1Function;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPod;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.testdata.Generate;
 import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.FunctionsUtil;
@@ -335,6 +336,11 @@ public class FunctionsImplTest {
         ApiClient apiClient = PowerMockito.mock(ApiClient.class);
         PowerMockito.stub(PowerMockito.method(FunctionsUtil.class, "downloadPackageFile")).toReturn(null);
 
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isFunctionEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
+
         String tenant = "public";
         String namespace = "default";
         String functionName = "word-count";
@@ -550,6 +556,11 @@ public class FunctionsImplTest {
                         null
                 )).thenReturn(getCall);
 
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isFunctionEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
+
         PowerMockito.stub(PowerMockito.method(FunctionsUtil.class, "downloadPackageFile")).toReturn(null);
 
         FunctionConfig functionConfig = Generate.CreateJavaFunctionWithPackageURLConfig(tenant, namespace, functionName);
@@ -582,7 +593,6 @@ public class FunctionsImplTest {
                     null,
                     null);
         } catch (Exception exception) {
-            exception.printStackTrace();
             Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
     }
