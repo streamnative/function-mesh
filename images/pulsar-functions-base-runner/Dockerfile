@@ -9,6 +9,7 @@ RUN mkdir -p /pulsar/conf/
 RUN mkdir -p /pulsar/instances/
 RUN mkdir -p /pulsar/connectors/
 RUN mkdir -p /pulsar/logs/
+RUN mkdir -p /pulsar/tmp/
 
 RUN chmod -R g=u /pulsar
 
@@ -29,3 +30,10 @@ RUN apt-get update \
 ENV PULSAR_ROOT_LOGGER=INFO,CONSOLE
 
 WORKDIR /pulsar
+
+RUN groupadd -g 10001 pulsar
+RUN adduser -u 10000 --gid 10001 --disabled-login --disabled-password --gecos '' pulsar
+
+ENV java.io.tmpdir=/pulsar/tmp/
+
+RUN chown pulsar:0 /pulsar && chmod g=u /pulsar

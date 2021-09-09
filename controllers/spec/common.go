@@ -55,6 +55,9 @@ const (
 	AnnotationPrometheusPort   = "prometheus.io/port"
 
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
+
+	DefaultRunnerUser  = "10001"
+	DefaultRunnerGroup = "10000"
 )
 
 var GRPCPort = corev1.ContainerPort{
