@@ -301,7 +301,6 @@ public class SourcesImpTest {
                     null,
                     null);
         } catch (Exception exception) {
-            exception.printStackTrace();
             Assert.fail("No exception, but got exception: " + exception);
         }
     }

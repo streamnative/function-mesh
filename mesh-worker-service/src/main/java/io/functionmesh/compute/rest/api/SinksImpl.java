@@ -186,7 +186,6 @@ public class SinksImpl extends MeshComponentImpl
                     restException.getMessage());
             throw restException;
         } catch (Exception e) {
-            e.printStackTrace();
             log.error(
                     "register {}/{}/{} sink failed, error message: {}",
                     tenant,

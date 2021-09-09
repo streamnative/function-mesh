@@ -266,7 +266,6 @@ public class FunctionsUtil {
             }
         } catch (Exception e) {
             log.error("Invalid register function request {}: {}", functionName, e);
-            e.printStackTrace();
             throw new RestException(Response.Status.BAD_REQUEST, e.getMessage());
         }
         Class<?>[] typeArgs = null;

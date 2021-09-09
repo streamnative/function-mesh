@@ -593,7 +593,6 @@ public class FunctionsImplTest {
                     null,
                     null);
         } catch (Exception exception) {
-            exception.printStackTrace();
             Assert.fail("Expected no exception to be thrown but got exception: " + exception);
         }
     }

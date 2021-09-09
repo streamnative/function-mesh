@@ -83,7 +83,7 @@ public class MeshWorkerServiceCustomConfig {
     @FieldContext(
             doc = "if allow user to change the service account name with custom-runtime-options"
     )
-    protected boolean allowUserDefinedServiceAccountName = true;
+    protected boolean allowUserDefinedServiceAccountName = false;
 
     @FieldContext(
             doc = "ServiceAccountName is the name of the ServiceAccount to use to run function/connector pod."

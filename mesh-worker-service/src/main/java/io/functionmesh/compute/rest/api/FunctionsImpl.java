@@ -243,7 +243,6 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             executeCall(replaceCall, V1alpha1Function.class);
         } catch (Exception e) {
             log.error("update {}/{}/{} function failed, error message: {}", tenant, namespace, functionName, e);
-            e.printStackTrace();
             throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
