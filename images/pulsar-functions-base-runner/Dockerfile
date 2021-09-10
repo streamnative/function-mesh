@@ -37,4 +37,4 @@ RUN adduser -u 10000 --gid 10001 --disabled-login --disabled-password --gecos ''
 
 ENV java.io.tmpdir=/pulsar/tmp/
 
-RUN chown -R pulsar:0 /pulsar && chmod -R g=u /pulsar
+RUN chown -R pulsar:10001 /pulsar && chmod -R g=u /pulsar
