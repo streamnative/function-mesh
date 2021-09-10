@@ -34,4 +34,4 @@ WORKDIR /pulsar
 RUN if [ -f "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh ; fi
 RUN if [ -f "/pulsar/bin/install-pulsar-client.sh" ]; then /pulsar/bin/install-pulsar-client.sh ; fi
 
-USER pulsar
+USER $PULSAR_RUNNER_USER

@@ -8,4 +8,4 @@ COPY --from=pulsar --chown=pulsar:0 /pulsar/instances/deps /pulsar/instances/dep
 
 WORKDIR /pulsar
 
-USER pulsar
+USER $PULSAR_RUNNER_USER

@@ -2,4 +2,4 @@ FROM pulsar-functions-runner-base:latest
 
 WORKDIR /pulsar
 
-USER pulsar
+USER $PULSAR_RUNNER_USER

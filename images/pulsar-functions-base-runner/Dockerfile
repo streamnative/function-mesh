@@ -32,9 +32,11 @@ ENV PULSAR_ROOT_LOGGER=INFO,CONSOLE
 
 WORKDIR /pulsar
 
-RUN groupadd -g 10001 pulsar
-RUN adduser -u 10000 --gid 10001 --disabled-login --disabled-password --gecos '' pulsar
+ENV PULSAR_RUNNER_USER=pulsar
+ENV PULSAR_RUNNER_GROUP=pulsar
+RUN groupadd -g 10001 $PULSAR_RUNNER_GROUP
+RUN adduser -u 10000 --gid 10001 --disabled-login --disabled-password --gecos '' $PULSAR_RUNNER_USER
 
 ENV java.io.tmpdir=/pulsar/tmp/
 
-RUN chown -R pulsar:10001 /pulsar && chmod -R g=u /pulsar
+RUN chown -R $PULSAR_RUNNER_USER:10001 /pulsar && chmod -R g=u /pulsar

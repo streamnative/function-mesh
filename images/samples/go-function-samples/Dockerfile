@@ -14,9 +14,4 @@ COPY func/exclamationFunc.go exclamationFunc.go
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o exclamationFunc exclamationFunc.go
 
 FROM streamnative/pulsar-functions-go-runner:${PULSAR_IMAGE_TAG}
-COPY --from=builder /workspace/exclamationFunc /pulsar/examples/go-exclamation-func
-
-USER root
-RUN chmod +x /pulsar/examples/go-exclamation-func
-
-USER pulsar
+COPY --from=builder --chown=$PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP /workspace/exclamationFunc /pulsar/examples/go-exclamation-func
