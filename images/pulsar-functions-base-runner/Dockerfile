@@ -16,7 +16,7 @@ RUN mkdir -p /pulsar/bin/ \
     && mkdir -p /pulsar/logs/ \
     && mkdir -p /pulsar/tmp/ \
     && mkdir -p /pulsar/examples/ \
-    && chown -R $PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP \
+    && chown -R $PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP /pulsar \
     && chmod -R g=u /pulsar
 
 COPY --from=pulsar --chown=$PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP /pulsar/conf /pulsar/conf
