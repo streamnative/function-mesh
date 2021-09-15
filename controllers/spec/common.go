@@ -56,8 +56,10 @@ const (
 
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
 
-	DefaultRunnerUser  = "10001"
-	DefaultRunnerGroup = "10000"
+	DefaultRunnerUserID  = "10001"
+	DefaultRunnerUser    = "pulsar"
+	DefaultRunnerGroupID = "10000"
+	DefaultRunnerGroup   = "pulsar"
 )
 
 var GRPCPort = corev1.ContainerPort{

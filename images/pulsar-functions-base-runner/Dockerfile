@@ -3,20 +3,25 @@ ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
 FROM ubuntu:20.04 as functions-runner
 
-RUN mkdir -p /pulsar/bin/
-RUN mkdir -p /pulsar/lib/
-RUN mkdir -p /pulsar/conf/
-RUN mkdir -p /pulsar/instances/
-RUN mkdir -p /pulsar/connectors/
-RUN mkdir -p /pulsar/logs/
-RUN mkdir -p /pulsar/tmp/
-RUN mkdir -p /pulsar/examples/
+ENV PULSAR_RUNNER_USER=pulsar
+ENV PULSAR_RUNNER_GROUP=pulsar
+RUN groupadd -g 10001 $PULSAR_RUNNER_GROUP
+RUN adduser -u 10000 --gid 10001 --disabled-login --disabled-password --gecos '' $PULSAR_RUNNER_USER
 
-RUN chmod -R g=u /pulsar
+RUN mkdir -p /pulsar/bin/ \
+    && mkdir -p /pulsar/lib/ \
+    && mkdir -p /pulsar/conf/ \
+    && mkdir -p /pulsar/instances/ \
+    && mkdir -p /pulsar/connectors/ \
+    && mkdir -p /pulsar/logs/ \
+    && mkdir -p /pulsar/tmp/ \
+    && mkdir -p /pulsar/examples/ \
+    && chown -R $PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP \
+    && chmod -R g=u /pulsar
 
-COPY --from=pulsar /pulsar/conf /pulsar/conf
-COPY --from=pulsar /pulsar/bin /pulsar/bin
-COPY --from=pulsar /pulsar/lib /pulsar/lib
+COPY --from=pulsar --chown=$PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP /pulsar/conf /pulsar/conf
+COPY --from=pulsar --chown=$PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP /pulsar/bin /pulsar/bin
+COPY --from=pulsar --chown=$PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP /pulsar/lib /pulsar/lib
 
 RUN chmod -R g=u /pulsar
 
@@ -29,14 +34,6 @@ RUN apt-get update \
      && rm -rf /var/lib/apt/lists/*
 
 ENV PULSAR_ROOT_LOGGER=INFO,CONSOLE
-
-WORKDIR /pulsar
-
-ENV PULSAR_RUNNER_USER=pulsar
-ENV PULSAR_RUNNER_GROUP=pulsar
-RUN groupadd -g 10001 $PULSAR_RUNNER_GROUP
-RUN adduser -u 10000 --gid 10001 --disabled-login --disabled-password --gecos '' $PULSAR_RUNNER_USER
-
 ENV java.io.tmpdir=/pulsar/tmp/
 
-RUN chown -R $PULSAR_RUNNER_USER:10001 /pulsar && chmod -R g=u /pulsar
+WORKDIR /pulsar
