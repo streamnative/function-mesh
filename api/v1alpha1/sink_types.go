@@ -54,15 +54,13 @@ type SinkSpec struct {
 	SecretsMap   map[string]SecretRef        `json:"secretsMap,omitempty"`
 	VolumeMounts []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
 
-	Timeout                      int32 `json:"timeout,omitempty"`
-	NegativeAckRedeliveryDelayMs int32 `json:"negativeAckRedeliveryDelayMs,omitempty"`
-	// +kubebuilder:default=true
-	// +kubebuilder:validation:Required
-	AutoAck             *bool            `json:"autoAck,omitempty"`
-	MaxMessageRetry     int32            `json:"maxMessageRetry,omitempty"`
-	ProcessingGuarantee ProcessGuarantee `json:"processingGuarantee,omitempty"`
-	RetainOrdering      bool             `json:"retainOrdering,omitempty"`
-	DeadLetterTopic     string           `json:"deadLetterTopic,omitempty"`
+	Timeout                      int32            `json:"timeout,omitempty"`
+	NegativeAckRedeliveryDelayMs int32            `json:"negativeAckRedeliveryDelayMs,omitempty"`
+	AutoAck                      *bool            `json:"autoAck,omitempty"`
+	MaxMessageRetry              int32            `json:"maxMessageRetry,omitempty"`
+	ProcessingGuarantee          ProcessGuarantee `json:"processingGuarantee,omitempty"`
+	RetainOrdering               bool             `json:"retainOrdering,omitempty"`
+	DeadLetterTopic              string           `json:"deadLetterTopic,omitempty"`
 
 	RuntimeFlags         string            `json:"runtimeFlags,omitempty"`
 	SubscriptionName     string            `json:"subscriptionName,omitempty"`

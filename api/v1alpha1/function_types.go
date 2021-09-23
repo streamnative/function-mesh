@@ -54,9 +54,7 @@ type FunctionSpec struct {
 	SecretsMap   map[string]SecretRef        `json:"secretsMap,omitempty"`
 	VolumeMounts []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
 
-	Timeout int32 `json:"timeout,omitempty"`
-	// +kubebuilder:default=true
-	// +kubebuilder:validation:Required
+	Timeout                      int32            `json:"timeout,omitempty"`
 	AutoAck                      *bool            `json:"autoAck,omitempty"`
 	MaxMessageRetry              int32            `json:"maxMessageRetry,omitempty"`
 	ProcessingGuarantee          ProcessGuarantee `json:"processingGuarantee,omitempty"`
