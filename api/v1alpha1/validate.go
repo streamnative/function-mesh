@@ -154,9 +154,9 @@ func validateRetainOrderingConflicts(retainKeyOrdering bool, retainOrdering bool
 	return allErrs
 }
 
-func validateFunctionConfig(config map[string]string) *field.Error {
+func validateFunctionConfig(config *Config) *field.Error {
 	if config != nil {
-		_, err := json.Marshal(config)
+		_, err := config.MarshalJSON()
 		if err != nil {
 			return field.Invalid(field.NewPath("spec").Child("funcConfig"), config, "function config is invalid: "+err.Error())
 		}
@@ -164,9 +164,9 @@ func validateFunctionConfig(config map[string]string) *field.Error {
 	return nil
 }
 
-func validateSinkConfig(config map[string]string) *field.Error {
+func validateSinkConfig(config *Config) *field.Error {
 	if config != nil {
-		_, err := json.Marshal(config)
+		_, err := config.MarshalJSON()
 		if err != nil {
 			return field.Invalid(field.NewPath("spec").Child("sinkConfig"), config, "sink config is invalid: "+err.Error())
 		}
@@ -174,9 +174,9 @@ func validateSinkConfig(config map[string]string) *field.Error {
 	return nil
 }
 
-func validateSourceConfig(config map[string]string) *field.Error {
+func validateSourceConfig(config *Config) *field.Error {
 	if config != nil {
-		_, err := json.Marshal(config)
+		_, err := config.MarshalJSON()
 		if err != nil {
 			return field.Invalid(field.NewPath("spec").Child("sourceConfig"), config, "source config is invalid: "+err.Error())
 		}
