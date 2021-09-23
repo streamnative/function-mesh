@@ -20,6 +20,7 @@ package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecJava;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
@@ -80,12 +81,9 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
     }
 
     private void validateSourceEnabled() {
-        Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-        if (customConfig != null) {
-            Boolean sourceEnabled = (Boolean) customConfig.get("sourceEnabled");
-            if (sourceEnabled != null && !sourceEnabled) {
-                throw new RestException(Response.Status.BAD_REQUEST, "Source API is disabled");
-            }
+        MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
+        if (customConfig != null && !customConfig.isSourceEnabled()) {
+            throw new RestException(Response.Status.BAD_REQUEST, "Source API is disabled");
         }
     }
 
@@ -103,9 +101,8 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         if (sourceConfig == null) {
             throw new RestException(Response.Status.BAD_REQUEST, "Source config is not provided");
         }
-        Map<String, Object> customConfig = worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-        if (jarUploaded && customConfig != null && customConfig.get("uploadEnabled") != null &&
-                !(Boolean) customConfig.get("uploadEnabled")) {
+        MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
+        if (jarUploaded && customConfig != null && !customConfig.isUploadEnabled()) {
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
         }
         this.validateResources(sourceConfig.getResources(), worker().getWorkerConfig().getFunctionInstanceMinResources(),
@@ -157,7 +154,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                         uploadedInputStream,
                         sourceConfig,
                         this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                        worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(), cluster);
+                        cluster, worker());
         try {
 
             // override namesapce by configuration
@@ -227,7 +224,7 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                             uploadedInputStream,
                             sourceConfig,
                             this.meshWorkerServiceSupplier.get().getConnectorsManager(),
-                            worker().getWorkerConfig().getFunctionsWorkerServiceCustomConfigs(), cluster);
+                            cluster, worker());
             Call getCall = worker().getCustomObjectsApi().getNamespacedCustomObjectCall(
                     group,
                     version,
@@ -576,28 +573,34 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
         if (worker().getWorkerConfig().isAuthenticationEnabled()) {
             if (clientAuthenticationDataHttps != null) {
                 try {
-                    Map<String, Object> functionsWorkerServiceCustomConfigs = worker()
-                            .getWorkerConfig().getFunctionsWorkerServiceCustomConfigs();
-                    Object volumes = functionsWorkerServiceCustomConfigs.get("volumes");
-                    if (volumes != null) {
-                        List<V1alpha1SourceSpecPodVolumes> volumesList = (List<V1alpha1SourceSpecPodVolumes>) volumes;
+                    V1alpha1SourceSpecPod podPolicy = v1alpha1Source.getSpec().getPod();
+                    if (podPolicy == null) {
+                        podPolicy = new V1alpha1SourceSpecPod();
+                        v1alpha1Source.getSpec().setPod(podPolicy);
+                    }
+                    MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
+                    List<V1alpha1SourceSpecPodVolumes> volumesList = customConfig.asV1alpha1SourceSpecPodVolumesList();
+                    if (volumesList != null && !volumesList.isEmpty()) {
                         v1alpha1Source.getSpec().getPod().setVolumes(volumesList);
                     }
-                    if (functionsWorkerServiceCustomConfigs.get("extraDependenciesDir") != null) {
-                        V1alpha1SourceSpecJava v1alpha1SourceSpecJava;
+                    List<V1alpha1SourceSpecPodVolumeMounts> volumeMountsList =
+                            customConfig.asV1alpha1SourceSpecPodVolumeMountsList();
+                    if (volumeMountsList != null && !volumeMountsList.isEmpty()) {
+                        v1alpha1Source.getSpec().setVolumeMounts(volumeMountsList);
+                    }
+                    if (customConfig != null && StringUtils.isNotEmpty(customConfig.getExtraDependenciesDir())) {
+                        V1alpha1SourceSpecJava v1alpha1SourceSpecJava = null;
                         if (v1alpha1Source.getSpec() != null && v1alpha1Source.getSpec().getJava() != null) {
                             v1alpha1SourceSpecJava = v1alpha1Source.getSpec().getJava();
-                        } else {
+                        } else if (v1alpha1Source.getSpec() != null && v1alpha1Source.getSpec().getJava() == null &&
+                                v1alpha1Source.getSpec().getPython() == null &&
+                                v1alpha1Source.getSpec().getGolang() == null){
                             v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
                         }
-                        v1alpha1SourceSpecJava.setExtraDependenciesDir(
-                                (String) functionsWorkerServiceCustomConfigs.get("extraDependenciesDir"));
-                        v1alpha1Source.getSpec().setJava(v1alpha1SourceSpecJava);
-                    }
-                    Object volumeMounts = functionsWorkerServiceCustomConfigs.get("volumeMounts");
-                    if (volumeMounts != null) {
-                        List<V1alpha1SourceSpecPodVolumeMounts> volumeMountsList = (List<V1alpha1SourceSpecPodVolumeMounts>) volumeMounts;
-                        v1alpha1Source.getSpec().setVolumeMounts(volumeMountsList);
+                        if (v1alpha1SourceSpecJava != null) {
+                            v1alpha1SourceSpecJava.setExtraDependenciesDir(customConfig.getExtraDependenciesDir());
+                            v1alpha1Source.getSpec().setJava(v1alpha1SourceSpecJava);
+                        }
                     }
                     if (!StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationPlugin())
                             && !StringUtils.isEmpty(worker().getWorkerConfig().getBrokerClientAuthenticationParameters())) {
@@ -611,6 +614,11 @@ public class SourcesImpl extends MeshComponentImpl implements Sources<MeshWorker
                                 v1alpha1Source.getSpec().getClusterName(), tenant, namespace, sourceName,
                                 worker().getWorkerConfig(), worker().getCoreV1Api(), worker().getFactoryConfig());
                         v1alpha1Source.getSpec().getPulsar().setTlsSecret(tlsSecretName);
+                    }
+                    if (!StringUtils.isEmpty(customConfig.getDefaultServiceAccountName())
+                            && StringUtils.isEmpty(v1alpha1Source.getSpec().getPod().getServiceAccountName())) {
+                        v1alpha1Source.getSpec().getPod().setServiceAccountName(
+                                customConfig.getDefaultServiceAccountName());
                     }
                 } catch (Exception e) {
                     log.error("Error create or update auth or tls secret for {} {}/{}/{}",

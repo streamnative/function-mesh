@@ -42,11 +42,10 @@ functionsWorkerServiceCustomConfigs:
       name: secret-pulsarcluster-data
       readOnly: true
   volumes:
-    volumes:
-      - name: secret-pulsarcluster-data
-        secret:
-          defaultMode: 420
-          secretName: pulsarcluster-data
+    - name: secret-pulsarcluster-data
+      secret:
+        defaultMode: 420
+        secretName: pulsarcluster-data
   extraDependenciesDir: /pulsar/lib/*
   ownerReference:
     apiVersion: pulsar.streamnative.io/v1alpha1
@@ -55,4 +54,4 @@ functionsWorkerServiceCustomConfigs:
     kind: PulsarBroker
     name: test
     uid: 4627a402-35f2-40ac-b3fc-1bae5a2bd626
-
+  defaultServiceAccountName: "service-account"

@@ -20,6 +20,7 @@ package io.functionmesh.compute.rest.api;
 
 import com.google.common.collect.Maps;
 import io.functionmesh.compute.MeshWorkerService;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
 import io.functionmesh.compute.util.CommonUtil;
 import io.functionmesh.compute.util.KubernetesUtils;
@@ -190,6 +191,7 @@ public class SinksImpTest {
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
         PulsarAdmin pulsarAdmin = PowerMockito.mock(PulsarAdmin.class);
         PowerMockito.when(meshWorkerService.getBrokerAdmin()).thenReturn(pulsarAdmin);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(new MeshWorkerServiceCustomConfig());
         Tenants tenants = PowerMockito.mock(Tenants.class);
         PowerMockito.when(pulsarAdmin.tenants()).thenReturn(tenants);
         Call call = PowerMockito.mock(Call.class);
@@ -242,10 +244,15 @@ public class SinksImpTest {
 
         PowerMockito.when(tenants.getTenantInfo(tenant)).thenReturn(null);
 
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isSinkEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
+
         V1alpha1Sink v1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null,
-                        Collections.emptyMap(), null);
+                        null, meshWorkerService);
 
         Map<String, String> customLabels = Maps.newHashMap();
         customLabels.put("pulsar-cluster", clusterName);
@@ -438,6 +445,10 @@ public class SinksImpTest {
         PowerMockito.when(meshWorkerService.getWorkerConfig()).thenReturn(workerConfig);
         PowerMockito.when(workerConfig.isAuthorizationEnabled()).thenReturn(false);
         PowerMockito.when(workerConfig.isAuthenticationEnabled()).thenReturn(false);
+        MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig = PowerMockito.mock(MeshWorkerServiceCustomConfig.class);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isUploadEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerServiceCustomConfig.isSinkEnabled()).thenReturn(true);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(meshWorkerServiceCustomConfig);
 
         Call getCall = PowerMockito.mock(Call.class);
         Response getResponse = PowerMockito.mock(Response.class);

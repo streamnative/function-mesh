@@ -261,9 +261,10 @@ functionsWorkerServiceCustomConfigs:
       name: secret-pulsarcluster-data
       readOnly: true
   volumes:
-    volumes:
-      - name: secret-pulsarcluster-data
-        secret:
-          defaultMode: 420
-          secretName: pulsarcluster-data
+    - name: secret-pulsarcluster-data
+      secret:
+        defaultMode: 420
+        secretName: pulsarcluster-data
   extraDependenciesDir: /pulsar/lib/*
+
+  defaultServiceAccountName: "service-account"

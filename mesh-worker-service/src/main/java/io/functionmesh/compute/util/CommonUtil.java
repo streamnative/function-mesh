@@ -26,6 +26,7 @@ import com.google.gson.Gson;
 import com.google.protobuf.Empty;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import lombok.extern.slf4j.Slf4j;
@@ -75,11 +76,11 @@ public class CommonUtil {
         return ori.toLowerCase().replaceAll("[^a-z0-9-\\.]", "-");
     }
 
-    public static V1OwnerReference getOwnerReferenceFromCustomConfigs(Map<String, Object> customConfigs) {
+    public static V1OwnerReference getOwnerReferenceFromCustomConfigs(MeshWorkerServiceCustomConfig customConfigs) {
         if (customConfigs == null) {
             return null;
         }
-        Map<String, Object> ownerRef = (Map<String, Object>) customConfigs.get("ownerReference");
+        Map<String, Object> ownerRef = customConfigs.getOwnerReference();
         if (ownerRef == null) {
             return null;
         }
