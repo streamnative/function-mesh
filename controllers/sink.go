@@ -161,10 +161,18 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, s
 		return nil
 	}
 
-	condition := v1alpha1.ResourceCondition{
-		Condition: v1alpha1.HPAReady,
-		Status:    metav1.ConditionFalse,
-		Action:    v1alpha1.NoAction,
+	condition, ok := sink.Status.Conditions[v1alpha1.HPA]
+	if !ok {
+		sink.Status.Conditions[v1alpha1.HPA] = v1alpha1.ResourceCondition{
+			Condition: v1alpha1.HPAReady,
+			Status:    metav1.ConditionFalse,
+			Action:    v1alpha1.Create,
+		}
+		return nil
+	}
+
+	if condition.Status == metav1.ConditionTrue {
+		return nil
 	}
 
 	hpa := &autov2beta2.HorizontalPodAutoscaler{}
@@ -172,15 +180,10 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, s
 		Name: spec.MakeSinkObjectMeta(sink).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			condition.Action = v1alpha1.Create
-			r.Log.Info("hpa is not created for sink...", "name", sink.Name)
-		} else {
-			sink.Status.Conditions[v1alpha1.HPA] = condition
-			return err
+			r.Log.Info("hpa is not created for sink...", "Name", sink.Name)
+			return nil
 		}
-	} else {
-		// HPA's status doesn't show its readiness, so once it's created just consider it's ready
-		condition.Status = metav1.ConditionTrue
+		return err
 	}
 
 	if hpa.Spec.MaxReplicas != *sink.Spec.MaxReplicas ||
@@ -194,6 +197,8 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, req ctrl.Request, s
 		return nil
 	}
 
+	condition.Action = v1alpha1.NoAction
+	condition.Status = metav1.ConditionTrue
 	sink.Status.Conditions[v1alpha1.HPA] = condition
 	return nil
 }
