@@ -35,7 +35,7 @@ FUNCTION_NAME=$1
 
 function ci::create_cluster() {
     echo "Creating a kind cluster ..."
-    ${FUNCTION_MESH_HOME}/hack/kind-cluster-build.sh --name sn-platform-${CLUSTER_ID} -c 3 -v 10
+    ${FUNCTION_MESH_HOME}/hack/kind-cluster-build.sh --name sn-platform-${CLUSTER_ID} -c 1 -v 10
     echo "Successfully created a kind cluster."
 }
 
