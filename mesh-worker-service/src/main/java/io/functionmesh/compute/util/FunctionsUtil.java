@@ -272,6 +272,7 @@ public class FunctionsUtil {
         Class<?>[] typeArgs = null;
         if (componentPackageFile != null) {
             typeArgs = extractTypeArgs(functionConfig, componentPackageFile, worker.getWorkerConfig().isForwardSourceMessageProperty());
+            componentPackageFile.delete();
         }
         if (StringUtils.isNotEmpty(functionConfig.getJar())) {
             V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
