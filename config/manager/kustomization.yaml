@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: streamnative/function-mesh-operator
-  newTag: v0.1.6-rc3
+  newTag: v0.1.7
