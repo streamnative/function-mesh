@@ -126,10 +126,6 @@ func (r *Function) ValidateCreate() error {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("name"), r.Name, "function name is not provided"))
 	}
 
-	if r.Spec.FuncConfig == nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("funcConfig"), r.Spec.FuncConfig, "function config is not provided"))
-	}
-
 	if r.Spec.Runtime.Java == nil && r.Spec.Runtime.Python == nil && r.Spec.Runtime.Golang == nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "java"), r.Spec.Runtime.Java, "runtime cannot be empty"))
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "python"), r.Spec.Runtime.Python, "runtime cannot be empty"))
