@@ -25,7 +25,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/streamnative/pulsarctl/pkg/pulsar/utils"
 	"os"
 	"strings"
 
@@ -33,6 +32,7 @@ import (
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	cmdutils "github.com/streamnative/pulsarctl/pkg/cmdutils"
 	"github.com/streamnative/pulsarctl/pkg/pulsar/common"
+	"github.com/streamnative/pulsarctl/pkg/pulsar/utils"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
