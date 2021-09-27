@@ -136,8 +136,7 @@ func main() {
 		fmt.Printf("List tenant failed from service %s, %v\n", cmdutils.PulsarCtlConfig.WebServiceURL, err)
 		os.Exit(1)
 	}
-	var kubeConfig *string
-	kubeConfig = flag.String("kubeConfig", "", "absolute path to the kubeconfig file")
+	kubeConfig := flag.String("kubeConfig", "", "absolute path to the kubeconfig file")
 	kubeNamespace := flag.String("namespace", "", "Please configure kubernetes namespace")
 	authParameters := flag.String("authParams", "", "Please configure auth params")
 	authPlugin := flag.String("authPlugin", "", "Please configure auth plugin")
