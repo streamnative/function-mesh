@@ -43,15 +43,15 @@ import (
 )
 
 type Source struct {
-	TypeClassName string `json:"typeClassName" yaml:"typeClassName"`
-	CleanupSubscription bool `json:"cleanupSubscription" yaml:"cleanupSubscription"`
-	InputSpecs map[string]utils.ConsumerConfig `json:"inputSpecs" yaml:"inputSpecs"`
+	TypeClassName       string                          `json:"typeClassName" yaml:"typeClassName"`
+	CleanupSubscription bool                            `json:"cleanupSubscription" yaml:"cleanupSubscription"`
+	InputSpecs          map[string]utils.ConsumerConfig `json:"inputSpecs" yaml:"inputSpecs"`
 }
 
 type Sink struct {
-	TypeClassName string `json:"typeClassName" yaml:"typeClassName"`
-	Topic *string `json:"topic" yaml:"topic"`
-	ForwardSourceMessageProperty *bool            `json:"forwardSourceMessageProperty,omitempty"`
+	TypeClassName                string  `json:"typeClassName" yaml:"typeClassName"`
+	Topic                        *string `json:"topic" yaml:"topic"`
+	ForwardSourceMessageProperty *bool   `json:"forwardSourceMessageProperty,omitempty"`
 }
 
 type FunctionDetail struct {
@@ -59,8 +59,8 @@ type FunctionDetail struct {
 	Namespace string `json:"namespace" yaml:"namespace"`
 	Name      string `json:"name" yaml:"name"`
 	ClassName string `json:"className" yaml:"className"`
-	Source Source `json:"source" yaml:"source"`
-	Sink Sink `json:"sink" yaml:"sink"`
+	Source    Source `json:"source" yaml:"source"`
+	Sink      Sink   `json:"sink" yaml:"sink"`
 }
 
 func SHA1(s string) string {
@@ -102,7 +102,7 @@ func getFunctionDetail(stListItems []appv1.StatefulSet, tenant string, namespace
 					commandList := strings.Split(commands[m], " ")
 					for i, n := range commandList {
 						if n == "--function_details" {
-							command := strings.TrimLeft(commandList[i + 1], "'")
+							command := strings.TrimLeft(commandList[i+1], "'")
 							command = strings.TrimRight(command, "'")
 							if err := json.Unmarshal([]byte(command), &functionDetail); err != nil {
 								fmt.Printf("Convert function detail failed %s\n", err)
@@ -258,7 +258,7 @@ func main() {
 					//defaultMode := 420
 					defaultMode := int32(420)
 					functionSpec := v1alpha1.FunctionSpec{
-						Name:                function + "-" + sha1Value[0: 8],
+						Name:                function + "-" + sha1Value[0:8],
 						ClassName:           functionConfig.ClassName,
 						Tenant:              functionConfig.Tenant,
 						ClusterName:         pulsarCluster,
@@ -275,16 +275,16 @@ func main() {
 							CustomSerdeSources:  functionConfig.CustomSerdeInputs,
 							CustomSchemaSources: functionConfig.CustomSchemaInputs,
 							SourceSpecs:         sourceSpecs,
-							TypeClassName: functionDetail.Source.TypeClassName,
+							TypeClassName:       functionDetail.Source.TypeClassName,
 						},
 						// Disable maxReplicas
 						//MaxReplicas: &replicas,
-						Timeout:     timeoutMs,
+						Timeout: timeoutMs,
 						Output: v1alpha1.OutputConf{
 							Topic:              functionConfig.Output,
 							SinkSerdeClassName: functionConfig.OutputSerdeClassName,
 							SinkSchemaType:     functionConfig.OutputSchemaType,
-							TypeClassName: functionDetail.Sink.TypeClassName,
+							TypeClassName:      functionDetail.Sink.TypeClassName,
 							// Need to be added in pulsarctl
 							// https://github.com/streamnative/pulsarctl/blob/master/pkg/pulsar/utils/function_confg.go
 							// CustomSchemaSinks:  functionConfig.CustomSchemaOutputs,
@@ -342,7 +342,7 @@ func main() {
 						Kind:       "Function",
 					}
 					objectMeta := metav1.ObjectMeta{
-						Name:      function + "-" + sha1Value[0: 8],
+						Name:      function + "-" + sha1Value[0:8],
 						Namespace: *kubeNamespace,
 						Labels:    labels,
 					}
@@ -352,17 +352,17 @@ func main() {
 						sha256Value := hex.EncodeToString(SHA256(authSecretName))
 						authUniqueSecretName := "function-auth-" + sha256Value
 						secret := corev1.Secret{
-							TypeMeta:   metav1.TypeMeta{
-								Kind: "Secret",
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "Secret",
 								APIVersion: "v1",
 							},
 							ObjectMeta: metav1.ObjectMeta{
-								Name: authUniqueSecretName,
+								Name:      authUniqueSecretName,
 								Namespace: *kubeNamespace,
 							},
-							Data: map[string][]byte {
-								"clientAuthenticationParameters" : []byte(*authParameters),
-								"clientAuthenticationPlugin": []byte(*authPlugin),
+							Data: map[string][]byte{
+								"clientAuthenticationParameters": []byte(*authParameters),
+								"clientAuthenticationPlugin":     []byte(*authPlugin),
 							},
 						}
 						secretData, err := json.Marshal(&secret)
@@ -381,12 +381,12 @@ func main() {
 						}
 						functionSpec.Pulsar.AuthSecret = authUniqueSecretName
 						if len(*secretName) > 0 {
-							functionSpec.Pod.Volumes = []corev1.Volume {
+							functionSpec.Pod.Volumes = []corev1.Volume{
 								{
 									Name: volumeName,
 									VolumeSource: corev1.VolumeSource{
-										Secret: &corev1.SecretVolumeSource {
-											SecretName: *secretName,
+										Secret: &corev1.SecretVolumeSource{
+											SecretName:  *secretName,
 											DefaultMode: &defaultMode,
 										},
 									},
@@ -395,8 +395,8 @@ func main() {
 							functionSpec.VolumeMounts = []corev1.VolumeMount{
 								{
 									MountPath: "/mnt/secrets",
-									Name: volumeName,
-									ReadOnly: true,
+									Name:      volumeName,
+									ReadOnly:  true,
 								},
 							}
 						}
