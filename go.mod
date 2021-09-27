@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/apache/pulsar-client-go/oauth2 v0.0.0-20201120111947-b8bd55bc02bd // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v0.3.0
+	github.com/go-logr/logr v0.1.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.3
 	github.com/kr/pretty v0.2.0 // indirect
@@ -15,8 +15,8 @@ require (
 	github.com/streamnative/pulsarctl v0.5.0
 	github.com/stretchr/testify v1.6.1
 	google.golang.org/protobuf v1.25.0
-	k8s.io/api v0.20.4
-	k8s.io/apimachinery v0.20.4
-	k8s.io/client-go v0.20.4
-	sigs.k8s.io/controller-runtime v0.7.0
+	k8s.io/api v0.18.6
+	k8s.io/apimachinery v0.18.6
+	k8s.io/client-go v0.18.6
+	sigs.k8s.io/controller-runtime v0.6.2
 )
