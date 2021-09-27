@@ -20,10 +20,12 @@ package main
 import (
 	"context"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/streamnative/pulsarctl/pkg/pulsar/utils"
 	"os"
 	"strings"
 
@@ -40,30 +42,88 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+type Source struct {
+	TypeClassName string `json:"typeClassName" yaml:"typeClassName"`
+	CleanupSubscription bool `json:"cleanupSubscription" yaml:"cleanupSubscription"`
+	InputSpecs map[string]utils.ConsumerConfig `json:"inputSpecs" yaml:"inputSpecs"`
+}
+
+type Sink struct {
+	TypeClassName string `json:"typeClassName" yaml:"typeClassName"`
+	Topic *string `json:"topic" yaml:"topic"`
+	ForwardSourceMessageProperty *bool            `json:"forwardSourceMessageProperty,omitempty"`
+}
+
+type FunctionDetail struct {
+	Tenant    string `json:"tenant" yaml:"tenant"`
+	Namespace string `json:"namespace" yaml:"namespace"`
+	Name      string `json:"name" yaml:"name"`
+	ClassName string `json:"className" yaml:"className"`
+	Source Source `json:"source" yaml:"source"`
+	Sink Sink `json:"sink" yaml:"sink"`
+}
+
 func SHA1(s string) string {
 	o := sha1.New()
 	o.Write([]byte(s))
 	return hex.EncodeToString(o.Sum(nil))
 }
 
-func getStatefulSet(stListItems []appv1.StatefulSet, tenant string, namespace string, name string) []string {
+func SHA256(s string) []byte {
+	hash := sha256.Sum256([]byte(s))
+	return hash[:]
+}
+
+func getStatefulSet(stListItems []appv1.StatefulSet, tenant string, namespace string, name string) map[string]string {
+	// --tenant public --namespace default --name test-func
+	for i := range stListItems {
+		meta := stListItems[i].Spec.Template.ObjectMeta.Labels
+		if meta["tenant"] == tenant && meta["namespace"] == namespace && meta["name"] == name {
+			return meta
+		}
+	}
+	return nil
+}
+
+func getFunctionDetail(stListItems []appv1.StatefulSet, tenant string, namespace string, name string) FunctionDetail {
 	// --tenant public --namespace default --name test-func
 	searchTenant := "--tenant " + tenant
 	searchNamespace := "--namespace " + namespace
 	searchName := "--name " + name
+	var functionDetail FunctionDetail
 	for i := range stListItems {
 		containers := stListItems[i].Spec.Template.Spec.Containers
 		for j := range containers {
 			commands := containers[j].Command
 			for m := range commands {
-				if strings.Contains(commands[m], searchTenant) && strings.Contains(commands[m], searchNamespace) && strings.Contains(commands[m], searchName) {
-					fmt.Println(strings.Split(commands[m], " "))
-					return strings.Split(commands[m], " ")
+				if strings.Contains(commands[m], searchTenant) &&
+					strings.Contains(commands[m], searchNamespace) &&
+					strings.Contains(commands[m], searchName) {
+					commandList := strings.Split(commands[m], " ")
+					for i, n := range commandList {
+						if n == "--function_details" {
+							command := strings.TrimLeft(commandList[i + 1], "'")
+							command = strings.TrimRight(command, "'")
+							if err := json.Unmarshal([]byte(command), &functionDetail); err != nil {
+								fmt.Printf("Convert function detail failed %s\n", err)
+							}
+						}
+					}
 				}
 			}
 		}
 	}
-	return nil
+	return functionDetail
+}
+
+func MergeMap(mObj ...map[string]string) map[string]string {
+	newObj := map[string]string{}
+	for _, m := range mObj {
+		for k, v := range m {
+			newObj[k] = v
+		}
+	}
+	return newObj
 }
 
 func main() {
@@ -79,6 +139,9 @@ func main() {
 	var kubeConfig *string
 	kubeConfig = flag.String("kubeConfig", "", "absolute path to the kubeconfig file")
 	kubeNamespace := flag.String("namespace", "", "Please configure kubernetes namespace")
+	authParameters := flag.String("authParams", "", "Please configure auth params")
+	authPlugin := flag.String("authPlugin", "", "Please configure auth plugin")
+	secretName := flag.String("secretName", "", "Please configure secret")
 	flag.Parse()
 	if *kubeConfig == "" {
 		fmt.Println("Please specify the kubernetes config path.")
@@ -123,7 +186,8 @@ func main() {
 				os.Exit(1)
 			}
 			for _, function := range functions {
-				getStatefulSet(stList.Items, tenantNamespace[0], tenantNamespace[1], function)
+				stsLabels := getStatefulSet(stList.Items, tenantNamespace[0], tenantNamespace[1], function)
+				functionDetail := getFunctionDetail(stList.Items, tenantNamespace[0], tenantNamespace[1], function)
 				functionConfig, err := functionAdmin.Functions().GetFunction(
 					tenantNamespace[0], tenantNamespace[1], function)
 				if err != nil {
@@ -184,10 +248,16 @@ func main() {
 					labels["pulsar-component"] = functionConfig.Name
 					labels["pulsar-namespace"] = tenantNamespace[1]
 					labels["pulsar-tenant"] = tenant
+					if stsLabels != nil {
+						labels = MergeMap(labels, stsLabels)
+					}
 					sha1Value := SHA1(pulsarCluster + "-" + tenantNamespace[0] +
 						"-" + tenantNamespace[1] + "-" + functionConfig.Name)
+					volumeName := "secret-broker"
+					//defaultMode := 420
+					defaultMode := int32(420)
 					functionSpec := v1alpha1.FunctionSpec{
-						Name:                "function-" + sha1Value[0: 8],
+						Name:                function + "-" + sha1Value[0: 8],
 						ClassName:           functionConfig.ClassName,
 						Tenant:              functionConfig.Tenant,
 						ClusterName:         pulsarCluster,
@@ -204,6 +274,7 @@ func main() {
 							CustomSerdeSources:  functionConfig.CustomSerdeInputs,
 							CustomSchemaSources: functionConfig.CustomSchemaInputs,
 							SourceSpecs:         sourceSpecs,
+							TypeClassName: functionDetail.Source.TypeClassName,
 						},
 						// Disable maxReplicas
 						//MaxReplicas: &replicas,
@@ -212,6 +283,7 @@ func main() {
 							Topic:              functionConfig.Output,
 							SinkSerdeClassName: functionConfig.OutputSerdeClassName,
 							SinkSchemaType:     functionConfig.OutputSchemaType,
+							TypeClassName: functionDetail.Sink.TypeClassName,
 							// Need to be added in pulsarctl
 							// https://github.com/streamnative/pulsarctl/blob/master/pkg/pulsar/utils/function_confg.go
 							// CustomSchemaSinks:  functionConfig.CustomSchemaOutputs,
@@ -232,6 +304,7 @@ func main() {
 						Pod: v1alpha1.PodPolicy{
 							Labels: labels,
 						},
+						//VolumeMounts: corev1.VolumeMount{MountPath:}
 					}
 					if functionConfig.ProcessingGuarantees != "" {
 						switch strings.ToLower(functionConfig.ProcessingGuarantees) {
@@ -268,8 +341,64 @@ func main() {
 						Kind:       "Function",
 					}
 					objectMeta := metav1.ObjectMeta{
-						Name:      "function-" + sha1Value[0: 8],
+						Name:      function + "-" + sha1Value[0: 8],
+						Namespace: *kubeNamespace,
 						Labels:    labels,
+					}
+					secretYamlStr := []byte("")
+					if authParameters != nil && authPlugin != nil && len(*authParameters) > 0 && len(*authPlugin) > 0 {
+						authSecretName := pulsarCluster + "-" + tenantNamespace[0] + "-" + tenantNamespace[1] + "-" + function
+						sha256Value := hex.EncodeToString(SHA256(authSecretName))
+						authUniqueSecretName := "function-auth-" + sha256Value
+						secret := corev1.Secret{
+							TypeMeta:   metav1.TypeMeta{
+								Kind: "Secret",
+								APIVersion: "v1",
+							},
+							ObjectMeta: metav1.ObjectMeta{
+								Name: authUniqueSecretName,
+								Namespace: *kubeNamespace,
+							},
+							Data: map[string][]byte {
+								"clientAuthenticationParameters" : []byte(*authParameters),
+								"clientAuthenticationPlugin": []byte(*authPlugin),
+							},
+						}
+						secretData, err := json.Marshal(&secret)
+						if err != nil {
+							fmt.Printf("Convert secret %s config to json failed"+
+								" from tenant %s namespace %s service %s err %v",
+								authUniqueSecretName, tenant, namespace, cmdutils.PulsarCtlConfig.WebServiceURL, err)
+							os.Exit(1)
+						}
+						secretYamlStr, err = yaml.JSONToYAML(secretData)
+						if err != nil {
+							fmt.Printf("Convert secret %s config to yaml failed"+
+								" from tenant %s namespace %s service %s err %v",
+								authUniqueSecretName, tenant, namespace, cmdutils.PulsarCtlConfig.WebServiceURL, err)
+							os.Exit(1)
+						}
+						functionSpec.Pulsar.AuthSecret = authUniqueSecretName
+						if len(*secretName) > 0 {
+							functionSpec.Pod.Volumes = []corev1.Volume {
+								{
+									Name: volumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource {
+											SecretName: *secretName,
+											DefaultMode: &defaultMode,
+										},
+									},
+								},
+							}
+							functionSpec.VolumeMounts = []corev1.VolumeMount{
+								{
+									MountPath: "/mnt/secrets",
+									Name: volumeName,
+									ReadOnly: true,
+								},
+							}
+						}
 					}
 					functionData := v1alpha1.Function{
 						TypeMeta:   typeMeta,
@@ -307,7 +436,13 @@ func main() {
 							function, tenant, namespace, cmdutils.PulsarCtlConfig.WebServiceURL, err)
 						os.Exit(1)
 					}
-					_, err = f.WriteString(string(y))
+					yamlStr := ""
+					if len(secretYamlStr) > 0 {
+						yamlStr = string(secretYamlStr) + "---\n" + string(y)
+					} else {
+						yamlStr = string(y)
+					}
+					_, err = f.WriteString(yamlStr)
 					if err != nil {
 						fmt.Printf("Write yaml file failed for function %s from tenant %s namespace %s service %s err %v",
 							function, tenant, namespace, cmdutils.PulsarCtlConfig.WebServiceURL, err)
@@ -316,6 +451,8 @@ func main() {
 					f.Sync()
 					f.Close()
 				}
+				fmt.Printf("Genereate configration file for k8s namespace: %s, pulsar tenant: %s, pulsar namespace: %s, function: %s\n",
+					*kubeNamespace, tenantNamespace[0], tenantNamespace[1], function)
 			}
 		}
 	}
