@@ -131,8 +131,6 @@ func main() {
 	functionAdmin := cmdutils.NewPulsarClientWithAPIVersion(common.V3)
 	tenants, err := admin.Tenants().List()
 	if err != nil {
-		fmt.Println(cmdutils.PulsarCtlConfig.AuthParams)
-		fmt.Println(cmdutils.PulsarCtlConfig.AuthPlugin)
 		fmt.Printf("List tenant failed from service %s, %v\n", cmdutils.PulsarCtlConfig.WebServiceURL, err)
 		os.Exit(1)
 	}
@@ -254,7 +252,6 @@ func main() {
 					sha1Value := SHA1(pulsarCluster + "-" + tenantNamespace[0] +
 						"-" + tenantNamespace[1] + "-" + functionConfig.Name)
 					volumeName := "secret-broker"
-					//defaultMode := 420
 					defaultMode := int32(420)
 					functionSpec := v1alpha1.FunctionSpec{
 						Name:                function + "-" + sha1Value[0:8],
@@ -304,7 +301,6 @@ func main() {
 						Pod: v1alpha1.PodPolicy{
 							Labels: labels,
 						},
-						//VolumeMounts: corev1.VolumeMount{MountPath:}
 					}
 					if functionConfig.ProcessingGuarantees != "" {
 						switch strings.ToLower(functionConfig.ProcessingGuarantees) {
