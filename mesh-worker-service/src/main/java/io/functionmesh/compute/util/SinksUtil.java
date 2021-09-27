@@ -19,14 +19,17 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
+import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpec;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInput;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInputCryptoConfig;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecInputSourceSpecs;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecJava;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPod;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPulsar;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodResources;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
@@ -37,16 +40,22 @@ import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SinkConfig;
+import org.apache.pulsar.common.policies.data.ExceptionInformation;
+import org.apache.pulsar.common.policies.data.SinkStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
 import org.apache.pulsar.functions.utils.SinkConfigUtils;
 
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
+import static io.functionmesh.compute.util.CommonUtil.getExceptionInformation;
 import static org.apache.pulsar.common.functions.Utils.BUILTIN;
 
 @Slf4j
@@ -57,9 +66,11 @@ public class SinksUtil {
     public static V1alpha1Sink createV1alpha1SkinFromSinkConfig(String kind, String group, String version
             , String sinkName, String sinkPkgUrl, InputStream uploadedInputStream, SinkConfig sinkConfig,
                                                                 MeshConnectorsManager connectorsManager,
-                                                                Map<String, Object> customConfigs, String cluster) {
+                                                                String cluster, MeshWorkerService worker) {
+        MeshWorkerServiceCustomConfig customConfigs = worker.getMeshWorkerServiceCustomConfig();
         CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(sinkConfig.getCustomRuntimeOptions());
         String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
+        String serviceAccountName = customRuntimeOptions.getServiceAccountName();
 
         String location =
                 String.format(
@@ -120,8 +131,6 @@ public class SinksUtil {
             extractedSinkDetails.setSinkClassName(sinkConfig.getClassName());
         }
 
-
-
         V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
 
         for (Map.Entry<String, Function.ConsumerSpec> inputSpecs : functionDetails.getSource().getInputSpecsMap().entrySet()) {
@@ -155,10 +164,9 @@ public class SinksUtil {
                 if (functionMeshConnectorDefinition == null) {
                     v1alpha1SinkSpecInput.setTypeClassName("[B");
                 } else {
-                    if (functionMeshConnectorDefinition.getTypeClassName() == null) {
+                    v1alpha1SinkSpecInput.setTypeClassName(functionMeshConnectorDefinition.getSinkTypeClassName());
+                    if (StringUtils.isEmpty(v1alpha1SinkSpecInput.getTypeClassName())) {
                         v1alpha1SinkSpecInput.setTypeClassName("[B");
-                    } else {
-                        v1alpha1SinkSpecInput.setTypeClassName(functionMeshConnectorDefinition.getTypeClassName());
                     }
                     // we only handle user provide --inputs but also with defaultSchemaType defined
                     if (sinkConfig.getInputs() != null && sinkConfig.getInputs().size() > 0) {
@@ -213,10 +221,6 @@ public class SinksUtil {
             v1alpha1SinkSpec.setTimeout((int) functionDetails.getSource().getTimeoutMs());
         }
 
-        if (Strings.isNotEmpty(functionDetails.getLogTopic())) {
-            v1alpha1SinkSpec.setLogTopic(functionDetails.getLogTopic());
-        }
-
         if (functionDetails.hasRetryDetails()) {
             v1alpha1SinkSpec.setMaxMessageRetry(functionDetails.getRetryDetails().getMaxMessageRetries());
             if (Strings.isNotEmpty(functionDetails.getRetryDetails().getDeadLetterTopic())) {
@@ -258,9 +262,15 @@ public class SinksUtil {
         v1alpha1SinkSpec.setPulsar(v1alpha1SinkSpecPulsar);
 
         v1alpha1SinkSpec.setClusterName(clusterName);
-        v1alpha1SinkSpec.setAutoAck(sinkConfig.getAutoAck());
 
-        v1alpha1SinkSpec.setSinkConfig(CommonUtil.transformedMapValueToString(sinkConfig.getConfigs()));
+        v1alpha1SinkSpec.setSinkConfig(sinkConfig.getConfigs());
+
+        V1alpha1SinkSpecPod specPod = new V1alpha1SinkSpecPod();
+        if (worker.getMeshWorkerServiceCustomConfig().isAllowUserDefinedServiceAccountName() &&
+                StringUtils.isNotEmpty(serviceAccountName)) {
+            specPod.setServiceAccountName(serviceAccountName);
+            v1alpha1SinkSpec.setPod(specPod);
+        }
 
         v1alpha1Sink.setSpec(v1alpha1SinkSpec);
 
@@ -300,6 +310,10 @@ public class SinksUtil {
         }
         if (v1alpha1SinkSpec.getMaxReplicas() != null && v1alpha1SinkSpec.getMaxReplicas() > 0) {
             customRuntimeOptions.setMaxReplicas(v1alpha1SinkSpec.getMaxReplicas());
+        }
+        if (v1alpha1SinkSpec.getPod() != null &&
+                Strings.isNotEmpty(v1alpha1SinkSpec.getPod().getServiceAccountName())) {
+            customRuntimeOptions.setServiceAccountName(v1alpha1SinkSpec.getPod().getServiceAccountName());
         }
 
         if (v1alpha1SinkSpecInput.getTopics() != null) {
@@ -376,7 +390,7 @@ public class SinksUtil {
         }
         sinkConfig.setClassName(v1alpha1SinkSpec.getClassName());
         if (v1alpha1SinkSpec.getSinkConfig() != null) {
-            sinkConfig.setConfigs(new HashMap<>(v1alpha1SinkSpec.getSinkConfig()));
+            sinkConfig.setConfigs((Map<String, Object>) v1alpha1SinkSpec.getSinkConfig());
         }
         // TODO: secretsMap
 
@@ -405,6 +419,42 @@ public class SinksUtil {
     private static V1alpha1SinkSpecInputCryptoConfig convertFromCryptoSpec(Function.CryptoSpec cryptoSpec) {
         // TODO: convertFromCryptoSpec
         return null;
+    }
+
+    public static void convertFunctionStatusToInstanceStatusData(InstanceCommunication.FunctionStatus functionStatus,
+                                                            SinkStatus.SinkInstanceStatus.SinkInstanceStatusData sinkInstanceStatusData) {
+        if (functionStatus == null || sinkInstanceStatusData == null) {
+            return;
+        }
+        sinkInstanceStatusData.setRunning(functionStatus.getRunning());
+        sinkInstanceStatusData.setError(functionStatus.getFailureException());
+        sinkInstanceStatusData.setNumReadFromPulsar(functionStatus.getNumReceived());
+        sinkInstanceStatusData.setNumSystemExceptions(functionStatus.getNumSystemExceptions()
+                + functionStatus.getNumUserExceptions() + functionStatus.getNumSourceExceptions());
+        List<ExceptionInformation> systemExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestUserExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSystemExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSourceExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        sinkInstanceStatusData.setLatestSystemExceptions(systemExceptionInformationList);
+        sinkInstanceStatusData.setNumSinkExceptions(functionStatus.getNumSinkExceptions());
+        List<ExceptionInformation> sinkExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSinkExceptionsList()) {
+            ExceptionInformation exceptionInformation = getExceptionInformation(exceptionEntry);
+            sinkExceptionInformationList.add(exceptionInformation);
+        }
+        sinkInstanceStatusData.setLatestSinkExceptions(sinkExceptionInformationList);
+
+        sinkInstanceStatusData.setNumWrittenToSink(functionStatus.getNumSuccessfullyProcessed());
+        sinkInstanceStatusData.setLastReceivedTime(functionStatus.getLastInvocationTime());
     }
 
 }

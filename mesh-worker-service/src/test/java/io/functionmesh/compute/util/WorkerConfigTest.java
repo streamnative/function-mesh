@@ -18,13 +18,20 @@
  */
 package io.functionmesh.compute.util;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumes;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodVolumes;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodVolumes;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
+
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pulsar.functions.runtime.RuntimeUtils;
 import org.apache.pulsar.functions.worker.WorkerConfig;
 import org.junit.Test;
 
@@ -37,8 +44,12 @@ public class WorkerConfigTest {
         log.info("Got worker config [{}]", workerConfig);
         Map<String, Object> customConfigs = workerConfig.getFunctionsWorkerServiceCustomConfigs();
         log.info("Got custom configs [{}]", customConfigs);
+        MeshWorkerServiceCustomConfig customConfig = RuntimeUtils.getRuntimeFunctionConfig(
+                customConfigs, MeshWorkerServiceCustomConfig.class);
 
-        V1OwnerReference ownerRef = CommonUtil.getOwnerReferenceFromCustomConfigs(customConfigs);
+        assertEquals("service-account", customConfig.getDefaultServiceAccountName());
+
+        V1OwnerReference ownerRef = CommonUtil.getOwnerReferenceFromCustomConfigs(customConfig);
         log.info("Got owner ref [{}]", ownerRef);
         assertEquals("pulsar.streamnative.io/v1alpha1", ownerRef.getApiVersion());
         assertEquals("PulsarBroker", ownerRef.getKind());
@@ -46,5 +57,26 @@ public class WorkerConfigTest {
         assertEquals("4627a402-35f2-40ac-b3fc-1bae5a2bd626", ownerRef.getUid());
         assertNull(ownerRef.getBlockOwnerDeletion());
         assertNull(ownerRef.getController());
+
+        List<V1alpha1SourceSpecPodVolumes> v1alpha1SourceSpecPodVolumesList =
+                customConfig.asV1alpha1SourceSpecPodVolumesList();
+        assertEquals(1, v1alpha1SourceSpecPodVolumesList.size());
+        assertEquals("secret-pulsarcluster-data", v1alpha1SourceSpecPodVolumesList.get(0).getName());
+        assertNotNull("pulsarcluster-data", v1alpha1SourceSpecPodVolumesList.get(0).getSecret());
+        assertEquals("pulsarcluster-data", v1alpha1SourceSpecPodVolumesList.get(0).getSecret().getSecretName());
+
+        List<V1alpha1SinkSpecPodVolumes> v1alpha1SinkSpecPodVolumesList =
+                customConfig.asV1alpha1SinkSpecPodVolumesList();
+        assertEquals(1, v1alpha1SinkSpecPodVolumesList.size());
+        assertEquals("secret-pulsarcluster-data", v1alpha1SinkSpecPodVolumesList.get(0).getName());
+        assertNotNull("pulsarcluster-data", v1alpha1SinkSpecPodVolumesList.get(0).getSecret());
+        assertEquals("pulsarcluster-data", v1alpha1SinkSpecPodVolumesList.get(0).getSecret().getSecretName());
+
+        List<V1alpha1FunctionSpecPodVolumes> v1alpha1FunctionSpecPodVolumesList =
+                customConfig.asV1alpha1FunctionSpecPodVolumesList();
+        assertEquals(1, v1alpha1FunctionSpecPodVolumesList.size());
+        assertEquals("secret-pulsarcluster-data", v1alpha1FunctionSpecPodVolumesList.get(0).getName());
+        assertNotNull("pulsarcluster-data", v1alpha1FunctionSpecPodVolumesList.get(0).getSecret());
+        assertEquals("pulsarcluster-data", v1alpha1FunctionSpecPodVolumesList.get(0).getSecret().getSecretName());
     }
 }

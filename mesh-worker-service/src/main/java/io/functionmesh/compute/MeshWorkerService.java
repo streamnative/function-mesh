@@ -18,11 +18,13 @@
  */
 package io.functionmesh.compute;
 
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.rest.api.FunctionsImpl;
 import io.functionmesh.compute.rest.api.SinksImpl;
 import io.functionmesh.compute.rest.api.SourcesImpl;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.util.Config;
@@ -68,10 +70,12 @@ public class MeshWorkerService implements WorkerService {
     private Sinks<MeshWorkerService> sinks;
     private Sources<MeshWorkerService> sources;
     private CoreV1Api coreV1Api;
+    private AppsV1Api appsV1Api;
     private CustomObjectsApi customObjectsApi;
     private ApiClient apiClient;
     private PulsarAdmin brokerAdmin;
     private KubernetesRuntimeFactoryConfig factoryConfig;
+    private MeshWorkerServiceCustomConfig meshWorkerServiceCustomConfig;
 
     private AuthenticationService authenticationService;
     private AuthorizationService authorizationService;
@@ -137,12 +141,15 @@ public class MeshWorkerService implements WorkerService {
         this.sinks = new SinksImpl(() -> MeshWorkerService.this);
         this.factoryConfig = RuntimeUtils.getRuntimeFunctionConfig(
                 workerConfig.getFunctionRuntimeFactoryConfigs(), KubernetesRuntimeFactoryConfig.class);
+        this.meshWorkerServiceCustomConfig = RuntimeUtils.getRuntimeFunctionConfig(
+                workerConfig.getFunctionsWorkerServiceCustomConfigs(), MeshWorkerServiceCustomConfig.class);
     }
 
     private void initKubernetesClient() throws IOException {
         try {
             apiClient = Config.defaultClient();
             coreV1Api = new CoreV1Api(Config.defaultClient());
+            appsV1Api = new AppsV1Api(Config.defaultClient());
             customObjectsApi = new CustomObjectsApi(Config.defaultClient());
         } catch (java.io.IOException e) {
             log.error("Initialization kubernetes client failed, exception: {}", e.getMessage());

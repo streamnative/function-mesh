@@ -18,12 +18,13 @@
  */
 package io.functionmesh.compute.util;
 
+import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sinks.models.V1alpha1Sink;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpec;
 import io.functionmesh.compute.testdata.Generate;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
-import java.util.Collections;
 import org.apache.commons.io.FileUtils;
 import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.nar.NarClassLoader;
@@ -84,11 +85,14 @@ public class SinksUtilTest {
         PowerMockito.<Class<?>>when(FunctionCommon.getSinkType(null)).thenReturn(getClass());
 
         SinkConfig sinkConfig = Generate.CreateSinkConfig(tenant, namespace, componentName);
+        MeshWorkerService meshWorkerService =
+                PowerMockito.mock(MeshWorkerService.class);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(new MeshWorkerServiceCustomConfig());
 
         V1alpha1Sink actualV1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null,
-                        Collections.emptyMap(), null);
+                        null, meshWorkerService);
 
         Assert.assertEquals(actualV1alpha1Sink.getKind(), kind);
         V1alpha1SinkSpec v1alpha1SinkSpec = actualV1alpha1Sink.getSpec();
@@ -127,11 +131,14 @@ public class SinksUtilTest {
         PowerMockito.<Class<?>>when(FunctionCommon.getSourceType(null)).thenReturn(getClass());
 
         SinkConfig sinkConfig = Generate.CreateSinkConfig(tenant, namespace, componentName);
+        MeshWorkerService meshWorkerService =
+                PowerMockito.mock(MeshWorkerService.class);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(new MeshWorkerServiceCustomConfig());
 
         V1alpha1Sink actualV1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, uploadedInputStream, sinkConfig, null,
-                        Collections.emptyMap(), null);
+                        null, meshWorkerService);
 
         SinkConfig newSinkConfig = SinksUtil.createSinkConfigFromV1alpha1Sink(tenant, namespace, componentName, actualV1alpha1Sink);
 
@@ -177,11 +184,14 @@ public class SinksUtilTest {
         PowerMockito.when(connectorsManager.getConnectorDefinition("elastic-search")).thenReturn(connectorDefinition);
 
         SinkConfig sinkConfig = Generate.CreateSinkConfigBuiltin(tenant, namespace, componentName);
+        MeshWorkerService meshWorkerService =
+                PowerMockito.mock(MeshWorkerService.class);
+        PowerMockito.when(meshWorkerService.getMeshWorkerServiceCustomConfig()).thenReturn(new MeshWorkerServiceCustomConfig());
 
         V1alpha1Sink actualV1alpha1Sink =
                 SinksUtil.createV1alpha1SkinFromSinkConfig(
                         kind, group, version, componentName, null, null, sinkConfig, connectorsManager,
-                        Collections.emptyMap(), null);
+                        null, meshWorkerService);
 
         Assert.assertEquals(actualV1alpha1Sink.getKind(), kind);
         V1alpha1SinkSpec v1alpha1SinkSpec = actualV1alpha1Sink.getSpec();

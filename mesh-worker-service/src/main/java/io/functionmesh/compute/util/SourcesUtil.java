@@ -19,16 +19,19 @@
 package io.functionmesh.compute.util;
 
 import com.google.gson.Gson;
+import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.FunctionMeshConnectorDefinition;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sources.models.V1alpha1Source;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpec;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecJava;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutput;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerConf;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecOutputProducerConfCryptoConfig;
-import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPod;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodResources;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPulsar;
 import io.functionmesh.compute.worker.MeshConnectorsManager;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
@@ -37,13 +40,18 @@ import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.ProducerConfig;
 import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.io.SourceConfig;
+import org.apache.pulsar.common.policies.data.ExceptionInformation;
+import org.apache.pulsar.common.policies.data.SourceStatus;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
 import org.apache.pulsar.functions.utils.SourceConfigUtils;
 
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import static org.apache.pulsar.common.functions.Utils.BUILTIN;
@@ -58,9 +66,11 @@ public class SourcesUtil {
                                                                       InputStream uploadedInputStream,
                                                                       SourceConfig sourceConfig,
                                                                       MeshConnectorsManager connectorsManager,
-                                                                      Map<String, Object> customConfigs, String cluster) {
+                                                                      String cluster, MeshWorkerService worker) {
+        MeshWorkerServiceCustomConfig customConfigs = worker.getMeshWorkerServiceCustomConfig();
         CustomRuntimeOptions customRuntimeOptions = CommonUtil.getCustomRuntimeOptions(sourceConfig.getCustomRuntimeOptions());
         String clusterName = CommonUtil.getClusterName(cluster, customRuntimeOptions);
+        String serviceAccountName = customRuntimeOptions.getServiceAccountName();
 
         String location = String.format("%s/%s/%s", sourceConfig.getTenant(), sourceConfig.getNamespace(),
                 sourceConfig.getName());
@@ -126,6 +136,7 @@ public class SourcesUtil {
         if (Strings.isNotEmpty(functionDetails.getSink().getSchemaType())) {
             v1alpha1SourceSpecOutput.setSinkSchemaType(functionDetails.getSink().getSchemaType());
         }
+        v1alpha1SourceSpec.setForwardSourceMessageProperty(functionDetails.getSink().getForwardSourceMessageProperty());
         // process ProducerConf
         V1alpha1SourceSpecOutputProducerConf v1alpha1SourceSpecOutputProducerConf
                 = new V1alpha1SourceSpecOutputProducerConf();
@@ -156,10 +167,9 @@ public class SourcesUtil {
                 if (functionMeshConnectorDefinition == null) {
                     v1alpha1SourceSpecOutput.setTypeClassName("[B");
                 } else {
-                    if (functionMeshConnectorDefinition.getTypeClassName() == null) {
+                    v1alpha1SourceSpecOutput.setTypeClassName(functionMeshConnectorDefinition.getSourceTypeClassName());
+                    if (StringUtils.isEmpty(v1alpha1SourceSpecOutput.getTypeClassName())) {
                         v1alpha1SourceSpecOutput.setTypeClassName("[B");
-                    } else {
-                        v1alpha1SourceSpecOutput.setTypeClassName(functionMeshConnectorDefinition.getTypeClassName());
                     }
                     // use default schema type if user not provided
                     if (StringUtils.isNotEmpty(functionMeshConnectorDefinition.getDefaultSchemaType())
@@ -175,10 +185,6 @@ public class SourcesUtil {
         }
 
         v1alpha1SourceSpec.setOutput(v1alpha1SourceSpecOutput);
-
-        if (!org.apache.commons.lang3.StringUtils.isEmpty(functionDetails.getLogTopic())) {
-            v1alpha1SourceSpec.setLogTopic(functionDetails.getLogTopic());
-        }
 
         v1alpha1SourceSpec.setReplicas(functionDetails.getParallelism());
         if (customRuntimeOptions.getMaxReplicas() > functionDetails.getParallelism()) {
@@ -213,7 +219,14 @@ public class SourcesUtil {
 
         v1alpha1SourceSpec.setClusterName(clusterName);
 
-        v1alpha1SourceSpec.setSourceConfig(CommonUtil.transformedMapValueToString(sourceConfig.getConfigs()));
+        v1alpha1SourceSpec.setSourceConfig(sourceConfig.getConfigs());
+
+        V1alpha1SourceSpecPod specPod = new V1alpha1SourceSpecPod();
+        if (worker.getMeshWorkerServiceCustomConfig().isAllowUserDefinedServiceAccountName() &&
+                StringUtils.isNotEmpty(serviceAccountName)) {
+            specPod.setServiceAccountName(serviceAccountName);
+            v1alpha1SourceSpec.setPod(specPod);
+        }
 
         v1alpha1Source.setSpec(v1alpha1SourceSpec);
 
@@ -283,8 +296,13 @@ public class SourcesUtil {
             customRuntimeOptions.setMaxReplicas(v1alpha1SourceSpec.getMaxReplicas());
         }
 
+        if (v1alpha1SourceSpec.getPod() != null &&
+                Strings.isNotEmpty(v1alpha1SourceSpec.getPod().getServiceAccountName())) {
+            customRuntimeOptions.setServiceAccountName(v1alpha1SourceSpec.getPod().getServiceAccountName());
+        }
+
         if (v1alpha1SourceSpec.getSourceConfig() != null) {
-            sourceConfig.setConfigs(new HashMap<>(v1alpha1SourceSpec.getSourceConfig()));
+            sourceConfig.setConfigs((Map<String, Object>) v1alpha1SourceSpec.getSourceConfig());
         }
 
         // TODO: secretsMap
@@ -304,7 +322,6 @@ public class SourcesUtil {
             sourceConfig.setRuntimeFlags(v1alpha1SourceSpec.getRuntimeFlags());
         }
 
-
         if (v1alpha1SourceSpec.getJava() != null && Strings.isNotEmpty(v1alpha1SourceSpec.getJava().getJar())) {
             sourceConfig.setArchive(v1alpha1SourceSpec.getJava().getJar());
         }
@@ -315,5 +332,58 @@ public class SourcesUtil {
     private static V1alpha1SourceSpecOutputProducerConfCryptoConfig convertFromCryptoSpec(Function.CryptoSpec cryptoSpec) {
         // TODO: convertFromCryptoSpec
         return null;
+    }
+
+    public static void convertFunctionStatusToInstanceStatusData(InstanceCommunication.FunctionStatus functionStatus,
+                                                                 SourceStatus.SourceInstanceStatus.SourceInstanceStatusData instanceStatusData) {
+        if (functionStatus == null || instanceStatusData == null) {
+            return;
+        }
+        instanceStatusData.setRunning(functionStatus.getRunning());
+        instanceStatusData.setError(functionStatus.getFailureException());
+        instanceStatusData.setNumReceivedFromSource(functionStatus.getNumReceived());
+        instanceStatusData.setNumSourceExceptions(functionStatus.getNumSourceExceptions());
+
+        List<ExceptionInformation> sourceExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSourceExceptionsList()) {
+            ExceptionInformation exceptionInformation
+                    = new ExceptionInformation();
+            exceptionInformation.setTimestampMs(exceptionEntry.getMsSinceEpoch());
+            exceptionInformation.setExceptionString(exceptionEntry.getExceptionString());
+            sourceExceptionInformationList.add(exceptionInformation);
+        }
+        instanceStatusData.setLatestSourceExceptions(sourceExceptionInformationList);
+
+        // Source treats all system and sink exceptions as system exceptions
+        instanceStatusData.setNumSystemExceptions(functionStatus.getNumSystemExceptions()
+                + functionStatus.getNumUserExceptions() + functionStatus.getNumSinkExceptions());
+        List<ExceptionInformation> systemExceptionInformationList = new LinkedList<>();
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestUserExceptionsList()) {
+            ExceptionInformation exceptionInformation
+                    = new ExceptionInformation();
+            exceptionInformation.setTimestampMs(exceptionEntry.getMsSinceEpoch());
+            exceptionInformation.setExceptionString(exceptionEntry.getExceptionString());
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSystemExceptionsList()) {
+            ExceptionInformation exceptionInformation
+                    = new ExceptionInformation();
+            exceptionInformation.setTimestampMs(exceptionEntry.getMsSinceEpoch());
+            exceptionInformation.setExceptionString(exceptionEntry.getExceptionString());
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+
+        for (InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry : functionStatus.getLatestSinkExceptionsList()) {
+            ExceptionInformation exceptionInformation
+                    = new ExceptionInformation();
+            exceptionInformation.setTimestampMs(exceptionEntry.getMsSinceEpoch());
+            exceptionInformation.setExceptionString(exceptionEntry.getExceptionString());
+            systemExceptionInformationList.add(exceptionInformation);
+        }
+        instanceStatusData.setLatestSystemExceptions(systemExceptionInformationList);
+
+        instanceStatusData.setNumWritten(functionStatus.getNumSuccessfullyProcessed());
+        instanceStatusData.setLastReceivedTime(functionStatus.getLastInvocationTime());
     }
 }

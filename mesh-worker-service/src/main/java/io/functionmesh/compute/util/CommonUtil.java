@@ -18,22 +18,42 @@
  */
 package io.functionmesh.compute.util;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
+import com.google.protobuf.Empty;
 import io.functionmesh.compute.MeshWorkerService;
 import io.functionmesh.compute.models.CustomRuntimeOptions;
+import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
-import java.util.Collections;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.pulsar.common.functions.FunctionConfig;
+import org.apache.pulsar.common.policies.data.ExceptionInformation;
 import org.apache.pulsar.common.util.RestException;
+import org.apache.pulsar.functions.proto.InstanceCommunication;
+import org.apache.pulsar.functions.proto.InstanceControlGrpc;
 
 import javax.ws.rs.core.Response;
+import java.util.Collections;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
+import static io.functionmesh.compute.util.KubernetesUtils.GRPC_TIMEOUT_SECS;
+
+@Slf4j
 public class CommonUtil {
+    public static final String COMPONENT_FUNCTION = "function";
+    public static final String COMPONENT_SOURCE = "source";
+    public static final String COMPONENT_SINK = "sink";
+    public static final String COMPONENT_STATEFUL_SET = "StatefulSet";
+    public static final String COMPONENT_SERVICE = "Service";
+    public static final String COMPONENT_HPA = "HorizontalPodAutoscaler";
     private static final String CLUSTER_NAME_ENV = "clusterName";
 
     public static String getClusterNameEnv() {
@@ -56,11 +76,11 @@ public class CommonUtil {
         return ori.toLowerCase().replaceAll("[^a-z0-9-\\.]", "-");
     }
 
-    public static V1OwnerReference getOwnerReferenceFromCustomConfigs(Map<String, Object> customConfigs) {
+    public static V1OwnerReference getOwnerReferenceFromCustomConfigs(MeshWorkerServiceCustomConfig customConfigs) {
         if (customConfigs == null) {
             return null;
         }
-        Map<String, Object> ownerRef = (Map<String, Object>) customConfigs.get("ownerReference");
+        Map<String, Object> ownerRef = customConfigs.getOwnerReference();
         if (ownerRef == null) {
             return null;
         }
@@ -116,20 +136,6 @@ public class CommonUtil {
         return null;
     }
 
-    public static Map<String, String> transformedMapValueToString(Map<String, Object> map) {
-        if (map == null) {
-            return null;
-        }
-        return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())));
-    }
-
-    public static Map<String, Object> transformedMapValueToObject(Map<String, String> map) {
-        if (map == null) {
-            return null;
-        }
-        return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
     // Return a CustomRuntimeOption if a json string is provided, otherwise an empty object is returned
     public static CustomRuntimeOptions getCustomRuntimeOptions(String customRuntimeOptionsJSON) {
         CustomRuntimeOptions customRuntimeOptions;
@@ -158,5 +164,51 @@ public class CommonUtil {
         } else {
             throw new RestException(Response.Status.BAD_REQUEST, "clusterName is not provided.");
         }
+    }
+
+    public static ExceptionInformation getExceptionInformation(InstanceCommunication.FunctionStatus.ExceptionInformation exceptionEntry) {
+        ExceptionInformation exceptionInformation
+                = new ExceptionInformation();
+        exceptionInformation.setTimestampMs(exceptionEntry.getMsSinceEpoch());
+        exceptionInformation.setExceptionString(exceptionEntry.getExceptionString());
+        return exceptionInformation;
+    }
+
+    public static String makeJobName(String name, String suffix) {
+        return String.format("%s-%s", name, suffix);
+    }
+
+    public static int getShardIdFromPodName(String podName) {
+        int shardId = -1;
+        try {
+            shardId = new Integer(podName.substring(podName.lastIndexOf("-")+1));
+        } catch (Exception ex) {
+            log.error("getShardIdFromPodName failed with podName {}, exception: {}", podName, ex);
+        }
+        return shardId;
+    }
+
+    public static CompletableFuture<InstanceCommunication.FunctionStatus> getFunctionStatusAsync(InstanceControlGrpc.InstanceControlFutureStub stub) {
+        CompletableFuture<InstanceCommunication.FunctionStatus> retval = new CompletableFuture<>();
+        if (stub == null) {
+            retval.completeExceptionally(new RuntimeException("Not alive"));
+            return retval;
+        }
+        ListenableFuture<InstanceCommunication.FunctionStatus> response = stub.withDeadlineAfter(GRPC_TIMEOUT_SECS, TimeUnit.SECONDS).getFunctionStatus(Empty.newBuilder().build());
+        Futures.addCallback(response, new FutureCallback<InstanceCommunication.FunctionStatus>() {
+            @Override
+            public void onFailure(Throwable throwable) {
+                InstanceCommunication.FunctionStatus.Builder builder = InstanceCommunication.FunctionStatus.newBuilder();
+                builder.setRunning(false);
+                builder.setFailureException(throwable.getMessage());
+                retval.complete(builder.build());
+            }
+
+            @Override
+            public void onSuccess(InstanceCommunication.FunctionStatus t) {
+                retval.complete(t);
+            }
+        }, MoreExecutors.directExecutor());
+        return retval;
     }
 }

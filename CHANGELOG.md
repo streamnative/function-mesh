@@ -1,3 +1,35 @@
+# Function Mesh v0.1.7 Release Notes
+
+## v0.1.7 What's New
+
+- [Function Mesh Worker service] Add `typeClassName` in the source and sink connector definition ([#247](https://github.com/streamnative/function-mesh/pull/247))
+- [Test] Add integration tests for Function Mesh Worker service ([#246](https://github.com/streamnative/function-mesh/pull/246))
+- [Controller] Use untyped YAML configuration as function or connector configuration ([#233](https://github.com/streamnative/function-mesh/pull/233))
+- [Controller] Enable source connector to set `ForwardMessageProperty` ([#250](https://github.com/streamnative/function-mesh/pull/250))
+- [Runner image] Find the issue that the Python runner image cannot be built based on the latest Pulsar image ([#253](https://github.com/streamnative/function-mesh/pull/253)) ([#254](https://github.com/streamnative/function-mesh/pull/254))
+- [controller] fix package download path not same as the executing command path ([#256](https://github.com/streamnative/function-mesh/pull/256))
+- [controller] support metrics based HPA by upgrade apis to k8s.io/api/autoscaling/v2beta2 ([#245](https://github.com/streamnative/function-mesh/pull/245))
+- [Controller] Fix misuse of Kubernetes namespace in Controller ([#259](https://github.com/streamnative/function-mesh/pull/259))
+- [Controller] Support downloading the package with authentication or TLS ([#257](https://github.com/streamnative/function-mesh/pull/257))
+- [Function Mesh Worker service] Support creating a function with the package URL ([#261](https://github.com/streamnative/function-mesh/pull/261))
+- [Test] Add integration tests for Pulsar package management service ([#268](https://github.com/streamnative/function-mesh/pull/268))
+- [Codebase] Remove the vendor folder in the codebase ([#267](https://github.com/streamnative/function-mesh/pull/267))
+
+# Function Mesh v0.1.6 Release Notes
+
+## v0.1.6 What's New
+
+- Move the Function runner image to Java 11 to support Pulsar 2.8.0. ([#202](https://github.com/streamnative/function-mesh/pull/202))
+- Fix the value of the `MaxReplicas` in Function Mesh Worker service. ([#212](https://github.com/streamnative/function-mesh/pull/212))
+- Update the observation logics of the sinks and sources. ([#217](https://github.com/streamnative/function-mesh/pull/217))
+- Support Pulsar Functions and connectors (sinks and sources) status API in Function Mesh Worker service. ([#220](https://github.com/streamnative/function-mesh/pull/220)) ([#224](https://github.com/streamnative/function-mesh/pull/224)) ([#225](https://github.com/streamnative/function-mesh/pull/225))
+- Support setting the service account name for running Pods. ([#226](https://github.com/streamnative/function-mesh/pull/226))
+- Fix the NPE that is generated when the `AutoAck` option is not set. ([#234](https://github.com/streamnative/function-mesh/pull/234))
+- Fix the issue that the Function Mesh worker service gets status with a fault pod. ([#239](https://github.com/streamnative/function-mesh/pull/239))
+- Remove the `logTopic` option from source and sink CRDs. ([#242](https://github.com/streamnative/function-mesh/pull/242))
+- Fix the observation logic of the service name. ([#230](https://github.com/streamnative/function-mesh/pull/230))
+- Bump Pulsar to version 2.8.0. ([#240](https://github.com/streamnative/function-mesh/pull/240))
+
 # Function Mesh v0.1.5 Release Notes
 
 ## v0.1.5 What's New

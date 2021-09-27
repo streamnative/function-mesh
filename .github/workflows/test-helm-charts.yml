@@ -62,8 +62,11 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
 
       - name: Create kind cluster
-        uses: helm/kind-action@v1.1.0
+        run: hack/kind-cluster-build.sh --name chart-testing -c 3 -v 10
         if: steps.list-changed.outputs.changed == 'true'
+        with:
+          node_image: kindest/node:v1.15.12
+          wait: 600s
 
       - name: Set up GO 1.13
         if: steps.list-changed.outputs.changed == 'true'

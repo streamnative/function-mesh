@@ -28,7 +28,6 @@ import (
 	"github.com/streamnative/function-mesh/controllers/proto"
 
 	appsv1 "k8s.io/api/apps/v1"
-	autov1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,14 +35,13 @@ import (
 const (
 	EnvShardID                 = "SHARD_ID"
 	FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
-	DefaultRunnerTag           = "2.8.0-rc-202106091215"
+	DefaultRunnerTag           = "2.8.0.14"
 	DefaultRunnerPrefix        = "streamnative/"
 	DefaultRunnerImage         = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
 	DefaultJavaRunnerImage     = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
 	DefaultPythonRunnerImage   = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
 	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
-	PulsarDownloadRootDir      = "/pulsar"
 
 	ComponentSource   = "source"
 	ComponentSink     = "sink"
@@ -72,6 +70,7 @@ var MetricsPort = corev1.ContainerPort{
 }
 
 func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev1.Service {
+	objectMeta.Name = MakeHeadlessServiceName(objectMeta.Name)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -90,27 +89,9 @@ func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev
 	}
 }
 
-func MakeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32,
-	kind string) *autov1.HorizontalPodAutoscaler {
-	// TODO: configurable cpu percentage
-	cpuPercentage := int32(80)
-	return &autov1.HorizontalPodAutoscaler{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "autoscaling/v1",
-			APIVersion: "HorizontalPodAutoscaler",
-		},
-		ObjectMeta: *objectMeta,
-		Spec: autov1.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autov1.CrossVersionObjectReference{
-				Kind:       kind,
-				Name:       objectMeta.Name,
-				APIVersion: "compute.functionmesh.io/v1alpha1",
-			},
-			MinReplicas:                    &minReplicas,
-			MaxReplicas:                    maxReplicas,
-			TargetCPUUtilizationPercentage: &cpuPercentage,
-		},
-	}
+// MakeHeadlessServiceName changes the name of service to headless style
+func MakeHeadlessServiceName(serviceName string) string {
+	return fmt.Sprintf("%s-headless", serviceName)
 }
 
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *corev1.Container,
@@ -121,12 +102,14 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: *objectMeta,
-		Spec:       *MakeStatefulSetSpec(replicas, container, volumes, labels, policy),
+		Spec: *MakeStatefulSetSpec(replicas, container, volumes, labels, policy,
+			MakeHeadlessServiceName(objectMeta.Name)),
 	}
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
-	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy) *appsv1.StatefulSetSpec {
+	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy,
+	serviceName string) *appsv1.StatefulSetSpec {
 	return &appsv1.StatefulSetSpec{
 		Replicas: replicas,
 		Selector: &metav1.LabelSelector{
@@ -137,6 +120,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
 		},
+		ServiceName: serviceName,
 	}
 }
 
@@ -157,6 +141,7 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 			Tolerations:                   policy.Tolerations,
 			SecurityContext:               policy.SecurityContext,
 			ImagePullSecrets:              policy.ImagePullSecrets,
+			ServiceAccountName:            policy.ServiceAccountName,
 		},
 	}
 }
@@ -168,7 +153,7 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, detai
 			memory, extraDependenciesDir, authProvided, tlsProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -181,7 +166,7 @@ func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, det
 			details, authProvided, tlsProvided), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -192,39 +177,58 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath, function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != ""), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
 }
 
-func getDownloadCommand(downloadPath, componentPackage string) []string {
+func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool) []string {
 	// The download path is the path that the package saved in the pulsar.
 	// By default, it's the path that the package saved in the pulsar, we can use package name
 	// to replace it for downloading packages from packages management service.
+	args := []string{
+		PulsarAdminExecutableFile,
+		"--admin-url",
+		"$webServiceURL",
+	}
+	if authProvided {
+		args = append(args, []string{
+			"--auth-plugin",
+			"$clientAuthenticationPlugin",
+			"--auth-params",
+			"$clientAuthenticationParameters"}...)
+	}
+
+	if tlsProvided {
+		args = append(args, []string{
+			"--tls-allow-insecure",
+			"$tlsAllowInsecureConnection",
+			"--tls-enable-hostname-verification",
+			"$tlsHostnameVerificationEnable",
+			"--tls-trust-cert-path",
+			"$tlsTrustCertsFilePath",
+		}...)
+	}
 	if hasPackageNamePrefix(downloadPath) {
-		return []string{
-			PulsarAdminExecutableFile,
-			"--admin-url",
-			"$webServiceURL",
+		args = append(args, []string{
 			"packages",
 			"download",
 			downloadPath,
 			"--path",
-			PulsarDownloadRootDir + "/" + componentPackage,
-		}
+			componentPackage,
+		}...)
+		return args
 	}
-	return []string{
-		PulsarAdminExecutableFile, // TODO configurable pulsar ROOTDIR and adminCLI
-		"--admin-url",
-		"$webServiceURL",
+	args = append(args, []string{
 		"functions",
 		"download",
 		"--path",
 		downloadPath,
 		"--destination-file",
-		PulsarDownloadRootDir + "/" + componentPackage,
-	}
+		componentPackage,
+	}...)
+	return args
 }
 
 // TODO: do a more strict check for the package name https://github.com/streamnative/function-mesh/issues/49
@@ -413,7 +417,10 @@ func generateResource(resources corev1.ResourceList) *proto.Resources {
 	}
 }
 
-func getUserConfig(configs map[string]string) string {
+func getUserConfig(configs *v1alpha1.Config) string {
+	if configs == nil {
+		return ""
+	}
 	// validated in admission web hook
 	bytes, _ := json.Marshal(configs)
 	return string(bytes)

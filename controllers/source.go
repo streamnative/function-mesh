@@ -19,11 +19,12 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
-	autov1 "k8s.io/api/autoscaling/v1"
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,12 +116,13 @@ func (r *SourceReconciler) ObserveSourceService(ctx context.Context, req ctrl.Re
 	}
 
 	svc := &corev1.Service{}
+	svcName := spec.MakeHeadlessServiceName(spec.MakeSourceObjectMeta(source).Name)
 	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
-		Name: spec.MakeSourceObjectMeta(source).Name}, svc)
+		Name: svcName}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			condition.Action = v1alpha1.Create
-			r.Log.Info("service is not created...", "Name", source.Name)
+			r.Log.Info("service is not created...", "Name", source.Name, "ServiceName", svcName)
 		} else {
 			source.Status.Conditions[v1alpha1.Service] = condition
 			return err
@@ -161,28 +163,40 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Reques
 		return nil
 	}
 
-	condition := v1alpha1.ResourceCondition{
-		Condition: v1alpha1.HPAReady,
-		Status:    metav1.ConditionFalse,
-		Action:    v1alpha1.NoAction,
+	condition, ok := source.Status.Conditions[v1alpha1.HPA]
+	if !ok {
+		source.Status.Conditions[v1alpha1.HPA] = v1alpha1.ResourceCondition{
+			Condition: v1alpha1.HPAReady,
+			Status:    metav1.ConditionFalse,
+			Action:    v1alpha1.Create,
+		}
+		return nil
 	}
 
-	hpa := &autov1.HorizontalPodAutoscaler{}
+	hpa := &autov2beta2.HorizontalPodAutoscaler{}
 	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
 		Name: spec.MakeSourceObjectMeta(source).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			condition.Action = v1alpha1.Create
-			r.Log.Info("hpa is not created for source...", "name", source.Name)
-		} else {
-			source.Status.Conditions[v1alpha1.HPA] = condition
-			return err
+			r.Log.Info("hpa is not created for source...", "Name", source.Name)
+			return nil
 		}
-	} else {
-		// HPA's status doesn't show its readiness, so once it's created just consider it's ready
-		condition.Status = metav1.ConditionTrue
+		return err
 	}
 
+	if hpa.Spec.MaxReplicas != *source.Spec.MaxReplicas ||
+		!reflect.DeepEqual(hpa.Spec.Metrics, source.Spec.Pod.AutoScalingMetrics) ||
+		(source.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior == nil) ||
+		(source.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior != nil &&
+			!reflect.DeepEqual(*hpa.Spec.Behavior, *source.Spec.Pod.AutoScalingBehavior)) {
+		condition.Status = metav1.ConditionFalse
+		condition.Action = v1alpha1.Update
+		source.Status.Conditions[v1alpha1.HPA] = condition
+		return nil
+	}
+
+	condition.Action = v1alpha1.NoAction
+	condition.Status = metav1.ConditionTrue
 	source.Status.Conditions[v1alpha1.HPA] = condition
 	return nil
 }
@@ -204,6 +218,33 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, req ctrl.Request,
 		hpa := spec.MakeSourceHPA(source)
 		if err := r.Create(ctx, hpa); err != nil {
 			r.Log.Error(err, "failed to create pod autoscaler for source", "name", source.Name)
+			return err
+		}
+	case v1alpha1.Update:
+		hpa := &autov2beta2.HorizontalPodAutoscaler{}
+		err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
+			Name: spec.MakeSourceObjectMeta(source).Name}, hpa)
+		if err != nil {
+			r.Log.Error(err, "failed to update pod autoscaler for source, cannot find hpa", "name", source.Name)
+			return err
+		}
+		if hpa.Spec.MaxReplicas != *source.Spec.MaxReplicas {
+			hpa.Spec.MaxReplicas = *source.Spec.MaxReplicas
+		}
+		if len(source.Spec.Pod.AutoScalingMetrics) > 0 && !reflect.DeepEqual(hpa.Spec.Metrics, source.Spec.Pod.AutoScalingMetrics) {
+			hpa.Spec.Metrics = source.Spec.Pod.AutoScalingMetrics
+		}
+		if source.Spec.Pod.AutoScalingBehavior != nil {
+			hpa.Spec.Behavior = source.Spec.Pod.AutoScalingBehavior
+		}
+		if len(source.Spec.Pod.BuiltinAutoscaler) > 0 {
+			metrics := spec.MakeMetricsFromBuiltinHPARules(source.Spec.Pod.BuiltinAutoscaler)
+			if !reflect.DeepEqual(hpa.Spec.Metrics, metrics) {
+				hpa.Spec.Metrics = metrics
+			}
+		}
+		if err := r.Update(ctx, hpa); err != nil {
+			r.Log.Error(err, "failed to update pod autoscaler for source", "name", source.Name)
 			return err
 		}
 	case v1alpha1.Wait, v1alpha1.NoAction:

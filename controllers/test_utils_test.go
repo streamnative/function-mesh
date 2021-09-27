@@ -18,13 +18,20 @@
 package controllers
 
 import (
+	"fmt"
+
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const TestClusterName string = "test-pulsar"
 const TestFunctionName string = "test-function"
+const TestFunctionE2EName string = "test-function-e2e"
+const TestFunctionKeyBatcherName string = "test-function-key-batcher"
+const TestFunctionHPAName string = "test-function-hpa"
+const TestFunctionBuiltinHPAName string = "test-function-builtin-hpa"
 const TestFunctionMeshName = "test-function-mesh"
 const TestSinkName string = "test-sink"
 const TestSourceName string = "test-source"
@@ -34,7 +41,7 @@ func makeSampleObjectMeta(name string) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
 		Name:      name,
 		Namespace: TestNameSpace,
-		UID:       "dead-beef", // uid not generate automatically with fake k8s
+		UID:       types.UID(fmt.Sprintf("dead-beef-%s", name)), // uid not generate automatically with fake k8s
 	}
 }
 
@@ -102,7 +109,7 @@ func makeFunctionSample(functionName string) *v1alpha1.Function {
 }
 
 func makeFunctionSampleWithCryptoEnabled() *v1alpha1.Function {
-	function := makeFunctionSample(TestFunctionName)
+	function := makeFunctionSample(TestFunctionE2EName)
 	function.Spec.Input = v1alpha1.InputConf{
 		Topics: []string{
 			"persistent://public/default/java-function-input-topic",
@@ -137,7 +144,7 @@ func makeFunctionSampleWithCryptoEnabled() *v1alpha1.Function {
 }
 
 func makeFunctionSampleWithKeyBasedBatcher() *v1alpha1.Function {
-	function := makeFunctionSample(TestFunctionName)
+	function := makeFunctionSample(TestFunctionKeyBatcherName)
 	function.Spec.Output = v1alpha1.OutputConf{
 		Topic: "persistent://public/default/java-function-output-topic",
 		ProducerConf: &v1alpha1.ProducerConfig{
@@ -177,6 +184,13 @@ func makeSinkSample() *v1alpha1.Sink {
 	replicas := int32(1)
 	maxReplicas := int32(1)
 	trueVal := true
+	sinkConfig := v1alpha1.NewConfig(map[string]interface{}{
+		"elasticSearchUrl": "http://quickstart-es-http.default.svc.cluster.local:9200",
+		"indexName":        "my_index",
+		"typeName":         "doc",
+		"username":         "elastic",
+		"password":         "wJ757TmoXEd941kXm07Z2GW3",
+	})
 	return &v1alpha1.Sink{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Sink",
@@ -194,13 +208,7 @@ func makeSinkSample() *v1alpha1.Sink {
 				},
 				TypeClassName: "[B",
 			},
-			SinkConfig: map[string]string{
-				"elasticSearchUrl": "http://quickstart-es-http.default.svc.cluster.local:9200",
-				"indexName":        "my_index",
-				"typeName":         "doc",
-				"username":         "elastic",
-				"password":         "wJ757TmoXEd941kXm07Z2GW3",
-			},
+			SinkConfig:      &sinkConfig,
 			Timeout:         0,
 			MaxMessageRetry: 0,
 			Replicas:        &replicas,
@@ -225,6 +233,15 @@ func makeSinkSample() *v1alpha1.Sink {
 func makeSourceSample() *v1alpha1.Source {
 	replicas := int32(1)
 	maxReplicas := int32(1)
+	sourceConfig := v1alpha1.NewConfig(map[string]interface{}{
+		"mongodb.hosts":      "rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017",
+		"mongodb.name":       "dbserver1",
+		"mongodb.user":       "debezium",
+		"mongodb.password":   "dbz",
+		"mongodb.task.id":    "1",
+		"database.whitelist": "inventory",
+		"pulsar.service.url": "pulsar://test-pulsar-broker.default.svc.cluster.local:6650",
+	})
 	return &v1alpha1.Source{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Sink",
@@ -245,17 +262,9 @@ func makeSourceSample() *v1alpha1.Source {
 					UseThreadLocalProducers:            true,
 				},
 			},
-			SourceConfig: map[string]string{
-				"mongodb.hosts":      "rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017",
-				"mongodb.name":       "dbserver1",
-				"mongodb.user":       "debezium",
-				"mongodb.password":   "dbz",
-				"mongodb.task.id":    "1",
-				"database.whitelist": "inventory",
-				"pulsar.service.url": "pulsar://test-pulsar-broker.default.svc.cluster.local:6650",
-			},
-			Replicas:    &replicas,
-			MaxReplicas: &maxReplicas,
+			SourceConfig: &sourceConfig,
+			Replicas:     &replicas,
+			MaxReplicas:  &maxReplicas,
 			Messaging: v1alpha1.Messaging{
 				Pulsar: &v1alpha1.PulsarMessaging{
 					PulsarConfig: TestClusterName,

@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.1.6-rc2
+VERSION ?= 0.1.7
 # Default image tag
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:v$(VERSION)
@@ -61,7 +61,7 @@ run: generate fmt vet manifests
 
 # Install CRDs into a cluster
 install: manifests kustomize crd
-	kubectl create -f manifests/crd.yaml
+	kubectl apply -f manifests/crd.yaml
 
 # Uninstall CRDs from a cluster
 uninstall: manifests kustomize

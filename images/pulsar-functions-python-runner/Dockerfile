@@ -11,19 +11,19 @@ COPY --from=pulsar /pulsar/pulsar-client /pulsar/pulsar-client
 # to make this Dockerfile compalicate with different Pulsar versions
 # Below is a hacky way to copy /pulsar/cpp-client if exist in pulsar image
 COPY --from=pulsar /pulsar/README /pulsar/cpp-clien* /tmp/pulsar/
-RUN mv /tmp/pulsar/cpp-client /pulsar/cpp-client || true
+RUN if [ -d "/tmp/pulsar/cpp-client" ]; then mv /tmp/pulsar/cpp-client /pulsar/cpp-client || true ; fi
 
 # Install some utilities
 RUN apt-get update \
-     && DEBIAN_FRONTEND=noninteractive apt-get install -y python3.7 python3.7-dev python3-setuptools python3-yaml python3-kazoo \
+     && DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-dev python3-setuptools python3-yaml python3-kazoo \
                  libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev \
                  curl \
      && apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/apt/lists/*
 
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-RUN python3.7 get-pip.py
+RUN python3 get-pip.py
 
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.7 10
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 RUN if [ -d "/pulsar/cpp-client" ]; then apt-get update \
      && apt install -y /pulsar/cpp-client/*.deb \
@@ -31,4 +31,5 @@ RUN if [ -d "/pulsar/cpp-client" ]; then apt-get update \
 
 WORKDIR /pulsar
 
-RUN /pulsar/bin/install-pulsar-client-37.sh
+RUN if [ -f "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh ; fi
+RUN if [ -f "/pulsar/bin/install-pulsar-client.sh" ]; then /pulsar/bin/install-pulsar-client.sh ; fi

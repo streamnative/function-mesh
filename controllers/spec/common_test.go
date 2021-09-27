@@ -30,7 +30,7 @@ import (
 
 func TestGetDownloadCommand(t *testing.T) {
 	doTest := func(downloadPath, componentPackage string, expectedCommand []string) {
-		actualResult := getDownloadCommand(downloadPath, componentPackage)
+		actualResult := getDownloadCommand(downloadPath, componentPackage, false, false)
 		assert.Equal(t, expectedCommand, actualResult)
 	}
 
@@ -44,21 +44,21 @@ func TestGetDownloadCommand(t *testing.T) {
 			[]string{
 				PulsarAdminExecutableFile,
 				"--admin-url", "$webServiceURL",
-				"packages", "download", "function://public/default/test@v1", "--path", PulsarDownloadRootDir + "/function-package.jar",
+				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
 			},
 		},
 		{"sink://public/default/test@v1", "sink-package.jar",
 			[]string{
 				PulsarAdminExecutableFile,
 				"--admin-url", "$webServiceURL",
-				"packages", "download", "sink://public/default/test@v1", "--path", PulsarDownloadRootDir + "/sink-package.jar",
+				"packages", "download", "sink://public/default/test@v1", "--path", "sink-package.jar",
 			},
 		},
 		{"source://public/default/test@v1", "source-package.jar",
 			[]string{
 				PulsarAdminExecutableFile,
 				"--admin-url", "$webServiceURL",
-				"packages", "download", "source://public/default/test@v1", "--path", PulsarDownloadRootDir + "/source-package.jar",
+				"packages", "download", "source://public/default/test@v1", "--path", "source-package.jar",
 			},
 		},
 		// test get the download command with normal name
@@ -66,7 +66,7 @@ func TestGetDownloadCommand(t *testing.T) {
 			[]string{
 				PulsarAdminExecutableFile,
 				"--admin-url", "$webServiceURL",
-				"functions", "download", "--path", "/test", "--destination-file", PulsarDownloadRootDir + "/test.jar",
+				"functions", "download", "--path", "/test", "--destination-file", "test.jar",
 			},
 		},
 		// test get the download command with a wrong package name
@@ -74,14 +74,14 @@ func TestGetDownloadCommand(t *testing.T) {
 			[]string{
 				PulsarAdminExecutableFile,
 				"--admin-url", "$webServiceURL",
-				"functions", "download", "--path", "source/public/default/test@v1", "--destination-file", PulsarDownloadRootDir + "/source-package.jar",
+				"functions", "download", "--path", "source/public/default/test@v1", "--destination-file", "source-package.jar",
 			},
 		},
 		{"source:/public/default/test@v1", "source-package.jar",
 			[]string{
 				PulsarAdminExecutableFile,
 				"--admin-url", "$webServiceURL",
-				"functions", "download", "--path", "source:/public/default/test@v1", "--destination-file", PulsarDownloadRootDir + "/source-package.jar",
+				"functions", "download", "--path", "source:/public/default/test@v1", "--destination-file", "source-package.jar",
 			},
 		},
 	}

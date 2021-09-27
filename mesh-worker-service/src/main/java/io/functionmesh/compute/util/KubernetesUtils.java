@@ -19,13 +19,21 @@
 package io.functionmesh.compute.util;
 
 import com.google.common.collect.Maps;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.pulsar.functions.proto.InstanceControlGrpc;
 import org.apache.pulsar.functions.runtime.kubernetes.KubernetesRuntimeFactoryConfig;
 import org.apache.pulsar.functions.utils.Actions;
 import org.apache.pulsar.functions.worker.WorkerConfig;
@@ -50,6 +58,7 @@ public class KubernetesUtils {
 	private static final String USE_TLS_CLAIM = "useTls";
 	private static final String TLS_ALLOW_INSECURE_CONNECTION_CLAIM = "tlsAllowInsecureConnection";
 	private static final String TLS_HOSTNAME_VERIFICATION_ENABLE_CLAIM = "tlsHostnameVerificationEnable";
+	public static final long GRPC_TIMEOUT_SECS = 5;
 
 	public static String getNamespace() {
 		String namespace = null;
@@ -181,6 +190,28 @@ public class KubernetesUtils {
 		}
 
 		return secretName;
+	}
+
+	public static String getServiceUrl(String podName, String subdomain, String jobNamespace) {
+		return String.format("%s.%s.%s.svc.cluster.local", podName, subdomain, jobNamespace);
+	}
+
+	public static boolean isPodRunning(V1Pod pod) {
+		if (pod == null) return false;
+		V1PodStatus podStatus = pod.getStatus();
+		if (podStatus == null) return false;
+		return podStatus.getPhase() != null && podStatus.getPhase().equals("Running")
+				&& podStatus.getContainerStatuses() != null
+				&& podStatus.getContainerStatuses().stream().allMatch(V1ContainerStatus::getReady);
+	}
+
+	public static String getPodName(V1Pod pod) {
+		String podName = "";
+		if (pod == null) return podName;
+		if (pod.getMetadata() != null && pod.getMetadata().getName() != null) {
+			podName = pod.getMetadata().getName();
+		}
+		return podName;
 	}
 
 }

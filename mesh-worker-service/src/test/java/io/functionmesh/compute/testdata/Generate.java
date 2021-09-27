@@ -59,6 +59,31 @@ public class Generate {
         return functionConfig;
     }
 
+    public static FunctionConfig CreateJavaFunctionWithPackageURLConfig(String tenant, String namespace, String functionName) {
+        FunctionConfig functionConfig = new FunctionConfig();
+        functionConfig.setName(functionName);
+        functionConfig.setTenant(tenant);
+        functionConfig.setNamespace(namespace);
+        functionConfig.setClassName("org.example.functions.WordCountFunction");
+        functionConfig.setInputs(Collections.singletonList("persistent://public/default/sentences"));
+        functionConfig.setParallelism(1);
+        functionConfig.setCleanupSubscription(true);
+        functionConfig.setOutput("persistent://public/default/count");
+        Resources resources = new Resources();
+        resources.setCpu(1.0);
+        resources.setRam(102400L);
+        functionConfig.setResources(resources);
+        CustomRuntimeOptions customRuntimeOptions = new CustomRuntimeOptions();
+        customRuntimeOptions.setClusterName(TEST_CLUSTER_NAME);
+        customRuntimeOptions.setInputTypeClassName("java.lang.String");
+        customRuntimeOptions.setOutputTypeClassName("java.lang.String");
+        String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
+        functionConfig.setCustomRuntimeOptions(customRuntimeOptionsJSON);
+        functionConfig.setJar(String.format("function://public/default/%s@1.0", functionName));
+        functionConfig.setAutoAck(true);
+        return functionConfig;
+    }
+
     public static SinkConfig CreateSinkConfig(String tenant, String namespace, String functionName) {
         SinkConfig sinkConfig = new SinkConfig();
         sinkConfig.setName(functionName);

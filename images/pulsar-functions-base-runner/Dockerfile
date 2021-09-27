@@ -1,7 +1,7 @@
 ARG PULSAR_IMAGE
 ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
-FROM openjdk:11-jre-slim as functions-runner
+FROM ubuntu:20.04 as functions-runner
 
 RUN mkdir -p /pulsar/bin/
 RUN mkdir -p /pulsar/lib/
@@ -17,6 +17,14 @@ COPY --from=pulsar /pulsar/bin /pulsar/bin
 COPY --from=pulsar /pulsar/lib /pulsar/lib
 
 RUN chmod -R g=u /pulsar
+
+RUN apt-get update \
+     && apt-get -y dist-upgrade \
+     && apt-get -y install openjdk-11-jdk-headless netcat dnsutils less procps iputils-ping \
+     && apt-get -y --purge autoremove \
+     && apt-get autoclean \
+     && apt-get clean \
+     && rm -rf /var/lib/apt/lists/*
 
 ENV PULSAR_ROOT_LOGGER=INFO,CONSOLE
 

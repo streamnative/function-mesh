@@ -21,14 +21,24 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
-	autov1 "k8s.io/api/autoscaling/v1"
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func MakeSinkHPA(sink *v1alpha1.Sink) *autov1.HorizontalPodAutoscaler {
+func MakeSinkHPA(sink *v1alpha1.Sink) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return MakeHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, sink.Kind)
+	targetRef := autov2beta2.CrossVersionObjectReference{
+		Kind:       sink.Kind,
+		Name:       sink.Name,
+		APIVersion: sink.APIVersion,
+	}
+	if isBuiltinHPAEnabled(sink.Spec.Replicas, sink.Spec.MaxReplicas, sink.Spec.Pod) {
+		return makeBuiltinHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, targetRef, sink.Spec.Pod.BuiltinAutoscaler)
+	} else if !isDefaultHPAEnabled(sink.Spec.Replicas, sink.Spec.MaxReplicas, sink.Spec.Pod) {
+		return makeHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, sink.Spec.Pod, targetRef)
+	}
+	return makeDefaultHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, targetRef)
 }
 
 func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
@@ -41,6 +51,11 @@ func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
 	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, MakeSinkContainer(sink),
 		makeSinkVolumes(sink), MakeSinkLabels(sink), sink.Spec.Pod)
+}
+
+func MakeSinkServiceName(sink *v1alpha1.Sink) string {
+	objectMeta := MakeSinkObjectMeta(sink)
+	return MakeHeadlessServiceName(objectMeta.Name)
 }
 
 func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {

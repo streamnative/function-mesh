@@ -72,6 +72,10 @@ func (r *Source) Default() {
 		r.Spec.Tenant = DefaultTenant
 	}
 
+	if r.Spec.Namespace == "" {
+		r.Spec.Namespace = DefaultNamespace
+	}
+
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
 			r.Spec.Resources.Requests.Cpu().Set(int64(1))
@@ -80,6 +84,11 @@ func (r *Source) Default() {
 		if r.Spec.Resources.Requests.Memory() == nil {
 			r.Spec.Resources.Requests.Memory().Set(int64(1073741824))
 		}
+	}
+
+	if r.Spec.ForwardSourceMessageProperty == nil {
+		trueVal := true
+		r.Spec.ForwardSourceMessageProperty = &trueVal
 	}
 
 	if r.Spec.Output.ProducerConf == nil {
