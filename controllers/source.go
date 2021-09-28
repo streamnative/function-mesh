@@ -163,10 +163,14 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Reques
 		return nil
 	}
 
-	condition := v1alpha1.ResourceCondition{
-		Condition: v1alpha1.HPAReady,
-		Status:    metav1.ConditionFalse,
-		Action:    v1alpha1.NoAction,
+	condition, ok := source.Status.Conditions[v1alpha1.HPA]
+	if !ok {
+		source.Status.Conditions[v1alpha1.HPA] = v1alpha1.ResourceCondition{
+			Condition: v1alpha1.HPAReady,
+			Status:    metav1.ConditionFalse,
+			Action:    v1alpha1.Create,
+		}
+		return nil
 	}
 
 	hpa := &autov2beta2.HorizontalPodAutoscaler{}
@@ -174,15 +178,10 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Reques
 		Name: spec.MakeSourceObjectMeta(source).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			condition.Action = v1alpha1.Create
-			r.Log.Info("hpa is not created for source...", "name", source.Name)
-		} else {
-			source.Status.Conditions[v1alpha1.HPA] = condition
-			return err
+			r.Log.Info("hpa is not created for source...", "Name", source.Name)
+			return nil
 		}
-	} else {
-		// HPA's status doesn't show its readiness, so once it's created just consider it's ready
-		condition.Status = metav1.ConditionTrue
+		return err
 	}
 
 	if hpa.Spec.MaxReplicas != *source.Spec.MaxReplicas ||
@@ -196,6 +195,8 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, req ctrl.Reques
 		return nil
 	}
 
+	condition.Action = v1alpha1.NoAction
+	condition.Status = metav1.ConditionTrue
 	source.Status.Conditions[v1alpha1.HPA] = condition
 	return nil
 }

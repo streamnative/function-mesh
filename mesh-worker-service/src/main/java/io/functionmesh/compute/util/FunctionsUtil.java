@@ -48,6 +48,7 @@ import org.apache.pulsar.common.functions.Resources;
 import org.apache.pulsar.common.functions.Utils;
 import org.apache.pulsar.common.policies.data.ExceptionInformation;
 import org.apache.pulsar.common.policies.data.FunctionStatus;
+import org.apache.pulsar.common.util.ClassLoaderUtils;
 import org.apache.pulsar.common.util.RestException;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
@@ -271,6 +272,7 @@ public class FunctionsUtil {
         Class<?>[] typeArgs = null;
         if (componentPackageFile != null) {
             typeArgs = extractTypeArgs(functionConfig, componentPackageFile, worker.getWorkerConfig().isForwardSourceMessageProperty());
+            componentPackageFile.delete();
         }
         if (StringUtils.isNotEmpty(functionConfig.getJar())) {
             V1alpha1FunctionSpecJava v1alpha1FunctionSpecJava = new V1alpha1FunctionSpecJava();
@@ -516,8 +518,10 @@ public class FunctionsUtil {
 
         Resources resources = new Resources();
         Map<String, String> functionResource = v1alpha1FunctionSpec.getResources().getLimits();
-        resources.setCpu(Double.parseDouble(functionResource.get(cpuKey)));
-        resources.setRam(Long.parseLong(functionResource.get(memoryKey)));
+        Quantity cpuQuantity = Quantity.fromString(functionResource.get(cpuKey));
+        Quantity memoryQuantity = Quantity.fromString(functionResource.get(memoryKey));
+        resources.setCpu(cpuQuantity.getNumber().doubleValue());
+        resources.setRam(memoryQuantity.getNumber().longValue());
         functionConfig.setResources(resources);
 
         String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
@@ -598,11 +602,18 @@ public class FunctionsUtil {
         if (componentPackageFile == null) {
             return null;
         }
-        ClassLoader clsLoader = FunctionConfigUtils.validate(functionConfig, componentPackageFile);
+        ClassLoader clsLoader = null;
+        try {
+            clsLoader = ClassLoaderUtils.extractClassLoader(componentPackageFile);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                    String.format("Cannot extract class loader for package %s", componentPackageFile), e);
+        }
         if (functionConfig.getRuntime() == FunctionConfig.Runtime.JAVA && clsLoader != null) {
             try {
-                typeArgs = FunctionCommon.getFunctionTypes(functionConfig, clsLoader);
-            } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                Class functionClass = ClassLoaderUtils.loadClass(functionConfig.getClassName(), clsLoader);
+                typeArgs = FunctionCommon.getFunctionTypes(functionClass, functionConfig.getWindowConfig() != null);
+            } catch (Exception e) {
                 throw new IllegalArgumentException(
                         String.format("Function class %s must be in class path", functionConfig.getClassName()), e);
             }
