@@ -17,6 +17,7 @@ builds:
   goarch:
     - amd64
   main: ./tools/migration.go
+  binary: migration-tool
 archives:
 - replacements:
     darwin: Darwin
