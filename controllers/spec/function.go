@@ -61,6 +61,7 @@ func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
 		Name:      makeJobName(function.Name, v1alpha1.FunctionComponent),
 		Namespace: function.Namespace,
+		Labels:    makeFunctionLabels(function),
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(function, function.GroupVersionKind()),
 		},
@@ -100,6 +101,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 
 func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 	labels := make(map[string]string)
+	labels["app"] = AppFunctionMesh
 	labels["component"] = ComponentFunction
 	labels["name"] = function.Name
 	labels["namespace"] = function.Namespace

@@ -62,6 +62,7 @@ func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
 		Name:      makeJobName(sink.Name, v1alpha1.SinkComponent),
 		Namespace: sink.Namespace,
+		Labels:    MakeSinkLabels(sink),
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(sink, sink.GroupVersionKind()),
 		},
