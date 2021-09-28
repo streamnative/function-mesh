@@ -121,3 +121,12 @@ jobs:
           asset_name: mesh-worker-service-${{ github.event.release.tag_name }}.nar
           tag: ${{ github.ref }}
           overwrite: true
+
+      - name: Run GoReleaser for migration tool
+          uses: goreleaser/goreleaser-action@v2
+          with:
+            version: latest
+            args: release --rm-dist
+            workdir: ./function-mesh
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

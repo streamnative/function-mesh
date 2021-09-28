@@ -31,3 +31,4 @@ index.Dockerfile*
 index_build_*/
 
 *.bak
+./dist
