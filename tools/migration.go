@@ -463,7 +463,7 @@ func main() {
 					f.Sync()
 					f.Close()
 				}
-				fmt.Printf("Genereate configration file for k8s namespace: %s, pulsar tenant: %s, pulsar namespace: %s, function: %s\n",
+				fmt.Printf("Generate configuration file for k8s namespace: %s, pulsar tenant: %s, pulsar namespace: %s, function: %s\n",
 					*kubeNamespace, tenantNamespace[0], tenantNamespace[1], function)
 			}
 		}
