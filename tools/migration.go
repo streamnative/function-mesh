@@ -126,6 +126,17 @@ func MergeMap(mObj ...map[string]string) map[string]string {
 	return newObj
 }
 
+type arrayLabels []string
+
+func (i *arrayLabels) String() string {
+	return "Array labels"
+}
+
+func (i *arrayLabels) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
+
 func main() {
 	admin := cmdutils.NewPulsarClient()
 	functionAdmin := cmdutils.NewPulsarClientWithAPIVersion(common.V3)
@@ -139,6 +150,8 @@ func main() {
 	authParameters := flag.String("authParams", "", "Please configure auth params")
 	authPlugin := flag.String("authPlugin", "", "Please configure auth plugin")
 	secretName := flag.String("secretName", "", "Please configure secret")
+	var removeLabels arrayLabels
+	flag.Var(&removeLabels, "removeLabel", "Name of the label to be removed")
 	flag.Parse()
 	if *kubeConfig == "" {
 		fmt.Println("Please specify the kubernetes config path.")
@@ -248,6 +261,9 @@ func main() {
 					labels["pulsar-tenant"] = tenant
 					if stsLabels != nil {
 						labels = MergeMap(labels, stsLabels)
+					}
+					for _, v := range removeLabels {
+						delete(labels, v)
 					}
 					sha1Value := SHA1(pulsarCluster + "-" + tenantNamespace[0] +
 						"-" + tenantNamespace[1] + "-" + functionConfig.Name)
