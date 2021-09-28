@@ -518,8 +518,10 @@ public class FunctionsUtil {
 
         Resources resources = new Resources();
         Map<String, String> functionResource = v1alpha1FunctionSpec.getResources().getLimits();
-        resources.setCpu(Double.parseDouble(functionResource.get(cpuKey)));
-        resources.setRam(Long.parseLong(functionResource.get(memoryKey)));
+        Quantity cpuQuantity = Quantity.fromString(functionResource.get(cpuKey));
+        Quantity memoryQuantity = Quantity.fromString(functionResource.get(memoryKey));
+        resources.setCpu(cpuQuantity.getNumber().doubleValue());
+        resources.setRam(memoryQuantity.getNumber().longValue());
         functionConfig.setResources(resources);
 
         String customRuntimeOptionsJSON = new Gson().toJson(customRuntimeOptions, CustomRuntimeOptions.class);
