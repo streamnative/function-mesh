@@ -5,8 +5,8 @@ FROM ubuntu:20.04 as functions-runner
 
 ENV PULSAR_RUNNER_USER=pulsar
 ENV PULSAR_RUNNER_GROUP=pulsar
-RUN groupadd -g 10001 $PULSAR_RUNNER_GROUP
-RUN adduser -u 10000 --gid 10001 --disabled-login --disabled-password --gecos '' $PULSAR_RUNNER_USER
+RUN groupadd -g 10001 $GID
+RUN adduser -u 10000 --gid 10001 --disabled-login --disabled-password --gecos '' $UID
 
 RUN mkdir -p /pulsar/bin/ \
     && mkdir -p /pulsar/lib/ \
@@ -16,12 +16,12 @@ RUN mkdir -p /pulsar/bin/ \
     && mkdir -p /pulsar/logs/ \
     && mkdir -p /pulsar/tmp/ \
     && mkdir -p /pulsar/examples/ \
-    && chown -R $PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP /pulsar \
+    && chown -R $UID:$GID /pulsar \
     && chmod -R g=u /pulsar
 
-COPY --from=pulsar --chown=$PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP /pulsar/conf /pulsar/conf
-COPY --from=pulsar --chown=$PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP /pulsar/bin /pulsar/bin
-COPY --from=pulsar --chown=$PULSAR_RUNNER_USER:$PULSAR_RUNNER_GROUP /pulsar/lib /pulsar/lib
+COPY --from=pulsar --chown=$UID:$GID /pulsar/conf /pulsar/conf
+COPY --from=pulsar --chown=$UID:$GID /pulsar/bin /pulsar/bin
+COPY --from=pulsar --chown=$UID:$GID /pulsar/lib /pulsar/lib
 
 RUN chmod -R g=u /pulsar
 
