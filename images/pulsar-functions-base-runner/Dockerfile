@@ -3,10 +3,10 @@ ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
 FROM ubuntu:20.04 as functions-runner
 
-ENV PULSAR_RUNNER_USER=pulsar
-ENV PULSAR_RUNNER_GROUP=pulsar
-RUN groupadd -g 10001 $GID
-RUN adduser -u 10000 --gid 10001 --disabled-login --disabled-password --gecos '' $UID
+ENV GID=10001
+ENV UID=10000
+RUN groupadd -g $GID pulsar
+RUN adduser -u $UID --gid $GID --disabled-login --disabled-password --gecos '' pulsar
 
 RUN mkdir -p /pulsar/bin/ \
     && mkdir -p /pulsar/lib/ \
