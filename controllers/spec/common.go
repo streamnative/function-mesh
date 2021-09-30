@@ -43,6 +43,7 @@ const (
 	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 
+	AppFunctionMesh   = "function-mesh"
 	ComponentSource   = "source"
 	ComponentSink     = "sink"
 	ComponentFunction = "function"
@@ -87,6 +88,10 @@ func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev
 				Name:     "grpc",
 				Protocol: corev1.ProtocolTCP,
 				Port:     GRPCPort.ContainerPort,
+			}, {
+				Name:     "metrics",
+				Protocol: corev1.ProtocolTCP,
+				Port:     MetricsPort.ContainerPort,
 			}},
 			Selector:  labels,
 			ClusterIP: "None",
