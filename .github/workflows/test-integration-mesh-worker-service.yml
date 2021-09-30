@@ -80,7 +80,7 @@ jobs:
 
       - name: Build runner images
         run: |
-          PULSAR_IMAGE_TAG=2.8.0.14 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=true images/build.sh
+          PULSAR_IMAGE_TAG=2.8.1.3 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=true images/build.sh
 
       - name: verify mesh-worker-service
         run: |
