@@ -84,6 +84,7 @@ public class WorkerConfigTest {
 
         List<V1alpha1FunctionSpecPodImagePullSecrets> functionSpecPodImagePullSecrets =
                 customConfig.asV1alpha1FunctionSpecPodImagePullSecrets();
+        assertEquals(1, customConfig.getImagePullSecrets().size());
         assertEquals(1, functionSpecPodImagePullSecrets.size());
         assertEquals("registry-secret", functionSpecPodImagePullSecrets.get(0).getName());
 

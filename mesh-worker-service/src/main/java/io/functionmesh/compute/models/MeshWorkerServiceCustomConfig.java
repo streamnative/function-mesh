@@ -107,7 +107,7 @@ public class MeshWorkerServiceCustomConfig {
     @FieldContext(
             doc = "ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec."
     )
-    protected List<V1LocalObjectReference> ImagePullSecrets;
+    protected List<V1LocalObjectReference> imagePullSecrets;
 
     public List<V1alpha1SinkSpecPodVolumes> asV1alpha1SinkSpecPodVolumesList() throws JsonProcessingException {
         ObjectMapper objectMapper = ObjectMapperFactory.getThreadLocal();
@@ -161,7 +161,7 @@ public class MeshWorkerServiceCustomConfig {
         ObjectMapper objectMapper = ObjectMapperFactory.getThreadLocal();
         TypeReference<List<V1alpha1FunctionSpecPodImagePullSecrets>> typeRef
                 = new TypeReference<List<V1alpha1FunctionSpecPodImagePullSecrets>>() {};
-        String j = objectMapper.writeValueAsString(ImagePullSecrets);
+        String j = objectMapper.writeValueAsString(imagePullSecrets);
         return objectMapper.readValue(j, typeRef);
     }
 
@@ -169,7 +169,7 @@ public class MeshWorkerServiceCustomConfig {
         ObjectMapper objectMapper = ObjectMapperFactory.getThreadLocal();
         TypeReference<List<V1alpha1SinkSpecPodImagePullSecrets>> typeRef
                 = new TypeReference<List<V1alpha1SinkSpecPodImagePullSecrets>>() {};
-        String j = objectMapper.writeValueAsString(ImagePullSecrets);
+        String j = objectMapper.writeValueAsString(imagePullSecrets);
         return objectMapper.readValue(j, typeRef);
     }
 
@@ -177,7 +177,7 @@ public class MeshWorkerServiceCustomConfig {
         ObjectMapper objectMapper = ObjectMapperFactory.getThreadLocal();
         TypeReference<List<V1alpha1SourceSpecPodImagePullSecrets>> typeRef
                 = new TypeReference<List<V1alpha1SourceSpecPodImagePullSecrets>>() {};
-        String j = objectMapper.writeValueAsString(ImagePullSecrets);
+        String j = objectMapper.writeValueAsString(imagePullSecrets);
         return objectMapper.readValue(j, typeRef);
     }
 }
