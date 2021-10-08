@@ -17,7 +17,7 @@
 # under the License.
 #
 
-FROM streamnative/pulsar:2.8.0.14
+FROM streamnative/pulsar:2.8.1.3
 COPY ./target/mesh-worker-service*.nar /pulsar/mesh-worker-service.nar
 COPY ./integration-tests/docker/connectors.yaml /pulsar/conf/connectors.yaml
 RUN mkdir -p /pulsar-nar
