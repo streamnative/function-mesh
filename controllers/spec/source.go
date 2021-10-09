@@ -57,6 +57,7 @@ func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
 		Name:      makeJobName(source.Name, v1alpha1.SourceComponent),
 		Namespace: source.Namespace,
+		Labels:    makeSourceLabels(source),
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(source, source.GroupVersionKind()),
 		},

@@ -21,8 +21,6 @@ import (
 	"context"
 	"reflect"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
@@ -253,8 +251,6 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, req ctrl.Requ
 			r.Log.Error(err, "failed to create pod autoscaler for function", "name", function.Name)
 			return err
 		}
-		key, _ := client.ObjectKeyFromObject(hpa)
-		r.Get(context.Background(), key, hpa)
 	case v1alpha1.Update:
 		hpa := &autov2beta2.HorizontalPodAutoscaler{}
 		err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace,

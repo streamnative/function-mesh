@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodImagePullSecrets;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumes;
 import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodVolumes;
@@ -78,5 +79,18 @@ public class WorkerConfigTest {
         assertEquals("secret-pulsarcluster-data", v1alpha1FunctionSpecPodVolumesList.get(0).getName());
         assertNotNull("pulsarcluster-data", v1alpha1FunctionSpecPodVolumesList.get(0).getSecret());
         assertEquals("pulsarcluster-data", v1alpha1FunctionSpecPodVolumesList.get(0).getSecret().getSecretName());
+
+        assertEquals("always", customConfig.getImagePullPolicy());
+
+        List<V1alpha1FunctionSpecPodImagePullSecrets> functionSpecPodImagePullSecrets =
+                customConfig.asV1alpha1FunctionSpecPodImagePullSecrets();
+        assertEquals(1, customConfig.getImagePullSecrets().size());
+        assertEquals(1, functionSpecPodImagePullSecrets.size());
+        assertEquals("registry-secret", functionSpecPodImagePullSecrets.get(0).getName());
+
+        assertEquals(3, customConfig.getFunctionRunnerImages().size());
+        assertEquals("streamnative/pulsar-functions-java-runner", customConfig.getFunctionRunnerImages().get("JAVA"));
+        assertEquals("streamnative/pulsar-functions-python-runner", customConfig.getFunctionRunnerImages().get("PYTHON"));
+        assertEquals("streamnative/pulsar-functions-go-runner", customConfig.getFunctionRunnerImages().get("GO"));
     }
 }
