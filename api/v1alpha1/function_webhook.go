@@ -18,8 +18,9 @@
 package v1alpha1
 
 import (
-	"encoding/json"
-	"errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,13 +48,13 @@ func (r *Function) Default() {
 	functionlog.Info("default", "name", r.Name)
 
 	if r.Spec.Replicas == nil {
-		zeroVal := int32(0)
-		r.Spec.Replicas = &zeroVal
+		r.Spec.Replicas = new(int32)
+		*r.Spec.Replicas = 1
 	}
 
 	if r.Spec.AutoAck == nil {
-		trueVal := true
-		r.Spec.AutoAck = &trueVal
+		r.Spec.AutoAck = new(bool)
+		*r.Spec.AutoAck = true
 	}
 
 	if r.Spec.ProcessingGuarantee == "" {
@@ -88,16 +89,24 @@ func (r *Function) Default() {
 
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
-			r.Spec.Resources.Requests.Cpu().Set(int64(1))
+			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
 		}
 
 		if r.Spec.Resources.Requests.Memory() == nil {
-			r.Spec.Resources.Requests.Memory().Set(int64(1073741824))
+			r.Spec.Resources.Requests.Memory().Set(DefaultResourceMemory)
 		}
 	}
 
 	if r.Spec.Resources.Limits == nil {
 		paddingResourceLimit(&r.Spec.Resources)
+	}
+
+	if r.Spec.Input.TypeClassName == "" {
+		r.Spec.Input.TypeClassName = "[B"
+	}
+
+	if r.Spec.Output.TypeClassName == "" {
+		r.Spec.Output.TypeClassName = "[B"
 	}
 }
 
@@ -108,69 +117,108 @@ var _ webhook.Validator = &Function{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Function) ValidateCreate() error {
-	functionlog.Info("validate create", "name", r.Name)
+	functionlog.Info("validate create function", "name", r.Name)
+	var allErrs field.ErrorList
+	var fieldErr *field.Error
+	var fieldErrs []*field.Error
 
-	if r.Spec.Java != nil {
-		if r.Spec.ClassName == "" {
-			return errors.New("class name cannot be empty")
-		}
+	if r.Name == "" {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("name"), r.Name, "function name is not provided"))
 	}
 
-	// TODO: verify source conf
-
-	// TODO: allow 0 replicas, currently hpa's min value has to be 1
-	if *r.Spec.Replicas == 0 {
-		return errors.New("replicas cannot be zero")
+	if r.Spec.Runtime.Java == nil && r.Spec.Runtime.Python == nil && r.Spec.Runtime.Golang == nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "java"), r.Spec.Runtime.Java, "runtime cannot be empty"))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "python"), r.Spec.Runtime.Python, "runtime cannot be empty"))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "golang"), r.Spec.Runtime.Golang, "runtime cannot be empty"))
 	}
 
-	if r.Spec.MaxReplicas != nil && *r.Spec.Replicas > *r.Spec.MaxReplicas {
-		return errors.New("maxReplicas must be greater than or equal to replicas")
+	if (r.Spec.Runtime.Java != nil && r.Spec.Runtime.Python != nil) ||
+		(r.Spec.Runtime.Java != nil && r.Spec.Runtime.Golang != nil) ||
+		(r.Spec.Runtime.Python != nil && r.Spec.Runtime.Golang != nil) ||
+		(r.Spec.Runtime.Java != nil && r.Spec.Runtime.Python != nil && r.Spec.Runtime.Golang != nil) {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime"), r.Spec.Runtime, "you can only specify one runtime"))
 	}
 
-	if !validResourceRequirement(r.Spec.Resources) {
-		return errors.New("resource requirement is invalid")
+	fieldErrs = validateJavaRuntime(r.Spec.Java, r.Spec.ClassName)
+	if len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	if r.Spec.Timeout != 0 && r.Spec.ProcessingGuarantee != AtleastOnce {
-		return errors.New("message timeout can only be set for AtleastOnce processing guarantee")
+	fieldErrs = validatePythonRuntime(r.Spec.Python, r.Spec.ClassName)
+	if len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	if r.Spec.MaxMessageRetry > 0 && r.Spec.ProcessingGuarantee == EffectivelyOnce {
-		return errors.New("MaxMessageRetries and Effectively once are not compatible")
+	fieldErrs = validateGolangRuntime(r.Spec.Golang)
+	if len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	if r.Spec.MaxMessageRetry <= 0 && r.Spec.DeadLetterTopic != "" {
-		return errors.New("dead letter topic is set but max message retry is set to infinity")
+	fieldErrs = validateReplicasAndMaxReplicas(r.Spec.Replicas, r.Spec.MaxReplicas)
+	if len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	if r.Spec.RetainKeyOrdering && r.Spec.ProcessingGuarantee == EffectivelyOnce {
-		return errors.New("when effectively once processing guarantee is specified, retain Key ordering cannot be set")
+	fieldErr = validateResourceRequirement(r.Spec.Resources)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
 
-	if r.Spec.RetainKeyOrdering && r.Spec.RetainOrdering {
-		return errors.New("only one of retain ordering or retain key ordering can be set")
+	fieldErr = validateAutoAck(r.Spec.AutoAck)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
 
-	if r.Spec.Java == nil && r.Spec.Python == nil && r.Spec.Golang == nil {
-		return errors.New("must specify a runtime from java, python or golang")
+	fieldErr = validateTimeout(r.Spec.Timeout, r.Spec.ProcessingGuarantee)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
 
-	if r.Spec.FuncConfig != nil {
-		_, err := json.Marshal(r.Spec.FuncConfig)
-		if err != nil {
-			return errors.New("provided config is wrong: " + err.Error())
-		}
+	fieldErrs = validateMaxMessageRetry(r.Spec.MaxMessageRetry, r.Spec.ProcessingGuarantee, r.Spec.DeadLetterTopic)
+	if len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	if r.Spec.SecretsMap != nil {
-		_, err := json.Marshal(r.Spec.SecretsMap)
-		if err != nil {
-			return errors.New("provided secrets map is wrong: " + err.Error())
-		}
+	fieldErr = validateRetainKeyOrdering(r.Spec.RetainKeyOrdering, r.Spec.ProcessingGuarantee)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
-	// TODO python/golang specific check
 
-	return nil
+	fieldErrs = validateRetainOrderingConflicts(r.Spec.RetainKeyOrdering, r.Spec.RetainOrdering)
+	if len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
+	}
+
+	fieldErr = validateFunctionConfig(r.Spec.FuncConfig)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
+
+	fieldErr = validateSecretsMap(r.Spec.SecretsMap)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
+
+	fieldErrs = validateInputOutput(&r.Spec.Input, &r.Spec.Output)
+	if len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
+	}
+
+	fieldErr = validateLogTopic(r.Spec.LogTopic)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
+
+	fieldErr = validateDeadLetterTopic(r.Spec.DeadLetterTopic)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
+
+	if len(allErrs) == 0 {
+		return nil
+	}
+
+	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "Function"}, r.Name, allErrs)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type

@@ -62,7 +62,7 @@ spec:
   image: streamnative/pulsar-functions-java-runner:2.7.1 # using java function runner
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   forwardSourceMessageProperty: true
-  MaxPendingAsyncRequests: 1000
+  maxPendingAsyncRequests: 1000
   replicas: 1
   maxReplicas: 5
   logTopic: persistent://public/default/logging-function-logs
@@ -120,7 +120,7 @@ spec:
   image: streamnative/example-function-image:latest # using function image here
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   forwardSourceMessageProperty: true
-  MaxPendingAsyncRequests: 1000
+  maxPendingAsyncRequests: 1000
   replicas: 1
   maxReplicas: 5
   logTopic: persistent://public/default/logging-function-logs

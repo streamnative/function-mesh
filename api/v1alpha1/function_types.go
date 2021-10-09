@@ -26,15 +26,19 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // FunctionSpec defines the desired state of Function
+// +kubebuilder:validation:Optional
 type FunctionSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// +kubebuilder:validation:Required
 	Name        string `json:"name,omitempty"`
 	ClassName   string `json:"className,omitempty"`
 	Tenant      string `json:"tenant,omitempty"`
 	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
-	Replicas    *int32 `json:"replicas,omitempty"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
 	// If provided, a default HPA with CPU at average of 80% will be used.
@@ -69,14 +73,17 @@ type FunctionSpec struct {
 
 	// TODO: windowconfig, customRuntimeOptions?
 
+	// +kubebuilder:validation:Required
 	Messaging `json:",inline"`
-	Runtime   `json:",inline"`
+
+	// +kubebuilder:validation:Required
+	Runtime `json:",inline"`
 
 	// Image is the container image used to run function pods.
 	// default is streamnative/pulsar-functions-java-runner
 	Image string `json:"image,omitempty"`
 
-	// Image pull policy, one of Always, Never, IfNotPresent, default to Always.
+	// Image pull policy, one of Always, Never, IfNotPresent, default to IfNotPresent.
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
@@ -94,6 +101,7 @@ type FunctionStatus struct {
 //+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 
 // Function is the Schema for the functions API
+// +kubebuilder:pruning:PreserveUnknownFields
 type Function struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

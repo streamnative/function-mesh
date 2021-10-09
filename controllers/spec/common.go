@@ -35,7 +35,7 @@ import (
 const (
 	EnvShardID                 = "SHARD_ID"
 	FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
-	DefaultRunnerTag           = "2.8.0.14"
+	DefaultRunnerTag           = "2.8.1.3"
 	DefaultRunnerPrefix        = "streamnative/"
 	DefaultRunnerImage         = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
 	DefaultJavaRunnerImage     = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
@@ -43,6 +43,7 @@ const (
 	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 
+	AppFunctionMesh   = "function-mesh"
 	ComponentSource   = "source"
 	ComponentSink     = "sink"
 	ComponentFunction = "function"
@@ -55,6 +56,11 @@ const (
 	AnnotationPrometheusPort   = "prometheus.io/port"
 
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
+
+	DefaultRunnerUserID  = "10001"
+	DefaultRunnerUser    = "pulsar"
+	DefaultRunnerGroupID = "10000"
+	DefaultRunnerGroup   = "pulsar"
 )
 
 var GRPCPort = corev1.ContainerPort{
@@ -82,6 +88,10 @@ func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev
 				Name:     "grpc",
 				Protocol: corev1.ProtocolTCP,
 				Port:     GRPCPort.ContainerPort,
+			}, {
+				Name:     "metrics",
+				Protocol: corev1.ProtocolTCP,
+				Port:     MetricsPort.ContainerPort,
 			}},
 			Selector:  labels,
 			ClusterIP: "None",

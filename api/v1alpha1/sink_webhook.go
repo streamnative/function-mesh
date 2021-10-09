@@ -18,8 +18,9 @@
 package v1alpha1
 
 import (
-	"encoding/json"
-	"errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,13 +48,13 @@ func (r *Sink) Default() {
 	sinklog.Info("default", "name", r.Name)
 
 	if r.Spec.Replicas == nil {
-		zeroVal := int32(0)
-		r.Spec.Replicas = &zeroVal
+		r.Spec.Replicas = new(int32)
+		*r.Spec.Replicas = 1
 	}
 
 	if r.Spec.AutoAck == nil {
-		trueVal := true
-		r.Spec.AutoAck = &trueVal
+		r.Spec.AutoAck = new(bool)
+		*r.Spec.AutoAck = true
 	}
 
 	if r.Spec.ProcessingGuarantee == "" {
@@ -78,16 +79,20 @@ func (r *Sink) Default() {
 
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
-			r.Spec.Resources.Requests.Cpu().Set(int64(1))
+			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
 		}
 
 		if r.Spec.Resources.Requests.Memory() == nil {
-			r.Spec.Resources.Requests.Memory().Set(int64(1073741824))
+			r.Spec.Resources.Requests.Memory().Set(DefaultResourceMemory)
 		}
 	}
 
 	if r.Spec.Resources.Limits == nil {
 		paddingResourceLimit(&r.Spec.Resources)
+	}
+
+	if r.Spec.Input.TypeClassName == "" {
+		r.Spec.Input.TypeClassName = "[B"
 	}
 }
 
@@ -98,62 +103,74 @@ var _ webhook.Validator = &Sink{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Sink) ValidateCreate() error {
-	sinklog.Info("validate create", "name", r.Name)
+	sinklog.Info("validate create sink", "name", r.Name)
+	var allErrs field.ErrorList
+	var fieldErr *field.Error
+	var fieldErrs []*field.Error
 
-	if r.Spec.Java != nil {
-		if r.Spec.ClassName == "" {
-			return errors.New("class name cannot be empty")
-		}
+	if r.Spec.SinkConfig == nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("sinkConfig"), r.Spec.SinkConfig, "sink config is not provided"))
 	}
 
-	// TODO: verify inputConf
-
-	// TODO: allow 0 replicas, currently hpa's min value has to be 1
-	if *r.Spec.Replicas == 0 {
-		return errors.New("replicas cannot be zero")
+	if r.Spec.Runtime.Java == nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "java"), r.Spec.Runtime.Java, "sink must have java runtime specified"))
 	}
 
-	if r.Spec.MaxReplicas != nil && *r.Spec.Replicas > *r.Spec.MaxReplicas {
-		return errors.New("maxReplicas must be greater than or equal to replicas")
+	fieldErrs = validateJavaRuntime(r.Spec.Java, r.Spec.ClassName)
+	if len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	if !validResourceRequirement(r.Spec.Resources) {
-		return errors.New("resource requirement is invalid")
+	fieldErrs = validateReplicasAndMaxReplicas(r.Spec.Replicas, r.Spec.MaxReplicas)
+	if len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	if r.Spec.Timeout != 0 && r.Spec.ProcessingGuarantee != AtleastOnce {
-		return errors.New("message timeout can only be set for AtleastOnce processing guarantee")
+	fieldErr = validateResourceRequirement(r.Spec.Resources)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
 
-	if r.Spec.MaxMessageRetry > 0 && r.Spec.ProcessingGuarantee == EffectivelyOnce {
-		return errors.New("MaxMessageRetries and Effectively once are not compatible")
+	fieldErr = validateAutoAck(r.Spec.AutoAck)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
 
-	if r.Spec.MaxMessageRetry <= 0 && r.Spec.DeadLetterTopic != "" {
-		return errors.New("dead letter topic is set but max message retry is set to infinity")
+	fieldErr = validateTimeout(r.Spec.Timeout, r.Spec.ProcessingGuarantee)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
 
-	if r.Spec.Java == nil && r.Spec.Python == nil && r.Spec.Golang == nil {
-		return errors.New("must specify a runtime from java, python or golang")
+	fieldErrs = validateMaxMessageRetry(r.Spec.MaxMessageRetry, r.Spec.ProcessingGuarantee, r.Spec.DeadLetterTopic)
+	if len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	if r.Spec.SinkConfig != nil {
-		_, err := json.Marshal(r.Spec.SinkConfig)
-		if err != nil {
-			return errors.New("provided config is wrong: " + err.Error())
-		}
+	fieldErr = validateSinkConfig(r.Spec.SinkConfig)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
 
-	if r.Spec.SecretsMap != nil {
-		_, err := json.Marshal(r.Spec.SecretsMap)
-		if err != nil {
-			return errors.New("provided secrets map is wrong: " + err.Error())
-		}
+	fieldErr = validateSecretsMap(r.Spec.SecretsMap)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
 	}
 
-	// TODO python/golang specific check
+	fieldErrs = validateInputOutput(&r.Spec.Input, nil)
+	if len(fieldErrs) > 0 {
+		allErrs = append(allErrs, fieldErrs...)
+	}
 
-	return nil
+	fieldErr = validateDeadLetterTopic(r.Spec.DeadLetterTopic)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
+
+	if len(allErrs) == 0 {
+		return nil
+	}
+
+	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "Sink"}, r.Name, allErrs)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type

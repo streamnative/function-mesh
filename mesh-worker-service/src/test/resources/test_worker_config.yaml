@@ -55,3 +55,10 @@ functionsWorkerServiceCustomConfigs:
     name: test
     uid: 4627a402-35f2-40ac-b3fc-1bae5a2bd626
   defaultServiceAccountName: "service-account"
+  imagePullPolicy: "always"
+  imagePullSecrets:
+    - name: "registry-secret"
+  functionRunnerImages:
+    "JAVA": streamnative/pulsar-functions-java-runner
+    "PYTHON": streamnative/pulsar-functions-python-runner
+    "GO": streamnative/pulsar-functions-go-runner

@@ -21,12 +21,16 @@ package io.functionmesh.compute.models;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodImagePullSecrets;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumeMounts;
 import io.functionmesh.compute.functions.models.V1alpha1FunctionSpecPodVolumes;
+import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodImagePullSecrets;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodVolumeMounts;
 import io.functionmesh.compute.sinks.models.V1alpha1SinkSpecPodVolumes;
+import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodImagePullSecrets;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodVolumeMounts;
 import io.functionmesh.compute.sources.models.V1alpha1SourceSpecPodVolumes;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import lombok.Data;
@@ -90,6 +94,21 @@ public class MeshWorkerServiceCustomConfig {
     )
     protected String defaultServiceAccountName;
 
+    @FieldContext(
+            doc = "The image pull policy for image used to run function instance. By default it is `IfNotPresent`"
+    )
+    protected String imagePullPolicy;
+
+    @FieldContext(
+            doc = "the runner image to run function instance. By default it is streamnative/pulsar-functions-java-runner."
+    )
+    protected Map<String, String> functionRunnerImages;
+
+    @FieldContext(
+            doc = "ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec."
+    )
+    protected List<V1LocalObjectReference> imagePullSecrets;
+
     public List<V1alpha1SinkSpecPodVolumes> asV1alpha1SinkSpecPodVolumesList() throws JsonProcessingException {
         ObjectMapper objectMapper = ObjectMapperFactory.getThreadLocal();
         TypeReference<List<V1alpha1SinkSpecPodVolumes>> typeRef
@@ -135,6 +154,30 @@ public class MeshWorkerServiceCustomConfig {
         TypeReference<List<V1alpha1FunctionSpecPodVolumeMounts>> typeRef
                 = new TypeReference<List<V1alpha1FunctionSpecPodVolumeMounts>>() {};
         String j = objectMapper.writeValueAsString(volumeMounts);
+        return objectMapper.readValue(j, typeRef);
+    }
+
+    public List<V1alpha1FunctionSpecPodImagePullSecrets> asV1alpha1FunctionSpecPodImagePullSecrets() throws JsonProcessingException {
+        ObjectMapper objectMapper = ObjectMapperFactory.getThreadLocal();
+        TypeReference<List<V1alpha1FunctionSpecPodImagePullSecrets>> typeRef
+                = new TypeReference<List<V1alpha1FunctionSpecPodImagePullSecrets>>() {};
+        String j = objectMapper.writeValueAsString(imagePullSecrets);
+        return objectMapper.readValue(j, typeRef);
+    }
+
+    public List<V1alpha1SinkSpecPodImagePullSecrets> asV1alpha1SinkSpecPodImagePullSecrets() throws JsonProcessingException {
+        ObjectMapper objectMapper = ObjectMapperFactory.getThreadLocal();
+        TypeReference<List<V1alpha1SinkSpecPodImagePullSecrets>> typeRef
+                = new TypeReference<List<V1alpha1SinkSpecPodImagePullSecrets>>() {};
+        String j = objectMapper.writeValueAsString(imagePullSecrets);
+        return objectMapper.readValue(j, typeRef);
+    }
+
+    public List<V1alpha1SourceSpecPodImagePullSecrets> asV1alpha1SourceSpecPodImagePullSecrets() throws JsonProcessingException {
+        ObjectMapper objectMapper = ObjectMapperFactory.getThreadLocal();
+        TypeReference<List<V1alpha1SourceSpecPodImagePullSecrets>> typeRef
+                = new TypeReference<List<V1alpha1SourceSpecPodImagePullSecrets>>() {};
+        String j = objectMapper.writeValueAsString(imagePullSecrets);
         return objectMapper.readValue(j, typeRef);
     }
 }
