@@ -14,6 +14,7 @@ spec:
     listKind: SinkList
     plural: sinks
     singular: sink
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     scale:
@@ -2378,6 +2379,10 @@ spec:
                   type: array
               type: object
             processingGuarantee:
+              enum:
+              - atleast_once
+              - atmost_once
+              - effectively_once
               type: string
             pulsar:
               properties:
@@ -2397,6 +2402,7 @@ spec:
               type: object
             replicas:
               format: int32
+              minimum: 1
               type: integer
             resources:
               properties:
@@ -2430,6 +2436,9 @@ spec:
             subscriptionName:
               type: string
             subscriptionPosition:
+              enum:
+              - latest
+              - earliest
               type: string
             tenant:
               type: string

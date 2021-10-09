@@ -268,7 +268,7 @@ public class SourcesUtil {
         sourceConfig.setParallelism(v1alpha1SourceSpec.getReplicas());
         if (v1alpha1SourceSpec.getProcessingGuarantee() != null) {
             sourceConfig.setProcessingGuarantees(
-                    CommonUtil.convertProcessingGuarantee(v1alpha1SourceSpec.getProcessingGuarantee()));
+                    CommonUtil.convertProcessingGuarantee(v1alpha1SourceSpec.getProcessingGuarantee().getValue()));
         }
         sourceConfig.setClassName(v1alpha1SourceSpec.getClassName());
 
