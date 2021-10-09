@@ -310,7 +310,8 @@ public class SinksUtil {
         }
         sinkConfig.setParallelism(v1alpha1SinkSpec.getReplicas());
         if (v1alpha1SinkSpec.getProcessingGuarantee() != null) {
-            sinkConfig.setProcessingGuarantees(CommonUtil.convertProcessingGuarantee(v1alpha1SinkSpec.getProcessingGuarantee()));
+            sinkConfig.setProcessingGuarantees(
+                    CommonUtil.convertProcessingGuarantee(v1alpha1SinkSpec.getProcessingGuarantee().getValue()));
         }
 
         CustomRuntimeOptions customRuntimeOptions = new CustomRuntimeOptions();

@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   forwardSourceMessageProperty: true
-  MaxPendingAsyncRequests: 1000
+  maxPendingAsyncRequests: 1000
   replicas: 1
   maxReplicas: 1
   logTopic: persistent://public/default/go-function-logs

@@ -380,7 +380,7 @@ public class FunctionsUtil {
         functionConfig.setParallelism(v1alpha1FunctionSpec.getReplicas());
         if (v1alpha1FunctionSpec.getProcessingGuarantee() != null) {
             functionConfig.setProcessingGuarantees(
-                    CommonUtil.convertProcessingGuarantee(v1alpha1FunctionSpec.getProcessingGuarantee()));
+                    CommonUtil.convertProcessingGuarantee(v1alpha1FunctionSpec.getProcessingGuarantee().getValue()));
         }
 
         CustomRuntimeOptions customRuntimeOptions = new CustomRuntimeOptions();

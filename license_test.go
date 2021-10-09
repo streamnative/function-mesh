@@ -70,7 +70,8 @@ var skip = map[string]bool{
 	".github/workflows/project.yml":      true,
 	".github/workflows/release.yml":      true,
 	".github/workflows/release-node.yml": true,
-	".github/release-drafter.yml":        true,
+	"hack/webhook-create-signed-cert.sh": true,
+	"hack/webhooks/certs/csr.conf":       true,
 }
 
 func TestLicense(t *testing.T) {
