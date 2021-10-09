@@ -57,10 +57,10 @@ const (
 
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
 
-	DefaultRunnerUserID  = "10001"
-	DefaultRunnerUser    = "pulsar"
-	DefaultRunnerGroupID = "10000"
-	DefaultRunnerGroup   = "pulsar"
+	DefaultRunnerUserID  int64 = 10001
+	DefaultRunnerUser          = "pulsar"
+	DefaultRunnerGroupID int64 = 10000
+	DefaultRunnerGroup         = "pulsar"
 )
 
 var GRPCPort = corev1.ContainerPort{
@@ -136,6 +136,10 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 
 func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy) *corev1.PodTemplateSpec {
+	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, true)
+	if policy.SecurityContext != nil {
+		podSecurityContext = policy.SecurityContext
+	}
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      mergeLabels(labels, policy.Labels),
@@ -149,7 +153,7 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 			NodeSelector:                  policy.NodeSelector,
 			Affinity:                      policy.Affinity,
 			Tolerations:                   policy.Tolerations,
-			SecurityContext:               policy.SecurityContext,
+			SecurityContext:               podSecurityContext,
 			ImagePullSecrets:              policy.ImagePullSecrets,
 			ServiceAccountName:            policy.ServiceAccountName,
 		},
@@ -643,4 +647,14 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 		return DefaultJavaRunnerImage
 	}
 	return DefaultRunnerImage
+}
+
+// getDefaultRunnerPodSecurityContext returns a default PodSecurityContext that runs as non-root
+func getDefaultRunnerPodSecurityContext(uid, gid int64, nonRoot bool) *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		RunAsUser:    &uid,
+		RunAsGroup:   &gid,
+		RunAsNonRoot: &nonRoot,
+		FSGroup:      &gid,
+	}
 }
