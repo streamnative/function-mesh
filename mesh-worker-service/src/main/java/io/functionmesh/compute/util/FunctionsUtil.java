@@ -102,6 +102,10 @@ public class FunctionsUtil {
                 CommonUtil.getOwnerReferenceFromCustomConfigs(customConfig)));
 
         V1alpha1FunctionSpec v1alpha1FunctionSpec = new V1alpha1FunctionSpec();
+
+        if (StringUtils.isNotEmpty(customConfig.getImagePullPolicy())) {
+            v1alpha1FunctionSpec.setImagePullPolicy(customConfig.getImagePullPolicy());
+        }
         v1alpha1FunctionSpec.setClassName(functionConfig.getClassName());
 
         V1alpha1FunctionSpecInput v1alpha1FunctionSpecInput = new V1alpha1FunctionSpecInput();
@@ -300,6 +304,11 @@ public class FunctionsUtil {
                     v1alpha1FunctionSpecOutput.setTypeClassName(typeArgs[1].getName());
                 }
             }
+            if (customConfig.getFunctionRunnerImages() != null && !customConfig.getFunctionRunnerImages().isEmpty()
+                    && customConfig.getFunctionRunnerImages().containsKey("JAVA")
+                    && StringUtils.isNotEmpty(customConfig.getFunctionRunnerImages().get("JAVA"))) {
+                v1alpha1FunctionSpec.setImage(customConfig.getFunctionRunnerImages().get("JAVA"));
+            }
         } else if (StringUtils.isNotEmpty(functionConfig.getPy())) {
             V1alpha1FunctionSpecPython v1alpha1FunctionSpecPython = new V1alpha1FunctionSpecPython();
             v1alpha1FunctionSpecPython.setPy(fileName);
@@ -307,6 +316,11 @@ public class FunctionsUtil {
                 v1alpha1FunctionSpecPython.setPyLocation(functionPkgUrl);
             }
             v1alpha1FunctionSpec.setPython(v1alpha1FunctionSpecPython);
+            if (customConfig.getFunctionRunnerImages() != null && !customConfig.getFunctionRunnerImages().isEmpty()
+                    && customConfig.getFunctionRunnerImages().containsKey("PYTHON")
+                    && StringUtils.isNotEmpty(customConfig.getFunctionRunnerImages().get("PYTHON"))) {
+                v1alpha1FunctionSpec.setImage(customConfig.getFunctionRunnerImages().get("PYTHON"));
+            }
         } else if (StringUtils.isNotEmpty(functionConfig.getGo())) {
             V1alpha1FunctionSpecGolang v1alpha1FunctionSpecGolang = new V1alpha1FunctionSpecGolang();
             v1alpha1FunctionSpecGolang.setGo(fileName);
@@ -314,6 +328,11 @@ public class FunctionsUtil {
                 v1alpha1FunctionSpecGolang.setGoLocation(functionPkgUrl);
             }
             v1alpha1FunctionSpec.setGolang(v1alpha1FunctionSpecGolang);
+            if (customConfig.getFunctionRunnerImages() != null && !customConfig.getFunctionRunnerImages().isEmpty()
+                    && customConfig.getFunctionRunnerImages().containsKey("GO")
+                    && StringUtils.isNotEmpty(customConfig.getFunctionRunnerImages().get("GO"))) {
+                v1alpha1FunctionSpec.setImage(customConfig.getFunctionRunnerImages().get("GO"));
+            }
         }
 
         v1alpha1FunctionSpec.setClusterName(clusterName);
@@ -323,8 +342,16 @@ public class FunctionsUtil {
         if (worker.getMeshWorkerServiceCustomConfig().isAllowUserDefinedServiceAccountName() &&
                 StringUtils.isNotEmpty(serviceAccountName)) {
             specPod.setServiceAccountName(serviceAccountName);
-            v1alpha1FunctionSpec.setPod(specPod);
         }
+        try {
+            if (customConfig.getImagePullSecrets() != null && !customConfig.getImagePullSecrets().isEmpty()) {
+                specPod.setImagePullSecrets(customConfig.asV1alpha1FunctionSpecPodImagePullSecrets());
+            }
+        } catch (Exception e) {
+            log.error("Invalid register function request {}: {}", functionName, e);
+            throw new RestException(Response.Status.BAD_REQUEST, e.getMessage());
+        }
+        v1alpha1FunctionSpec.setPod(specPod);
 
         v1alpha1Function.setSpec(v1alpha1FunctionSpec);
 

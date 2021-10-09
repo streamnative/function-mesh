@@ -100,6 +100,10 @@ public class SourcesUtil {
                 CommonUtil.getOwnerReferenceFromCustomConfigs(customConfigs)));
 
         V1alpha1SourceSpec v1alpha1SourceSpec = new V1alpha1SourceSpec();
+
+        if (StringUtils.isNotEmpty(customConfigs.getImagePullPolicy())) {
+            v1alpha1SourceSpec.setImagePullPolicy(customConfigs.getImagePullPolicy());
+        }
         v1alpha1SourceSpec.setClassName(sourceConfig.getClassName());
 
         V1alpha1SourceSpecJava v1alpha1SourceSpecJava = new V1alpha1SourceSpecJava();
@@ -124,6 +128,12 @@ public class SourcesUtil {
             v1alpha1SourceSpecJava.setJarLocation(location);
             v1alpha1SourceSpec.setJava(v1alpha1SourceSpecJava);
             extractedSourceDetails.setSourceClassName(sourceConfig.getClassName());
+        }
+
+        if (customConfigs.getFunctionRunnerImages() != null && !customConfigs.getFunctionRunnerImages().isEmpty()
+                && customConfigs.getFunctionRunnerImages().containsKey("JAVA")
+                && StringUtils.isNotEmpty(customConfigs.getFunctionRunnerImages().get("JAVA"))) {
+            v1alpha1SourceSpec.setImage(customConfigs.getFunctionRunnerImages().get("JAVA"));
         }
 
         V1alpha1SourceSpecOutput v1alpha1SourceSpecOutput = new V1alpha1SourceSpecOutput();
@@ -225,8 +235,16 @@ public class SourcesUtil {
         if (worker.getMeshWorkerServiceCustomConfig().isAllowUserDefinedServiceAccountName() &&
                 StringUtils.isNotEmpty(serviceAccountName)) {
             specPod.setServiceAccountName(serviceAccountName);
-            v1alpha1SourceSpec.setPod(specPod);
         }
+        try {
+            if (customConfigs.getImagePullSecrets() != null && !customConfigs.getImagePullSecrets().isEmpty()) {
+                specPod.setImagePullSecrets(customConfigs.asV1alpha1SourceSpecPodImagePullSecrets());
+            }
+        } catch (Exception e) {
+            log.error("Error converting ImagePullSecrets for source connector {}: {}", sourceName, e);
+            throw new RestException(Response.Status.BAD_REQUEST, e.getMessage());
+        }
+        v1alpha1SourceSpec.setPod(specPod);
 
         v1alpha1Source.setSpec(v1alpha1SourceSpec);
 

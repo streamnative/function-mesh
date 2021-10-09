@@ -78,7 +78,7 @@ type SinkSpec struct {
 	// default is streamnative/pulsar-functions-java-runner
 	Image string `json:"image,omitempty"`
 
-	// Image pull policy, one of Always, Never, IfNotPresent, default to Always.
+	// Image pull policy, one of Always, Never, IfNotPresent, default to IfNotPresent.
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 

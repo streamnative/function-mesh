@@ -102,6 +102,10 @@ public class SinksUtil {
                 CommonUtil.getOwnerReferenceFromCustomConfigs(customConfigs)));
 
         V1alpha1SinkSpec v1alpha1SinkSpec = new V1alpha1SinkSpec();
+
+        if (StringUtils.isNotEmpty(customConfigs.getImagePullPolicy())) {
+            v1alpha1SinkSpec.setImagePullPolicy(customConfigs.getImagePullPolicy());
+        }
         v1alpha1SinkSpec.setClassName(sinkConfig.getClassName());
 
         Integer parallelism = sinkConfig.getParallelism() == null ? 1 : sinkConfig.getParallelism();
@@ -129,6 +133,12 @@ public class SinksUtil {
             v1alpha1SinkSpecJava.setJarLocation(location);
             v1alpha1SinkSpec.setJava(v1alpha1SinkSpecJava);
             extractedSinkDetails.setSinkClassName(sinkConfig.getClassName());
+        }
+
+        if (customConfigs.getFunctionRunnerImages() != null && !customConfigs.getFunctionRunnerImages().isEmpty()
+                && customConfigs.getFunctionRunnerImages().containsKey("JAVA")
+                && StringUtils.isNotEmpty(customConfigs.getFunctionRunnerImages().get("JAVA"))) {
+            v1alpha1SinkSpec.setImage(customConfigs.getFunctionRunnerImages().get("JAVA"));
         }
 
         V1alpha1SinkSpecInput v1alpha1SinkSpecInput = new V1alpha1SinkSpecInput();
@@ -269,8 +279,16 @@ public class SinksUtil {
         if (worker.getMeshWorkerServiceCustomConfig().isAllowUserDefinedServiceAccountName() &&
                 StringUtils.isNotEmpty(serviceAccountName)) {
             specPod.setServiceAccountName(serviceAccountName);
-            v1alpha1SinkSpec.setPod(specPod);
         }
+        try {
+            if (customConfigs.getImagePullSecrets() != null && !customConfigs.getImagePullSecrets().isEmpty()) {
+                specPod.setImagePullSecrets(customConfigs.asV1alpha1SinkSpecPodImagePullSecrets());
+            }
+        } catch (Exception e) {
+            log.error("Error converting ImagePullSecrets for sink connector {}: {}", sinkName, e);
+            throw new RestException(Response.Status.BAD_REQUEST, e.getMessage());
+        }
+        v1alpha1SinkSpec.setPod(specPod);
 
         v1alpha1Sink.setSpec(v1alpha1SinkSpec);
 
