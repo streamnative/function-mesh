@@ -96,7 +96,6 @@ var _ = Describe("Function Controller", func() {
 					Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
 					Namespace: TestNameSpace,
 				}, function)
-				fmt.Println(function)
 				return err == nil && function.Annotations[spec.AnnotationAppliedConfigHash] != ""
 			}, 10*time.Second, 1*time.Second).Should(BeTrue())
 			Expect(function.Annotations[spec.AnnotationAppliedConfigHash]).To(Equal(newConfigHash))
