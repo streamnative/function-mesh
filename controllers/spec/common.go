@@ -274,7 +274,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, 
 	}
 	sharedArgs := getSharedArgs(details, clusterName, authProvided, tlsProvided)
 	args = append(args, sharedArgs...)
-	if secretMaps != nil && len(secretMaps) > 0 {
+	if len(secretMaps) > 0 {
 		secretProviderArgs := getJavaSecretProviderArgs(secretMaps)
 		args = append(args, secretProviderArgs...)
 	}
@@ -299,7 +299,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string,
 	}
 	sharedArgs := getSharedArgs(details, clusterName, authProvided, tlsProvided)
 	args = append(args, sharedArgs...)
-	if secretMaps != nil && len(secretMaps) > 0 {
+	if len(secretMaps) > 0 {
 		secretProviderArgs := getPythonSecretProviderArgs(secretMaps)
 		args = append(args, secretProviderArgs...)
 	}
@@ -656,8 +656,8 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 }
 
 func getJavaSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []string {
-	var ret []string = nil
-	if secretMaps != nil && len(secretMaps) > 0 {
+	var ret []string
+	if len(secretMaps) > 0 {
 		ret = []string{
 			"--secrets_provider",
 			"org.apache.pulsar.functions.secretsprovider.EnvironmentBasedSecretsProvider",
@@ -667,8 +667,8 @@ func getJavaSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []strin
 }
 
 func getPythonSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []string {
-	var ret []string = nil
-	if secretMaps != nil && len(secretMaps) > 0 {
+	var ret []string
+	if len(secretMaps) > 0 {
 		ret = []string{
 			"--secrets_provider",
 			"secretsprovider.EnvironmentBasedSecretsProvider",
