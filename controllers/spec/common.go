@@ -157,10 +157,10 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 }
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory, extraDependenciesDir string,
-	authProvided, tlsProvided bool) []string {
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, details,
-			memory, extraDependenciesDir, authProvided, tlsProvided), " ")
+			memory, extraDependenciesDir, authProvided, tlsProvided, secretMaps), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
@@ -170,10 +170,10 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, detai
 }
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details string,
-	authProvided, tlsProvided bool) []string {
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
-			details, authProvided, tlsProvided), " ")
+			details, authProvided, tlsProvided, secretMaps), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
@@ -252,7 +252,8 @@ func setShardIDEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
-func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, extraDependenciesDir string, authProvided, tlsProvided bool) []string {
+func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, extraDependenciesDir string,
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
@@ -273,10 +274,15 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, 
 	}
 	sharedArgs := getSharedArgs(details, clusterName, authProvided, tlsProvided)
 	args = append(args, sharedArgs...)
+	if secretMaps != nil && len(secretMaps) > 0 {
+		secretProviderArgs := getJavaSecretProviderArgs(secretMaps)
+		args = append(args, secretProviderArgs...)
+	}
 	return args
 }
 
-func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string, authProvided, tlsProvided bool) []string {
+func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string, authProvided, tlsProvided bool,
+	secretMaps map[string]v1alpha1.SecretRef) []string {
 	args := []string{
 		"exec",
 		"python",
@@ -293,6 +299,10 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string,
 	}
 	sharedArgs := getSharedArgs(details, clusterName, authProvided, tlsProvided)
 	args = append(args, sharedArgs...)
+	if secretMaps != nil && len(secretMaps) > 0 {
+		secretProviderArgs := getPythonSecretProviderArgs(secretMaps)
+		args = append(args, secretProviderArgs...)
+	}
 	return args
 }
 
@@ -643,4 +653,26 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 		return DefaultJavaRunnerImage
 	}
 	return DefaultRunnerImage
+}
+
+func getJavaSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []string {
+	var ret []string = nil
+	if secretMaps != nil && len(secretMaps) > 0 {
+		ret = []string{
+			"--secrets_provider",
+			"org.apache.pulsar.functions.secretsprovider.EnvironmentBasedSecretsProvider",
+		}
+	}
+	return ret
+}
+
+func getPythonSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []string {
+	var ret []string = nil
+	if secretMaps != nil && len(secretMaps) > 0 {
+		ret = []string{
+			"--secrets_provider",
+			"secretsprovider.EnvironmentBasedSecretsProvider",
+		}
+	}
+	return ret
 }
