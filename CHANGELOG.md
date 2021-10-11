@@ -6,7 +6,7 @@
 - [Function Mesh Worker service] Support custom `ServiceAccountName` and `DefaultServiceAccountName` ([#276](https://github.com/streamnative/function-mesh/pull/276))
 - [Controller] Fix the issue that HPA does work as expected on Sink and Source resources ([#281](https://github.com/streamnative/function-mesh/pull/281))
 - [Function Mesh Worker service] Clean up temporarily downloaded files ([#282](https://github.com/streamnative/function-mesh/pull/282))
-- [Function Mesh Worker service] Fix Resource convert with Kubernetes Client ([#286](https://github.com/streamnative/function-mesh/pull/286))
+- [Function Mesh Worker service] Fix the resource convert exception with the Kubernetes Client ([#286](https://github.com/streamnative/function-mesh/pull/286))
 - [Controller] Added function-mesh labels to Service and HPA ([#287](https://github.com/streamnative/function-mesh/pull/287))
 - [Controller] Bump to Pulsar 2.8.1 ([#288](https://github.com/streamnative/function-mesh/pull/288))
 
