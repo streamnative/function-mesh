@@ -2,7 +2,7 @@
 
 ## v0.1.8 What's New
 
-- [Controller] Update to Pulsar 2.8's Function's proto files ([#274](https://github.com/streamnative/function-mesh/pull/274))
+- [Controller] Update to Pulsar 2.8 Function's proto files ([#274](https://github.com/streamnative/function-mesh/pull/274))
 - [Function Mesh Worker service] Support custom `ServiceAccountName` and `DefaultServiceAccountName` ([#276](https://github.com/streamnative/function-mesh/pull/276))
 - [Controller] Fix HPA not work as expected on Sink and Source resources ([#281](https://github.com/streamnative/function-mesh/pull/281))
 - [Function Mesh Worker service] Cleanup temp download files ([#282](https://github.com/streamnative/function-mesh/pull/282))
