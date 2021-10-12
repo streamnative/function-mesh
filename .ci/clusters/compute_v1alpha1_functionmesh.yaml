@@ -5,7 +5,7 @@ metadata:
 spec:
   functions:
     - name: java-function
-      image: streamnative/pulsar-functions-java-sample:2.8.1.3
+      image: streamnative/pulsar-functions-java-sample:2.8.1.6
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
       replicas: 1
       maxReplicas: 1
@@ -31,7 +31,7 @@ spec:
           memory: 1.1G
       clusterName: test
     - name: golang-function
-      image: streamnative/pulsar-functions-go-sample:2.8.1.3
+      image: streamnative/pulsar-functions-go-sample:2.8.1.6
       replicas: 1
       maxReplicas: 1
       input:
@@ -56,7 +56,7 @@ spec:
           memory: 1.1G
       clusterName: test
     - name: python-function
-      image: streamnative/pulsar-functions-python-sample:2.8.1.3
+      image: streamnative/pulsar-functions-python-sample:2.8.1.6
       className: exclamation_function.ExclamationFunction
       replicas: 1
       maxReplicas: 1
