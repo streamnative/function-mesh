@@ -664,6 +664,7 @@ func getDefaultRunnerPodSecurityContext(uid, gid int64, nonRoot bool) *corev1.Po
 		RunAsNonRoot: &nonRoot,
 		FSGroup:      &gid,
 	}
+}
 
 func getJavaSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []string {
 	var ret []string
