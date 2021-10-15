@@ -136,7 +136,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 
 func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy) *corev1.PodTemplateSpec {
-	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, true)
+	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, false)
 	if policy.SecurityContext != nil {
 		podSecurityContext = policy.SecurityContext
 	}
