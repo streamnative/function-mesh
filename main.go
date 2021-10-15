@@ -48,6 +48,7 @@ func init() {
 func main() {
 	var metricsAddr string
 	var leaderElectionID string
+	var certDir string
 	var enableLeaderElection bool
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id", "a3f45fce.functionmesh.io",
@@ -55,6 +56,8 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&certDir, "cert-dir", "",
+		"CertDir is the directory that contains the server key and certificate.\n\tif not set, webhook server would look up the server key and certificate in\n\t{TempDir}/k8s-webhook-server/serving-certs. The server key and certificate\n\tmust be named tls.key and tls.crt, respectively.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
@@ -65,6 +68,7 @@ func main() {
 		Port:               9443,
 		LeaderElection:     enableLeaderElection,
 		LeaderElectionID:   leaderElectionID,
+		CertDir:            certDir,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

@@ -26,16 +26,20 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // SinkSpec defines the desired state of Topic
+// +kubebuilder:validation:Optional
 type SinkSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// +kubebuilder:validation:Required
 	Name        string `json:"name,omitempty"`
 	ClassName   string `json:"className,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	Tenant      string `json:"tenant,omitempty"`
 	Namespace   string `json:"namespace,omitempty"`
 	SinkType    string `json:"sinkType,omitempty"` // refer to `--sink-type` as builtin connector
-	Replicas    *int32 `json:"replicas,omitempty"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
 	// If provided, a default HPA with CPU at average of 80% will be used.
@@ -65,8 +69,10 @@ type SinkSpec struct {
 
 	Pod PodPolicy `json:"pod,omitempty"`
 
+	// +kubebuilder:validation:Required
 	Messaging `json:",inline"`
-	Runtime   `json:",inline"`
+	// +kubebuilder:validation:Required
+	Runtime `json:",inline"`
 
 	// Image is the container image used to run sink pods.
 	// default is streamnative/pulsar-functions-java-runner
@@ -89,7 +95,8 @@ type SinkStatus struct {
 // +kubebuilder:subresource:status
 //+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 
-// Topic is the Schema for the sinks API
+// Sink is the Schema for the sinks API
+// +kubebuilder:pruning:PreserveUnknownFields
 type Sink struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
