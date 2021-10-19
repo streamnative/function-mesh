@@ -207,7 +207,9 @@ public class FunctionsUtil {
             v1alpha1FunctionSpec.setLogTopic(functionDetails.getLogTopic());
         }
         v1alpha1FunctionSpec.setForwardSourceMessageProperty(functionDetails.getSink().getForwardSourceMessageProperty());
-
+        if (v1alpha1FunctionSpec.getForwardSourceMessageProperty() == null) {
+            v1alpha1FunctionSpec.setForwardSourceMessageProperty(true);
+        }
         if (functionDetails.hasRetryDetails()) {
             v1alpha1FunctionSpec.setMaxMessageRetry(functionDetails.getRetryDetails().getMaxMessageRetries());
             if (!StringUtils.isEmpty(functionDetails.getRetryDetails().getDeadLetterTopic())) {

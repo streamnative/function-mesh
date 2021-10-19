@@ -147,6 +147,9 @@ public class SourcesUtil {
             v1alpha1SourceSpecOutput.setSinkSchemaType(functionDetails.getSink().getSchemaType());
         }
         v1alpha1SourceSpec.setForwardSourceMessageProperty(functionDetails.getSink().getForwardSourceMessageProperty());
+        if (v1alpha1SourceSpec.getForwardSourceMessageProperty() == null) {
+            v1alpha1SourceSpec.setForwardSourceMessageProperty(true);
+        }
         // process ProducerConf
         V1alpha1SourceSpecOutputProducerConf v1alpha1SourceSpecOutputProducerConf
                 = new V1alpha1SourceSpecOutputProducerConf();
