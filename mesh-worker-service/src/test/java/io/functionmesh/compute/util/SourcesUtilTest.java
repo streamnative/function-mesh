@@ -197,5 +197,6 @@ public class SourcesUtilTest {
         Assert.assertEquals(v1alpha1SourceSpec.getOutput().getTypeClassName(), typeClassName);
         Assert.assertEquals(v1alpha1SourceSpec.getJava().getJar(), archive);
         Assert.assertEquals(v1alpha1SourceSpec.getSourceConfig(), configs);
+        Assert.assertEquals(v1alpha1SourceSpec.getForwardSourceMessageProperty(), true);
     }
 }

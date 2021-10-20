@@ -106,7 +106,7 @@ public class FunctionsUtilTest {
         Assert.assertEquals(v1alpha1FunctionSpec.getInput().getTypeClassName(), typeClassName);
         Assert.assertEquals(v1alpha1FunctionSpec.getOutput().getTypeClassName(), typeClassName);
         Assert.assertEquals(v1alpha1FunctionSpec.getJava().getJar(), jar);
-
+        Assert.assertEquals(v1alpha1FunctionSpec.getForwardSourceMessageProperty(), true);
     }
 
     @Test
