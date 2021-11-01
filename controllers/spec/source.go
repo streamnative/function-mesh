@@ -80,6 +80,9 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret, source.Spec.Pulsar.TLSSecret),
 		VolumeMounts:    makeSourceVolumeMounts(source),
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"CAP_FOWNER"}},
+		},
 	}
 }
 

@@ -186,7 +186,8 @@ func TestMakeGoFunctionCommand(t *testing.T) {
 	assert.True(t, strings.HasPrefix(innerCommands[2], " GO_FUNCTION_CONF"))
 	assert.Equal(t, innerCommands[3], " goFunctionConfigs=${GO_FUNCTION_CONF} ")
 	assert.Equal(t, innerCommands[4], " echo goFunctionConfigs=\"'${goFunctionConfigs}'\" ")
-	assert.Equal(t, innerCommands[5], " exec /pulsar/go-func -instance-conf ${goFunctionConfigs}")
+	assert.Equal(t, innerCommands[5], " chmod +x /pulsar/go-func ")
+	assert.Equal(t, innerCommands[6], " exec /pulsar/go-func -instance-conf ${goFunctionConfigs}")
 }
 
 const TestClusterName string = "test-pulsar"
