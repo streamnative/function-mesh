@@ -186,9 +186,11 @@ func TestMakeGoFunctionCommand(t *testing.T) {
 	assert.True(t, strings.HasPrefix(innerCommands[2], " GO_FUNCTION_CONF"))
 	assert.Equal(t, innerCommands[3], " goFunctionConfigs=${GO_FUNCTION_CONF} ")
 	assert.Equal(t, innerCommands[4], " echo goFunctionConfigs=\"'${goFunctionConfigs}'\" ")
-	assert.Equal(t, innerCommands[5], " ls -l /pulsar/go-func ")
-	assert.Equal(t, innerCommands[6], " chmod +x /pulsar/go-func ")
-	assert.Equal(t, innerCommands[7], " exec /pulsar/go-func -instance-conf ${goFunctionConfigs}")
+	assert.Equal(t, innerCommands[5], " whoami ")
+	assert.Equal(t, innerCommands[6], " groups $whoami ")
+	assert.Equal(t, innerCommands[7], " ls -l /pulsar/go-func ")
+	assert.Equal(t, innerCommands[8], " chmod +x /pulsar/go-func ")
+	assert.Equal(t, innerCommands[9], " exec /pulsar/go-func -instance-conf ${goFunctionConfigs}")
 }
 
 const TestClusterName string = "test-pulsar"
