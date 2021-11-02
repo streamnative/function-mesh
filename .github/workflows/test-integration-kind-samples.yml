@@ -80,9 +80,6 @@ jobs:
           kubectl apply -f .ci/clusters/compute_v1alpha1_go_function.yaml
           kubectl get all
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Verify Function kind - Go Function
         run: |
           .ci/verify_function_mesh.sh compute_v1alpha1_go_function
