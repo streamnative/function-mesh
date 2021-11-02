@@ -22,9 +22,6 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Deploy k8s cluster env
         uses: nick-invision/retry@v2
         with:
@@ -82,6 +79,9 @@ jobs:
         run: |
           kubectl apply -f .ci/clusters/compute_v1alpha1_go_function.yaml
           kubectl get all
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
 
       - name: Verify Function kind - Go Function
         run: |
