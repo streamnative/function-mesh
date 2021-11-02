@@ -57,9 +57,9 @@ const (
 
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
 
-	DefaultRunnerUserID  int64 = 10001
+	DefaultRunnerUserID  int64 = 10000
 	DefaultRunnerUser          = "pulsar"
-	DefaultRunnerGroupID int64 = 10000
+	DefaultRunnerGroupID int64 = 10001
 	DefaultRunnerGroup         = "pulsar"
 )
 
