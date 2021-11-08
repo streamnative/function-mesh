@@ -5,8 +5,9 @@ FROM ubuntu:20.04 as functions-runner
 
 ENV GID=10001
 ENV UID=10000
+ENV USER=pulsar
 RUN groupadd -g $GID pulsar
-RUN adduser -u $UID --gid $GID --disabled-login --disabled-password --gecos '' pulsar
+RUN adduser -u $UID --gid $GID --disabled-login --disabled-password --gecos '' $USER
 
 RUN mkdir -p /pulsar/bin/ \
     && mkdir -p /pulsar/lib/ \

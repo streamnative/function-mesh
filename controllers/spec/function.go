@@ -96,6 +96,9 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret, function.Spec.Pulsar.TLSSecret),
 		VolumeMounts:    makeFunctionVolumeMounts(function),
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"CAP_FOWNER"}},
+		},
 	}
 }
 

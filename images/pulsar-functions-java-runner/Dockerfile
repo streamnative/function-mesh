@@ -8,4 +8,4 @@ COPY --from=pulsar --chown=$UID:$GID /pulsar/instances/deps /pulsar/instances/de
 
 WORKDIR /pulsar
 
-USER $UID
+USER $USER
