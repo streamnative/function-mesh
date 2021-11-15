@@ -127,6 +127,12 @@ public class MeshWorkerService implements WorkerService {
     @Override
     public void initInBroker(ServiceConfiguration brokerConfig,
                              WorkerConfig workerConfig, PulsarResources pulsarResources,
+                             InternalConfigurationData internalConf) throws Exception {
+        this.init(workerConfig);
+    }
+
+    public void initInBroker(ServiceConfiguration brokerConfig,
+                             WorkerConfig workerConfig, PulsarResources pulsarResources,
                              ConfigurationCacheService configurationCacheService,
                              InternalConfigurationData internalConfigurationData) throws Exception {
         this.init(workerConfig);
