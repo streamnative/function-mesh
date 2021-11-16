@@ -26,7 +26,7 @@
 
     <groupId>io.functionmesh.proxy</groupId>
     <artifactId>mesh-worker-service</artifactId>
-    <version>v0.1.9-rc1</version>
+    <version>v0.1.9-rc2</version>
 
     <properties>
         <pulsar.version>2.9.0.0-rc-4</pulsar.version>
