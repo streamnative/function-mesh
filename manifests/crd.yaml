@@ -15,6 +15,7 @@ spec:
         name: webhook-service
         namespace: system
         path: /convert
+        port: 443
   group: compute.functionmesh.io
   names:
     kind: FunctionMesh
@@ -7441,6 +7442,7 @@ spec:
         name: webhook-service
         namespace: system
         path: /convert
+        port: 443
   group: compute.functionmesh.io
   names:
     kind: Function
@@ -10015,6 +10017,7 @@ spec:
         name: webhook-service
         namespace: system
         path: /convert
+        port: 443
   group: compute.functionmesh.io
   names:
     kind: Sink
@@ -12526,6 +12529,7 @@ spec:
         name: webhook-service
         namespace: system
         path: /convert
+        port: 443
   group: compute.functionmesh.io
   names:
     kind: Source
