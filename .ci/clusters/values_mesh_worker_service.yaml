@@ -102,6 +102,11 @@ pulsar_metadata:
 functions:
   configData:
     functionsWorkerServiceNarPackage: /pulsar/mesh-worker-service.nar
+    functionsWorkerServiceCustomConfigs:
+      uploadEnabled: true
+      functionEnabled: true
+      sinkEnabled: true
+      sourceEnabled: true
 
 broker:
   replicaCount: 1

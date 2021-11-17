@@ -36,3 +36,5 @@ ci::verify_python_package
 
 ci::upload_go_package
 ci::verify_go_package
+
+ci::create_java_function_by_upload
