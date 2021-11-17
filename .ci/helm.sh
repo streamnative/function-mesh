@@ -452,6 +452,7 @@ function ci::verify_go_package() {
 }
 
 function ci::create_java_function_by_upload() {
+  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- cat conf/functions_worker.yml
   RET=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --jar /pulsar/examples/api-examples.jar --name package-upload-java-fn --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/package-upload-java-fn-input --cpu 0.1)
   ${KUBECTL} logs -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0
   sleep 15
