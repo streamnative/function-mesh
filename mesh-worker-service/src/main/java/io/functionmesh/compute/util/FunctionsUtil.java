@@ -37,9 +37,11 @@ import io.functionmesh.compute.models.CustomRuntimeOptions;
 import io.functionmesh.compute.models.MeshWorkerServiceCustomConfig;
 import io.kubernetes.client.custom.Quantity;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.common.functions.ConsumerConfig;
 import org.apache.pulsar.common.functions.FunctionConfig;
@@ -54,10 +56,13 @@ import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
 import org.apache.pulsar.functions.utils.FunctionCommon;
 import org.apache.pulsar.functions.utils.FunctionConfigUtils;
+import org.apache.pulsar.packages.management.core.common.PackageMetadata;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -650,4 +655,44 @@ public class FunctionsUtil {
         return typeArgs;
     }
 
+    private static String generatePackageURL(final String tenant,
+                                             final String namespace,
+                                             final String functionName) {
+        return String.format("function://%s/%s/%s", tenant, namespace, functionName);
+    }
+
+    public static String uploadPackageToPackageService(PulsarAdmin admin,
+                                                     final String tenant,
+                                                     final String namespace,
+                                                     final String functionName,
+                                                     final InputStream uploadedInputStream,
+                                                     final FormDataContentDisposition fileDetail,
+                                                     String tempDirectory) throws Exception {
+        Path tempDirectoryPath = Paths.get(tempDirectory);
+        if (Files.notExists(tempDirectoryPath)) {
+            Files.createDirectories(tempDirectoryPath);
+        }
+        Path filePath = Files.createTempFile(tempDirectoryPath,
+                RandomStringUtils.random(5, true, true).toLowerCase(), fileDetail.getFileName());
+        FileUtils.copyInputStreamToFile(uploadedInputStream, filePath.toFile());
+        uploadedInputStream.close();
+
+        PackageMetadata packageMetadata = new PackageMetadata();
+        String packageName = generatePackageURL(tenant, namespace, functionName);
+        packageMetadata.setContact("mesh-worker-service");
+        packageMetadata.setDescription("mesh-worker-service created for " + packageName);
+        Map<String, String> properties = new HashMap<>();
+        properties.put("tenant", tenant);
+        properties.put("namespace", namespace);
+        properties.put("functionName", functionName);
+        properties.put("fileName", fileDetail.getFileName());
+        properties.put("size", Long.toString(filePath.toFile().length()));
+        long checksum = FileUtils.checksumCRC32(filePath.toFile());
+        properties.put("checksum", Long.toString(checksum));
+        packageMetadata.setProperties(properties);
+        admin.packages().upload(packageMetadata, packageName, filePath.toString());
+        log.info("upload file {} to package service {} successfully", filePath, packageName);
+        Files.deleteIfExists(filePath);
+        return packageName;
+    }
 }

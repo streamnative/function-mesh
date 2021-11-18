@@ -48,6 +48,7 @@ public class WorkerConfigTest {
         MeshWorkerServiceCustomConfig customConfig = RuntimeUtils.getRuntimeFunctionConfig(
                 customConfigs, MeshWorkerServiceCustomConfig.class);
 
+        assertEquals(customConfigs.get("uploadEnabled"), customConfig.isUploadEnabled());
         assertEquals("service-account", customConfig.getDefaultServiceAccountName());
 
         V1OwnerReference ownerRef = CommonUtil.getOwnerReferenceFromCustomConfigs(customConfig);

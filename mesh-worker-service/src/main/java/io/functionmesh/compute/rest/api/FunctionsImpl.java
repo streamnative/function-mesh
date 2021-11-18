@@ -88,7 +88,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             throw new RestException(Response.Status.BAD_REQUEST, "Function config is not provided");
         }
         MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
-        if (jarUploaded && customConfig != null && customConfig.isUploadEnabled()) {
+        if (jarUploaded && customConfig != null && !customConfig.isUploadEnabled()) {
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
         }
         this.validateResources(functionConfig.getResources(), worker().getWorkerConfig().getFunctionInstanceMinResources(),
@@ -130,6 +130,16 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 clientAuthenticationDataHttps,
                 ComponentTypeUtils.toString(componentType));
         this.validateTenantIsExist(tenant, namespace, functionName, clientRole);
+        String packageURL = functionPkgUrl;
+        if (uploadedInputStream != null) {
+            try {
+                String tempDirectory = System.getProperty("java.io.tmpdir");
+                packageURL = FunctionsUtil.uploadPackageToPackageService(worker().getBrokerAdmin(), tenant, namespace, functionName, uploadedInputStream, fileDetail, tempDirectory);
+            } catch (Exception e) {
+                log.error("register {}/{}/{} function failed, error message: {}", tenant, namespace, functionName, e);
+                throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+            }
+        }
 
         String cluster = worker().getWorkerConfig().getPulsarFunctionsCluster();
         V1alpha1Function v1alpha1Function = FunctionsUtil.createV1alpha1FunctionFromFunctionConfig(
@@ -137,7 +147,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
                 group,
                 version,
                 functionName,
-                functionPkgUrl,
+                packageURL,
                 functionConfig,
                 cluster,
                 worker()
