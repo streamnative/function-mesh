@@ -88,7 +88,7 @@ public class FunctionsImpl extends MeshComponentImpl implements Functions<MeshWo
             throw new RestException(Response.Status.BAD_REQUEST, "Function config is not provided");
         }
         MeshWorkerServiceCustomConfig customConfig = worker().getMeshWorkerServiceCustomConfig();
-        if (jarUploaded && customConfig != null && customConfig.isUploadEnabled()) {
+        if (jarUploaded && customConfig != null && !customConfig.isUploadEnabled()) {
             throw new RestException(Response.Status.BAD_REQUEST, "Uploading Jar File is not enabled");
         }
         this.validateResources(functionConfig.getResources(), worker().getWorkerConfig().getFunctionInstanceMinResources(),
