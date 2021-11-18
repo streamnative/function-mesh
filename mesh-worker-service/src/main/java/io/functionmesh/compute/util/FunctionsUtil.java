@@ -668,6 +668,15 @@ public class FunctionsUtil {
                                                      final InputStream uploadedInputStream,
                                                      final FormDataContentDisposition fileDetail,
                                                      String tempDirectory) throws Exception {
+        Path tempDirectoryPath = Paths.get(tempDirectory);
+        if (Files.notExists(tempDirectoryPath)) {
+            Files.createDirectories(tempDirectoryPath);
+        }
+        Path filePath = Files.createTempFile(tempDirectoryPath,
+                RandomStringUtils.random(5, true, true).toLowerCase(), fileDetail.getFileName());
+        FileUtils.copyInputStreamToFile(uploadedInputStream, filePath.toFile());
+        uploadedInputStream.close();
+
         PackageMetadata packageMetadata = new PackageMetadata();
         String packageName = generatePackageURL(tenant, namespace, functionName);
         packageMetadata.setContact("mesh-worker-service");
@@ -677,24 +686,13 @@ public class FunctionsUtil {
         properties.put("namespace", namespace);
         properties.put("functionName", functionName);
         properties.put("fileName", fileDetail.getFileName());
-        properties.put("size", Long.toString(fileDetail.getSize()));
-        String sha1 = org.apache.commons.codec.digest.DigestUtils.sha1Hex(uploadedInputStream);
-        properties.put("sha1", sha1);
+        properties.put("size", Long.toString(filePath.toFile().length()));
+        long checksum = FileUtils.checksumCRC32(filePath.toFile());
+        properties.put("checksum", Long.toString(checksum));
         packageMetadata.setProperties(properties);
-
-        Path tempDirectoryPath = Paths.get(tempDirectory);
-        if (Files.notExists(tempDirectoryPath)) {
-            Files.createDirectories(tempDirectoryPath);
-        }
-        Path filePath = Paths.get(tempDirectoryPath.toString(), fileDetail.getFileName());
-        Files.deleteIfExists(filePath);
-        if (!filePath.toFile().exists()) {
-            filePath.toFile().createNewFile();
-        }
-        FileUtils.copyInputStreamToFile(uploadedInputStream, filePath.toFile());
         admin.packages().upload(packageMetadata, packageName, filePath.toString());
-        Files.deleteIfExists(filePath);
         log.info("upload file {} to package service {} successfully", filePath, packageName);
+        Files.deleteIfExists(filePath);
         return packageName;
     }
 }
