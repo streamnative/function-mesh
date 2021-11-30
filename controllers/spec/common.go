@@ -138,7 +138,7 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy) *corev1.PodTemplateSpec {
 	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, false)
 	if policy.SecurityContext != nil {
-		podSecurityContext = policy.SecurityContext
+		podSecurityContext = mergeSecurityContext(podSecurityContext, policy.SecurityContext)
 	}
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
@@ -660,6 +660,23 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 		return DefaultJavaRunnerImage
 	}
 	return DefaultRunnerImage
+}
+
+// mergeSecurityContext allows overriding the security context of a container and keeps the defaults if not set
+func mergeSecurityContext(defaults, overrides *corev1.PodSecurityContext) *corev1.PodSecurityContext {
+	if overrides.RunAsGroup == nil {
+		overrides.RunAsGroup = defaults.RunAsGroup
+	}
+	if overrides.RunAsUser == nil {
+		overrides.RunAsUser = defaults.RunAsUser
+	}
+	if overrides.RunAsNonRoot == nil {
+		overrides.RunAsNonRoot = defaults.RunAsNonRoot
+	}
+	if overrides.FSGroup == nil {
+		overrides.FSGroup = defaults.FSGroup
+	}
+	return overrides
 }
 
 // getDefaultRunnerPodSecurityContext returns a default PodSecurityContext that runs as non-root

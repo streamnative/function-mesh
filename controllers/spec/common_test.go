@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
@@ -246,4 +248,33 @@ func makeGoFunctionSample(functionName string) *v1alpha1.Function {
 			},
 		},
 	}
+}
+
+func TestMergeSecurityContext(t *testing.T) {
+	defaults := getDefaultRunnerPodSecurityContext(10000, 10001, false)
+	trueVal := true
+	overrides := corev1.PodSecurityContext{
+		RunAsNonRoot: &trueVal,
+	}
+	merged := mergeSecurityContext(defaults, &overrides)
+	assert.Equal(t, merged.RunAsNonRoot, &trueVal)
+	assert.Equal(t, merged.RunAsUser, &defaults.RunAsUser)
+	assert.Equal(t, merged.RunAsGroup, &defaults.RunAsGroup)
+	assert.Equal(t, merged.FSGroup, &defaults.FSGroup)
+	assert.Equal(t, merged.SupplementalGroups, &defaults.SupplementalGroups)
+
+	userIDVal := int64(20000)
+	groupIDVal := int64(20001)
+	overridesWithAllValues := corev1.PodSecurityContext{
+		RunAsNonRoot: &trueVal,
+		RunAsUser:    &userIDVal,
+		RunAsGroup:   &groupIDVal,
+		FSGroup:      &groupIDVal,
+	}
+	mergedWithAllValues := mergeSecurityContext(defaults, &overridesWithAllValues)
+	assert.Equal(t, mergedWithAllValues.RunAsNonRoot, &trueVal)
+	assert.Equal(t, mergedWithAllValues.RunAsUser, &overridesWithAllValues.RunAsUser)
+	assert.Equal(t, mergedWithAllValues.RunAsGroup, &overridesWithAllValues.RunAsGroup)
+	assert.Equal(t, mergedWithAllValues.FSGroup, &overridesWithAllValues.FSGroup)
+	assert.Equal(t, mergedWithAllValues.SupplementalGroups, &overridesWithAllValues.SupplementalGroups)
 }
