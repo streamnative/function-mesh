@@ -245,7 +245,7 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 			BatchBuilder:                       source.Spec.Output.ProducerConf.BatchBuilder,
 		}
 	}
-	var forward = false
+	var forward = true
 	if source.Spec.ForwardSourceMessageProperty != nil {
 		forward = *source.Spec.ForwardSourceMessageProperty
 	}

@@ -35,8 +35,8 @@ jobs:
 
       - name: Build runner images
         run: |
-          PULSAR_IMAGE_TAG=2.8.1.6 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=true images/build.sh
-          PULSAR_IMAGE_TAG=2.8.1.6 KIND_PUSH=true images/samples/build.sh
+          PULSAR_IMAGE_TAG=2.9.0.0-rc-4 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=true images/build.sh
+          PULSAR_IMAGE_TAG=2.9.0.0-rc-4 KIND_PUSH=true images/samples/build.sh
 
       - name: Install operator-sdk
         run: |

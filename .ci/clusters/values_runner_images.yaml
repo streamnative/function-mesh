@@ -40,27 +40,27 @@ monitoring:
 images:
   zookeeper:
     repository: streamnative/pulsar-all
-    tag: 2.8.1.6
+    tag: 2.9.0.0-rc-4
     pullPolicy: IfNotPresent
   bookie:
     repository: streamnative/pulsar-all
-    tag: 2.8.1.6
+    tag: 2.9.0.0-rc-4
     pullPolicy: IfNotPresent
   autorecovery:
     repository: streamnative/pulsar-all
-    tag: 2.8.1.6
+    tag: 2.9.0.0-rc-4
     pullPolicy: IfNotPresent
   broker:
     repository: streamnative/pulsar-all
-    tag: 2.8.1.6
+    tag: 2.9.0.0-rc-4
     pullPolicy: IfNotPresent
   proxy:
     repository: streamnative/pulsar-all
-    tag: 2.8.1.6
+    tag: 2.9.0.0-rc-4
     pullPolicy: IfNotPresent
   functions:
     repository: streamnative/pulsar-all
-    tag: 2.8.1.6
+    tag: 2.9.0.0-rc-4
     pullPolicy: IfNotPresent
 
 zookeeper:
@@ -71,7 +71,7 @@ bookkeeper:
   metadata:
     image:
       repository: streamnative/pulsar-all
-      tag: 2.8.1.6
+      tag: 2.9.0.0-rc-4
   configData:
     # `BOOKIE_MEM` is used for `bookie shell`
     BOOKIE_MEM: >
@@ -101,7 +101,7 @@ bookkeeper:
 pulsar_metadata:
   image:
     repository: streamnative/pulsar-all
-    tag: 2.8.1.6
+    tag: 2.9.0.0-rc-4
     pullPolicy: IfNotPresent
 
 broker:
@@ -161,9 +161,9 @@ functions:
     disk: 1048576000
   functionRuntimeFactoryConfigs:
     functionDockerImages:
-      JAVA: "streamnative/pulsar-functions-java-runner:2.8.1.6"
-      PYTHON: "streamnative/pulsar-functions-python-runner:2.8.1.6"
-      GO: "streamnative/pulsar-functions-go-runner:2.8.1.6"
+      JAVA: "streamnative/pulsar-functions-java-runner:2.9.0.0-rc-4"
+      PYTHON: "streamnative/pulsar-functions-python-runner:2.9.0.0-rc-4"
+      GO: "streamnative/pulsar-functions-go-runner:2.9.0.0-rc-4"
     functionInstanceMinResources:
       cpu: 0.1
       ram: 10485760
