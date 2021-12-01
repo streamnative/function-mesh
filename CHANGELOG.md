@@ -15,7 +15,9 @@ Action required: We have moved the Function Mesh Worker service into a separate 
 - [Function Mesh Worker service] Move the Function Mesh Worker service into a separate repository ([#1](https://github.com/streamnative/function-mesh-worker-service/issues/1))
 - [Function Mesh Worker service] Support `secretsMap` on branch-2.8 ([#21](https://github.com/streamnative/function-mesh-worker-service/pull/21))
 
-Note: The release notes will not contain any changes to the `function-mesh-worker-service` repo in the future.
+> **Note**
+>
+> From this release, the release note will not contain any changes to the `function-mesh-worker-service` repository.
 
 # Function Mesh v0.1.8 Release Notes
 
