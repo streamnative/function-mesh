@@ -1,3 +1,22 @@
+# Function Mesh v0.1.9 Release Notes
+
+## v0.1.9 What's New
+
+Action required: We have moved the mesh worker service into a separate repository [streamnative/function-mesh-worker-service](https://github.com/streamnative/function-mesh-worker-service), as the result, the function-mesh repo will no longer release any new version of mesh worker service.
+
+- [Runner Images] Make runner images rootless ([#278](https://github.com/streamnative/function-mesh/pull/278))
+- [Runner Images] Simplifier the runner image layers ([#292](https://github.com/streamnative/function-mesh/pull/292))
+- [Controller] Support CRD validation with WebHook ([#238](https://github.com/streamnative/function-mesh/pull/238), [#299](https://github.com/streamnative/function-mesh/pull/299))
+- [Controller] Support `EnvironmentBasedSecretsProvider` as the default secret provider ([#295](https://github.com/streamnative/function-mesh/pull/295))
+- [Controller] Provide default `SecurityContext` to run functions and connectors in rootless mode ([#294](https://github.com/streamnative/function-mesh/pull/294))
+- [Function Mesh Worker service] Support customize runner images ([#291](https://github.com/streamnative/function-mesh/pull/291))
+- [Function Mesh Worker service] Fix the default value for `ForwardSourceMessageProperty` ([#300](https://github.com/streamnative/function-mesh/pull/300))
+- [Function Mesh Worker service] Use Pulsar Package Management Service as the backend and redirect uploading JAR requests to the backend ([#308](https://github.com/streamnative/function-mesh/pull/308))
+- [Function Mesh Worker service] Move mesh-worker-service into a separate repository ([#1](https://github.com/streamnative/function-mesh-worker-service/issues/1))
+- [Function Mesh Worker service] Support `secretsMap` on branch-2.8 ([#21](https://github.com/streamnative/function-mesh-worker-service/pull/21))
+
+Note: The release notes will not contain any changes to the `function-mesh-worker-service` repo in the future.
+
 # Function Mesh v0.1.8 Release Notes
 
 ## v0.1.8 What's New
