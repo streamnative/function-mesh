@@ -8,7 +8,7 @@ Action required: We have moved the Function Mesh Worker service into a separate 
 - [Runner Images] Simplify the runner image layers ([#292](https://github.com/streamnative/function-mesh/pull/292))
 - [Controller] Support CRD validation with WebHook ([#238](https://github.com/streamnative/function-mesh/pull/238), [#299](https://github.com/streamnative/function-mesh/pull/299))
 - [Controller] Support `EnvironmentBasedSecretsProvider` as the default secret provider ([#295](https://github.com/streamnative/function-mesh/pull/295))
-- [Controller] Provide default `SecurityContext` to run functions and connectors in rootless mode ([#294](https://github.com/streamnative/function-mesh/pull/294))
+- [Controller] Provide the default `SecurityContext` to run Pulsar Functions and connectors in the rootless mode ([#294](https://github.com/streamnative/function-mesh/pull/294))
 - [Function Mesh Worker service] Support customize runner images ([#291](https://github.com/streamnative/function-mesh/pull/291))
 - [Function Mesh Worker service] Fix the default value for `ForwardSourceMessageProperty` ([#300](https://github.com/streamnative/function-mesh/pull/300))
 - [Function Mesh Worker service] Use Pulsar Package Management Service as the backend and redirect uploading JAR requests to the backend ([#308](https://github.com/streamnative/function-mesh/pull/308))
