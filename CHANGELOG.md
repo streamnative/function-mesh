@@ -2,7 +2,7 @@
 
 ## v0.1.9 What's New
 
-Action required: We have moved the mesh worker service into a separate repository [streamnative/function-mesh-worker-service](https://github.com/streamnative/function-mesh-worker-service), as the result, the function-mesh repo will no longer release any new version of mesh worker service.
+Action required: We have moved the Function Mesh Worker service into a separate repository [streamnative/function-mesh-worker-service](https://github.com/streamnative/function-mesh-worker-service). Therefore, the `function-mesh` repo will not include releases of the Function Mesh Worker service.
 
 - [Runner Images] Make runner images rootless ([#278](https://github.com/streamnative/function-mesh/pull/278))
 - [Runner Images] Simplifier the runner image layers ([#292](https://github.com/streamnative/function-mesh/pull/292))
