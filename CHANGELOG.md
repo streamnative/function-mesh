@@ -12,7 +12,7 @@ Action required: We have moved the Function Mesh Worker service into a separate 
 - [Function Mesh Worker service] Support customizing runner images ([#291](https://github.com/streamnative/function-mesh/pull/291))
 - [Function Mesh Worker service] Fix the default value for `ForwardSourceMessageProperty` ([#300](https://github.com/streamnative/function-mesh/pull/300))
 - [Function Mesh Worker service] Use Pulsar Package Management Service as the backend and redirect uploading JAR requests to the backend ([#308](https://github.com/streamnative/function-mesh/pull/308))
-- [Function Mesh Worker service] Move mesh-worker-service into a separate repository ([#1](https://github.com/streamnative/function-mesh-worker-service/issues/1))
+- [Function Mesh Worker service] Move the Function Mesh Worker service into a separate repository ([#1](https://github.com/streamnative/function-mesh-worker-service/issues/1))
 - [Function Mesh Worker service] Support `secretsMap` on branch-2.8 ([#21](https://github.com/streamnative/function-mesh-worker-service/pull/21))
 
 Note: The release notes will not contain any changes to the `function-mesh-worker-service` repo in the future.
