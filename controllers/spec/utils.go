@@ -40,7 +40,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		LogTopic:             function.Spec.LogTopic,
 		ProcessingGuarantees: convertProcessingGuarantee(function.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(function.Spec.FuncConfig),
-		SecretsMap:           marshalSecretsMap(function.Spec.SecretsMap),
+		SecretsMap:           marshalMapToJSONString(function.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              getBoolFromPtrOrDefault(function.Spec.AutoAck, true),
 		Parallelism:          getInt32FromPtrOrDefault(function.Spec.Replicas, 1),
@@ -209,7 +209,7 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
 		ProcessingGuarantees: convertProcessingGuarantee(source.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(source.Spec.SourceConfig),
-		SecretsMap:           marshalSecretsMap(source.Spec.SecretsMap),
+		SecretsMap:           marshalMapToJSONString(source.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              true,
 		Parallelism:          getInt32FromPtrOrDefault(source.Spec.Replicas, 1),
@@ -266,7 +266,7 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		Name:                 sink.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
 		ProcessingGuarantees: convertProcessingGuarantee(sink.Spec.ProcessingGuarantee),
-		SecretsMap:           marshalSecretsMap(sink.Spec.SecretsMap),
+		SecretsMap:           marshalMapToJSONString(sink.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              getBoolFromPtrOrDefault(sink.Spec.AutoAck, true),
 		Parallelism:          getInt32FromPtrOrDefault(sink.Spec.Replicas, 1),
@@ -311,10 +311,14 @@ func generateSinkOutputSpec(sink *v1alpha1.Sink) *proto.SinkSpec {
 	}
 }
 
-func marshalSecretsMap(secrets map[string]v1alpha1.SecretRef) string {
-	// validated in admission webhook
-	bytes, _ := json.Marshal(secrets)
-	return string(bytes)
+func marshalMapToJSONString(maps interface{}) string {
+	if maps != nil {
+		bytes, err := json.Marshal(maps)
+		if err == nil {
+			return string(bytes)
+		}
+	}
+	return "{}"
 }
 
 func unmarshalConsumerConfig(conf string) v1alpha1.ConsumerConfig {
@@ -328,10 +332,10 @@ func generateCryptoSpec(conf *v1alpha1.CryptoConfig) *proto.CryptoSpec {
 	if conf == nil {
 		return nil
 	}
-	configs, _ := json.Marshal(conf.CryptoKeyReaderConfig)
+	configs := marshalMapToJSONString(conf.CryptoKeyReaderConfig)
 	return &proto.CryptoSpec{
 		CryptoKeyReaderClassName:    conf.CryptoKeyReaderClassName,
-		CryptoKeyReaderConfig:       string(configs),
+		CryptoKeyReaderConfig:       configs,
 		ProducerEncryptionKeyName:   conf.EncryptionKeys,
 		ProducerCryptoFailureAction: getProducerProtoFailureAction(conf.ProducerCryptoFailureAction),
 		ConsumerCryptoFailureAction: getConsumerProtoFailureAction(conf.ConsumerCryptoFailureAction),
