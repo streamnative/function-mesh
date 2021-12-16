@@ -43,9 +43,9 @@ func TestMarshalSecretsMap(t *testing.T) {
 			Path: "path",
 		},
 	}
-	marshaledSecrets := marshalMapToJSONString(secrets)
+	marshaledSecrets := marshalSecretsMap(secrets)
 	assert.Equal(t, marshaledSecrets, `{"foo":{"path":"path"}}`)
 
-	marshaledSecretsNil := marshalMapToJSONString(nil)
+	marshaledSecretsNil := marshalSecretsMap(nil)
 	assert.Equal(t, marshaledSecretsNil, `{}`)
 }
