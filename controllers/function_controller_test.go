@@ -260,7 +260,13 @@ func createFunction(function *v1alpha1.Function) {
 		Eventually(func() bool {
 			err := k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
 			log.Info("delete statefulset result", "err", err, "statefulsets", statefulsets)
-			return err == nil && len(statefulsets.Items) == 0
+			containsFunction := false
+			for _, item := range statefulsets.Items {
+				if item.Name == function.Name {
+					containsFunction = true
+				}
+			}
+			return err == nil && !containsFunction
 		}, timeout, interval).Should(BeTrue())
 		log.Info("StatefulSet resource deleted", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
 
