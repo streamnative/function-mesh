@@ -259,6 +259,7 @@ func createFunction(function *v1alpha1.Function) {
 		log.Info("waiting for StatefulSet resource to disappear", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
 		Eventually(func() bool {
 			err := k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
+			log.Info("delete statefulset result", "err", err, "statefulsets", statefulsets)
 			return err == nil && len(statefulsets.Items) == 0
 		}, timeout, interval).Should(BeTrue())
 		log.Info("StatefulSet resource deleted", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
