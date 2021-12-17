@@ -14,6 +14,7 @@ spec:
     listKind: FunctionMeshList
     plural: functionmeshes
     singular: functionmesh
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}
@@ -2443,6 +2444,10 @@ spec:
                         type: array
                     type: object
                   processingGuarantee:
+                    enum:
+                    - atleast_once
+                    - atmost_once
+                    - effectively_once
                     type: string
                   pulsar:
                     properties:
@@ -2462,6 +2467,7 @@ spec:
                     type: object
                   replicas:
                     format: int32
+                    minimum: 1
                     type: integer
                   resources:
                     properties:
@@ -2492,6 +2498,9 @@ spec:
                   subscriptionName:
                     type: string
                   subscriptionPosition:
+                    enum:
+                    - latest
+                    - earliest
                     type: string
                   tenant:
                     type: string
@@ -4869,6 +4878,10 @@ spec:
                         type: array
                     type: object
                   processingGuarantee:
+                    enum:
+                    - atleast_once
+                    - atmost_once
+                    - effectively_once
                     type: string
                   pulsar:
                     properties:
@@ -4888,6 +4901,7 @@ spec:
                     type: object
                   replicas:
                     format: int32
+                    minimum: 1
                     type: integer
                   resources:
                     properties:
@@ -4921,6 +4935,9 @@ spec:
                   subscriptionName:
                     type: string
                   subscriptionPosition:
+                    enum:
+                    - latest
+                    - earliest
                     type: string
                   tenant:
                     type: string
@@ -7275,6 +7292,10 @@ spec:
                         type: array
                     type: object
                   processingGuarantee:
+                    enum:
+                    - atleast_once
+                    - atmost_once
+                    - effectively_once
                     type: string
                   pulsar:
                     properties:

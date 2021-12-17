@@ -80,6 +80,9 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret, source.Spec.Pulsar.TLSSecret),
 		VolumeMounts:    makeSourceVolumeMounts(source),
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"CAP_FOWNER"}},
+		},
 	}
 }
 
@@ -105,7 +108,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName, generateSourceDetailsInJSON(source),
 		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir,
-		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "")
+		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap)
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {

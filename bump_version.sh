@@ -42,8 +42,3 @@ sed -i.bak -E "s/(local fm_version\=)(.+)/\1\"v$NEW_VERSION\"/" install.sh
 
 # change README.md
 sed -i.bak -E "s/(.+)v(.+)(\/install.sh)/\1v$NEW_VERSION\3/" README.md
-
-# change mesh worker service
-pushd mesh-worker-service
-mvn versions:set -DnewVersion=v$NEW_VERSION
-popd

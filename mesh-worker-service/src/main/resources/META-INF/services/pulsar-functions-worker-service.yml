@@ -1,3 +1,0 @@
-name: function-mesh-worker-service
-description: Function Mesh Worker Service
-handlerClass: io.functionmesh.compute.MeshWorkerService

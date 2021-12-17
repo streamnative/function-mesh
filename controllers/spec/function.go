@@ -96,6 +96,9 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret, function.Spec.Pulsar.TLSSecret),
 		VolumeMounts:    makeFunctionVolumeMounts(function),
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"CAP_FOWNER"}},
+		},
 	}
 }
 
@@ -117,13 +120,13 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
 				spec.Resources.Requests.Memory().String(), spec.Java.ExtraDependenciesDir,
-				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "")
+				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
 				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
-				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "")
+				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap)
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {

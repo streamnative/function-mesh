@@ -85,6 +85,9 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret, sink.Spec.Pulsar.TLSSecret),
 		VolumeMounts:    makeSinkVolumeMounts(sink),
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"CAP_FOWNER"}},
+		},
 	}
 }
 
@@ -110,7 +113,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName, generateSinkDetailsInJSON(sink),
 		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir,
-		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "")
+		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap)
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {

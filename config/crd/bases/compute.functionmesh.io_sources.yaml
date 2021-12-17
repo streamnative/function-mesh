@@ -14,6 +14,7 @@ spec:
     listKind: SourceList
     plural: sources
     singular: source
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     scale:
@@ -2355,6 +2356,10 @@ spec:
                   type: array
               type: object
             processingGuarantee:
+              enum:
+              - atleast_once
+              - atmost_once
+              - effectively_once
               type: string
             pulsar:
               properties:
