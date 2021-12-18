@@ -107,6 +107,8 @@ var _ = Describe("Source Controller", func() {
 			re := regexp.MustCompile("{\"configkey1\":\"configvalue1\",\"configkey2\":\"configvalue2\",\"configkey3\":\"configvalue3\"}")
 			// Verify new config synced to pod spec
 			Expect(len(re.FindAllString(strings.ReplaceAll(sourceSts.Spec.Template.Spec.Containers[0].Command[2], "\\", ""), -1))).To(Equal(2))
+			// cleanup
+			Expect(k8sClient.Delete(context.Background(), source)).Should(Succeed())
 		})
 	})
 })
