@@ -20,8 +20,6 @@ package controllers
 import (
 	"context"
 
-	"github.com/streamnative/function-mesh/controllers/spec"
-
 	"github.com/go-logr/logr"
 	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -47,8 +45,7 @@ type SourceReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
-func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("source", req.NamespacedName)
 
 	// your logic here
@@ -61,20 +58,12 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		r.Log.Error(err, "failed to get source")
 		return reconcile.Result{}, err
 	}
-	var configHash string
-	if source.Spec.SourceConfig != nil {
-		configHash, err = spec.ComputeConfigHash(source.Spec.SourceConfig.Data)
-	}
-	if err != nil {
-		r.Log.Error(err, "fail to compute source config hash")
-		return reconcile.Result{}, err
-	}
 
 	if source.Status.Conditions == nil {
 		source.Status.Conditions = make(map[computev1alpha1.Component]computev1alpha1.ResourceCondition)
 	}
 
-	err = r.ObserveSourceStatefulSet(ctx, req, source, configHash)
+	err = r.ObserveSourceStatefulSet(ctx, req, source)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -93,7 +82,7 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	err = r.ApplySourceStatefulSet(ctx, req, source, configHash)
+	err = r.ApplySourceStatefulSet(ctx, req, source)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

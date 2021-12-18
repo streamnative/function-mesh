@@ -20,8 +20,6 @@ package controllers
 import (
 	"context"
 
-	"github.com/streamnative/function-mesh/controllers/spec"
-
 	"github.com/go-logr/logr"
 	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -47,8 +45,7 @@ type SinkReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
-func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("sink", req.NamespacedName)
 
 	// your logic here
@@ -61,10 +58,7 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		r.Log.Error(err, "failed to get sink")
 		return reconcile.Result{}, err
 	}
-	var configHash string
-	if sink.Spec.SinkConfig != nil {
-		configHash, err = spec.ComputeConfigHash(sink.Spec.SinkConfig.Data)
-	}
+
 	if err != nil {
 		r.Log.Error(err, "fail to compute source config hash")
 		return reconcile.Result{}, err
@@ -74,7 +68,7 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		sink.Status.Conditions = make(map[computev1alpha1.Component]computev1alpha1.ResourceCondition)
 	}
 
-	err = r.ObserveSinkStatefulSet(ctx, req, sink, configHash)
+	err = r.ObserveSinkStatefulSet(ctx, req, sink)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -93,7 +87,7 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	err = r.ApplySinkStatefulSet(ctx, req, sink, configHash)
+	err = r.ApplySinkStatefulSet(ctx, req, sink)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

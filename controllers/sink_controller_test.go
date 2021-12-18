@@ -19,7 +19,7 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"github.com/streamnative/function-mesh/controllers/spec"
 	"regexp"
 	"strings"
 	"time"
@@ -31,7 +31,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/spec"
 )
 
 var _ = Describe("Sink Controller", func() {
@@ -66,18 +65,20 @@ var _ = Describe("Sink Controller", func() {
 		It("Should update sink statefulset container command", func() {
 			err := k8sClient.Create(context.Background(), sink)
 			Expect(err).NotTo(HaveOccurred())
-			sink := &v1alpha1.Sink{}
+			sinkSts := &appv1.StatefulSet{}
 
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      TestSinkName,
-					Namespace: TestNameSpace,
-				}, sink)
-				return err == nil && len(sink.Annotations) > 0
+					Name:      spec.MakeSinkObjectMeta(sink).Name,
+					Namespace: spec.MakeSinkObjectMeta(sink).Namespace,
+				}, sinkSts)
+				return err == nil && len(sinkSts.Spec.Template.Spec.Containers[0].Command[2]) > 0
 			}, 10*time.Second, 1*time.Second).Should(BeTrue())
-
-			Expect(sink.Annotations[spec.AnnotationAppliedConfigHash]).NotTo(Equal(""))
-			configHash := sink.Annotations[spec.AnnotationAppliedConfigHash]
+			err = k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      TestSinkName,
+				Namespace: TestNameSpace,
+			}, sink)
+			Expect(err).NotTo(HaveOccurred())
 
 			oldSinkConfig := sink.Spec.SinkConfig
 			oldSinkConfig.Data = map[string]interface{}{
@@ -85,35 +86,25 @@ var _ = Describe("Sink Controller", func() {
 				"configkey2": "configvalue2",
 				"configkey3": "configvalue3",
 			}
-			newConfigHash, _ := spec.ComputeConfigHash(oldSinkConfig.Data)
 			sink.Spec.SinkConfig = oldSinkConfig
-
 			err = k8sClient.Update(context.Background(), sink)
 			Expect(err).NotTo(HaveOccurred())
-
 			Eventually(func() bool {
-				sinkReconciler.Reconcile(ctrl.Request{
+				sinkReconciler.Reconcile(context.Background(), ctrl.Request{
 					NamespacedName: types.NamespacedName{
 						Name:      TestSinkName,
 						Namespace: TestNameSpace,
 					},
 				})
 				err := k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      TestSinkName,
-					Namespace: TestNameSpace,
-				}, sink)
-				return err == nil && sink.Annotations[spec.AnnotationAppliedConfigHash] != configHash
+					Name:      spec.MakeSinkObjectMeta(sink).Name,
+					Namespace: spec.MakeSinkObjectMeta(sink).Namespace,
+				}, sinkSts)
+				return err == nil && sinkSts.ObjectMeta.Generation > 1
 			}, 10*time.Second, 1*time.Second).Should(BeTrue())
-			Expect(sink.Annotations[spec.AnnotationAppliedConfigHash]).To(Equal(newConfigHash))
-			statefulSet := &appv1.StatefulSet{}
-			err = k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      fmt.Sprintf("%s-sink", TestSinkName),
-				Namespace: TestNameSpace,
-			}, statefulSet)
-			Expect(err).NotTo(HaveOccurred())
 			re := regexp.MustCompile("{\"configkey1\":\"configvalue1\",\"configkey2\":\"configvalue2\",\"configkey3\":\"configvalue3\"}")
 			// Verify new config synced to pod spec
-			Expect(len(re.FindAllString(strings.ReplaceAll(statefulSet.Spec.Template.Spec.Containers[0].Command[2], "\\", ""), -1))).To(Equal(1))
+			Expect(len(re.FindAllString(strings.ReplaceAll(sinkSts.Spec.Template.Spec.Containers[0].Command[2], "\\", ""), -1))).To(Equal(1))
 		})
 
 	})

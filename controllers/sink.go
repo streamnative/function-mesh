@@ -33,7 +33,7 @@ import (
 )
 
 func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Request,
-	sink *v1alpha1.Sink, configHash string) error {
+	sink *v1alpha1.Sink) error {
 	condition := v1alpha1.ResourceCondition{
 		Condition: v1alpha1.StatefulSetReady,
 		Status:    metav1.ConditionFalse,
@@ -60,7 +60,7 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 	// statefulset created, waiting it to be ready
 	condition.Action = v1alpha1.Wait
 
-	if *statefulSet.Spec.Replicas != *sink.Spec.Replicas || sink.Annotations[spec.AnnotationAppliedConfigHash] != configHash {
+	if *statefulSet.Spec.Replicas != *sink.Spec.Replicas || !reflect.DeepEqual(statefulSet.Spec.Template, spec.MakeSinkStatefulSet(sink).Spec.Template) {
 		condition.Action = v1alpha1.Update
 	}
 
@@ -81,40 +81,23 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 }
 
 func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, req ctrl.Request,
-	sink *v1alpha1.Sink, configHash string) error {
+	sink *v1alpha1.Sink) error {
 	condition := sink.Status.Conditions[v1alpha1.StatefulSet]
 
 	if condition.Status == metav1.ConditionTrue {
 		return nil
 	}
+	desiredStatefulSet := spec.MakeSinkStatefulSet(sink)
 
 	switch condition.Action {
 	case v1alpha1.Create:
-		statefulSet := spec.MakeSinkStatefulSet(sink)
-		if err := r.Create(ctx, statefulSet); err != nil {
+		if err := r.Create(ctx, desiredStatefulSet); err != nil {
 			r.Log.Error(err, "failed to create new sink statefulSet")
 			return err
 		}
-		if sink.Annotations == nil {
-			sink.Annotations = map[string]string{}
-		}
-		sink.Annotations[spec.AnnotationAppliedConfigHash] = configHash
-		if err := r.Update(ctx, sink); err != nil {
-			r.Log.Error(err, "failed to Update sink")
-			return err
-		}
 	case v1alpha1.Update:
-		statefulSet := spec.MakeSinkStatefulSet(sink)
-		if err := r.Update(ctx, statefulSet); err != nil {
+		if err := r.Update(ctx, desiredStatefulSet); err != nil {
 			r.Log.Error(err, "failed to update the sink statefulSet")
-			return err
-		}
-		if sink.Annotations == nil {
-			sink.Annotations = map[string]string{}
-		}
-		sink.Annotations[spec.AnnotationAppliedConfigHash] = configHash
-		if err := r.Update(ctx, sink); err != nil {
-			r.Log.Error(err, "failed to Update sink")
 			return err
 		}
 	case v1alpha1.Wait, v1alpha1.NoAction:

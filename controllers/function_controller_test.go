@@ -60,17 +60,20 @@ var _ = Describe("Function Controller", func() {
 		It("Should update function statefulset container command", func() {
 			err := k8sClient.Create(context.Background(), function)
 			Expect(err).NotTo(HaveOccurred())
-			function := &v1alpha1.Function{}
+			functionSts := &appsv1.StatefulSet{}
 
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
-					Namespace: TestNameSpace,
-				}, function)
-				return err == nil && len(function.Annotations) > 0
+					Name:      spec.MakeFunctionObjectMeta(function).Name,
+					Namespace: spec.MakeFunctionObjectMeta(function).Namespace,
+				}, functionSts)
+				return err == nil && len(functionSts.Spec.Template.Spec.Containers[0].Command[2]) > 0
 			}, 10*time.Second, 1*time.Second).Should(BeTrue())
-
-			Expect(function.Annotations[spec.AnnotationAppliedConfigHash]).To(Equal(""))
+			err = k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
+				Namespace: TestNameSpace,
+			}, function)
+			Expect(err).NotTo(HaveOccurred())
 
 			oldFunctionConfig := &v1alpha1.Config{}
 			oldFunctionConfig.Data = map[string]interface{}{
@@ -78,14 +81,11 @@ var _ = Describe("Function Controller", func() {
 				"configkey2": "configvalue2",
 				"configkey3": "configvalue3",
 			}
-			newConfigHash, _ := spec.ComputeConfigHash(oldFunctionConfig.Data)
 			function.Spec.FuncConfig = oldFunctionConfig
-
 			err = k8sClient.Update(context.Background(), function)
 			Expect(err).NotTo(HaveOccurred())
-
 			Eventually(func() bool {
-				funcReconciler.Reconcile(
+				funcReconciler.Reconcile(context.Background(),
 					ctrl.Request{
 						NamespacedName: types.NamespacedName{
 							Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
@@ -93,21 +93,14 @@ var _ = Describe("Function Controller", func() {
 						},
 					})
 				err := k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
-					Namespace: TestNameSpace,
-				}, function)
-				return err == nil && function.Annotations[spec.AnnotationAppliedConfigHash] != ""
+					Name:      spec.MakeFunctionObjectMeta(function).Name,
+					Namespace: spec.MakeFunctionObjectMeta(function).Namespace,
+				}, functionSts)
+				return err == nil && functionSts.ObjectMeta.Generation > 1
 			}, 10*time.Second, 1*time.Second).Should(BeTrue())
-			Expect(function.Annotations[spec.AnnotationAppliedConfigHash]).To(Equal(newConfigHash))
-			statefulSet := &appsv1.StatefulSet{}
-			err = k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      fmt.Sprintf("%s-function", fmt.Sprintf("%s-streamnative", TestFunctionName)),
-				Namespace: TestNameSpace,
-			}, statefulSet)
-			Expect(err).NotTo(HaveOccurred())
 			re := regexp.MustCompile("{\"configkey1\":\"configvalue1\",\"configkey2\":\"configvalue2\",\"configkey3\":\"configvalue3\"}")
 			// Verify new config synced to pod spec
-			Expect(len(re.FindAllString(strings.ReplaceAll(statefulSet.Spec.Template.Spec.Containers[0].Command[2], "\\", ""), -1))).To(Equal(1))
+			Expect(len(re.FindAllString(strings.ReplaceAll(functionSts.Spec.Template.Spec.Containers[0].Command[2], "\\", ""), -1))).To(Equal(1))
 		})
 	})
 })
@@ -237,8 +230,7 @@ func createFunction(function *v1alpha1.Function) {
 	})
 
 	It("Function should be deleted", func() {
-		key, err := client.ObjectKeyFromObject(function)
-		Expect(err).To(Succeed())
+		key := client.ObjectKeyFromObject(function)
 
 		log.Info("deleting resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
 		Expect(k8sClient.Delete(context.Background(), function)).To(Succeed())
@@ -250,7 +242,7 @@ func createFunction(function *v1alpha1.Function) {
 		log.Info("deleted resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
 
 		statefulsets := new(appsv1.StatefulSetList)
-		err = k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
+		err := k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
 		Expect(err).Should(BeNil())
 		for _, item := range statefulsets.Items {
 			log.Info("deleting statefulset resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)

@@ -33,7 +33,7 @@ import (
 )
 
 func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctrl.Request,
-	source *v1alpha1.Source, configHash string) error {
+	source *v1alpha1.Source) error {
 	condition := v1alpha1.ResourceCondition{
 		Condition: v1alpha1.StatefulSetReady,
 		Status:    metav1.ConditionFalse,
@@ -60,7 +60,7 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 	// statefulset created, waiting it to be ready
 	condition.Action = v1alpha1.Wait
 
-	if *statefulSet.Spec.Replicas != *source.Spec.Replicas || source.Annotations[spec.AnnotationAppliedConfigHash] != configHash {
+	if *statefulSet.Spec.Replicas != *source.Spec.Replicas || !reflect.DeepEqual(statefulSet.Spec.Template, spec.MakeSourceStatefulSet(source).Spec.Template) {
 		condition.Action = v1alpha1.Update
 	}
 
@@ -81,40 +81,23 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 }
 
 func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, req ctrl.Request,
-	source *v1alpha1.Source, configHash string) error {
+	source *v1alpha1.Source) error {
 	condition := source.Status.Conditions[v1alpha1.StatefulSet]
 
 	if condition.Status == metav1.ConditionTrue {
 		return nil
 	}
+	desiredStatefulSet := spec.MakeSourceStatefulSet(source)
 
 	switch condition.Action {
 	case v1alpha1.Create:
-		statefulSet := spec.MakeSourceStatefulSet(source)
-		if err := r.Create(ctx, statefulSet); err != nil {
+		if err := r.Create(ctx, desiredStatefulSet); err != nil {
 			r.Log.Error(err, "failed to create new source statefulSet")
 			return err
 		}
-		if source.Annotations == nil {
-			source.Annotations = map[string]string{}
-		}
-		source.Annotations[spec.AnnotationAppliedConfigHash] = configHash
-		if err := r.Update(ctx, source); err != nil {
-			r.Log.Error(err, "failed to Update source")
-			return err
-		}
 	case v1alpha1.Update:
-		statefulSet := spec.MakeSourceStatefulSet(source)
-		if err := r.Update(ctx, statefulSet); err != nil {
+		if err := r.Update(ctx, desiredStatefulSet); err != nil {
 			r.Log.Error(err, "failed to update the source statefulSet")
-			return err
-		}
-		if source.Annotations == nil {
-			source.Annotations = map[string]string{}
-		}
-		source.Annotations[spec.AnnotationAppliedConfigHash] = configHash
-		if err := r.Update(ctx, source); err != nil {
-			r.Log.Error(err, "failed to Update source")
 			return err
 		}
 	case v1alpha1.Wait, v1alpha1.NoAction:

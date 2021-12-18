@@ -18,7 +18,6 @@
 package spec
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -27,7 +26,6 @@ import (
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
-	"k8s.io/apimachinery/pkg/util/rand"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -201,12 +199,8 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 }
 
 func ComputeConfigHash(config map[string]interface{}) (string, error) {
-	buf, err := json.Marshal(config)
-	if err != nil {
-		return "", err
-	}
-	hex := fmt.Sprintf("%x", sha256.Sum256(buf))
-	return rand.SafeEncodeString(hex), nil
+
+	return "", nil
 }
 
 func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool) []string {

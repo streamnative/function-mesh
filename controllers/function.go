@@ -33,7 +33,7 @@ import (
 )
 
 func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req ctrl.Request,
-	function *v1alpha1.Function, configHash string) error {
+	function *v1alpha1.Function) error {
 	condition, ok := function.Status.Conditions[v1alpha1.StatefulSet]
 	if !ok {
 		function.Status.Conditions[v1alpha1.StatefulSet] = v1alpha1.ResourceCondition{
@@ -64,7 +64,7 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 	}
 	function.Status.Selector = selector.String()
 
-	if *statefulSet.Spec.Replicas != *function.Spec.Replicas || function.Annotations[spec.AnnotationAppliedConfigHash] != configHash {
+	if *statefulSet.Spec.Replicas != *function.Spec.Replicas || !reflect.DeepEqual(statefulSet.Spec.Template, spec.MakeFunctionStatefulSet(function).Spec.Template) {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		function.Status.Conditions[v1alpha1.StatefulSet] = condition
@@ -84,39 +84,22 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 }
 
 func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, req ctrl.Request,
-	function *v1alpha1.Function, configHash string) error {
+	function *v1alpha1.Function) error {
 	condition := function.Status.Conditions[v1alpha1.StatefulSet]
 	if condition.Status == metav1.ConditionTrue {
 		return nil
 	}
+	desiredStatefulSet := spec.MakeFunctionStatefulSet(function)
 
 	switch condition.Action {
 	case v1alpha1.Create:
-		statefulSet := spec.MakeFunctionStatefulSet(function)
-		if err := r.Create(ctx, statefulSet); err != nil {
+		if err := r.Create(ctx, desiredStatefulSet); err != nil {
 			r.Log.Error(err, "Failed to create new function statefulSet")
 			return err
 		}
-		if function.Annotations == nil {
-			function.Annotations = map[string]string{}
-		}
-		function.Annotations[spec.AnnotationAppliedConfigHash] = configHash
-		if err := r.Update(ctx, function); err != nil {
-			r.Log.Error(err, "failed to Update function")
-			return err
-		}
 	case v1alpha1.Update:
-		statefulSet := spec.MakeFunctionStatefulSet(function)
-		if err := r.Update(ctx, statefulSet); err != nil {
+		if err := r.Update(ctx, desiredStatefulSet); err != nil {
 			r.Log.Error(err, "Failed to update the function statefulSet")
-			return err
-		}
-		if function.Annotations == nil {
-			function.Annotations = map[string]string{}
-		}
-		function.Annotations[spec.AnnotationAppliedConfigHash] = configHash
-		if err := r.Update(ctx, function); err != nil {
-			r.Log.Error(err, "failed to Update function")
 			return err
 		}
 	case v1alpha1.Wait:

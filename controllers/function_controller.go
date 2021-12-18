@@ -20,8 +20,6 @@ package controllers
 import (
 	"context"
 
-	"github.com/streamnative/function-mesh/controllers/spec"
-
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -48,8 +46,7 @@ type FunctionReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
-func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("function", req.NamespacedName)
 
 	// your logic here
@@ -62,21 +59,13 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		r.Log.Error(err, "failed to get function")
 		return reconcile.Result{}, err
 	}
-	var configHash string
-	if function.Spec.FuncConfig != nil {
-		configHash, err = spec.ComputeConfigHash(function.Spec.FuncConfig.Data)
-	}
-	if err != nil {
-		r.Log.Error(err, "fail to compute source config hash")
-		return reconcile.Result{}, err
-	}
 
 	// initialize component status map
 	if function.Status.Conditions == nil {
 		function.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 	}
 
-	err = r.ObserveFunctionStatefulSet(ctx, req, function, configHash)
+	err = r.ObserveFunctionStatefulSet(ctx, req, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -95,7 +84,7 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	err = r.ApplyFunctionStatefulSet(ctx, req, function, configHash)
+	err = r.ApplyFunctionStatefulSet(ctx, req, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

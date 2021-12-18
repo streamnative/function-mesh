@@ -65,18 +65,20 @@ var _ = Describe("Source Controller", func() {
 		It("Should update source statefulset container command", func() {
 			err := k8sClient.Create(context.Background(), source)
 			Expect(err).NotTo(HaveOccurred())
-			source := &v1alpha1.Source{}
+			sourceSts := &appv1.StatefulSet{}
 
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      TestSourceName,
-					Namespace: TestNameSpace,
-				}, source)
-				return err == nil && len(source.Annotations) > 0
+					Name:      spec.MakeSourceObjectMeta(source).Name,
+					Namespace: spec.MakeSourceObjectMeta(source).Namespace,
+				}, sourceSts)
+				return err == nil && len(sourceSts.Spec.Template.Spec.Containers[0].Command[2]) > 0
 			}, 10*time.Second, 1*time.Second).Should(BeTrue())
-
-			Expect(source.Annotations[spec.AnnotationAppliedConfigHash]).NotTo(Equal(""))
-			configHash := source.Annotations[spec.AnnotationAppliedConfigHash]
+			err = k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      TestSourceName,
+				Namespace: TestNameSpace,
+			}, source)
+			Expect(err).NotTo(HaveOccurred())
 
 			oldSourceConfig := source.Spec.SourceConfig
 			oldSourceConfig.Data = map[string]interface{}{
@@ -84,35 +86,27 @@ var _ = Describe("Source Controller", func() {
 				"configkey2": "configvalue2",
 				"configkey3": "configvalue3",
 			}
-			newConfigHash, _ := spec.ComputeConfigHash(oldSourceConfig.Data)
 			source.Spec.SourceConfig = oldSourceConfig
-
 			err = k8sClient.Update(context.Background(), source)
 			Expect(err).NotTo(HaveOccurred())
-
 			Eventually(func() bool {
-				sourceReconciler.Reconcile(ctrl.Request{
+				sourceReconciler.Reconcile(context.Background(), ctrl.Request{
 					NamespacedName: types.NamespacedName{
 						Name:      TestSourceName,
 						Namespace: TestNameSpace,
 					},
 				})
 				err := k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      TestSourceName,
-					Namespace: TestNameSpace,
-				}, source)
-				return err == nil && source.Annotations[spec.AnnotationAppliedConfigHash] != configHash
+					Name:      spec.MakeSourceObjectMeta(source).Name,
+					Namespace: spec.MakeSourceObjectMeta(source).Namespace,
+				}, sourceSts)
+				fmt.Println(sourceSts.ObjectMeta)
+				fmt.Println(sourceSts.Spec.Template.Spec.Containers[0].Command[2])
+				return err == nil && sourceSts.ObjectMeta.Generation > 1
 			}, 10*time.Second, 1*time.Second).Should(BeTrue())
-			Expect(source.Annotations[spec.AnnotationAppliedConfigHash]).To(Equal(newConfigHash))
-			statefulSet := &appv1.StatefulSet{}
-			err = k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      fmt.Sprintf("%s-source", TestSourceName),
-				Namespace: TestNameSpace,
-			}, statefulSet)
-			Expect(err).NotTo(HaveOccurred())
 			re := regexp.MustCompile("{\"configkey1\":\"configvalue1\",\"configkey2\":\"configvalue2\",\"configkey3\":\"configvalue3\"}")
 			// Verify new config synced to pod spec
-			Expect(len(re.FindAllString(strings.ReplaceAll(statefulSet.Spec.Template.Spec.Containers[0].Command[2], "\\", ""), -1))).To(Equal(2))
+			Expect(len(re.FindAllString(strings.ReplaceAll(sourceSts.Spec.Template.Spec.Containers[0].Command[2], "\\", ""), -1))).To(Equal(2))
 		})
 	})
 })
