@@ -1,6 +1,6 @@
 module github.com/streamnative/function-mesh
 
-go 1.13
+go 1.16
 
 require (
 	github.com/apache/pulsar-client-go/oauth2 v0.0.0-20201120111947-b8bd55bc02bd // indirect
