@@ -4,7 +4,7 @@
 run:
   deadline: 20m
   skip-dirs:
-    - /go/pkg/mod
+    - /home/runner/go/pkg/mod
 linters:
   disable-all: true
   enable:
