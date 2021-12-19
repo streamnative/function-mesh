@@ -85,7 +85,7 @@ var _ = Describe("Function Controller", func() {
 			err = k8sClient.Update(context.Background(), function)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(func() bool {
-				funcReconciler.Reconcile(context.Background(),
+				funcReconciler.Reconcile(
 					ctrl.Request{
 						NamespacedName: types.NamespacedName{
 							Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
@@ -230,7 +230,8 @@ func createFunction(function *v1alpha1.Function) {
 	})
 
 	It("Function should be deleted", func() {
-		key := client.ObjectKeyFromObject(function)
+		key, err := client.ObjectKeyFromObject(function)
+		Expect(err).To(Succeed())
 
 		log.Info("deleting resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
 		Expect(k8sClient.Delete(context.Background(), function)).To(Succeed())
@@ -242,7 +243,7 @@ func createFunction(function *v1alpha1.Function) {
 		log.Info("deleted resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
 
 		statefulsets := new(appsv1.StatefulSetList)
-		err := k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
+		err = k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
 		Expect(err).Should(BeNil())
 		for _, item := range statefulsets.Items {
 			log.Info("deleting statefulset resource", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)

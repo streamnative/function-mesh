@@ -19,12 +19,11 @@ package controllers
 
 import (
 	"context"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -212,7 +211,7 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 	return nil
 }
 
-func (r *FunctionMeshReconciler) HandleAction(ctx context.Context, obj client.Object,
+func (r *FunctionMeshReconciler) HandleAction(ctx context.Context, obj runtime.Object,
 	action v1alpha1.ReconcileAction) error {
 	switch action {
 	case v1alpha1.Create:

@@ -45,7 +45,8 @@ type SourceReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
-func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	ctx := context.Background()
 	_ = r.Log.WithValues("source", req.NamespacedName)
 
 	// your logic here
