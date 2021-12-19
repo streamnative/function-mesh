@@ -60,11 +60,6 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	if err != nil {
-		r.Log.Error(err, "fail to compute source config hash")
-		return reconcile.Result{}, err
-	}
-
 	if sink.Status.Conditions == nil {
 		sink.Status.Conditions = make(map[computev1alpha1.Component]computev1alpha1.ResourceCondition)
 	}

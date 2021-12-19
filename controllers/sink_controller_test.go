@@ -19,10 +19,11 @@ package controllers
 
 import (
 	"context"
-	"github.com/streamnative/function-mesh/controllers/spec"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/streamnative/function-mesh/controllers/spec"
 
 	appv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
