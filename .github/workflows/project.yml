@@ -43,7 +43,7 @@ jobs:
 
       - name: CheckStyle
         run: |
-          ./bin/golangci-lint run -c ./.golangci.yml ./...
+          ./bin/golangci-lint run -c --skip-files /go/pkg/mod/* ./.golangci.yml ./...
 
       - name: Check License Header
         run: |
