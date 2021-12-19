@@ -3,7 +3,8 @@
 # We can execute `golangci-lint run` for code checking.
 run:
   deadline: 20m
-
+skip-dirs:
+  - /go/pkg/mod
 linters:
   disable-all: true
   enable:
