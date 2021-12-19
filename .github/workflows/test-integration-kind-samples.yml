@@ -55,6 +55,9 @@ jobs:
           make install
           nohup make run &
 
+      - name: Setup tmate session
+          uses: mxschmitt/action-tmate@v3
+
       - name: Test Function kind - Java Function
         run: |
           kubectl apply -f .ci/clusters/compute_v1alpha1_function.yaml
