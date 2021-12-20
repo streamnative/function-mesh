@@ -60,7 +60,7 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 	// statefulset created, waiting it to be ready
 	condition.Action = v1alpha1.Wait
 
-	if *statefulSet.Spec.Replicas != *sink.Spec.Replicas || !reflect.DeepEqual(statefulSet.Spec.Template, spec.MakeSinkStatefulSet(sink).Spec.Template) {
+	if *statefulSet.Spec.Replicas != *sink.Spec.Replicas || !reflect.DeepEqual(statefulSet.Spec.Template.Spec, spec.MakeSinkStatefulSet(sink).Spec.Template.Spec) {
 		condition.Action = v1alpha1.Update
 	}
 

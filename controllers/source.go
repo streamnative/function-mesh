@@ -60,7 +60,7 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 	// statefulset created, waiting it to be ready
 	condition.Action = v1alpha1.Wait
 
-	if *statefulSet.Spec.Replicas != *source.Spec.Replicas || !reflect.DeepEqual(statefulSet.Spec.Template, spec.MakeSourceStatefulSet(source).Spec.Template) {
+	if *statefulSet.Spec.Replicas != *source.Spec.Replicas || !reflect.DeepEqual(statefulSet.Spec.Template.Spec, spec.MakeSourceStatefulSet(source).Spec.Template.Spec) {
 		condition.Action = v1alpha1.Update
 	}
 
