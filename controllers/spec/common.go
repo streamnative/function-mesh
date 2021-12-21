@@ -371,12 +371,12 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 
 func generateGoFunctionConf(function *v1alpha1.Function) string {
 	goFunctionConfs := convertGoFunctionConfs(function)
-	json, err := json.Marshal(goFunctionConfs)
+	j, err := json.Marshal(goFunctionConfs)
 	if err != nil {
 		// TODO
 		panic(err)
 	}
-	ret := string(json)
+	ret := string(j)
 	ret = strings.ReplaceAll(ret, "\"instanceID\":0", "\"instanceID\":${"+EnvShardID+"}")
 	return ret
 }
