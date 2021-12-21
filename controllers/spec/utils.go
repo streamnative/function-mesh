@@ -20,9 +20,10 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/validation"
 	"regexp"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"

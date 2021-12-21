@@ -20,10 +20,11 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/streamnative/function-mesh/api/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/proto"
 	"strconv"
 	"strings"
+
+	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/proto"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -305,7 +306,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 		"/pulsar/conf/functions-logging/console_logging_config.ini",
 		// TODO: Maybe we don't need installUserCodeDependencies, dependency_repository, and pythonExtraDependencyRepository
 	}
-	sharedArgs := getSharedArgs(details, clusterName,uid, authProvided, tlsProvided)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getPythonSecretProviderArgs(secretMaps)
