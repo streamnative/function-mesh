@@ -134,6 +134,7 @@ function ci::verify_function_mesh() {
       WC=$(${KUBECTL} get pods -lname=${FUNCTION_NAME} --field-selector=status.phase=Running | wc -l)
     done
     ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
+    sleep 30
     ${KUBECTL} logs -lname=${FUNCTION_NAME}  --all-containers=true
 }
 
