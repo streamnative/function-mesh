@@ -20,11 +20,9 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"regexp"
 	"strings"
-	"time"
-
-	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
@@ -60,7 +58,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 	return &GoFunctionConf{
-		FuncID:               fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
+		FuncID:               fmt.Sprintf("${%s}-%s", EnvShardID, string(function.UID)),
 		PulsarServiceURL:     "${brokerServiceURL}",
 		FuncVersion:          "0",
 		MaxBufTuples:         100, //TODO

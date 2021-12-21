@@ -119,13 +119,13 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		if spec.Java.Jar != "" {
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
-				spec.Resources.Requests.Memory().String(), spec.Java.ExtraDependenciesDir,
+				spec.Resources.Requests.Memory().String(), spec.Java.ExtraDependenciesDir, string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
-				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
+				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function), string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap)
 		}
 	} else if spec.Golang != nil {

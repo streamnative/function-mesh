@@ -64,7 +64,7 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 	}
 	function.Status.Selector = selector.String()
 
-	if *statefulSet.Spec.Replicas != *function.Spec.Replicas || !reflect.DeepEqual(statefulSet.Spec.Template.Spec, spec.MakeFunctionStatefulSet(function).Spec.Template.Spec) {
+	if *statefulSet.Spec.Replicas != *function.Spec.Replicas || !reflect.DeepEqual(statefulSet.Spec.Template, spec.MakeFunctionStatefulSet(function).Spec.Template) {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		function.Status.Conditions[v1alpha1.StatefulSet] = condition

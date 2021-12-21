@@ -107,7 +107,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 	spec := source.Spec
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName, generateSourceDetailsInJSON(source),
-		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir,
+		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir, string(source.UID),
 		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap)
 }
 

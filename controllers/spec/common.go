@@ -20,12 +20,10 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
+	"strconv"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -161,11 +159,11 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	}
 }
 
-func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory, extraDependenciesDir string,
+func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, details,
-			memory, extraDependenciesDir, authProvided, tlsProvided, secretMaps), " ")
+			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
@@ -174,11 +172,11 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, detai
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details string,
+func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
-			details, authProvided, tlsProvided, secretMaps), " ")
+			details, uid, authProvided, tlsProvided, secretMaps), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
@@ -262,7 +260,7 @@ func setShardIDEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
-func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, extraDependenciesDir string,
+func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
@@ -282,7 +280,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, 
 		"--jar",
 		packageName,
 	}
-	sharedArgs := getSharedArgs(details, clusterName, authProvided, tlsProvided)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getJavaSecretProviderArgs(secretMaps)
@@ -291,7 +289,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, 
 	return args
 }
 
-func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string, authProvided, tlsProvided bool,
+func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid string, authProvided, tlsProvided bool,
 	secretMaps map[string]v1alpha1.SecretRef) []string {
 	args := []string{
 		"exec",
@@ -307,7 +305,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string,
 		"/pulsar/conf/functions-logging/console_logging_config.ini",
 		// TODO: Maybe we don't need installUserCodeDependencies, dependency_repository, and pythonExtraDependencyRepository
 	}
-	sharedArgs := getSharedArgs(details, clusterName, authProvided, tlsProvided)
+	sharedArgs := getSharedArgs(details, clusterName,uid, authProvided, tlsProvided)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getPythonSecretProviderArgs(secretMaps)
@@ -317,12 +315,12 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string,
 }
 
 // This method is suitable for Java and Python runtime, not include Go runtime.
-func getSharedArgs(details, clusterName string, authProvided bool, tlsProvided bool) []string {
+func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool) []string {
 	args := []string{
 		"--instance_id",
 		"${" + EnvShardID + "}",
 		"--function_id",
-		fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
+		fmt.Sprintf("${%s}-%s", EnvShardID, uid),
 		"--function_version",
 		"0",
 		"--function_details",
