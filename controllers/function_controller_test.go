@@ -19,13 +19,17 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 
@@ -48,6 +52,56 @@ var _ = Describe("Function Controller", func() {
 		function := makeFunctionSample(TestFunctionName)
 
 		createFunction(function)
+	})
+
+	Context("FunctionConfig", func() {
+		function := makeFunctionSample(fmt.Sprintf("%s-streamnative", TestFunctionName))
+
+		It("Should update function statefulset container command", func() {
+			err := k8sClient.Create(context.Background(), function)
+			Expect(err).NotTo(HaveOccurred())
+			functionSts := &appsv1.StatefulSet{}
+
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      spec.MakeFunctionObjectMeta(function).Name,
+					Namespace: spec.MakeFunctionObjectMeta(function).Namespace,
+				}, functionSts)
+				return err == nil && len(functionSts.Spec.Template.Spec.Containers[0].Command[2]) > 0
+			}, 10*time.Second, 1*time.Second).Should(BeTrue())
+			err = k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
+				Namespace: TestNameSpace,
+			}, function)
+			Expect(err).NotTo(HaveOccurred())
+
+			oldFunctionConfig := &v1alpha1.Config{}
+			oldFunctionConfig.Data = map[string]interface{}{
+				"configkey1": "configvalue1",
+				"configkey2": "configvalue2",
+				"configkey3": "configvalue3",
+			}
+			function.Spec.FuncConfig = oldFunctionConfig
+			err = k8sClient.Update(context.Background(), function)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(func() bool {
+				funcReconciler.Reconcile(
+					ctrl.Request{
+						NamespacedName: types.NamespacedName{
+							Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
+							Namespace: TestNameSpace,
+						},
+					})
+				err := k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      spec.MakeFunctionObjectMeta(function).Name,
+					Namespace: spec.MakeFunctionObjectMeta(function).Namespace,
+				}, functionSts)
+				return err == nil && functionSts.ObjectMeta.Generation > 1
+			}, 10*time.Second, 1*time.Second).Should(BeTrue())
+			re := regexp.MustCompile("{\"configkey1\":\"configvalue1\",\"configkey2\":\"configvalue2\",\"configkey3\":\"configvalue3\"}")
+			// Verify new config synced to pod spec
+			Expect(len(re.FindAllString(strings.ReplaceAll(functionSts.Spec.Template.Spec.Containers[0].Command[2], "\\", ""), -1))).To(Equal(1))
+		})
 	})
 })
 
@@ -198,7 +252,14 @@ func createFunction(function *v1alpha1.Function) {
 		log.Info("waiting for StatefulSet resource to disappear", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
 		Eventually(func() bool {
 			err := k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
-			return err == nil && len(statefulsets.Items) == 0
+			log.Info("delete statefulset result", "err", err, "statefulsets", statefulsets)
+			containsFunction := false
+			for _, item := range statefulsets.Items {
+				if item.Name == function.Name {
+					containsFunction = true
+				}
+			}
+			return err == nil && !containsFunction
 		}, timeout, interval).Should(BeTrue())
 		log.Info("StatefulSet resource deleted", "namespace", key.Namespace, "name", key.Name, "test", CurrentGinkgoTestDescription().FullTestText)
 

@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	"k8s.io/apimachinery/pkg/util/validation"
 
@@ -64,7 +63,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 	return &GoFunctionConf{
-		FuncID:               fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
+		FuncID:               fmt.Sprintf("${%s}-%s", EnvShardID, string(function.UID)),
 		PulsarServiceURL:     "${brokerServiceURL}",
 		FuncVersion:          "0",
 		MaxBufTuples:         100, //TODO
