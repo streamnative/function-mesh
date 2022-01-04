@@ -1,3 +1,11 @@
+# Function Mesh v0.1.10 Release Notes
+
+## v0.1.10 What's New
+
+- [Controller] Remove unused `CAP_FOWNER` Capability from SecurityContext ([#313](https://github.com/streamnative/function-mesh/pull/313))
+- [Controller] Fix json marshal nil to `"null"` and breaks FunctionDetails ([#312](https://github.com/streamnative/function-mesh/pull/312))
+- [Controller] Sync function/source/sink configurations to pod when updated. ([#262](https://github.com/streamnative/function-mesh/pull/262))
+
 # Function Mesh v0.1.9 Release Notes
 
 ## v0.1.9 What's New
