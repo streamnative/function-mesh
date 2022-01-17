@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	"k8s.io/apimachinery/pkg/util/validation"
 
@@ -31,8 +30,7 @@ import (
 )
 
 func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails {
-
-	return &proto.FunctionDetails{
+	fd := &proto.FunctionDetails{
 		Tenant:               function.Spec.Tenant,
 		Namespace:            function.Spec.Namespace,
 		Name:                 function.Spec.Name,
@@ -40,7 +38,6 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		LogTopic:             function.Spec.LogTopic,
 		ProcessingGuarantees: convertProcessingGuarantee(function.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(function.Spec.FuncConfig),
-		SecretsMap:           marshalSecretsMap(function.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              getBoolFromPtrOrDefault(function.Spec.AutoAck, true),
 		Parallelism:          getInt32FromPtrOrDefault(function.Spec.Replicas, 1),
@@ -56,11 +53,17 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		RetainOrdering:       function.Spec.RetainOrdering,
 		RetainKeyOrdering:    function.Spec.RetainKeyOrdering,
 	}
+
+	if function.Spec.SecretsMap != nil {
+		fd.SecretsMap = marshalSecretsMap(function.Spec.SecretsMap)
+	}
+
+	return fd
 }
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 	return &GoFunctionConf{
-		FuncID:               fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
+		FuncID:               fmt.Sprintf("${%s}-%s", EnvShardID, string(function.UID)),
 		PulsarServiceURL:     "${brokerServiceURL}",
 		FuncVersion:          "0",
 		MaxBufTuples:         100, //TODO
@@ -202,14 +205,13 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 }
 
 func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
-	return &proto.FunctionDetails{
+	fd := &proto.FunctionDetails{
 		Tenant:               source.Spec.Tenant,
 		Namespace:            source.Spec.Namespace,
 		Name:                 source.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
 		ProcessingGuarantees: convertProcessingGuarantee(source.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(source.Spec.SourceConfig),
-		SecretsMap:           marshalSecretsMap(source.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              true,
 		Parallelism:          getInt32FromPtrOrDefault(source.Spec.Replicas, 1),
@@ -219,6 +221,12 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 		RuntimeFlags:         source.Spec.RuntimeFlags,
 		ComponentType:        proto.FunctionDetails_SOURCE,
 	}
+
+	if source.Spec.SecretsMap != nil {
+		fd.SecretsMap = marshalSecretsMap(source.Spec.SecretsMap)
+	}
+
+	return fd
 }
 
 func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
@@ -245,7 +253,7 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 			BatchBuilder:                       source.Spec.Output.ProducerConf.BatchBuilder,
 		}
 	}
-	var forward = false
+	var forward = true
 	if source.Spec.ForwardSourceMessageProperty != nil {
 		forward = *source.Spec.ForwardSourceMessageProperty
 	}
@@ -260,13 +268,12 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 }
 
 func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
-	return &proto.FunctionDetails{
+	fd := &proto.FunctionDetails{
 		Tenant:               sink.Spec.Tenant,
 		Namespace:            sink.Spec.Namespace,
 		Name:                 sink.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
 		ProcessingGuarantees: convertProcessingGuarantee(sink.Spec.ProcessingGuarantee),
-		SecretsMap:           marshalSecretsMap(sink.Spec.SecretsMap),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              getBoolFromPtrOrDefault(sink.Spec.AutoAck, true),
 		Parallelism:          getInt32FromPtrOrDefault(sink.Spec.Replicas, 1),
@@ -277,6 +284,12 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		RuntimeFlags:         sink.Spec.RuntimeFlags,
 		ComponentType:        proto.FunctionDetails_SINK,
 	}
+
+	if sink.Spec.SecretsMap != nil {
+		fd.SecretsMap = marshalSecretsMap(sink.Spec.SecretsMap)
+	}
+
+	return fd
 }
 
 func generateSinkInputSpec(sink *v1alpha1.Sink) *proto.SourceSpec {
@@ -312,8 +325,10 @@ func generateSinkOutputSpec(sink *v1alpha1.Sink) *proto.SinkSpec {
 }
 
 func marshalSecretsMap(secrets map[string]v1alpha1.SecretRef) string {
-	// validated in admission webhook
-	bytes, _ := json.Marshal(secrets)
+	bytes, err := json.Marshal(secrets)
+	if err != nil || string(bytes) == "null" {
+		return "{}"
+	}
 	return string(bytes)
 }
 
@@ -328,14 +343,19 @@ func generateCryptoSpec(conf *v1alpha1.CryptoConfig) *proto.CryptoSpec {
 	if conf == nil {
 		return nil
 	}
-	configs, _ := json.Marshal(conf.CryptoKeyReaderConfig)
-	return &proto.CryptoSpec{
+	cryptoSpec := &proto.CryptoSpec{
 		CryptoKeyReaderClassName:    conf.CryptoKeyReaderClassName,
-		CryptoKeyReaderConfig:       string(configs),
 		ProducerEncryptionKeyName:   conf.EncryptionKeys,
 		ProducerCryptoFailureAction: getProducerProtoFailureAction(conf.ProducerCryptoFailureAction),
 		ConsumerCryptoFailureAction: getConsumerProtoFailureAction(conf.ConsumerCryptoFailureAction),
 	}
+	if conf.CryptoKeyReaderConfig != nil {
+		configs, err := json.Marshal(conf.CryptoKeyReaderConfig)
+		if err == nil {
+			cryptoSpec.CryptoKeyReaderConfig = string(configs)
+		}
+	}
+	return cryptoSpec
 }
 
 func getConsumerProtoFailureAction(action string) proto.CryptoSpec_FailureAction {

@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
@@ -35,7 +34,7 @@ import (
 const (
 	EnvShardID                 = "SHARD_ID"
 	FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
-	DefaultRunnerTag           = "2.8.0.14"
+	DefaultRunnerTag           = "2.9.0.0-rc-4"
 	DefaultRunnerPrefix        = "streamnative/"
 	DefaultRunnerImage         = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
 	DefaultJavaRunnerImage     = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
@@ -43,6 +42,7 @@ const (
 	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 
+	AppFunctionMesh   = "function-mesh"
 	ComponentSource   = "source"
 	ComponentSink     = "sink"
 	ComponentFunction = "function"
@@ -51,10 +51,16 @@ const (
 	PackageNameSinkPrefix     = "sink://"
 	PackageNameSourcePrefix   = "source://"
 
-	AnnotationPrometheusScrape = "prometheus.io/scrape"
-	AnnotationPrometheusPort   = "prometheus.io/port"
+	AnnotationPrometheusScrape  = "prometheus.io/scrape"
+	AnnotationPrometheusPort    = "prometheus.io/port"
+	AnnotationAppliedConfigHash = "config.functionmesh.io/applied"
 
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
+
+	DefaultRunnerUserID  int64 = 10000
+	DefaultRunnerUser          = "pulsar"
+	DefaultRunnerGroupID int64 = 10001
+	DefaultRunnerGroup         = "pulsar"
 )
 
 var GRPCPort = corev1.ContainerPort{
@@ -82,6 +88,10 @@ func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev
 				Name:     "grpc",
 				Protocol: corev1.ProtocolTCP,
 				Port:     GRPCPort.ContainerPort,
+			}, {
+				Name:     "metrics",
+				Protocol: corev1.ProtocolTCP,
+				Port:     MetricsPort.ContainerPort,
 			}},
 			Selector:  labels,
 			ClusterIP: "None",
@@ -126,6 +136,10 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 
 func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy) *corev1.PodTemplateSpec {
+	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, false)
+	if policy.SecurityContext != nil {
+		podSecurityContext = policy.SecurityContext
+	}
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      mergeLabels(labels, policy.Labels),
@@ -139,18 +153,18 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 			NodeSelector:                  policy.NodeSelector,
 			Affinity:                      policy.Affinity,
 			Tolerations:                   policy.Tolerations,
-			SecurityContext:               policy.SecurityContext,
+			SecurityContext:               podSecurityContext,
 			ImagePullSecrets:              policy.ImagePullSecrets,
 			ServiceAccountName:            policy.ServiceAccountName,
 		},
 	}
 }
 
-func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory, extraDependenciesDir string,
-	authProvided, tlsProvided bool) []string {
+func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory, extraDependenciesDir, uid string,
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, details,
-			memory, extraDependenciesDir, authProvided, tlsProvided), " ")
+			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
@@ -159,11 +173,11 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, detai
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details string,
-	authProvided, tlsProvided bool) []string {
+func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details, uid string,
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
-			details, authProvided, tlsProvided), " ")
+			details, uid, authProvided, tlsProvided, secretMaps), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
@@ -181,6 +195,11 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
+}
+
+func ComputeConfigHash(config map[string]interface{}) (string, error) {
+
+	return "", nil
 }
 
 func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool) []string {
@@ -242,7 +261,8 @@ func setShardIDEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
-func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, extraDependenciesDir string, authProvided, tlsProvided bool) []string {
+func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, extraDependenciesDir, uid string,
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
@@ -261,12 +281,17 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, 
 		"--jar",
 		packageName,
 	}
-	sharedArgs := getSharedArgs(details, clusterName, authProvided, tlsProvided)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided)
 	args = append(args, sharedArgs...)
+	if len(secretMaps) > 0 {
+		secretProviderArgs := getJavaSecretProviderArgs(secretMaps)
+		args = append(args, secretProviderArgs...)
+	}
 	return args
 }
 
-func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string, authProvided, tlsProvided bool) []string {
+func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid string, authProvided, tlsProvided bool,
+	secretMaps map[string]v1alpha1.SecretRef) []string {
 	args := []string{
 		"exec",
 		"python",
@@ -281,18 +306,22 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details string,
 		"/pulsar/conf/functions-logging/console_logging_config.ini",
 		// TODO: Maybe we don't need installUserCodeDependencies, dependency_repository, and pythonExtraDependencyRepository
 	}
-	sharedArgs := getSharedArgs(details, clusterName, authProvided, tlsProvided)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided)
 	args = append(args, sharedArgs...)
+	if len(secretMaps) > 0 {
+		secretProviderArgs := getPythonSecretProviderArgs(secretMaps)
+		args = append(args, secretProviderArgs...)
+	}
 	return args
 }
 
 // This method is suitable for Java and Python runtime, not include Go runtime.
-func getSharedArgs(details, clusterName string, authProvided bool, tlsProvided bool) []string {
+func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool) []string {
 	args := []string{
 		"--instance_id",
 		"${" + EnvShardID + "}",
 		"--function_id",
-		fmt.Sprintf("${%s}-%d", EnvShardID, time.Now().Unix()),
+		fmt.Sprintf("${%s}-%s", EnvShardID, uid),
 		"--function_version",
 		"0",
 		"--function_details",
@@ -342,12 +371,12 @@ func getSharedArgs(details, clusterName string, authProvided bool, tlsProvided b
 
 func generateGoFunctionConf(function *v1alpha1.Function) string {
 	goFunctionConfs := convertGoFunctionConfs(function)
-	json, err := json.Marshal(goFunctionConfs)
+	j, err := json.Marshal(goFunctionConfs)
 	if err != nil {
 		// TODO
 		panic(err)
 	}
-	ret := string(json)
+	ret := string(j)
 	ret = strings.ReplaceAll(ret, "\"instanceID\":0", "\"instanceID\":${"+EnvShardID+"}")
 	return ret
 }
@@ -361,6 +390,9 @@ func getProcessGoRuntimeArgs(goExecFilePath string, function *v1alpha1.Function)
 		fmt.Sprintf("goFunctionConfigs=${%s}", EnvGoFunctionConfigs),
 		"&&",
 		"echo goFunctionConfigs=\"'${goFunctionConfigs}'\"",
+		"&&",
+		"ls -l",
+		goExecFilePath,
 		"&&",
 		"chmod +x",
 		goExecFilePath,
@@ -633,4 +665,36 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 		return DefaultJavaRunnerImage
 	}
 	return DefaultRunnerImage
+}
+
+// getDefaultRunnerPodSecurityContext returns a default PodSecurityContext that runs as non-root
+func getDefaultRunnerPodSecurityContext(uid, gid int64, nonRoot bool) *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		RunAsUser:    &uid,
+		RunAsGroup:   &gid,
+		RunAsNonRoot: &nonRoot,
+		FSGroup:      &gid,
+	}
+}
+
+func getJavaSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []string {
+	var ret []string
+	if len(secretMaps) > 0 {
+		ret = []string{
+			"--secrets_provider",
+			"org.apache.pulsar.functions.secretsprovider.EnvironmentBasedSecretsProvider",
+		}
+	}
+	return ret
+}
+
+func getPythonSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []string {
+	var ret []string
+	if len(secretMaps) > 0 {
+		ret = []string{
+			"--secrets_provider",
+			"secretsprovider.EnvironmentBasedSecretsProvider",
+		}
+	}
+	return ret
 }

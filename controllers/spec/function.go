@@ -61,6 +61,7 @@ func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
 		Name:      makeJobName(function.Name, v1alpha1.FunctionComponent),
 		Namespace: function.Namespace,
+		Labels:    makeFunctionLabels(function),
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(function, function.GroupVersionKind()),
 		},
@@ -100,6 +101,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 
 func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 	labels := make(map[string]string)
+	labels["app"] = AppFunctionMesh
 	labels["component"] = ComponentFunction
 	labels["name"] = function.Name
 	labels["namespace"] = function.Namespace
@@ -114,14 +116,14 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		if spec.Java.Jar != "" {
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
-				spec.Resources.Requests.Memory().String(), spec.Java.ExtraDependenciesDir,
-				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "")
+				spec.Resources.Requests.Memory().String(), spec.Java.ExtraDependenciesDir, string(function.UID),
+				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
-				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
-				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "")
+				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function), string(function.UID),
+				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap)
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {

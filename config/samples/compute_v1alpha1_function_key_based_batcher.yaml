@@ -7,7 +7,7 @@ spec:
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   image: streamnative/pulsar-all:2.7.1
   forwardSourceMessageProperty: true
-  MaxPendingAsyncRequests: 1000
+  maxPendingAsyncRequests: 1000
   replicas: 1
   maxReplicas: 5
   logTopic: persistent://public/default/logging-function-logs

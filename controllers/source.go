@@ -47,7 +47,7 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 	}, statefulSet)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Info("sink statefulset is not found...")
+			r.Log.Info("source statefulset is not found...")
 			condition.Action = v1alpha1.Create
 			source.Status.Conditions[v1alpha1.StatefulSet] = condition
 			return nil
@@ -60,7 +60,7 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 	// statefulset created, waiting it to be ready
 	condition.Action = v1alpha1.Wait
 
-	if *statefulSet.Spec.Replicas != *source.Spec.Replicas {
+	if *statefulSet.Spec.Replicas != *source.Spec.Replicas || !reflect.DeepEqual(statefulSet.Spec.Template, spec.MakeSourceStatefulSet(source).Spec.Template) {
 		condition.Action = v1alpha1.Update
 	}
 
@@ -87,17 +87,16 @@ func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, req ctrl.
 	if condition.Status == metav1.ConditionTrue {
 		return nil
 	}
+	desiredStatefulSet := spec.MakeSourceStatefulSet(source)
 
 	switch condition.Action {
 	case v1alpha1.Create:
-		statefulSet := spec.MakeSourceStatefulSet(source)
-		if err := r.Create(ctx, statefulSet); err != nil {
+		if err := r.Create(ctx, desiredStatefulSet); err != nil {
 			r.Log.Error(err, "failed to create new source statefulSet")
 			return err
 		}
 	case v1alpha1.Update:
-		statefulSet := spec.MakeSourceStatefulSet(source)
-		if err := r.Update(ctx, statefulSet); err != nil {
+		if err := r.Update(ctx, desiredStatefulSet); err != nil {
 			r.Log.Error(err, "failed to update the source statefulSet")
 			return err
 		}

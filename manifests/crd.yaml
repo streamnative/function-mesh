@@ -2,16 +2,27 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
   name: functionmeshes.compute.functionmesh.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhookClientConfig:
+      caBundle: Cg==
+      service:
+        name: webhook-service
+        namespace: system
+        path: /convert
+        port: 443
   group: compute.functionmesh.io
   names:
     kind: FunctionMesh
     listKind: FunctionMeshList
     plural: functionmeshes
     singular: functionmesh
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}
@@ -2441,6 +2452,10 @@ spec:
                         type: array
                     type: object
                   processingGuarantee:
+                    enum:
+                    - atleast_once
+                    - atmost_once
+                    - effectively_once
                     type: string
                   pulsar:
                     properties:
@@ -2460,6 +2475,7 @@ spec:
                     type: object
                   replicas:
                     format: int32
+                    minimum: 1
                     type: integer
                   resources:
                     properties:
@@ -2490,6 +2506,9 @@ spec:
                   subscriptionName:
                     type: string
                   subscriptionPosition:
+                    enum:
+                    - latest
+                    - earliest
                     type: string
                   tenant:
                     type: string
@@ -4867,6 +4886,10 @@ spec:
                         type: array
                     type: object
                   processingGuarantee:
+                    enum:
+                    - atleast_once
+                    - atmost_once
+                    - effectively_once
                     type: string
                   pulsar:
                     properties:
@@ -4886,6 +4909,7 @@ spec:
                     type: object
                   replicas:
                     format: int32
+                    minimum: 1
                     type: integer
                   resources:
                     properties:
@@ -4919,6 +4943,9 @@ spec:
                   subscriptionName:
                     type: string
                   subscriptionPosition:
+                    enum:
+                    - latest
+                    - earliest
                     type: string
                   tenant:
                     type: string
@@ -7273,6 +7300,10 @@ spec:
                         type: array
                     type: object
                   processingGuarantee:
+                    enum:
+                    - atleast_once
+                    - atmost_once
+                    - effectively_once
                     type: string
                   pulsar:
                     properties:
@@ -7398,16 +7429,27 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
   name: functions.compute.functionmesh.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhookClientConfig:
+      caBundle: Cg==
+      service:
+        name: webhook-service
+        namespace: system
+        path: /convert
+        port: 443
   group: compute.functionmesh.io
   names:
     kind: Function
     listKind: FunctionList
     plural: functions
     singular: function
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     scale:
@@ -9838,6 +9880,10 @@ spec:
                   type: array
               type: object
             processingGuarantee:
+              enum:
+              - atleast_once
+              - atmost_once
+              - effectively_once
               type: string
             pulsar:
               properties:
@@ -9857,6 +9903,7 @@ spec:
               type: object
             replicas:
               format: int32
+              minimum: 1
               type: integer
             resources:
               properties:
@@ -9887,6 +9934,9 @@ spec:
             subscriptionName:
               type: string
             subscriptionPosition:
+              enum:
+              - latest
+              - earliest
               type: string
             tenant:
               type: string
@@ -9954,16 +10004,27 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
   name: sinks.compute.functionmesh.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhookClientConfig:
+      caBundle: Cg==
+      service:
+        name: webhook-service
+        namespace: system
+        path: /convert
+        port: 443
   group: compute.functionmesh.io
   names:
     kind: Sink
     listKind: SinkList
     plural: sinks
     singular: sink
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     scale:
@@ -12328,6 +12389,10 @@ spec:
                   type: array
               type: object
             processingGuarantee:
+              enum:
+              - atleast_once
+              - atmost_once
+              - effectively_once
               type: string
             pulsar:
               properties:
@@ -12347,6 +12412,7 @@ spec:
               type: object
             replicas:
               format: int32
+              minimum: 1
               type: integer
             resources:
               properties:
@@ -12380,6 +12446,9 @@ spec:
             subscriptionName:
               type: string
             subscriptionPosition:
+              enum:
+              - latest
+              - earliest
               type: string
             tenant:
               type: string
@@ -12447,16 +12516,27 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
   name: sources.compute.functionmesh.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhookClientConfig:
+      caBundle: Cg==
+      service:
+        name: webhook-service
+        namespace: system
+        path: /convert
+        port: 443
   group: compute.functionmesh.io
   names:
     kind: Source
     listKind: SourceList
     plural: sources
     singular: source
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     scale:
@@ -14798,6 +14878,10 @@ spec:
                   type: array
               type: object
             processingGuarantee:
+              enum:
+              - atleast_once
+              - atmost_once
+              - effectively_once
               type: string
             pulsar:
               properties:

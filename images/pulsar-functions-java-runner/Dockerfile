@@ -3,7 +3,9 @@ ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
 FROM pulsar-functions-runner-base:latest
 
-COPY --from=pulsar /pulsar/instances/java-instance.jar /pulsar/instances/java-instance.jar
-COPY --from=pulsar /pulsar/instances/deps /pulsar/instances/deps
+COPY --from=pulsar --chown=$UID:$GID /pulsar/instances/java-instance.jar /pulsar/instances/java-instance.jar
+COPY --from=pulsar --chown=$UID:$GID /pulsar/instances/deps /pulsar/instances/deps
 
 WORKDIR /pulsar
+
+USER $USER

@@ -90,43 +90,35 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
 
-      - name: Set up JDK 1.8
-        uses: actions/setup-java@v1
-        with:
-          java-version: 1.8
+#      - name: Set up JDK 1.8
+#        uses: actions/setup-java@v1
+#        with:
+#          java-version: 1.8
+#
+#      - name: Login to GitHub Packages Docker Registry
+#        uses: docker/login-action@v1
+#        with:
+#          registry: docker.pkg.github.com
+#          username: tuteng
+#          password: ${{ secrets.IMAGE_GITHUB_TOKEN }}
+#
+#      - name: Auto generate crd model
+#        run: cd mesh-worker-service && ./tool/generate-crd.sh
+#
+#      - name: Format license
+#        run: cd mesh-worker-service && mvn license:format
+#
+#      - name: Run mesh worker service unit test
+#        run: |
+#          cd mesh-worker-service
+#          mvn clean install
+#
+#      - name: Upload mesh worker service nar package to release
+#        uses: svenstaro/upload-release-action@v2
+#        with:
+#          repo_token: ${{ secrets.GITHUB_TOKEN }}
+#          file: mesh-worker-service/target/mesh-worker-service-${{ github.event.release.tag_name }}.nar
+#          asset_name: mesh-worker-service-${{ github.event.release.tag_name }}.nar
+#          tag: ${{ github.ref }}
+#          overwrite: true
 
-      - name: Login to GitHub Packages Docker Registry
-        uses: docker/login-action@v1
-        with:
-          registry: docker.pkg.github.com
-          username: tuteng
-          password: ${{ secrets.IMAGE_GITHUB_TOKEN }}
-
-      - name: Auto generate crd model
-        run: cd mesh-worker-service && ./tool/generate-crd.sh
-
-      - name: Format license
-        run: cd mesh-worker-service && mvn license:format
-
-      - name: Run mesh worker service unit test
-        run: |
-          cd mesh-worker-service
-          mvn clean install
-
-      - name: Upload mesh worker service nar package to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: mesh-worker-service/target/mesh-worker-service-${{ github.event.release.tag_name }}.nar
-          asset_name: mesh-worker-service-${{ github.event.release.tag_name }}.nar
-          tag: ${{ github.ref }}
-          overwrite: true
-
-      - name: Run GoReleaser for migration tool
-          uses: goreleaser/goreleaser-action@v2
-          with:
-            version: latest
-            args: release --rm-dist
-            workdir: ./function-mesh
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

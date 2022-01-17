@@ -20,6 +20,8 @@ package spec
 import (
 	"testing"
 
+	"github.com/streamnative/function-mesh/api/v1alpha1"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,4 +35,17 @@ func TestGetValFromPtrOrDefault(t *testing.T) {
 	int32Ptr := &int32Val
 	assert.Equal(t, getInt32FromPtrOrDefault(int32Ptr, 200), int32Val)
 	assert.Equal(t, getInt32FromPtrOrDefault(nil, int32Val), int32Val)
+}
+
+func TestMarshalSecretsMap(t *testing.T) {
+	secrets := map[string]v1alpha1.SecretRef{
+		"foo": {
+			Path: "path",
+		},
+	}
+	marshaledSecrets := marshalSecretsMap(secrets)
+	assert.Equal(t, marshaledSecrets, `{"foo":{"path":"path"}}`)
+
+	marshaledSecretsNil := marshalSecretsMap(nil)
+	assert.Equal(t, marshaledSecretsNil, `{}`)
 }

@@ -4,10 +4,10 @@ metadata:
   name: function-sample
   namespace: default
 spec:
-  image: streamnative/pulsar-functions-java-sample:2.8.0.14
+  image: streamnative/pulsar-functions-java-sample:2.9.0.0-rc-4
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   forwardSourceMessageProperty: true
-  MaxPendingAsyncRequests: 1000
+  maxPendingAsyncRequests: 1000
   replicas: 1
   maxReplicas: 5
   logTopic: persistent://public/default/logging-function-logs

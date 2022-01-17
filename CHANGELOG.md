@@ -1,3 +1,44 @@
+# Function Mesh v0.1.10 Release Notes
+
+## v0.1.10 What's New
+
+- [Controller] Remove unused `CAP_FOWNER` Capability from SecurityContext ([#313](https://github.com/streamnative/function-mesh/pull/313))
+- [Controller] Fix Json marshal nil to `"null"` and break FunctionDetails ([#312](https://github.com/streamnative/function-mesh/pull/312))
+- [Controller] Sync function, source, or sink configurations to the Pod when they are updated. ([#262](https://github.com/streamnative/function-mesh/pull/262))
+
+# Function Mesh v0.1.9 Release Notes
+
+## v0.1.9 What's New
+
+Action required: We have moved the Function Mesh Worker service into a separate repository [streamnative/function-mesh-worker-service](https://github.com/streamnative/function-mesh-worker-service). Therefore, the `function-mesh` repo will not include releases of the Function Mesh Worker service.
+
+- [Runner Images] Make runner images rootless ([#278](https://github.com/streamnative/function-mesh/pull/278))
+- [Runner Images] Simplify the runner image layers ([#292](https://github.com/streamnative/function-mesh/pull/292))
+- [Controller] Support CRD validation with WebHook ([#238](https://github.com/streamnative/function-mesh/pull/238), [#299](https://github.com/streamnative/function-mesh/pull/299))
+- [Controller] Support `EnvironmentBasedSecretsProvider` as the default secret provider ([#295](https://github.com/streamnative/function-mesh/pull/295))
+- [Controller] Provide the default `SecurityContext` to run Pulsar Functions and connectors in the rootless mode ([#294](https://github.com/streamnative/function-mesh/pull/294))
+- [Function Mesh Worker service] Support customizing runner images ([#291](https://github.com/streamnative/function-mesh/pull/291))
+- [Function Mesh Worker service] Fix the default value for `ForwardSourceMessageProperty` ([#300](https://github.com/streamnative/function-mesh/pull/300))
+- [Function Mesh Worker service] Use Pulsar Package Management Service as the backend and redirect uploading JAR requests to the backend ([#308](https://github.com/streamnative/function-mesh/pull/308))
+- [Function Mesh Worker service] Move the Function Mesh Worker service into a separate repository ([#1](https://github.com/streamnative/function-mesh-worker-service/issues/1))
+- [Function Mesh Worker service] Support `secretsMap` on branch-2.8 ([#21](https://github.com/streamnative/function-mesh-worker-service/pull/21))
+
+> **Note**
+>
+> From this release, the release note will not contain any changes to the `function-mesh-worker-service` repository.
+
+# Function Mesh v0.1.8 Release Notes
+
+## v0.1.8 What's New
+
+- [Controller] Update to Pulsar 2.8 Function's proto files ([#274](https://github.com/streamnative/function-mesh/pull/274))
+- [Function Mesh Worker service] Support custom `ServiceAccountName` and `DefaultServiceAccountName` ([#276](https://github.com/streamnative/function-mesh/pull/276))
+- [Controller] Fix the issue that HPA does work as expected on Sink and Source resources ([#281](https://github.com/streamnative/function-mesh/pull/281))
+- [Function Mesh Worker service] Clean up temporarily downloaded files ([#282](https://github.com/streamnative/function-mesh/pull/282))
+- [Function Mesh Worker service] Fix the resource convert exception with the Kubernetes Client ([#286](https://github.com/streamnative/function-mesh/pull/286))
+- [Controller] Added function-mesh labels to Service and HPA ([#287](https://github.com/streamnative/function-mesh/pull/287))
+- [Controller] Bump to Pulsar 2.8.1 ([#288](https://github.com/streamnative/function-mesh/pull/288))
+
 # Function Mesh v0.1.7 Release Notes
 
 ## v0.1.7 What's New

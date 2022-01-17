@@ -57,6 +57,7 @@ func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
 		Name:      makeJobName(source.Name, v1alpha1.SourceComponent),
 		Namespace: source.Namespace,
+		Labels:    makeSourceLabels(source),
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(source, source.GroupVersionKind()),
 		},
@@ -103,8 +104,8 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 	spec := source.Spec
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName, generateSourceDetailsInJSON(source),
-		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir,
-		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "")
+		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir, string(source.UID),
+		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap)
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {

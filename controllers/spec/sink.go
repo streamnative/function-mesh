@@ -62,6 +62,7 @@ func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
 		Name:      makeJobName(sink.Name, v1alpha1.SinkComponent),
 		Namespace: sink.Namespace,
+		Labels:    MakeSinkLabels(sink),
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(sink, sink.GroupVersionKind()),
 		},
@@ -108,8 +109,8 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName, generateSinkDetailsInJSON(sink),
-		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir,
-		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "")
+		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir, string(sink.UID),
+		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap)
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {
