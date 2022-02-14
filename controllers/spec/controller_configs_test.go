@@ -40,7 +40,7 @@ func TestParseConfigFiles(t *testing.T) {
 }
 
 func TestParseEmptyConfigFiles(t *testing.T) {
-	err := ParseControllerConfigs("../../testdata/controller_configs.yaml")
+	err := ParseControllerConfigs("../../testdata/empty_controller_configs.yaml")
 	if err != nil {
 		t.Errorf("ParseControllerConfigs failed: %v", err)
 	}
