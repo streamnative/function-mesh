@@ -18,8 +18,9 @@
 package spec
 
 import (
-	"gotest.tools/assert"
 	"testing"
+
+	"gotest.tools/assert"
 )
 
 func TestParseConfigFiles(t *testing.T) {

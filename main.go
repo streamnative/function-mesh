@@ -19,8 +19,9 @@ package main
 
 import (
 	"flag"
-	"github.com/streamnative/function-mesh/controllers/spec"
 	"os"
+
+	"github.com/streamnative/function-mesh/controllers/spec"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
