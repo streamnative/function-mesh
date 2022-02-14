@@ -143,7 +143,7 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      mergeLabels(labels, Configs.ResourceLabels, policy.Labels),
-			Annotations: generateAnnotations(policy.Annotations),
+			Annotations: generateAnnotations(Configs.ResourceAnnotations, policy.Annotations),
 		},
 		Spec: corev1.PodSpec{
 			InitContainers:                policy.InitContainers,
@@ -607,7 +607,7 @@ func mergeLabels(labels ...map[string]string) map[string]string {
 	return merged
 }
 
-func generateAnnotations(customAnnotations map[string]string) map[string]string {
+func generateAnnotations(customAnnotations ...map[string]string) map[string]string {
 	annotations := make(map[string]string)
 
 	// controlled annotations
@@ -615,8 +615,10 @@ func generateAnnotations(customAnnotations map[string]string) map[string]string 
 	annotations[AnnotationPrometheusPort] = strconv.Itoa(int(MetricsPort.ContainerPort))
 
 	// customized annotations which may override any previous set annotations
-	for k, v := range customAnnotations {
-		annotations[k] = v
+	for _, custom := range customAnnotations {
+		for k, v := range custom {
+			annotations[k] = v
+		}
 	}
 
 	return annotations
