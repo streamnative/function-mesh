@@ -21,9 +21,12 @@ spec:
   replicas: 1
   template:
     metadata:
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: '9443'
       labels:
         control-plane: controller-manager
         app: function-mesh-operator
+        service.istio.io/canonical-name: function-mesh-operator
     spec:
       containers:
       - command:
