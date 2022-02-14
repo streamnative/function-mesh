@@ -38,3 +38,16 @@ func TestParseConfigFiles(t *testing.T) {
 	assert.Assert(t, Configs.ResourceLabels["foo"] == "bar")
 	assert.Assert(t, Configs.ResourceAnnotations["fooAnnotation"] == "barAnnotation")
 }
+
+func TestParseEmptyConfigFiles(t *testing.T) {
+	err := ParseControllerConfigs("../../testdata/controller_configs.yaml")
+	if err != nil {
+		t.Errorf("ParseControllerConfigs failed: %v", err)
+	}
+	assert.Assert(t, Configs != nil)
+	assert.Assert(t, Configs.RunnerImages.Java == DefaultJavaRunnerImage)
+	assert.Assert(t, Configs.RunnerImages.Python == DefaultPythonRunnerImage)
+	assert.Assert(t, Configs.RunnerImages.Go == DefaultGoRunnerImage)
+	assert.Assert(t, len(Configs.ResourceLabels) == 0)
+	assert.Assert(t, len(Configs.ResourceAnnotations) == 0)
+}

@@ -46,3 +46,12 @@ controllerManager:
   selector: []
   # - k1==v1
   # - k2!=v2
+  # default runner images for different language runtime
+  # runnerImages:
+  #  java: streamnative/pulsar-functions-java-runner:2.9.0.0-rc-4
+  #  python: streamnative/pulsar-functions-python-runner:2.9.0.0-rc-4
+  #  go: streamnative/pulsar-functions-go-runner:2.9.0.0-rc-4
+  # resource labels applied to each function/connector managed by this controller
+  # resourceLabels: {}
+  # resource annotations applied to each function/connector managed by this controller
+  # resourceAnnotations: {}
