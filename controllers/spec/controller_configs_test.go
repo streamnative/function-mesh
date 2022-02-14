@@ -24,7 +24,7 @@ import (
 )
 
 func TestParseConfigFiles(t *testing.T) {
-	err := ParseControllerConfigs("testdata/controller_configs.yaml")
+	err := ParseControllerConfigs("../../testdata/controller_configs.yaml")
 	if err != nil {
 		t.Errorf("ParseControllerConfigs failed: %v", err)
 	}
