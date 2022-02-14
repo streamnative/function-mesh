@@ -15,10 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package controllers
+package spec
 
 import (
-	"github.com/streamnative/function-mesh/controllers/spec"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 )
@@ -40,9 +39,9 @@ var Configs = DefaultConfigs()
 func DefaultConfigs() *ControllerConfigs {
 	return &ControllerConfigs{
 		RunnerImages: RunnerImages{
-			Java:   spec.DefaultJavaRunnerImage,
-			Python: spec.DefaultPythonRunnerImage,
-			Go:     spec.DefaultGoRunnerImage,
+			Java:   DefaultJavaRunnerImage,
+			Python: DefaultPythonRunnerImage,
+			Go:     DefaultGoRunnerImage,
 		},
 	}
 }

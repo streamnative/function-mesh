@@ -20,7 +20,6 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/streamnative/function-mesh/controllers"
 	"strconv"
 	"strings"
 
@@ -143,7 +142,7 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	}
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:      mergeLabels(labels, controllers.Configs.ResourceLabels, policy.Labels),
+			Labels:      mergeLabels(labels, Configs.ResourceLabels, policy.Labels),
 			Annotations: generateAnnotations(policy.Annotations),
 		},
 		Spec: corev1.PodSpec{
@@ -629,11 +628,11 @@ func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
 	if img != "" {
 		return img
 	} else if runtime.Java != nil && runtime.Java.Jar != "" {
-		return controllers.Configs.RunnerImages.Java
+		return Configs.RunnerImages.Java
 	} else if runtime.Python != nil && runtime.Python.Py != "" {
-		return controllers.Configs.RunnerImages.Python
+		return Configs.RunnerImages.Python
 	} else if runtime.Golang != nil && runtime.Golang.Go != "" {
-		return controllers.Configs.RunnerImages.Go
+		return Configs.RunnerImages.Go
 	}
 	return DefaultRunnerImage
 }
@@ -645,7 +644,7 @@ func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
 	}
 	if spec.Runtime.Java.Jar != "" && spec.Runtime.Java.JarLocation != "" &&
 		hasPackageNamePrefix(spec.Runtime.Java.JarLocation) {
-		return controllers.Configs.RunnerImages.Java
+		return Configs.RunnerImages.Java
 	}
 	return DefaultRunnerImage
 }
@@ -657,7 +656,7 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 	}
 	if spec.Runtime.Java.Jar != "" && spec.Runtime.Java.JarLocation != "" &&
 		hasPackageNamePrefix(spec.Runtime.Java.JarLocation) {
-		return controllers.Configs.RunnerImages.Java
+		return Configs.RunnerImages.Java
 	}
 	return DefaultRunnerImage
 }

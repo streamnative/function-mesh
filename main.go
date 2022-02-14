@@ -19,6 +19,7 @@ package main
 
 import (
 	"flag"
+	"github.com/streamnative/function-mesh/controllers/spec"
 	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -66,7 +67,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
 	if configFile != "" {
-		err := controllers.ParseControllerConfigs(configFile)
+		err := spec.ParseControllerConfigs(configFile)
 		if err != nil {
 			setupLog.Error(err, "unable to parse the controller configs")
 			os.Exit(1)
