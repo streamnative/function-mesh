@@ -24,6 +24,7 @@ import (
 )
 
 func TestParseConfigFiles(t *testing.T) {
+	Configs = DefaultConfigs()
 	err := ParseControllerConfigs("../../testdata/controller_configs.yaml")
 	if err != nil {
 		t.Errorf("ParseControllerConfigs failed: %v", err)
@@ -40,6 +41,7 @@ func TestParseConfigFiles(t *testing.T) {
 }
 
 func TestParseEmptyConfigFiles(t *testing.T) {
+	Configs = DefaultConfigs()
 	err := ParseControllerConfigs("../../testdata/empty_controller_configs.yaml")
 	if err != nil {
 		t.Errorf("ParseControllerConfigs failed: %v", err)
