@@ -45,6 +45,7 @@ func TestParseEmptyConfigFiles(t *testing.T) {
 		t.Errorf("ParseControllerConfigs failed: %v", err)
 	}
 	assert.Assert(t, Configs != nil)
+	t.Log("Configs", Configs)
 	assert.Assert(t, Configs.RunnerImages.Java == DefaultJavaRunnerImage)
 	assert.Assert(t, Configs.RunnerImages.Python == DefaultPythonRunnerImage)
 	assert.Assert(t, Configs.RunnerImages.Go == DefaultGoRunnerImage)
