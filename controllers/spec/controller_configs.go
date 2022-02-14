@@ -52,6 +52,9 @@ func ParseControllerConfigs(configFilePath string) error {
 	if err != nil {
 		return err
 	}
+	if len(yamlFile) == 0 {
+		return nil
+	}
 	err = yaml.Unmarshal(yamlFile, Configs)
 	if err != nil {
 		return err
