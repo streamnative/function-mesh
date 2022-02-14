@@ -20,6 +20,7 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/streamnative/function-mesh/controllers/config"
 	"strconv"
 	"strings"
 
@@ -142,7 +143,7 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	}
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:      mergeLabels(labels, policy.Labels),
+			Labels:      mergeLabels(labels, config.Configs.ResourceLabels, policy.Labels),
 			Annotations: generateAnnotations(policy.Annotations),
 		},
 		Spec: corev1.PodSpec{
@@ -191,15 +192,11 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath, function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != ""), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath,
+			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != ""), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
-}
-
-func ComputeConfigHash(config map[string]interface{}) (string, error) {
-
-	return "", nil
 }
 
 func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool) []string {
@@ -599,18 +596,16 @@ func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.Produ
 	return volumes
 }
 
-func mergeLabels(label1, label2 map[string]string) map[string]string {
-	label := make(map[string]string)
+func mergeLabels(labels ...map[string]string) map[string]string {
+	merged := make(map[string]string)
 
-	for k, v := range label1 {
-		label[k] = v
+	for _, m := range labels {
+		for k, v := range m {
+			merged[k] = v
+		}
 	}
 
-	for k, v := range label2 {
-		label[k] = v
-	}
-
-	return label
+	return merged
 }
 
 func generateAnnotations(customAnnotations map[string]string) map[string]string {
@@ -634,11 +629,11 @@ func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
 	if img != "" {
 		return img
 	} else if runtime.Java != nil && runtime.Java.Jar != "" {
-		return DefaultJavaRunnerImage
+		return config.Configs.RunnerImages.Java
 	} else if runtime.Python != nil && runtime.Python.Py != "" {
-		return DefaultPythonRunnerImage
+		return config.Configs.RunnerImages.Python
 	} else if runtime.Golang != nil && runtime.Golang.Go != "" {
-		return DefaultGoRunnerImage
+		return config.Configs.RunnerImages.Go
 	}
 	return DefaultRunnerImage
 }
@@ -650,7 +645,7 @@ func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
 	}
 	if spec.Runtime.Java.Jar != "" && spec.Runtime.Java.JarLocation != "" &&
 		hasPackageNamePrefix(spec.Runtime.Java.JarLocation) {
-		return DefaultJavaRunnerImage
+		return config.Configs.RunnerImages.Java
 	}
 	return DefaultRunnerImage
 }
@@ -662,7 +657,7 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 	}
 	if spec.Runtime.Java.Jar != "" && spec.Runtime.Java.JarLocation != "" &&
 		hasPackageNamePrefix(spec.Runtime.Java.JarLocation) {
-		return DefaultJavaRunnerImage
+		return config.Configs.RunnerImages.Java
 	}
 	return DefaultRunnerImage
 }

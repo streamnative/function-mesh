@@ -19,6 +19,7 @@ package main
 
 import (
 	"flag"
+	"github.com/streamnative/function-mesh/controllers/config"
 	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,6 +51,7 @@ func main() {
 	var leaderElectionID string
 	var certDir string
 	var enableLeaderElection bool
+	var configFile string
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id", "a3f45fce.functionmesh.io",
 		"the name of the configmap that leader election will use for holding the leader lock.")
@@ -58,9 +60,19 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&certDir, "cert-dir", "",
 		"CertDir is the directory that contains the server key and certificate.\n\tif not set, webhook server would look up the server key and certificate in\n\t{TempDir}/k8s-webhook-server/serving-certs. The server key and certificate\n\tmust be named tls.key and tls.crt, respectively.")
+	flag.StringVar(&configFile, "config-file", "",
+		"config file path for controller manager")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+
+	if configFile != "" {
+		err := config.ParseControllerConfigs(configFile)
+		if err != nil {
+			setupLog.Error(err, "unable to parse the controller configs")
+			os.Exit(1)
+		}
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
