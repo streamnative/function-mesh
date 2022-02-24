@@ -6,6 +6,10 @@
 rbac:
   create: true
 
+# values for Function Mesh installation
+installation:
+  namespace: function-mesh-system
+
 # operatorImage is Function Mesh Operator image
 operatorImage: streamnative/function-mesh:v0.1.11-rc1
 imagePullPolicy: IfNotPresent
