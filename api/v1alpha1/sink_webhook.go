@@ -39,7 +39,7 @@ func (r *Sink) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-sink,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=sinks,verbs=create;update,versions=v1alpha1,name=msink.kb.io
+// +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-sink,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=sinks,verbs=create;update,versions=v1alpha1,name=msink.kb.io,sideEffects=none,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Sink{}
 
@@ -97,7 +97,7 @@ func (r *Sink) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-sink,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=sinks,versions=v1alpha1,name=vsink.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-sink,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=sinks,versions=v1alpha1,name=vsink.kb.io,sideEffects=none,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Sink{}
 
