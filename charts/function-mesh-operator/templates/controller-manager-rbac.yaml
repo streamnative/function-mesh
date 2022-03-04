@@ -3,6 +3,7 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: {{ .Values.controllerManager.serviceAccount }}
+  namespace: {{ .Values.installation.namespace }}
   labels:
     app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
