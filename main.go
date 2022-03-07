@@ -19,6 +19,7 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"os"
 
 	"github.com/streamnative/function-mesh/controllers/spec"
@@ -48,24 +49,40 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
+	var metricsAddr, pprofAddr string
 	var leaderElectionID string
 	var certDir string
-	var enableLeaderElection bool
+	var healthProbeAddr string
+	var enableLeaderElection, enablePprof bool
 	var configFile string
+	var namespace string
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id", "a3f45fce.functionmesh.io",
 		"the name of the configmap that leader election will use for holding the leader lock.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&healthProbeAddr, "health-probe-addr", ":8000", "The address the healthz/readyz endpoint binds to.")
 	flag.StringVar(&certDir, "cert-dir", "",
 		"CertDir is the directory that contains the server key and certificate.\n\tif not set, webhook server would look up the server key and certificate in\n\t{TempDir}/k8s-webhook-server/serving-certs. The server key and certificate\n\tmust be named tls.key and tls.crt, respectively.")
 	flag.StringVar(&configFile, "config-file", "",
 		"config file path for controller manager")
+	flag.StringVar(&namespace, "namespace", "",
+		"Namespace if specified restricts the manager's cache to watch objects in the desired namespace. Defaults to all namespaces.")
+	flag.BoolVar(&enablePprof, "enable-pprof", true, "Enable pprof for controller manager.")
+	flag.StringVar(&pprofAddr, "pprof-addr", ":8090", "The address the pprof binds to.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+
+	// enable pprof
+	if enablePprof {
+		go func() {
+			if err := http.ListenAndServe(pprofAddr, nil); err != nil {
+				setupLog.Error(err, "unable to start pprof")
+			}
+		}()
+	}
 
 	if configFile != "" {
 		err := spec.ParseControllerConfigs(configFile)
@@ -76,12 +93,14 @@ func main() {
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		Port:               9443,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   leaderElectionID,
-		CertDir:            certDir,
+		Scheme:                 scheme,
+		MetricsBindAddress:     metricsAddr,
+		HealthProbeBindAddress: healthProbeAddr,
+		Port:                   9443,
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       leaderElectionID,
+		Namespace:              namespace,
+		CertDir:                certDir,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
