@@ -42,22 +42,22 @@ monitoring:
 images:
   zookeeper:
     repository: streamnative/pulsar-all
-    tag: 2.9.0.0-rc-4
+    tag: 2.10.0.0-rc10
   bookie:
     repository: streamnative/pulsar-all
-    tag: 2.9.0.0-rc-4
+    tag: 2.10.0.0-rc10
   autorecovery:
     repository: streamnative/pulsar-all
-    tag: 2.9.0.0-rc-4
+    tag: 2.10.0.0-rc10
   broker:
     repository: streamnative/pulsar-all
-    tag: 2.9.0.0-rc-4
+    tag: 2.10.0.0-rc10
   functions:
     repository: streamnative/pulsar-all
-    tag: 2.9.0.0-rc-4
+    tag: 2.10.0.0-rc10
   proxy:
     repository: streamnative/pulsar-all
-    tag: 2.9.0.0-rc-4
+    tag: 2.10.0.0-rc10
 
 zookeeper:
   replicaCount: 1
@@ -67,7 +67,7 @@ bookkeeper:
   metadata:
     image:
       repository: streamnative/pulsar-all
-      tag: 2.9.0.0-rc-4
+      tag: 2.10.0.0-rc10
   configData:
     # `BOOKIE_MEM` is used for `bookie shell`
     BOOKIE_MEM: >
@@ -97,7 +97,7 @@ bookkeeper:
 pulsar_metadata:
   image:
     repository: streamnative/pulsar-all
-    tag: 2.9.0.0-rc-4
+    tag: 2.10.0.0-rc10
 
 broker:
   replicaCount: 1
