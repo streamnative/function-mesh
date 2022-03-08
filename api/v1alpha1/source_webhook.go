@@ -39,7 +39,7 @@ func (r *Source) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-source,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,verbs=create;update,versions=v1alpha1,name=msource.kb.io
+// +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-source,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,verbs=create;update,versions=v1alpha1,name=msource.kb.io,sideEffects=none,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Source{}
 
@@ -107,7 +107,7 @@ func (r *Source) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-source,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,versions=v1alpha1,name=vsource.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-source,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,versions=v1alpha1,name=vsource.kb.io,sideEffects=none,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Source{}
 
