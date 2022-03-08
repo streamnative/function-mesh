@@ -4,7 +4,7 @@ metadata:
   name: function-builtin-hpa-sample
   namespace: default
 spec:
-  image: streamnative/pulsar-functions-java-sample:2.9.0.0-rc-4
+  image: streamnative/pulsar-functions-java-sample:2.10.0.0-rc10
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
