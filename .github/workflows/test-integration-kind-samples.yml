@@ -58,7 +58,7 @@ jobs:
         run: |
           make generate
           make install
-          make docker-build
+          make docker-build-skip-test
           IMG=$(make function-mesh-docker-image-name)
           clusters=$(kind get clusters)
           echo $clusters

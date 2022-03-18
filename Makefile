@@ -226,3 +226,7 @@ operator-docker-image-name:
 
 function-mesh-docker-image-name:
 	@echo ${IMG}
+
+# Build the docker image without tests
+docker-build-skip-test:
+	docker build . -t ${IMG}
