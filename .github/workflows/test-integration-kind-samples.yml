@@ -45,7 +45,6 @@ jobs:
           chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu && sudo mkdir -p /usr/local/bin/ && sudo cp operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu /usr/local/bin/operator-sdk && rm operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
 
       - name: setup kubebuilder 2.3.1
-        if: steps.list-changed.outputs.changed == 'true'
         uses: RyanSiu1995/kubebuilder-action@v1.1
         with:
           version: 2.3.1
