@@ -223,3 +223,6 @@ version:
 
 operator-docker-image-name:
 	@echo ${OPERATOR_IMG}
+
+function-mesh-docker-image-name:
+	@echo ${IMG}

@@ -53,7 +53,17 @@ jobs:
         run: |
           make generate
           make install
-          nohup make run &
+          make docker-build
+          IMG=$(make function-mesh-docker-image-name)
+          clusters=$(kind get clusters)
+          echo $clusters
+          for cluster in $clusters
+          do
+          kind load docker-image --name ${cluster} ${IMG}
+          done
+          make deploy
+          kubectl get crds
+          kubectl wait --for condition=available --timeout=360s deployment/controller-manager
 
       - name: Test Function kind - Java Function
         run: |
