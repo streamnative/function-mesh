@@ -30,6 +30,7 @@ jobs:
           retry_on: error
           command: |
             .ci/deploy_pulsar_cluster.sh
+            helm install cert-manager --namespace sn-system jetstack/cert-manager --set installCRDs=true
           on_retry_command: |
             .ci/cleanup.sh
 
