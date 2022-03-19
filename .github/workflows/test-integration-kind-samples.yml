@@ -71,7 +71,7 @@ jobs:
           done
           make deploy
           kubectl get crds
-          kubectl wait --for condition=available --timeout=360s deployment/controller-manager
+          kubectl wait --for condition=available --timeout=360s deployment/function-mesh-controller-manager
 
       - name: Test Function kind - Java Function
         run: |
