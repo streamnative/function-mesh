@@ -132,3 +132,7 @@ jobs:
         run: |
           .ci/verify_function_mesh.sh compute_v1alpha1_function_builtin_hpa
           kubectl delete -f .ci/clusters/compute_v1alpha1_function_builtin_hpa.yaml
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: failure()
