@@ -86,7 +86,7 @@ webhooks:
       namespace: system
       path: /validate-compute-functionmesh-io-v1alpha1-function
   failurePolicy: Fail
-  name: mfunction.kb.io
+  name: vfunction.kb.io
   rules:
   - apiGroups:
     - compute.functionmesh.io
