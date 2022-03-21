@@ -143,7 +143,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Sink")
 		os.Exit(1)
 	}
-	if os.Getenv("ENABLE_WEBHOOKS") == "true" {
+
+	// enable the webhook service by default
+	// Disable function-mesh webhook with `ENABLE_WEBHOOKS=false` when we run locally.
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&computev1alpha1.Function{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Function")
 			os.Exit(1)
