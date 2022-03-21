@@ -14,4 +14,3 @@ spec:
     control-plane: controller-manager
     app: function-mesh-operator
     service.istio.io/canonical-name: function-mesh-operator
-
