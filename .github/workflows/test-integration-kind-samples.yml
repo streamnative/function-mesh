@@ -30,6 +30,9 @@ jobs:
           retry_on: error
           command: |
             .ci/deploy_pulsar_cluster.sh
+            helm repo add jetstack https://charts.jetstack.io
+            helm repo update
+            helm install cert-manager jetstack/cert-manager --set installCRDs=true
           on_retry_command: |
             .ci/cleanup.sh
 
@@ -44,6 +47,11 @@ jobs:
           curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
           chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu && sudo mkdir -p /usr/local/bin/ && sudo cp operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu /usr/local/bin/operator-sdk && rm operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
 
+      - name: setup kubebuilder 2.3.1
+        uses: RyanSiu1995/kubebuilder-action@v1.2.1
+        with:
+          version: 2.3.1
+
       #      - name: Add CRD, controller or webhooks
       #        run: |
       #          operator-sdk create api --group compute --version v1alpha1 --kind Function --resource=true --controller=true
@@ -53,7 +61,17 @@ jobs:
         run: |
           make generate
           make install
-          nohup make run &
+          make docker-build-skip-test
+          IMG=$(make function-mesh-docker-image-name)
+          clusters=$(kind get clusters)
+          echo $clusters
+          for cluster in $clusters
+          do
+          kind load docker-image --name ${cluster} ${IMG}
+          done
+          make deploy
+          kubectl get crds
+          kubectl wait --for condition=available --timeout=360s deployment/function-mesh-controller-manager
 
       - name: Test Function kind - Java Function
         run: |
@@ -114,3 +132,7 @@ jobs:
         run: |
           .ci/verify_function_mesh.sh compute_v1alpha1_function_builtin_hpa
           kubectl delete -f .ci/clusters/compute_v1alpha1_function_builtin_hpa.yaml
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: failure()

@@ -223,3 +223,10 @@ version:
 
 operator-docker-image-name:
 	@echo ${OPERATOR_IMG}
+
+function-mesh-docker-image-name:
+	@echo ${IMG}
+
+# Build the docker image without tests
+docker-build-skip-test:
+	docker build . -t ${IMG}

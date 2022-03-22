@@ -4,9 +4,13 @@ kind: Service
 metadata:
   name: webhook-service
   namespace: system
+  annotations:
+    traffic.sidecar.istio.io/excludeInboundPorts: "9443"
 spec:
   ports:
     - port: 443
       targetPort: 9443
   selector:
     control-plane: controller-manager
+    app: function-mesh-operator
+    service.istio.io/canonical-name: function-mesh-operator

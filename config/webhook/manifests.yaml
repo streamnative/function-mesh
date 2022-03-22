@@ -7,6 +7,7 @@ metadata:
   name: mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
+  - v1beta1
   - v1
   clientConfig:
     service:
@@ -27,6 +28,7 @@ webhooks:
     - functions
   sideEffects: None
 - admissionReviewVersions:
+  - v1beta1
   - v1
   clientConfig:
     service:
@@ -47,6 +49,7 @@ webhooks:
     - sinks
   sideEffects: None
 - admissionReviewVersions:
+  - v1beta1
   - v1
   clientConfig:
     service:
@@ -75,6 +78,7 @@ metadata:
   name: validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
+  - v1beta1
   - v1
   clientConfig:
     service:
@@ -82,7 +86,7 @@ webhooks:
       namespace: system
       path: /validate-compute-functionmesh-io-v1alpha1-function
   failurePolicy: Fail
-  name: vsink.kb.io
+  name: vfunction.kb.io
   rules:
   - apiGroups:
     - compute.functionmesh.io
@@ -95,6 +99,7 @@ webhooks:
     - functions
   sideEffects: None
 - admissionReviewVersions:
+  - v1beta1
   - v1
   clientConfig:
     service:
@@ -115,6 +120,7 @@ webhooks:
     - sinks
   sideEffects: None
 - admissionReviewVersions:
+  - v1beta1
   - v1
   clientConfig:
     service:

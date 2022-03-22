@@ -38,8 +38,7 @@ func (r *Function) SetupWebhookWithManager(mgr ctrl.Manager) error {
 }
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-function,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=functions,verbs=create;update,versions=v1alpha1,name=mfunction.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-function,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=functions,verbs=create;update,versions=v1alpha1,name=mfunction.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
 var _ webhook.Defaulter = &Function{}
 
@@ -111,7 +110,7 @@ func (r *Function) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-function,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=functions,versions=v1alpha1,name=vsink.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-function,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=functions,versions=v1alpha1,name=vfunction.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
 var _ webhook.Validator = &Function{}
 
@@ -127,16 +126,20 @@ func (r *Function) ValidateCreate() error {
 	}
 
 	if r.Spec.Runtime.Java == nil && r.Spec.Runtime.Python == nil && r.Spec.Runtime.Golang == nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "java"), r.Spec.Runtime.Java, "runtime cannot be empty"))
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "python"), r.Spec.Runtime.Python, "runtime cannot be empty"))
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "golang"), r.Spec.Runtime.Golang, "runtime cannot be empty"))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "java"), r.Spec.Runtime.Java,
+			"runtime cannot be empty"))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "python"), r.Spec.Runtime.Python,
+			"runtime cannot be empty"))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "golang"), r.Spec.Runtime.Golang,
+			"runtime cannot be empty"))
 	}
 
 	if (r.Spec.Runtime.Java != nil && r.Spec.Runtime.Python != nil) ||
 		(r.Spec.Runtime.Java != nil && r.Spec.Runtime.Golang != nil) ||
 		(r.Spec.Runtime.Python != nil && r.Spec.Runtime.Golang != nil) ||
 		(r.Spec.Runtime.Java != nil && r.Spec.Runtime.Python != nil && r.Spec.Runtime.Golang != nil) {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime"), r.Spec.Runtime, "you can only specify one runtime"))
+		allErrs = append(allErrs,
+			field.Invalid(field.NewPath("spec").Child("runtime"), r.Spec.Runtime, "you can only specify one runtime"))
 	}
 
 	fieldErrs = validateJavaRuntime(r.Spec.Java, r.Spec.ClassName)
