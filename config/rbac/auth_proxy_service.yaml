@@ -8,7 +8,7 @@ metadata:
   namespace: system
 spec:
   ports:
-  - name: https
+  - name: https-metrics-service
     port: 8443
     targetPort: https
   selector:

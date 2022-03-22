@@ -10,6 +10,7 @@ spec:
   ports:
     - port: 443
       targetPort: 9443
+      name: https-webhook-service
   selector:
     control-plane: controller-manager
     app: function-mesh-operator
