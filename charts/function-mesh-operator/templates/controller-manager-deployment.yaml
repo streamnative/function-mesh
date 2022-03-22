@@ -42,16 +42,17 @@ spec:
           - /manager
         args:
           - --enable-leader-election
-          - --config-file=/etc/config/config.yaml
+          - --config-file=/etc/config/configs.yaml
         env:
           - name: NAMESPACE
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: ENABLE_WEBHOOKS
+            value: "false"
         volumeMounts:
           - name: cfg
-            mountPath: /etc/config/config.yaml
-            subPath: config.yaml
+            mountPath: /etc/config/
       {{- with .Values.controllerManager.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
