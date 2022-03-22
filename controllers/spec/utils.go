@@ -23,6 +23,9 @@ import (
 	"regexp"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
 	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
@@ -407,4 +410,12 @@ func getInt32FromPtrOrDefault(ptr *int32, val int32) int32 {
 		ret = *ptr
 	}
 	return ret
+}
+
+func toServicePort(port *corev1.ContainerPort) corev1.ServicePort {
+	return corev1.ServicePort{
+		Name:       port.Name,
+		Port:       port.ContainerPort,
+		TargetPort: intstr.FromInt(int(port.ContainerPort)),
+	}
 }

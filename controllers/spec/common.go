@@ -64,13 +64,13 @@ const (
 )
 
 var GRPCPort = corev1.ContainerPort{
-	Name:          "grpc",
+	Name:          "tcp-grpc",
 	ContainerPort: 9093,
 	Protocol:      corev1.ProtocolTCP,
 }
 
 var MetricsPort = corev1.ContainerPort{
-	Name:          "metrics",
+	Name:          "tcp-metrics",
 	ContainerPort: 9094,
 	Protocol:      corev1.ProtocolTCP,
 }
@@ -84,17 +84,9 @@ func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev
 		},
 		ObjectMeta: *objectMeta,
 		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{{
-				Name:     "grpc",
-				Protocol: corev1.ProtocolTCP,
-				Port:     GRPCPort.ContainerPort,
-			}, {
-				Name:     "metrics",
-				Protocol: corev1.ProtocolTCP,
-				Port:     MetricsPort.ContainerPort,
-			}},
+			Ports:     []corev1.ServicePort{toServicePort(&GRPCPort), toServicePort(&MetricsPort)},
 			Selector:  labels,
-			ClusterIP: "None",
+			ClusterIP: corev1.ClusterIPNone,
 		},
 	}
 }
