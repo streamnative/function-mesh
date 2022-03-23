@@ -8,7 +8,7 @@ rbac:
 
 # values for Function Mesh installation
 installation:
-  namespace: function-mesh-system
+  namespace: default
 
 # operatorImage is Function Mesh Operator image
 operatorImage: streamnative/function-mesh:v0.1.11-rc3
