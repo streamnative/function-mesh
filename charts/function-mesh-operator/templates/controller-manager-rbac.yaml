@@ -22,169 +22,161 @@ metadata:
     app.kubernetes.io/component: controller-manager
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+"  "_" }}
 rules:
-- apiGroups:
-    - ""
-  resources:
-    - services
-    - events
-  verbs:
-    - "*"
-- apiGroups:
-    - ""
-  resources:
-    - configmaps
-    - endpoints
-  verbs:
-    - get
-    - list
-    - watch
-    - create
-    - update
-    - patch
-    - delete
-- apiGroups:
-    - ""
-  resources:
-    - configmaps/status
-  verbs:
-    - get
-    - update
-    - patch
-- apiGroups:
-    - compute.functionmesh.io
-  resources:
-    - functionmeshes
-  verbs:
-    - create
-    - delete
-    - get
-    - list
-    - patch
-    - update
-    - watch
-- apiGroups:
-    - compute.functionmesh.io
-  resources:
-    - functionmeshes/status
-  verbs:
-    - get
-    - patch
-    - update
-- apiGroups:
-    - compute.functionmesh.io
-  resources:
-    - functions
-  verbs:
-    - create
-    - delete
-    - get
-    - list
-    - patch
-    - update
-    - watch
-- apiGroups:
-    - compute.functionmesh.io
-  resources:
-    - functions/status
-  verbs:
-    - get
-    - patch
-    - update
-- apiGroups:
-    - compute.functionmesh.io
-  resources:
-    - sinks
-  verbs:
-    - create
-    - delete
-    - get
-    - list
-    - patch
-    - update
-    - watch
-- apiGroups:
-    - compute.functionmesh.io
-  resources:
-    - sinks/status
-  verbs:
-    - get
-    - patch
-    - update
-- apiGroups:
-    - compute.functionmesh.io
-  resources:
-    - sources
-  verbs:
-    - create
-    - delete
-    - get
-    - list
-    - patch
-    - update
-    - watch
-- apiGroups:
-    - compute.functionmesh.io
-  resources:
-    - sources/status
-  verbs:
-    - get
-    - patch
-    - update
-- apiGroups:
-    - authentication.k8s.io
-  resources:
-    - tokenreviews
-  verbs:
-    - create
-- apiGroups:
-    - authorization.k8s.io
-  resources:
-    - subjectaccessreviews
-  verbs:
-    - create
-- nonResourceURLs:
-    - /metrics
-  verbs:
-    - get
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["create", "update", "get", "list", "watch","delete", "patch"]
-- apiGroups: [""]
-  resources: ["services"]
-  verbs: ["create", "update", "get", "list", "watch","delete", "patch"]
-- apiGroups: [""]
-  resources: ["persistentvolumeclaims"]
-  verbs: ["get", "list", "watch", "create", "update", "delete", "patch"]
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list", "watch","update", "delete"]
-- apiGroups: ["apps"]
-  resources: ["statefulsets","deployments", "controllerrevisions"]
-  verbs: ["*"]
-- apiGroups: ["extensions"]
-  resources: ["ingresses"]
-  verbs: ["*"]
-- apiGroups: [""]
-  resources: ["serviceaccounts"]
-  verbs: ["create","get","update","delete"]
-- apiGroups: [""]
-  resources: ["nodes"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: [""]
-  resources: ["persistentvolumes"]
-  verbs: ["get", "list", "watch", "patch","update"]
-- apiGroups: ["storage.k8s.io"]
-  resources: ["storageclasses"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["rbac.authorization.k8s.io"]
-  resources: [clusterroles,roles]
-  verbs: ["escalate","create","get","update", "delete"]
-- apiGroups: ["rbac.authorization.k8s.io"]
-  resources: ["rolebindings","clusterrolebindings"]
-  verbs: ["create","get","update", "delete"]
-- apiGroups: ["autoscaling"]
-  resources: ["horizontalpodautoscalers"]
-  verbs: ["create", "delete", "patch", "update", "get", "watch", "list"]
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - functionmeshes
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - functionmeshes/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - functions
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - functions/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - sinks
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - sinks/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - sources
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - sources/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
