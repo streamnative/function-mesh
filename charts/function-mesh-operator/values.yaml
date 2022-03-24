@@ -59,3 +59,13 @@ controllerManager:
   # resourceLabels: {}
   # resource annotations applied to each function/connector managed by this controller
   # resourceAnnotations: {}
+
+  configFile: /etc/config/config.yaml
+  enable-leader-election: true
+  metrics:
+    port: 8080
+  healthProbe:
+    port: 8000
+  pprof:
+    enable: false
+    port: 8090
