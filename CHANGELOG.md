@@ -16,7 +16,7 @@
 - [Runner Images] Verify Pulsar 2.10 ([#336](https://github.com/streamnative/function-mesh/pull/336))
 - [Runner Images] Bump sample dependencies ([#317](https://github.com/streamnative/function-mesh/pull/317)), ([#318](https://github.com/streamnative/function-mesh/pull/318))
 - [Test] Bump versions for the test script toolsets ([#334](https://github.com/streamnative/function-mesh/pull/334))
-- [Test] Remove unused steps in test scripts ([#331](https://github.com/streamnative/function-mesh/pull/331))
+- [Test] Remove unused steps from the test scripts ([#331](https://github.com/streamnative/function-mesh/pull/331))
 
 # Function Mesh v0.1.10 Release Notes
 
