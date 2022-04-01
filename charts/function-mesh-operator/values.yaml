@@ -61,7 +61,7 @@ controllerManager:
   # resourceAnnotations: {}
 
   configFile: /etc/config/config.yaml
-  enable-leader-election: true
+  enableLeaderElection: true
   metrics:
     port: 8080
   healthProbe:
