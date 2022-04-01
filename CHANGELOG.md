@@ -2,7 +2,7 @@
 
 ## v0.1.11 What's New
 
-- [Helm Charts] support more controller manager params for helm charts ([#339](https://github.com/streamnative/function-mesh/pull/339))
+- [Helm Charts] Support more controller manager parameters for Helm charts ([#339](https://github.com/streamnative/function-mesh/pull/339))
 - [Helm Charts] fix helm charts install ([#347](https://github.com/streamnative/function-mesh/pull/347)), ([#346](https://github.com/streamnative/function-mesh/pull/346)), ([#345](https://github.com/streamnative/function-mesh/pull/345)), ([#344](https://github.com/streamnative/function-mesh/pull/344))
 - [Helm Charts] support namespace config for helm charts ([#327](https://github.com/streamnative/function-mesh/pull/327))
 - [Controller] apply Istio service port name convention to services ([#343](https://github.com/streamnative/function-mesh/pull/343))
