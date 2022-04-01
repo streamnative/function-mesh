@@ -27,7 +27,7 @@ Note:
 The following Kubernetes versions are supported and work as we test against these versions in their respective branches. But note that other versions might work as well.
 
 | Function Mesh operator                                                          | Kubernetes 1.16  | Kubernetes 1.17 | Kubernetes 1.18 | Kubernetes 1.19 | Kubernetes 1.20 | Kubernetes 1.21 | Kubernetes 1.22 |
-|---------------------------------------------------------------------------------|------------------|-----------------|-----------------|-----------------|
+|---------------------------------------------------------------------------------|------------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|
 | [`v0.1.11`](https://github.com/streamnative/function-mesh/releases/tag/v0.1.11) | ✗                | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
 | [`v0.1.10`](https://github.com/streamnative/function-mesh/releases/tag/v0.1.10) | ✔                | ✔               | ✔               | ✔               | ✔               | ✔               | ✗               |
 | [`v0.1.9`](https://github.com/streamnative/function-mesh/releases/tag/v0.1.9)   | ✔                | ✔               | ✔               | ✔               | ✔               | ✔               | ✗               |
