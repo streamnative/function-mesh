@@ -13,7 +13,7 @@
 - [Controller] add controller config file ([#322](https://github.com/streamnative/function-mesh/pull/322))
 - [Controller] Add annotation to exclude the webhook port from Istio proxying ([#321](https://github.com/streamnative/function-mesh/pull/321))
 - [OLM] Increase resource limit for manager ([#324](https://github.com/streamnative/function-mesh/pull/324))
-- [Runner Images] verify Pulsar 2.10 ([#336](https://github.com/streamnative/function-mesh/pull/336))
+- [Runner Images] Verify Pulsar 2.10 ([#336](https://github.com/streamnative/function-mesh/pull/336))
 - [Runner Images] bump sample dependencies ([#317](https://github.com/streamnative/function-mesh/pull/317)), ([#318](https://github.com/streamnative/function-mesh/pull/318))
 - [Test] Bump versions for test script toolsets ([#334](https://github.com/streamnative/function-mesh/pull/334))
 - [Test] Remove unused steps in test scripts ([#331](https://github.com/streamnative/function-mesh/pull/331))
