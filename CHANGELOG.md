@@ -5,7 +5,7 @@
 - [Helm Charts] Support more controller manager parameters for Helm charts ([#339](https://github.com/streamnative/function-mesh/pull/339))
 - [Helm Charts] Fix Helm charts installation issues ([#347](https://github.com/streamnative/function-mesh/pull/347)), ([#346](https://github.com/streamnative/function-mesh/pull/346)), ([#345](https://github.com/streamnative/function-mesh/pull/345)), ([#344](https://github.com/streamnative/function-mesh/pull/344))
 - [Helm Charts] Support namespace configurations for Helm charts ([#327](https://github.com/streamnative/function-mesh/pull/327))
-- [Controller] apply Istio service port name convention to services ([#343](https://github.com/streamnative/function-mesh/pull/343))
+- [Controller] Apply the Istio service port name convention to services ([#343](https://github.com/streamnative/function-mesh/pull/343))
 - [Controller] fix webhook service ([#341](https://github.com/streamnative/function-mesh/pull/341))
 - [Controller] Move `apiextensions.k8s.io/v1beta1` to `apiextensions.k8s.io/v1` ([#328](https://github.com/streamnative/function-mesh/pull/328))
 - [Controller] fix service `controller-manager-metrics-service` wrong selector ([#333](https://github.com/streamnative/function-mesh/pull/333))
