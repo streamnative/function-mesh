@@ -41,7 +41,7 @@ spec:
         command:
           - /manager
         args:
-          - --enable-leader-election={{ .Values.controllerManager.enable-leader-election }}
+          - --enable-leader-election={{ .Values.controllerManager.enableLeaderElection }}
           - --enable-pprof={{ .Values.controllerManager.pprof.enable }}
           - --metrics-addr=:{{ .Values.controllerManager.metrics.port }}
           - --health-probe-addr=:{{ .Values.controllerManager.healthProbe.port }}
