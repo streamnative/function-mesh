@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/component: controller-manager
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+"  "_" }}
 data:
-  configs.yaml: |
+  config.yaml: |
     {{- if .Values.controllerManager.runnerImages }}
     runnerImages:
 {{ toYaml .Values.controllerManager.runnerImages | indent 6 }}
