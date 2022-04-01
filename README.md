@@ -24,7 +24,7 @@ Note:
 
 ### Kubernetes compatibility matrix
 
-The following Kubernetes versions are supported and work as we test against these versions in their respective branches. But note that other versions might work as well.
+This table outlines the supported Kubernetes versions. We have tested these versions in their respective branches. But note that other versions might work as well.
 
 | Function Mesh operator                                                          | Kubernetes 1.16  | Kubernetes 1.17 | Kubernetes 1.18 | Kubernetes 1.19 | Kubernetes 1.20 | Kubernetes 1.21 | Kubernetes 1.22 |
 |---------------------------------------------------------------------------------|------------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|
