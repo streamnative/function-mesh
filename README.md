@@ -4,7 +4,7 @@ A Kubernetes-Native way to run pulsar functions, connectors and composed functio
 ## Install
 
 ```bash
-curl -sSL https://github.com/streamnative/function-mesh/releases/download/v0.1.11-rc3/install.sh | bash
+curl -sSL https://github.com/streamnative/function-mesh/releases/download/v0.1.11/install.sh | bash
 ```
 
 The above command installs all the CRDs, required service account configuration, and all function-mesh operator components. Before you start running a function-mesh example, verify if Function Mesh is installed correctly.
@@ -19,6 +19,19 @@ Note:
 - [kubernetes cluster](https://kubernetes.io/)
 - [pulsar-cluster](https://pulsar.apache.org/docs/en/pulsar-2.0/)
 - [pulsar-functions](https://pulsar.apache.org/docs/en/functions-overview/)
+
+## Compatibility
+
+### Kubernetes compatibility matrix
+
+The following Kubernetes versions are supported and work as we test against these versions in their respective branches. But note that other versions might work as well.
+
+| Function Mesh operator                                                          | Kubernetes 1.16  | Kubernetes 1.17 | Kubernetes 1.18 | Kubernetes 1.19 | Kubernetes 1.20 | Kubernetes 1.21 | Kubernetes 1.22 |
+|---------------------------------------------------------------------------------|------------------|-----------------|-----------------|-----------------|
+| [`v0.1.11`](https://github.com/streamnative/function-mesh/releases/tag/v0.1.11) | ✗                | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
+| [`v0.1.10`](https://github.com/streamnative/function-mesh/releases/tag/v0.1.10) | ✔                | ✔               | ✔               | ✔               | ✔               | ✔               | ✗               |
+| [`v0.1.9`](https://github.com/streamnative/function-mesh/releases/tag/v0.1.9)   | ✔                | ✔               | ✔               | ✔               | ✔               | ✔               | ✗               |
+| [`Master`](https://github.com/streamnative/function-mesh/tree/master)           | ✗                | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
 
 ## Development
 

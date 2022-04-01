@@ -1,3 +1,23 @@
+# Function Mesh v0.1.11 Release Notes
+
+## v0.1.11 What's New
+
+- [Helm Charts] support more controller manager params for helm charts ([#339](https://github.com/streamnative/function-mesh/pull/339))
+- [Helm Charts] fix helm charts install ([#347](https://github.com/streamnative/function-mesh/pull/347)), ([#346](https://github.com/streamnative/function-mesh/pull/346)), ([#345](https://github.com/streamnative/function-mesh/pull/345)), ([#344](https://github.com/streamnative/function-mesh/pull/344))
+- [Helm Charts] support namespace config for helm charts ([#327](https://github.com/streamnative/function-mesh/pull/327))
+- [Controller] apply Istio service port name convention to services ([#343](https://github.com/streamnative/function-mesh/pull/343))
+- [Controller] fix webhook service ([#341](https://github.com/streamnative/function-mesh/pull/341))
+- [Controller] Move `apiextensions.k8s.io/v1beta1` to `apiextensions.k8s.io/v1` ([#328](https://github.com/streamnative/function-mesh/pull/328))
+- [Controller] fix service `controller-manager-metrics-service` wrong selector ([#333](https://github.com/streamnative/function-mesh/pull/333))
+- [Controller] expose more parameters for manager ([#329](https://github.com/streamnative/function-mesh/pull/329))
+- [Controller] add controller config file ([#322](https://github.com/streamnative/function-mesh/pull/322))
+- [Controller] Add annotation to exclude the webhook port from Istio proxying ([#321](https://github.com/streamnative/function-mesh/pull/321))
+- [OLM] Increase resource limit for manager ([#324](https://github.com/streamnative/function-mesh/pull/324))
+- [Runner Images] verify Pulsar 2.10 ([#336](https://github.com/streamnative/function-mesh/pull/336))
+- [Runner Images] bump sample dependencies ([#317](https://github.com/streamnative/function-mesh/pull/317)), ([#318](https://github.com/streamnative/function-mesh/pull/318))
+- [Test] Bump versions for test script toolsets ([#334](https://github.com/streamnative/function-mesh/pull/334))
+- [Test] Remove unused steps in test scripts ([#331](https://github.com/streamnative/function-mesh/pull/331))
+
 # Function Mesh v0.1.10 Release Notes
 
 ## v0.1.10 What's New
