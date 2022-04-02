@@ -211,7 +211,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.controllerManager.serviceAccount }}
-    namespace: {{ .Release.Namespace }}
+    namespace: {{ .Values.installation.namespace }}
 roleRef:
   kind: ClusterRole
   name: {{ .Release.Name }}-function-mesh-controller-manager
@@ -230,7 +230,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.controllerManager.serviceAccount }}
-    namespace: {{ .Release.Namespace }}
+    namespace: {{ .Values.installation.namespace }}
 roleRef:
   kind: ClusterRole
   name: {{ .Release.Name }}-function-mesh-controller-manager-admin
