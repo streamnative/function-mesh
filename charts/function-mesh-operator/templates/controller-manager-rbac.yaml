@@ -150,8 +150,20 @@ rules:
       - patch
       - update
       - watch
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Release.Name }}-function-mesh-controller-manager-admin
+  labels:
+    app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: controller-manager
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+"  "_" }}
+rules:
   - apiGroups:
-      - ""
+    - ""
     resources:
       - configmaps
     verbs:
@@ -177,6 +189,14 @@ rules:
     verbs:
       - create
       - patch
+  - verbs:
+      - get
+      - list
+      - watch
+    apiGroups:
+      - ''
+    resources:
+      - namespaces
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -195,5 +215,24 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: {{ .Release.Name }}-function-mesh-controller-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Release.Name }}-function-mesh-controller-manager-admin
+  labels:
+    app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: controller-manager
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+"  "_" }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.controllerManager.serviceAccount }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ .Release.Name }}-function-mesh-controller-manager-admin
   apiGroup: rbac.authorization.k8s.io
 {{- end }}
