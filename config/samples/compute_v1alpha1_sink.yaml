@@ -26,8 +26,9 @@ spec:
     requests:
       cpu: "0.1"
       memory: 1G
+  image: streamnative/pulsar-io-elastic-search:2.10.0.0-rc10
   java:
-    jar: connectors/pulsar-io-elastic-search-2.7.0-rc-pm-3.nar
+    jar: connectors/pulsar-io-elastic-search-2.10.0.0-rc10.nar
     jarLocation: "" # use pulsar provided connectors
     # use package name:
     # jarLocation: function://public/default/nul-test-java-sink@v1

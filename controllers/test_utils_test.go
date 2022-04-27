@@ -220,9 +220,10 @@ func makeSinkSample() *v1alpha1.Sink {
 					//AuthConfig: "test-auth",
 				},
 			},
+			Image: "streamnative/pulsar-io-elastic-search:2.10.0.0-rc10",
 			Runtime: v1alpha1.Runtime{
 				Java: &v1alpha1.JavaRuntime{
-					Jar:         "connectors/pulsar-io-elastic-search-2.7.0-rc-pm-3.nar",
+					Jar:         "connectors/pulsar-io-elastic-search-2.10.0.0-rc10.nar",
 					JarLocation: "",
 				},
 			},
@@ -271,9 +272,10 @@ func makeSourceSample() *v1alpha1.Source {
 					//AuthConfig: "test-auth",
 				},
 			},
+			Image: "streamnative/pulsar-io-debezium-mongodb:2.10.0.0-rc10",
 			Runtime: v1alpha1.Runtime{
 				Java: &v1alpha1.JavaRuntime{
-					Jar:         "connectors/pulsar-io-elastic-search-2.7.0-rc-pm-3.nar",
+					Jar:         "connectors/pulsar-io-debezium-mongodb-2.10.0.0-rc10.nar",
 					JarLocation: "",
 				},
 			},
