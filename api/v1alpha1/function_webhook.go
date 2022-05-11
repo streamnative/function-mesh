@@ -217,6 +217,11 @@ func (r *Function) ValidateCreate() error {
 		allErrs = append(allErrs, fieldErr)
 	}
 
+	fieldErr = validateStatefulFunctionConfigs(r.Spec.StatefulFunction, r.Spec.Runtime)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
+
 	if len(allErrs) == 0 {
 		return nil
 	}
