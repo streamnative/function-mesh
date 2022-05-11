@@ -69,7 +69,8 @@ type PulsarStateStore struct {
 
 type PulsarStateStoreJavaProvider struct {
 	// The java class name of the state store provider implementation
-	// The class must implement org.apache.pulsar.functions.instance.state.StateStoreProvider interface
+	// The class must implement `org.apache.pulsar.functions.instance.state.StateStoreProvider` interface
+	// If not set, `org.apache.pulsar.functions.instance.state.BKStateStoreProviderImpl` will be used
 	ClassName string `json:"className"`
 
 	// The configmap of the configuration for the state store provider
