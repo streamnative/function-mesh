@@ -1,8 +1,0 @@
-check-version-increment: false
-chart-dirs:
-  - charts
-all: false
-validate-maintainers: false
-helm-extra-args: --timeout 2000s
-namespace: default
-release-label: release

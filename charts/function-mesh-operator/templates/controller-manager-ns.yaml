@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    control-plane: function-mesh-controller-manager
-  name: {{ .Values.installation.namespace }}
