@@ -33,7 +33,7 @@ jobs:
 
       - name: InstallTool
         run: |
-          wget -O - -q https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.18.0
+          wget -O - -q https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.45.2
           ./bin/golangci-lint --version
 
       - name: BuildProject
