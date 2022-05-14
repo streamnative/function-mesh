@@ -34,7 +34,8 @@ func MakeSourceHPA(source *v1alpha1.Source) *autov2beta2.HorizontalPodAutoscaler
 		APIVersion: source.APIVersion,
 	}
 	if isBuiltinHPAEnabled(source.Spec.Replicas, source.Spec.MaxReplicas, source.Spec.Pod) {
-		return makeBuiltinHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, targetRef, source.Spec.Pod.BuiltinAutoscaler)
+		return makeBuiltinHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, targetRef,
+			source.Spec.Pod.BuiltinAutoscaler)
 	} else if !isDefaultHPAEnabled(source.Spec.Replicas, source.Spec.MaxReplicas, source.Spec.Pod) {
 		return makeHPA(objectMeta, *source.Spec.Replicas, *source.Spec.MaxReplicas, source.Spec.Pod, targetRef)
 	}
@@ -78,8 +79,9 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		Env:             generateContainerEnv(source.Spec.SecretsMap),
 		Resources:       source.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
-		EnvFrom:         generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret, source.Spec.Pulsar.TLSSecret),
-		VolumeMounts:    makeSourceVolumeMounts(source),
+		EnvFrom: generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret,
+			source.Spec.Pulsar.TLSSecret),
+		VolumeMounts: makeSourceVolumeMounts(source),
 	}
 }
 
@@ -105,7 +107,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName, generateSourceDetailsInJSON(source),
 		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir, string(source.UID),
-		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap)
+		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil)
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {
