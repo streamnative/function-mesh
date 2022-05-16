@@ -319,21 +319,13 @@ func validateStatefulFunctionConfigs(statefulFunctionConfigs *Stateful, runtime 
 				return field.Invalid(field.NewPath("spec").Child("statefulFunction"), runtime.Golang,
 					fmt.Sprintf("Golang function do not support stateful function yet"))
 			}
-			if statefulFunctionConfigs.Pulsar.ServiceUrl == "" {
+			if statefulFunctionConfigs.Pulsar.ServiceURL == "" {
 				return field.Invalid(field.NewPath("spec").Child("statefulFunction", "pulsar", "serviceUrl"),
-					statefulFunctionConfigs.Pulsar.ServiceUrl, "serviceUrl cannot be empty")
+					statefulFunctionConfigs.Pulsar.ServiceURL, "serviceUrl cannot be empty")
 			}
 		}
 	}
 	return nil
-}
-
-func isJavaRuntime(runtime Runtime) bool {
-	return runtime.Java != nil && runtime.Golang == nil && runtime.Python == nil
-}
-
-func isPythonRuntime(runtime Runtime) bool {
-	return runtime.Python != nil && runtime.Golang == nil && runtime.Java == nil
 }
 
 func isGolangRuntime(runtime Runtime) bool {

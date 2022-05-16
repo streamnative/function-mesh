@@ -275,10 +275,10 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, 
 		secretProviderArgs := getJavaSecretProviderArgs(secretMaps)
 		args = append(args, secretProviderArgs...)
 	}
-	if state != nil && state.Pulsar != nil && state.Pulsar.ServiceUrl != "" {
+	if state != nil && state.Pulsar != nil && state.Pulsar.ServiceURL != "" {
 		statefulArgs := []string{
 			"--state_storage_serviceurl",
-			state.Pulsar.ServiceUrl,
+			state.Pulsar.ServiceURL,
 		}
 		if state.Pulsar.JavaProvider != nil {
 			statefulArgs = append(statefulArgs, "--state_storage_impl_class", state.Pulsar.JavaProvider.ClassName)
@@ -310,10 +310,10 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 		secretProviderArgs := getPythonSecretProviderArgs(secretMaps)
 		args = append(args, secretProviderArgs...)
 	}
-	if state != nil && state.Pulsar != nil && state.Pulsar.ServiceUrl != "" {
+	if state != nil && state.Pulsar != nil && state.Pulsar.ServiceURL != "" {
 		statefulArgs := []string{
 			"--state_storage_serviceurl",
-			state.Pulsar.ServiceUrl,
+			state.Pulsar.ServiceURL,
 		}
 		args = append(args, statefulArgs...)
 	}

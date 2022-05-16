@@ -61,7 +61,7 @@ type PulsarMessaging struct {
 type PulsarStateStore struct {
 	// The service url points to the state store service
 	// By default, the state store service is bookkeeper table service
-	ServiceUrl string `json:"serviceUrl"`
+	ServiceURL string `json:"serviceUrl"`
 
 	// The state store config for Java runtime
 	JavaProvider *PulsarStateStoreJavaProvider `json:"javaProvider,omitempty"`
