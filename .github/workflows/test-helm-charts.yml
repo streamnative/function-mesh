@@ -68,11 +68,11 @@ jobs:
           node_image: kindest/node:v1.17.17
           wait: 600s
 
-      - name: Set up GO 1.13
+      - name: Set up GO 1.18
         if: steps.list-changed.outputs.changed == 'true'
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13
+          go-version: 1.18
         id: go
 
       - name: setup kubebuilder 2.3.1
