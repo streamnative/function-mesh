@@ -1,5 +1,5 @@
 ARG PULSAR_IMAGE_TAG
-FROM golang:1.13 as builder
+FROM golang:1.18 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
