@@ -78,5 +78,7 @@ case ${1} in
     sleep 60
     ci::print_function_log java-function-stateful-sample
     ci::verify_java_function java-function-stateful-sample
+    sleep 60
+    ci::print_function_log java-function-stateful-sample
     ;;
 esac
