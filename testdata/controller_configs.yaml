@@ -1,9 +1,0 @@
-runnerImages:
-  java: streamnative/pulsar-functions-java-runner:latest
-  python: streamnative/pulsar-functions-python-runner:latest
-  go: streamnative/pulsar-functions-go-runner:latest
-resourceLabels:
-  functionmesh.io/managedBy: function-mesh
-  foo: bar
-resourceAnnotations:
-  fooAnnotation: barAnnotation
