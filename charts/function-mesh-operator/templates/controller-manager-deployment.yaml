@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: function-mesh-controller-manager
-  namespace: {{ .Values.installation.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}

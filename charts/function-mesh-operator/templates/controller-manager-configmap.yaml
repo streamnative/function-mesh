@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: function-mesh-controller-manager-configs
-  namespace: {{ .Values.installation.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
