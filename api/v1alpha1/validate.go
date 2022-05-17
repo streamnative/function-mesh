@@ -317,7 +317,7 @@ func validateStatefulFunctionConfigs(statefulFunctionConfigs *Stateful, runtime 
 		if statefulFunctionConfigs.Pulsar != nil {
 			if isGolangRuntime(runtime) {
 				return field.Invalid(field.NewPath("spec").Child("statefulFunction"), runtime.Golang,
-					fmt.Sprintf("Golang function do not support stateful function yet"))
+					"Golang function do not support stateful function yet")
 			}
 			if statefulFunctionConfigs.Pulsar.ServiceURL == "" {
 				return field.Invalid(field.NewPath("spec").Child("statefulFunction", "pulsar", "serviceUrl"),
