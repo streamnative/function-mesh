@@ -3,7 +3,7 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: {{ .Values.controllerManager.serviceAccount }}
-  namespace: {{ .Values.installation.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
@@ -211,7 +211,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.controllerManager.serviceAccount }}
-    namespace: {{ .Values.installation.namespace }}
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: {{ .Release.Name }}-function-mesh-controller-manager
@@ -230,7 +230,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.controllerManager.serviceAccount }}
-    namespace: {{ .Values.installation.namespace }}
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: {{ .Release.Name }}-function-mesh-controller-manager-admin
