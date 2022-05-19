@@ -32,7 +32,7 @@ spec:
     extraDependenciesDir: random-dir/
   clusterName: test-pulsar
   autoAck: true
-  statefulFunction:
+  statefulConfig:
     pulsar:
       serviceUrl: "bk://test-pulsar-bk.default.svc.cluster.local:4181"
 ---

@@ -31,7 +31,7 @@ spec:
     jar: /pulsar/examples/api-examples.jar
   clusterName: test-pulsar
   autoAck: true
-  statefulFunction:
+  statefulConfig:
     pulsar:
       serviceUrl: "bk://sn-platform-pulsar-bk.default.svc.cluster.local:4181"
 ---

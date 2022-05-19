@@ -74,7 +74,7 @@ type PulsarStateStoreJavaProvider struct {
 	ClassName string `json:"className"`
 
 	// The configmap of the configuration for the state store provider
-	Config string `json:"config,omitempty"`
+	Config *Config `json:"config,omitempty"`
 }
 
 type PodPolicy struct {

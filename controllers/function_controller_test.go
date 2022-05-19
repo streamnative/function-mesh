@@ -170,7 +170,7 @@ var _ = Describe("Function Controller (builtin HPA)", func() {
 var _ = Describe("Function Controller (Stateful Function)", func() {
 	Context("Simple Function Item with Stateful store config", func() {
 		function := makeFunctionSample(TestFunctionStatefulJavaName)
-		function.Spec.StatefulFunction = &v1alpha1.Stateful{
+		function.Spec.StateConfig = &v1alpha1.Stateful{
 			Pulsar: &v1alpha1.PulsarStateStore{
 				ServiceURL: "bk://localhost:4181",
 			},
@@ -203,7 +203,7 @@ func createFunction(function *v1alpha1.Function) {
 		Expect(statefulSet.Name).Should(Equal(spec.MakeFunctionObjectMeta(function).Name))
 		Expect(*statefulSet.Spec.Replicas).Should(Equal(int32(1)))
 
-		if function.Spec.StatefulFunction != nil {
+		if function.Spec.StateConfig != nil {
 			containers := statefulSet.Spec.Template.Spec.Containers
 			Expect(len(containers) > 0).Should(BeTrue())
 			for _, container := range containers {

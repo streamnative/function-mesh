@@ -2580,7 +2580,7 @@ spec:
                             type: string
                         type: object
                       type: object
-                    statefulFunction:
+                    statefulConfig:
                       properties:
                         pulsar:
                           properties:
@@ -2589,7 +2589,7 @@ spec:
                                 className:
                                   type: string
                                 config:
-                                  type: string
+                                  type: object
                               required:
                               - className
                               type: object

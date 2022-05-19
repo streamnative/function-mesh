@@ -82,7 +82,7 @@ func makeFunctionSample(functionName string) *v1alpha1.Function {
 					JarLocation: "public/default/nlu-test-java-function",
 				},
 			},
-			StatefulFunction: &v1alpha1.Stateful{
+			StateConfig: &v1alpha1.Stateful{
 				Pulsar: &v1alpha1.PulsarStateStore{
 					ServiceURL: "bk://localhost:4181",
 				},

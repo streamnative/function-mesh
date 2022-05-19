@@ -87,7 +87,7 @@ type FunctionSpec struct {
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	StatefulFunction *Stateful `json:"statefulFunction,omitempty"`
+	StateConfig *Stateful `json:"statefulConfig,omitempty"`
 }
 
 // FunctionStatus defines the observed state of Function
