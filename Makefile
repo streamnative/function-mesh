@@ -127,9 +127,12 @@ kustomize:
 ifeq (, $(shell which kustomize))
 	@{ \
 	set -e ;\
+	echo "Installing kustomize..." ;\
 	if [ "$(GO_MINOR_VERSION)" -ge "18" ]; then \
+	echo "Installing kustomize with go 1.18 install..." ;\
 	go install sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
 	else \
+	echo "Installing kustomize with go get..." ;\
 	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
 	go mod init tmp ;\
