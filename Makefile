@@ -108,7 +108,7 @@ controller-gen:
 ifeq (, $(shell which controller-gen))
 	@{ \
 	set -e ;\
-	if [ "$(GO_MINOR_VERSION)" -ge "18" ]; then \
+	if [ "$(GO_MINOR_VERSION)" -ge "17" ]; then \
 		go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2 ;\
 	else \
 		CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
@@ -128,17 +128,17 @@ ifeq (, $(shell which kustomize))
 	@{ \
 	set -e ;\
 	echo "Installing kustomize..." ;\
-	if [ "$(GO_MINOR_VERSION)" -ge "18" ]; then \
-	echo "Installing kustomize with go 1.18 install..." ;\
-	go install sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
+	if [ "$(GO_MINOR_VERSION)" -ge "17" ]; then \
+		echo "Installing kustomize with go install..." ;\
+		go install sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
 	else \
-	echo "Installing kustomize with go get..." ;\
-	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
-	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
-	fi ;\
+		echo "Installing kustomize with go get..." ;\
+		KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
+		cd $$KUSTOMIZE_GEN_TMP_DIR ;\
+		go mod init tmp ;\
+		go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
+		rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
+		fi ;\
 	}
 KUSTOMIZE=$(GOBIN)/kustomize
 else
