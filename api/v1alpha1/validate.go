@@ -34,7 +34,8 @@ func validateJavaRuntime(java *JavaRuntime, className string) []*field.Error {
 			allErrs = append(allErrs, e)
 		}
 		if java.Jar == "" {
-			e := field.Invalid(field.NewPath("spec").Child("java", "jar"), java.Jar, "jar cannot be empty in java runtime")
+			e := field.Invalid(field.NewPath("spec").Child("java", "jar"), java.Jar,
+				"jar cannot be empty in java runtime")
 			allErrs = append(allErrs, e)
 		}
 		if java.JarLocation != "" {
@@ -56,7 +57,8 @@ func validatePythonRuntime(python *PythonRuntime, className string) []*field.Err
 			allErrs = append(allErrs, e)
 		}
 		if python.Py == "" {
-			e := field.Invalid(field.NewPath("spec").Child("python", "py"), python.Py, "py cannot be empty in python runtime")
+			e := field.Invalid(field.NewPath("spec").Child("python", "py"), python.Py,
+				"py cannot be empty in python runtime")
 			allErrs = append(allErrs, e)
 		}
 		if python.PyLocation != "" {
@@ -74,7 +76,8 @@ func validateGolangRuntime(golang *GoRuntime) []*field.Error {
 	var allErrs field.ErrorList
 	if golang != nil {
 		if golang.Go == "" {
-			e := field.Invalid(field.NewPath("spec").Child("golang", "go"), golang.Go, "go cannot be empty in golang runtime")
+			e := field.Invalid(field.NewPath("spec").Child("golang", "go"), golang.Go,
+				"go cannot be empty in golang runtime")
 			allErrs = append(allErrs, e)
 		}
 		if golang.GoLocation != "" {
@@ -102,7 +105,8 @@ func validateReplicasAndMaxReplicas(replicas, maxReplicas *int32) []*field.Error
 	}
 
 	if maxReplicas != nil && replicas != nil && *replicas > *maxReplicas {
-		e := field.Invalid(field.NewPath("spec").Child("maxReplicas"), *maxReplicas, "maxReplicas must be greater than or equal to replicas")
+		e := field.Invalid(field.NewPath("spec").Child("maxReplicas"), *maxReplicas,
+			"maxReplicas must be greater than or equal to replicas")
 		allErrs = append(allErrs, e)
 	}
 	return allErrs
@@ -117,20 +121,24 @@ func validateResourceRequirement(requirements corev1.ResourceRequirements) *fiel
 
 func validateTimeout(timeout int32, processingGuarantee ProcessGuarantee) *field.Error {
 	if timeout != 0 && processingGuarantee == EffectivelyOnce {
-		return field.Invalid(field.NewPath("spec").Child("timeout"), timeout, "message timeout can only be set for AtleastOnce processing guarantee")
+		return field.Invalid(field.NewPath("spec").Child("timeout"), timeout,
+			"message timeout can only be set for AtleastOnce processing guarantee")
 	}
 	return nil
 }
 
-func validateMaxMessageRetry(maxMessageRetry int32, processingGuarantee ProcessGuarantee, deadLetterTopic string) []*field.Error {
+func validateMaxMessageRetry(maxMessageRetry int32, processingGuarantee ProcessGuarantee,
+	deadLetterTopic string) []*field.Error {
 	var allErrs field.ErrorList
 	if maxMessageRetry > 0 && processingGuarantee == EffectivelyOnce {
-		e := field.Invalid(field.NewPath("spec").Child("maxMessageRetry"), maxMessageRetry, "MaxMessageRetries and Effectively once are not compatible")
+		e := field.Invalid(field.NewPath("spec").Child("maxMessageRetry"), maxMessageRetry,
+			"MaxMessageRetries and Effectively once are not compatible")
 		allErrs = append(allErrs, e)
 	}
 
 	if maxMessageRetry <= 0 && deadLetterTopic != "" {
-		e := field.Invalid(field.NewPath("spec").Child("maxMessageRetry"), maxMessageRetry, "dead letter topic is set but max message retry is set to infinity")
+		e := field.Invalid(field.NewPath("spec").Child("maxMessageRetry"), maxMessageRetry,
+			"dead letter topic is set but max message retry is set to infinity")
 		allErrs = append(allErrs, e)
 	}
 	return allErrs
@@ -138,7 +146,8 @@ func validateMaxMessageRetry(maxMessageRetry int32, processingGuarantee ProcessG
 
 func validateRetainKeyOrdering(retainKeyOrdering bool, processingGuarantee ProcessGuarantee) *field.Error {
 	if retainKeyOrdering && processingGuarantee == EffectivelyOnce {
-		return field.Invalid(field.NewPath("spec").Child("retainKeyOrdering"), retainKeyOrdering, "when effectively once processing guarantee is specified, retain Key ordering cannot be set")
+		return field.Invalid(field.NewPath("spec").Child("retainKeyOrdering"), retainKeyOrdering,
+			"when effectively once processing guarantee is specified, retain Key ordering cannot be set")
 	}
 	return nil
 }
@@ -146,9 +155,11 @@ func validateRetainKeyOrdering(retainKeyOrdering bool, processingGuarantee Proce
 func validateRetainOrderingConflicts(retainKeyOrdering bool, retainOrdering bool) []*field.Error {
 	var allErrs field.ErrorList
 	if retainKeyOrdering && retainOrdering {
-		e := field.Invalid(field.NewPath("spec").Child("retainKeyOrdering"), retainKeyOrdering, "only one of retain ordering or retain key ordering can be set")
+		e := field.Invalid(field.NewPath("spec").Child("retainKeyOrdering"), retainKeyOrdering,
+			"only one of retain ordering or retain key ordering can be set")
 		allErrs = append(allErrs, e)
-		e = field.Invalid(field.NewPath("spec").Child("retainOrdering"), retainOrdering, "only one of retain ordering or retain key ordering can be set")
+		e = field.Invalid(field.NewPath("spec").Child("retainOrdering"), retainOrdering,
+			"only one of retain ordering or retain key ordering can be set")
 		allErrs = append(allErrs, e)
 	}
 	return allErrs
@@ -158,7 +169,8 @@ func validateFunctionConfig(config *Config) *field.Error {
 	if config != nil {
 		_, err := config.MarshalJSON()
 		if err != nil {
-			return field.Invalid(field.NewPath("spec").Child("funcConfig"), config, "function config is invalid: "+err.Error())
+			return field.Invalid(field.NewPath("spec").Child("funcConfig"), config,
+				"function config is invalid: "+err.Error())
 		}
 	}
 	return nil
@@ -168,7 +180,8 @@ func validateSinkConfig(config *Config) *field.Error {
 	if config != nil {
 		_, err := config.MarshalJSON()
 		if err != nil {
-			return field.Invalid(field.NewPath("spec").Child("sinkConfig"), config, "sink config is invalid: "+err.Error())
+			return field.Invalid(field.NewPath("spec").Child("sinkConfig"), config,
+				"sink config is invalid: "+err.Error())
 		}
 	}
 	return nil
@@ -178,7 +191,8 @@ func validateSourceConfig(config *Config) *field.Error {
 	if config != nil {
 		_, err := config.MarshalJSON()
 		if err != nil {
-			return field.Invalid(field.NewPath("spec").Child("sourceConfig"), config, "source config is invalid: "+err.Error())
+			return field.Invalid(field.NewPath("spec").Child("sourceConfig"), config,
+				"source config is invalid: "+err.Error())
 		}
 	}
 	return nil
@@ -188,7 +202,8 @@ func validateSecretsMap(secrets map[string]SecretRef) *field.Error {
 	if secrets != nil {
 		_, err := json.Marshal(secrets)
 		if err != nil {
-			return field.Invalid(field.NewPath("spec").Child("secretsMap"), secrets, "secrets map is invalid: "+err.Error())
+			return field.Invalid(field.NewPath("spec").Child("secretsMap"), secrets,
+				"secrets map is invalid: "+err.Error())
 		}
 	}
 	return nil
@@ -247,14 +262,18 @@ func validateInputOutput(input *InputConf, output *OutputConf) []*field.Error {
 			}
 			if output.ProducerConf != nil && output.ProducerConf.CryptoConfig != nil {
 				if output.ProducerConf.CryptoConfig.CryptoKeyReaderClassName == "" {
-					e := field.Invalid(field.NewPath("spec").Child("output", "producerConf", "cryptoConfig", "cryptoKeyReaderClassName"),
-						output.ProducerConf.CryptoConfig.CryptoKeyReaderClassName, "cryptoKeyReader class name required")
+					e := field.Invalid(field.NewPath("spec").Child("output", "producerConf", "cryptoConfig",
+						"cryptoKeyReaderClassName"),
+						output.ProducerConf.CryptoConfig.CryptoKeyReaderClassName,
+						"cryptoKeyReader class name required")
 					allErrs = append(allErrs, e)
 				}
 
 				if len(output.ProducerConf.CryptoConfig.EncryptionKeys) == 0 {
-					e := field.Invalid(field.NewPath("spec").Child("output", "producerConf", "cryptoConfig", "encryptionKeys"),
-						output.ProducerConf.CryptoConfig.EncryptionKeys, "must provide encryption key name for crypto key reader")
+					e := field.Invalid(field.NewPath("spec").Child("output", "producerConf", "cryptoConfig",
+						"encryptionKeys"),
+						output.ProducerConf.CryptoConfig.EncryptionKeys,
+						"must provide encryption key name for crypto key reader")
 					allErrs = append(allErrs, e)
 				}
 			}
@@ -268,7 +287,8 @@ func validateLogTopic(logTopic string) *field.Error {
 	if logTopic != "" {
 		err := isValidTopicName(logTopic)
 		if err != nil {
-			return field.Invalid(field.NewPath("spec").Child("logTopic"), logTopic, fmt.Sprintf("Log topic %s is invalid", logTopic))
+			return field.Invalid(field.NewPath("spec").Child("logTopic"), logTopic,
+				fmt.Sprintf("Log topic %s is invalid", logTopic))
 		}
 	}
 	return nil
@@ -278,7 +298,8 @@ func validateDeadLetterTopic(deadLetterTopic string) *field.Error {
 	if deadLetterTopic != "" {
 		err := isValidTopicName(deadLetterTopic)
 		if err != nil {
-			return field.Invalid(field.NewPath("spec").Child("deadLetterTopic"), deadLetterTopic, fmt.Sprintf("DeadLetter topic %s is invalid", deadLetterTopic))
+			return field.Invalid(field.NewPath("spec").Child("deadLetterTopic"), deadLetterTopic,
+				fmt.Sprintf("DeadLetter topic %s is invalid", deadLetterTopic))
 		}
 	}
 	return nil
@@ -289,4 +310,24 @@ func validateAutoAck(autoAck *bool) *field.Error {
 		return field.Invalid(field.NewPath("spec").Child("autoAck"), autoAck, "autoAck cannot be nil")
 	}
 	return nil
+}
+
+func validateStatefulFunctionConfigs(statefulFunctionConfigs *Stateful, runtime Runtime) *field.Error {
+	if statefulFunctionConfigs != nil {
+		if statefulFunctionConfigs.Pulsar != nil {
+			if isGolangRuntime(runtime) {
+				return field.Invalid(field.NewPath("spec").Child("statefulConfig"), runtime.Golang,
+					"Golang function do not support stateful function yet")
+			}
+			if statefulFunctionConfigs.Pulsar.ServiceURL == "" {
+				return field.Invalid(field.NewPath("spec").Child("statefulConfig", "pulsar", "serviceUrl"),
+					statefulFunctionConfigs.Pulsar.ServiceURL, "serviceUrl cannot be empty")
+			}
+		}
+	}
+	return nil
+}
+
+func isGolangRuntime(runtime Runtime) bool {
+	return runtime.Golang != nil && runtime.Python == nil && runtime.Java == nil
 }

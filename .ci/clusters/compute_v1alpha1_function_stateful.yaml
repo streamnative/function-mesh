@@ -1,0 +1,44 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: java-function-stateful-sample
+  namespace: default
+spec:
+  image: streamnative/pulsar-functions-java-sample:2.10.0.0-rc10
+  className: org.apache.pulsar.functions.api.examples.WordCountFunction
+  forwardSourceMessageProperty: true
+  maxPendingAsyncRequests: 1000
+  replicas: 1
+  maxReplicas: 5
+  logTopic: persistent://public/default/logging-function-logs
+  input:
+    topics:
+    - persistent://public/default/java-function-stateful-input-topic
+    typeClassName: java.lang.String
+  output:
+    topic: persistent://public/default/java-function-stateful-output-topic
+    typeClassName: java.lang.String
+  resources:
+    requests:
+      cpu: "0.1"
+      memory: 1G
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+  pulsar:
+    pulsarConfig: "test-pulsar"
+  java:
+    jar: /pulsar/examples/api-examples.jar
+  clusterName: test-pulsar
+  autoAck: true
+  statefulConfig:
+    pulsar:
+      serviceUrl: "bk://sn-platform-pulsar-bk.default.svc.cluster.local:4181"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-pulsar
+data:
+    webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+    brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650

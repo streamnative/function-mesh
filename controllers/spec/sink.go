@@ -34,7 +34,8 @@ func MakeSinkHPA(sink *v1alpha1.Sink) *autov2beta2.HorizontalPodAutoscaler {
 		APIVersion: sink.APIVersion,
 	}
 	if isBuiltinHPAEnabled(sink.Spec.Replicas, sink.Spec.MaxReplicas, sink.Spec.Pod) {
-		return makeBuiltinHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, targetRef, sink.Spec.Pod.BuiltinAutoscaler)
+		return makeBuiltinHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, targetRef,
+			sink.Spec.Pod.BuiltinAutoscaler)
 	} else if !isDefaultHPAEnabled(sink.Spec.Replicas, sink.Spec.MaxReplicas, sink.Spec.Pod) {
 		return makeHPA(objectMeta, *sink.Spec.Replicas, *sink.Spec.MaxReplicas, sink.Spec.Pod, targetRef)
 	}
@@ -83,8 +84,9 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		Env:             generateContainerEnv(sink.Spec.SecretsMap),
 		Resources:       sink.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
-		EnvFrom:         generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret, sink.Spec.Pulsar.TLSSecret),
-		VolumeMounts:    makeSinkVolumeMounts(sink),
+		EnvFrom: generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret,
+			sink.Spec.Pulsar.TLSSecret),
+		VolumeMounts: makeSinkVolumeMounts(sink),
 	}
 }
 
@@ -110,7 +112,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName, generateSinkDetailsInJSON(sink),
 		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir, string(sink.UID),
-		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap)
+		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil)
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {
