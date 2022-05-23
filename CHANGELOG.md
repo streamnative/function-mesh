@@ -2,7 +2,7 @@
 
 ## v0.2.0 What's New
 
-- [Helm Charts] Release function-mesh-operator to helm charts repository ([#356](https://github.com/streamnative/function-mesh/issues/356))
+- [Helm Charts] Release the FunctionMesh operator to helm charts repository ([#356](https://github.com/streamnative/function-mesh/issues/356))
 - [Controller] Support stateful functions for Pulsar Functions ([#325](https://github.com/streamnative/function-mesh/issues/325))
 - [Controller] Migrate to golang 1.18 ([#366](https://github.com/streamnative/function-mesh/issues/366))
 
