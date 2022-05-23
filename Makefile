@@ -21,8 +21,8 @@ GOARCH := $(if $(GOARCH),$(GOARCH),amd64)
 GOENV  := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO     := $(GOENV) go
 GO_BUILD := $(GO) build -trimpath
-GO_MAJOR_VERSION = $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f1)
-GO_MINOR_VERSION = $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f2)
+GO_MAJOR_VERSION := $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f1)
+GO_MINOR_VERSION := $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f2)
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -105,58 +105,44 @@ image-push:
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:
-ifeq ($(shell expr $(value) \>= 18), 1)
 ifeq (, $(shell which controller-gen))
 	@{ \
 	set -e ;\
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2 ;\
+	if [ "$(GO_MINOR_VERSION)" -ge "18" ]; then \
+		go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2 ;\
+	else \
+		CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
+		cd $$CONTROLLER_GEN_TMP_DIR ;\
+		go mod init tmp ;\
+		go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2 ;\
+		rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+	fi ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
-else
-ifeq (, $(shell which controller-gen))
-	@{ \
-	set -e ;\
-	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CONTROLLER_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2 ;\
-	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	}
-CONTROLLER_GEN=$(GOBIN)/controller-gen
-else
-CONTROLLER_GEN=$(shell which controller-gen)
-endif
-endif
+	@echo "Using controller-gen at $(CONTROLLER_GEN)"
 
 kustomize:
-ifeq ($(shell expr $(value) \>= 18), 1)
 ifeq (, $(shell which kustomize))
 	@{ \
 	set -e ;\
+	if [ "$(GO_MINOR_VERSION)" -ge "18" ]; then \
 	go install sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
-	}
-KUSTOMIZE=$(GOBIN)/kustomize
-else
-KUSTOMIZE=$(shell which kustomize)
-endif
-else
-ifeq (, $(shell which kustomize))
-	@{ \
-	set -e ;\
+	else \
 	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
 	go mod init tmp ;\
 	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
 	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
+	fi ;\
 	}
 KUSTOMIZE=$(GOBIN)/kustomize
 else
 KUSTOMIZE=$(shell which kustomize)
 endif
-endif
+	@echo "Using kustomize at $(KUSTOMIZE)"
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
