@@ -122,7 +122,6 @@ CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
-	@echo "Using controller-gen at $(CONTROLLER_GEN)"
 
 kustomize:
 ifeq (, $(shell which kustomize))
@@ -142,7 +141,6 @@ KUSTOMIZE=$(GOBIN)/kustomize
 else
 KUSTOMIZE=$(shell which kustomize)
 endif
-	@echo "Using kustomize at $(KUSTOMIZE)"
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
