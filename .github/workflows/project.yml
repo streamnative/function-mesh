@@ -36,6 +36,10 @@ jobs:
           wget -O - -q https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.45.2
           ./bin/golangci-lint --version
 
+      - name: validate controller-gen
+        run: |
+          make manager
+
       - name: BuildProject
         run: |
           go mod download
