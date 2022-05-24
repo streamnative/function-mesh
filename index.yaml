@@ -3,6 +3,22 @@ entries:
   function-mesh-operator:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2022-05-24T03:03:59.60539514Z"
+    description: function mesh operator Helm chart for Kubernetes
+    digest: dfe0bb523f0c21161dec018ef2ab07780e746da73a8e0364734e4799e3f0c0c9
+    home: https://github.com/streamnative/function-mesh
+    maintainers:
+    - email: function-mesh@streamnative.io
+      name: Function Mesh Support
+    name: function-mesh-operator
+    sources:
+    - https://github.com/streamnative/function-mesh
+    type: application
+    urls:
+    - https://github.com/streamnative/function-mesh/releases/download/function-mesh-operator-0.2.0/function-mesh-operator-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2022-05-18T09:45:47.48039836Z"
     description: function mesh operator Helm chart for Kubernetes
     digest: 588ef6bd43b98c7b64fc96bc6ae04cc78758e6ba618237f825fe692a228f7afe
@@ -17,4 +33,4 @@ entries:
     urls:
     - https://github.com/streamnative/function-mesh/releases/download/function-mesh-operator-0.1.12/function-mesh-operator-0.1.12.tgz
     version: 0.1.12
-generated: "2022-05-18T09:45:47.480417061Z"
+generated: "2022-05-24T03:03:59.605410341Z"
