@@ -112,3 +112,6 @@ broker:
 
 proxy:
   replicaCount: 1
+
+functions:
+  functionState: true

@@ -35,6 +35,10 @@ type Messaging struct {
 	Pulsar *PulsarMessaging `json:"pulsar,omitempty"`
 }
 
+type Stateful struct {
+	Pulsar *PulsarStateStore `json:"pulsar,omitempty"`
+}
+
 type PulsarMessaging struct {
 	// The config map need to contain the following fields
 	// webServiceURL
@@ -52,6 +56,25 @@ type PulsarMessaging struct {
 	// hostname_verification_enabled
 	// tls_trust_cert_path
 	TLSSecret string `json:"tlsSecret,omitempty"`
+}
+
+type PulsarStateStore struct {
+	// The service url points to the state store service
+	// By default, the state store service is bookkeeper table service
+	ServiceURL string `json:"serviceUrl"`
+
+	// The state store config for Java runtime
+	JavaProvider *PulsarStateStoreJavaProvider `json:"javaProvider,omitempty"`
+}
+
+type PulsarStateStoreJavaProvider struct {
+	// The java class name of the state store provider implementation
+	// The class must implement `org.apache.pulsar.functions.instance.state.StateStoreProvider` interface
+	// If not set, `org.apache.pulsar.functions.instance.state.BKStateStoreProviderImpl` will be used
+	ClassName string `json:"className"`
+
+	// The configmap of the configuration for the state store provider
+	Config *Config `json:"config,omitempty"`
 }
 
 type PodPolicy struct {

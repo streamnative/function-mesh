@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.1.11
+VERSION ?= 0.2.0
 # Default image tag
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:v$(VERSION)
@@ -21,6 +21,8 @@ GOARCH := $(if $(GOARCH),$(GOARCH),amd64)
 GOENV  := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO     := $(GOENV) go
 GO_BUILD := $(GO) build -trimpath
+GO_MAJOR_VERSION := $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f1)
+GO_MINOR_VERSION := $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f2)
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -106,11 +108,15 @@ controller-gen:
 ifeq (, $(shell which controller-gen))
 	@{ \
 	set -e ;\
-	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CONTROLLER_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2 ;\
-	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+	if [ "$(GO_MINOR_VERSION)" -ge "17" ]; then \
+		go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2 ;\
+	else \
+		CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
+		cd $$CONTROLLER_GEN_TMP_DIR ;\
+		go mod init tmp ;\
+		go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2 ;\
+		rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+	fi ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
@@ -121,11 +127,18 @@ kustomize:
 ifeq (, $(shell which kustomize))
 	@{ \
 	set -e ;\
-	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
-	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
+	echo "Installing kustomize..." ;\
+	if [ "$(GO_MINOR_VERSION)" -ge "17" ]; then \
+		echo "Installing kustomize with go install..." ;\
+		go install sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
+	else \
+		echo "Installing kustomize with go get..." ;\
+		KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
+		cd $$KUSTOMIZE_GEN_TMP_DIR ;\
+		go mod init tmp ;\
+		go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
+		rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
+		fi ;\
 	}
 KUSTOMIZE=$(GOBIN)/kustomize
 else

@@ -2577,6 +2577,25 @@ spec:
                       type: string
                   type: object
                 type: object
+              statefulConfig:
+                properties:
+                  pulsar:
+                    properties:
+                      javaProvider:
+                        properties:
+                          className:
+                            type: string
+                          config:
+                            type: object
+                        required:
+                        - className
+                        type: object
+                      serviceUrl:
+                        type: string
+                    required:
+                    - serviceUrl
+                    type: object
+                type: object
               subscriptionName:
                 type: string
               subscriptionPosition:

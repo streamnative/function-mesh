@@ -73,4 +73,12 @@ case ${1} in
     ci::verify_java_function function-builtin-hpa-sample
     ci::verify_hpa function-builtin-hpa-sample
     ;;
+  compute_v1alpha1_function_stateful)
+    ci::verify_function_mesh java-function-stateful-sample
+    sleep 60
+    ci::print_function_log java-function-stateful-sample
+    ci::verify_java_function java-function-stateful-sample
+    sleep 60
+    ci::print_function_log java-function-stateful-sample
+    ;;
 esac
