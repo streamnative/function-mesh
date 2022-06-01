@@ -19,9 +19,9 @@ package controllers
 
 import (
 	"context"
-
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -59,6 +59,11 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 		r.Log.Error(err, "failed to get function")
 		return reconcile.Result{}, err
+	}
+	
+	if !spec.IsManaged(function) {
+		r.Log.Info("Skipping function not managed by the controller", "Name", req.String())
+		return reconcile.Result{}, nil
 	}
 
 	// initialize component status map

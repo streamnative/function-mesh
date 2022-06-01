@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/streamnative/function-mesh/controllers/spec"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
@@ -54,6 +55,12 @@ func (r *FunctionMeshReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		r.Log.Error(err, "failed to get mesh")
 		return reconcile.Result{Requeue: true}, err
 	}
+
+	if !spec.IsManaged(mesh) {
+		r.Log.Info("Skipping function mesh not managed by the controller", "Name", req.String())
+		return reconcile.Result{}, nil
+	}
+	
 	// initialize component status map
 	if mesh.Status.FunctionConditions == nil {
 		mesh.Status.FunctionConditions = make(map[string]v1alpha1.ResourceCondition)

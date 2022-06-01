@@ -53,7 +53,7 @@ const (
 
 	AnnotationPrometheusScrape  = "prometheus.io/scrape"
 	AnnotationPrometheusPort    = "prometheus.io/port"
-	AnnotationAppliedConfigHash = "config.functionmesh.io/applied"
+	AnnotationManaged 			= "compute.functionmesh.io/managed"
 
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
 
@@ -73,6 +73,11 @@ var MetricsPort = corev1.ContainerPort{
 	Name:          "tcp-metrics",
 	ContainerPort: 9094,
 	Protocol:      corev1.ProtocolTCP,
+}
+
+func IsManaged(object metav1.Object) bool {
+	managed, exists := object.GetAnnotations()[AnnotationManaged]
+	return !exists || managed != "false"
 }
 
 func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev1.Service {

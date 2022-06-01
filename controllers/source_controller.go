@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/streamnative/function-mesh/controllers/spec"
 
 	"github.com/go-logr/logr"
 	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
@@ -58,6 +59,11 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 		r.Log.Error(err, "failed to get source")
 		return reconcile.Result{}, err
+	}
+
+	if !spec.IsManaged(source) {
+		r.Log.Info("Skipping source not managed by the controller", "Name", req.String())
+		return reconcile.Result{}, nil
 	}
 
 	if source.Status.Conditions == nil {
