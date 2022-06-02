@@ -1,0 +1,166 @@
+{{- if .Values.admissionWebhook.enabled }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  {{- if eq .Values.admissionWebhook.certificate.provider "cert-manager" }}
+  annotations:
+    {{- include "function-mesh-operator.certManager.annotation" . | nindent 4 -}}
+  {{- end }}
+  name: {{ .Release.Name }}-mutating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      service:
+        name: {{ include "function-mesh-operator.service.webhook" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-compute-functionmesh-io-v1alpha1-function
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: mfunction.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - functions
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      service:
+        name: {{ include "function-mesh-operator.service.webhook" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-compute-functionmesh-io-v1alpha1-sink
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: msink.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - sinks
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      service:
+        name: {{ include "function-mesh-operator.service.webhook" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-compute-functionmesh-io-v1alpha1-source
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: msource.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - sources
+    sideEffects: None
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  {{- if eq .Values.admissionWebhook.certificate.provider "cert-manager" }}
+  annotations:
+    {{- include "function-mesh-operator.certManager.annotation" . | nindent 4 -}}
+  {{- end }}
+  name: {{ .Release.Name }}-validating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      service:
+        name: {{ include "function-mesh-operator.service.webhook" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-compute-functionmesh-io-v1alpha1-function
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: vfunction.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - functions
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      service:
+        name: {{ include "function-mesh-operator.service.webhook" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-compute-functionmesh-io-v1alpha1-sink
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: vsink.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - sinks
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      service:
+        name: {{ include "function-mesh-operator.service.webhook" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-compute-functionmesh-io-v1alpha1-source
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: vsource.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - sources
+    sideEffects: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "function-mesh-operator.service.webhook" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "function-mesh-operator.selectorLabels" . | nindent 4 }}
+spec:
+  ports:
+    - name: webhook
+      port: 443
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    {{- include "function-mesh-operator.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: controller-manager
+{{- end}}

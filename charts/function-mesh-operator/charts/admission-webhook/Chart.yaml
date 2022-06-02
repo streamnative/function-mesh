@@ -1,6 +1,6 @@
 apiVersion: v2
-name: function-mesh-operator
-description: function mesh operator Helm chart for Kubernetes
+name: admission-webhook
+description: function mesh admission webhook Helm chart for Kubernetes
 maintainers:
   - name: Function Mesh Support
     email: function-mesh@streamnative.io
@@ -23,12 +23,9 @@ version: 0.2.0
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
-appVersion: 1.16.0
+# It is recommended to use it with quotes.
+appVersion: "1.16.0"
 
 home: https://github.com/streamnative/function-mesh
 sources:
   - https://github.com/streamnative/function-mesh
-
-dependencies:
-  - name: admission-webhook
-    condition: admissionWebhook.enabled
