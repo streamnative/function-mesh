@@ -34,4 +34,7 @@ WORKDIR /pulsar
 RUN if [ -f "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh ; fi
 RUN if [ -f "/pulsar/bin/install-pulsar-client.sh" ]; then /pulsar/bin/install-pulsar-client.sh ; fi
 
+
 USER $USER
+# a temp solution from https://github.com/apache/pulsar/pull/15846 to fix python protobuf version error
+RUN pip3 install protobuf==3.20.1 --user
