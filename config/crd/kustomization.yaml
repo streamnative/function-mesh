@@ -11,7 +11,7 @@ resources:
 patchesStrategicMerge:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
-- patches/webhook_in_functionmeshes.yaml
+#- patches/webhook_in_functionmeshes.yaml
 - patches/webhook_in_functions.yaml
 - patches/webhook_in_sources.yaml
 - patches/webhook_in_sinks.yaml

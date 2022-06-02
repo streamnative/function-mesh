@@ -11,16 +11,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 If release name contains chart name it will be used as a full name.
 */}}
 {{- define "function-mesh-operator.fullname" -}}
-{{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
-{{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 
 {{/*
@@ -59,4 +51,68 @@ Create the name of the service account to use
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
+{{- end }}
+
+{{/*
+Volume mounts
+*/}}
+{{- define "function-mesh-operator.volumeMounts" -}}
+- name: cfg
+  mountPath: /etc/config/
+{{- if .Values.admissionWebhook.enabled }}
+- mountPath: /tmp/k8s-webhook-server/serving-certs
+  name: cert
+  readOnly: true
+{{- end }}
+{{- end }}
+
+{{/*
+Volumes
+*/}}
+{{- define "function-mesh-operator.volumes" -}}
+- name: cfg
+  configMap:
+    name: function-mesh-controller-manager-configs
+    defaultMode: 420
+{{- if .Values.admissionWebhook.enabled }}
+- name: cert
+  secret:
+    defaultMode: 420
+    secretName: {{ include "function-mesh-operator.certificate.secretName" . }}
+{{- end }}
+{{- end }}
+
+{{/*
+Webhook service
+*/}}
+{{- define "function-mesh-operator.service.webhook" -}}
+{{ .Release.Name }}-admission-webhook-service
+{{- end }}
+
+{{/*
+Webhook certificate secret name
+*/}}
+{{- define "function-mesh-operator.certificate.secretName" -}}
+{{ .Release.Name }}-cert
+{{- end }}
+
+{{/*
+Webhook certificate name when use Cert-Manager
+*/}}
+{{- define "function-mesh-operator.certificate.name" -}}
+{{ .Release.Name }}-server-cert
+{{- end }}
+
+{{/*
+Webhook annotation when use Cert-Manager
+*/}}
+{{- define "function-mesh-operator.certManager.annotation" -}}
+{{ printf "cert-manager.io/inject-ca-from: %s/%s" .Release.Namespace (include "function-mesh-operator.certificate.name" .) }}
+{{- end }}
+
+{{/*
+Certificate common name
+*/}}
+{{- define "function-mesh-operator.certificate.commonName" -}}
+{{ printf "%s.%s.svc" ( include "function-mesh-operator.service.webhook" . ) .Release.Namespace }}
 {{- end }}
