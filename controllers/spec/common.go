@@ -51,9 +51,9 @@ const (
 	PackageNameSinkPrefix     = "sink://"
 	PackageNameSourcePrefix   = "source://"
 
-	AnnotationPrometheusScrape  = "prometheus.io/scrape"
-	AnnotationPrometheusPort    = "prometheus.io/port"
-	AnnotationManaged 			= "compute.functionmesh.io/managed"
+	AnnotationPrometheusScrape = "prometheus.io/scrape"
+	AnnotationPrometheusPort   = "prometheus.io/port"
+	AnnotationManaged          = "compute.functionmesh.io/managed"
 
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
 

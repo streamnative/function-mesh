@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
@@ -60,7 +61,7 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		r.Log.Error(err, "failed to get function")
 		return reconcile.Result{}, err
 	}
-	
+
 	if !spec.IsManaged(function) {
 		r.Log.Info("Skipping function not managed by the controller", "Name", req.String())
 		return reconcile.Result{}, nil
