@@ -14,7 +14,7 @@ spec:
     webhook:
       clientConfig:
         service:
-          name: {{ include "function-mesh-operator.service.webhook" . }}
+          name: {{ include "function-mesh-operator.webhook.service" . }}
           namespace: {{ .Release.Namespace }}
           path: /convert
           port: 443

@@ -10,7 +10,7 @@ spec:
   issuerRef:
     kind: Issuer
     name: function-mesh-selfsigned-issuer
-  secretName: {{ include "function-mesh-operator.certificate.secretName" . }}
+  secretName: {{ include "function-mesh-operator.certificate.secret" . }}
 
 ---
 apiVersion: cert-manager.io/v1

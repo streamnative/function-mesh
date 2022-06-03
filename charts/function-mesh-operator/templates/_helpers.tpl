@@ -78,21 +78,21 @@ Volumes
 - name: cert
   secret:
     defaultMode: 420
-    secretName: {{ include "function-mesh-operator.certificate.secretName" . }}
+    secretName: {{ include "function-mesh-operator.certificate.secret" . }}
 {{- end }}
 {{- end }}
 
 {{/*
-Webhook service
+Webhook service name
 */}}
-{{- define "function-mesh-operator.service.webhook" -}}
-{{ .Release.Name }}-admission-webhook-service
+{{- define "function-mesh-operator.webhook.service" -}}
+function-mesh-admission-webhook-service
 {{- end }}
 
 {{/*
 Webhook certificate secret name
 */}}
-{{- define "function-mesh-operator.certificate.secretName" -}}
+{{- define "function-mesh-operator.certificate.secret" -}}
 {{ .Release.Name }}-cert
 {{- end }}
 
@@ -114,5 +114,5 @@ Webhook annotation when use Cert-Manager
 Certificate common name
 */}}
 {{- define "function-mesh-operator.certificate.commonName" -}}
-{{ printf "%s.%s.svc" ( include "function-mesh-operator.service.webhook" . ) .Release.Namespace }}
+{{ printf "%s.%s.svc" ( include "function-mesh-operator.webhook.service" . ) .Release.Namespace }}
 {{- end }}

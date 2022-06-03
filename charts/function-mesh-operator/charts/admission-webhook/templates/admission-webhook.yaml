@@ -13,7 +13,7 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: {{ include "function-mesh-operator.service.webhook" . }}
+        name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
         path: /mutate-compute-functionmesh-io-v1alpha1-function
     failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
@@ -34,7 +34,7 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: {{ include "function-mesh-operator.service.webhook" . }}
+        name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
         path: /mutate-compute-functionmesh-io-v1alpha1-sink
     failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
@@ -55,7 +55,7 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: {{ include "function-mesh-operator.service.webhook" . }}
+        name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
         path: /mutate-compute-functionmesh-io-v1alpha1-source
     failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
@@ -87,7 +87,7 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: {{ include "function-mesh-operator.service.webhook" . }}
+        name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
         path: /validate-compute-functionmesh-io-v1alpha1-function
     failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
@@ -108,7 +108,7 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: {{ include "function-mesh-operator.service.webhook" . }}
+        name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
         path: /validate-compute-functionmesh-io-v1alpha1-sink
     failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
@@ -129,7 +129,7 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: {{ include "function-mesh-operator.service.webhook" . }}
+        name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
         path: /validate-compute-functionmesh-io-v1alpha1-source
     failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
@@ -150,7 +150,7 @@ webhooks:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "function-mesh-operator.service.webhook" . }}
+  name: {{ include "function-mesh-operator.webhook.service" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "function-mesh-operator.selectorLabels" . | nindent 4 }}

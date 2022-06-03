@@ -8,4 +8,4 @@ Make sure admission-webhook components are running:
     kubectl get mutatingwebhookconfigurations {{ .Release.Name }}-mutating-webhook-configuration
 
 - For checking certificates:
-    kubectl get secerts --namespace {{ .Release.Namespace }} {{ include "function-mesh-operator.certificate.secretName" . }}
+    kubectl get secerts --namespace {{ .Release.Namespace }} {{ include "function-mesh-operator.certificate.secret" . }}
