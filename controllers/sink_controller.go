@@ -20,6 +20,8 @@ package controllers
 import (
 	"context"
 
+	"github.com/streamnative/function-mesh/controllers/spec"
+
 	"github.com/go-logr/logr"
 	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -58,6 +60,11 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 		r.Log.Error(err, "failed to get sink")
 		return reconcile.Result{}, err
+	}
+
+	if !spec.IsManaged(sink) {
+		r.Log.Info("Skipping sink not managed by the controller", "Name", req.String())
+		return reconcile.Result{}, nil
 	}
 
 	if sink.Status.Conditions == nil {
