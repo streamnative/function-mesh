@@ -4,6 +4,8 @@ kind: Certificate
 metadata:
   name: {{ include "function-mesh-operator.certificate.name" . }}
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "function-mesh-operator.labels" . | nindent 4 }}
 spec:
   dnsNames:
     - {{ include "function-mesh-operator.certificate.commonName" . }}
@@ -18,6 +20,8 @@ kind: Issuer
 metadata:
   name: function-mesh-selfsigned-issuer
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "function-mesh-operator.labels" . | nindent 4 }}
 spec:
   selfSigned: {}
 {{- end }}

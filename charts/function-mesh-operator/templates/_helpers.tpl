@@ -93,7 +93,14 @@ function-mesh-admission-webhook-service
 Webhook certificate secret name
 */}}
 {{- define "function-mesh-operator.certificate.secret" -}}
-{{ .Release.Name }}-cert
+function-mesh-admission-webhook-server-cert
+{{- end }}
+
+{{/*
+Webhook CA certificate secret name
+*/}}
+{{- define "function-mesh-operator.certificate.caSecret" -}}
+function-mesh-admission-webhook-server-cert-ca
 {{- end }}
 
 {{/*
@@ -115,4 +122,11 @@ Certificate common name
 */}}
 {{- define "function-mesh-operator.certificate.commonName" -}}
 {{ printf "%s.%s.svc" ( include "function-mesh-operator.webhook.service" . ) .Release.Namespace }}
+{{- end }}
+
+{{/*
+CA certificate bundle template
+*/}}
+{{- define "function-mesh-operator.caBundle" -}}
+caBundle: %s
 {{- end }}

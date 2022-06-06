@@ -1,4 +1,13 @@
 {{- if .Values.admissionWebhook.enabled }}
+  {{- $caBundle := "" -}}
+  {{- if eq .Values.admissionWebhook.certificate.provider "custom" }}
+    {{- $caSecret := (lookup "v1" "Secret" "default" (include "function-mesh-operator.certificate.caSecret" .)) -}}
+    {{- if $caSecret }}
+      {{- $caCert := (b64dec (get $caSecret.data "tls.crt")) -}}
+      {{- $caBundle = (printf (include "function-mesh-operator.caBundle" .) (b64enc $caCert)) -}}
+    {{- end }}
+  {{- end }}
+
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
@@ -12,6 +21,9 @@ webhooks:
       - v1beta1
       - v1
     clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
       service:
         name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
@@ -33,6 +45,9 @@ webhooks:
       - v1beta1
       - v1
     clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
       service:
         name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
@@ -54,6 +69,9 @@ webhooks:
       - v1beta1
       - v1
     clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
       service:
         name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
@@ -86,6 +104,9 @@ webhooks:
       - v1beta1
       - v1
     clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
       service:
         name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
@@ -107,6 +128,9 @@ webhooks:
       - v1beta1
       - v1
     clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
       service:
         name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
@@ -128,6 +152,9 @@ webhooks:
       - v1beta1
       - v1
     clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
       service:
         name: {{ include "function-mesh-operator.webhook.service" . }}
         namespace: {{ .Release.Namespace }}
@@ -153,7 +180,7 @@ metadata:
   name: {{ include "function-mesh-operator.webhook.service" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "function-mesh-operator.selectorLabels" . | nindent 4 }}
+    {{- include "function-mesh-operator.labels" . | nindent 4 }}
 spec:
   ports:
     - name: webhook
