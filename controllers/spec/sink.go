@@ -111,7 +111,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName, generateSinkDetailsInJSON(sink),
-		spec.Resources.Requests.Memory().ToDec().String(), spec.Java.ExtraDependenciesDir, string(sink.UID),
+		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),
 		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil)
 }
 

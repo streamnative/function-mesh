@@ -118,7 +118,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		if spec.Java.Jar != "" {
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
-				spec.Resources.Requests.Memory().String(), spec.Java.ExtraDependenciesDir, string(function.UID),
+				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
 				function.Spec.StateConfig)
 		}
