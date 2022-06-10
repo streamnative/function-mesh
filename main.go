@@ -36,6 +36,8 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
+const DEFAULT_ELECTION_NAMESPACE = "default"
+
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -46,6 +48,20 @@ func init() {
 
 	utilruntime.Must(computev1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
+}
+
+func getLeaderElectionNamespace() string {
+	// Check whether running in k8s cluster.
+	// If not, we need to specify the election namespace
+	if _, present := os.LookupEnv("KUBERNETES_SERVICE_HOST"); !present {
+		namespace, isSet := os.LookupEnv("LEADER_ELECTION_NAMESPACE")
+		if isSet {
+			return namespace
+		}
+		return DEFAULT_ELECTION_NAMESPACE
+	}
+
+	return ""
 }
 
 func main() {
@@ -93,14 +109,15 @@ func main() {
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		HealthProbeBindAddress: healthProbeAddr,
-		Port:                   9443,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       leaderElectionID,
-		Namespace:              namespace,
-		CertDir:                certDir,
+		Scheme:                  scheme,
+		MetricsBindAddress:      metricsAddr,
+		HealthProbeBindAddress:  healthProbeAddr,
+		Port:                    9443,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionNamespace: getLeaderElectionNamespace(),
+		LeaderElectionID:        leaderElectionID,
+		Namespace:               namespace,
+		CertDir:                 certDir,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
