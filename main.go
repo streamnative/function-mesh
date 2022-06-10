@@ -36,7 +36,7 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-const DEFAULT_ELECTION_NAMESPACE = "default"
+const DefaultElectionNamespace string = "default"
 
 var (
 	scheme   = runtime.NewScheme()
@@ -58,7 +58,7 @@ func getLeaderElectionNamespace() string {
 		if isSet {
 			return namespace
 		}
-		return DEFAULT_ELECTION_NAMESPACE
+		return DefaultElectionNamespace
 	}
 
 	return ""
