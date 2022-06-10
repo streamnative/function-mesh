@@ -104,17 +104,10 @@ function-mesh-admission-webhook-server-cert-ca
 {{- end }}
 
 {{/*
-Webhook certificate name when use Cert-Manager
-*/}}
-{{- define "function-mesh-operator.certificate.name" -}}
-{{ .Release.Name }}-server-cert
-{{- end }}
-
-{{/*
 Webhook annotation when use Cert-Manager
 */}}
 {{- define "function-mesh-operator.certManager.annotation" -}}
-{{ printf "cert-manager.io/inject-ca-from: %s/%s" .Release.Namespace (include "function-mesh-operator.certificate.name" .) }}
+{{ printf "cert-manager.io/inject-ca-from: %s/%s" .Release.Namespace (include "function-mesh-operator.certificate.secret" .) }}
 {{- end }}
 
 {{/*

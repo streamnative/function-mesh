@@ -2,7 +2,7 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: {{ include "function-mesh-operator.certificate.name" . }}
+  name: {{ include "function-mesh-operator.certificate.secret" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "function-mesh-operator.labels" . | nindent 4 }}
