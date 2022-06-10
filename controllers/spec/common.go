@@ -28,6 +28,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -707,4 +708,12 @@ func getPythonSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []str
 		}
 	}
 	return ret
+}
+
+// Java command requires memory values in resource.DecimalSI format
+func getDecimalSIMemory(quantity *resource.Quantity) string {
+	if quantity.Format == resource.DecimalSI {
+		return quantity.String()
+	}
+	return resource.NewQuantity(quantity.Value(), resource.DecimalSI).String()
 }
