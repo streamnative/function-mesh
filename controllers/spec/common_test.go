@@ -29,8 +29,8 @@ import (
 )
 
 func TestGetDownloadCommand(t *testing.T) {
-	doTest := func(downloadPath, componentPackage string, expectedCommand []string) {
-		actualResult := getDownloadCommand(downloadPath, componentPackage, false, false)
+	doTest := func(downloadPath, componentPackage string, expectedCommand []string, authProvided bool, tlsProvided bool) {
+		actualResult := getDownloadCommand(downloadPath, componentPackage, authProvided, tlsProvided)
 		assert.Equal(t, expectedCommand, actualResult)
 	}
 
@@ -38,6 +38,8 @@ func TestGetDownloadCommand(t *testing.T) {
 		downloadPath     string
 		componentPackage string
 		expectedCommand  []string
+		authProvided     bool
+		tlsProvided      bool
 	}{
 		// test get the download command with package name
 		{"function://public/default/test@v1", "function-package.jar",
@@ -46,6 +48,8 @@ func TestGetDownloadCommand(t *testing.T) {
 				"--admin-url", "$webServiceURL",
 				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
 			},
+			false,
+			false,
 		},
 		{"sink://public/default/test@v1", "sink-package.jar",
 			[]string{
@@ -53,6 +57,8 @@ func TestGetDownloadCommand(t *testing.T) {
 				"--admin-url", "$webServiceURL",
 				"packages", "download", "sink://public/default/test@v1", "--path", "sink-package.jar",
 			},
+			false,
+			false,
 		},
 		{"source://public/default/test@v1", "source-package.jar",
 			[]string{
@@ -60,6 +66,8 @@ func TestGetDownloadCommand(t *testing.T) {
 				"--admin-url", "$webServiceURL",
 				"packages", "download", "source://public/default/test@v1", "--path", "source-package.jar",
 			},
+			false,
+			false,
 		},
 		// test get the download command with normal name
 		{"/test", "test.jar",
@@ -68,6 +76,8 @@ func TestGetDownloadCommand(t *testing.T) {
 				"--admin-url", "$webServiceURL",
 				"functions", "download", "--path", "/test", "--destination-file", "test.jar",
 			},
+			false,
+			false,
 		},
 		// test get the download command with a wrong package name
 		{"source/public/default/test@v1", "source-package.jar",
@@ -76,6 +86,8 @@ func TestGetDownloadCommand(t *testing.T) {
 				"--admin-url", "$webServiceURL",
 				"functions", "download", "--path", "source/public/default/test@v1", "--destination-file", "source-package.jar",
 			},
+			false,
+			false,
 		},
 		{"source:/public/default/test@v1", "source-package.jar",
 			[]string{
@@ -83,11 +95,37 @@ func TestGetDownloadCommand(t *testing.T) {
 				"--admin-url", "$webServiceURL",
 				"functions", "download", "--path", "source:/public/default/test@v1", "--destination-file", "source-package.jar",
 			},
+			false,
+			false,
+		},
+		{"source:/public/default/test@v1", "source-package.jar",
+			[]string{
+				"if [ \"b$tlsAllowInsecureConnection\" = \"btrue\" ]; then export ALLOW_INSECURE=\"--tls-allow-insecure\"; fi && ",
+				"if [ \"b$tlsHostnameVerificationEnable\" = \"btrue\" ]; then export ENABLE_HOSTNAME_VERIFY=\"--tls-enable-hostname-verification\"; fi && ",
+				PulsarAdminExecutableFile,
+				"--admin-url", "$webServiceURL",
+				"$ALLOW_INSECURE", "$ENABLE_HOSTNAME_VERIFY",
+				"--tls-trust-cert-path", "$tlsTrustCertsFilePath",
+				"functions", "download", "--path", "source:/public/default/test@v1", "--destination-file", "source-package.jar",
+			},
+			false,
+			true,
+		},
+		{"source:/public/default/test@v1", "source-package.jar",
+			[]string{
+				PulsarAdminExecutableFile,
+				"--admin-url", "$webServiceURL",
+				"--auth-plugin", "$clientAuthenticationPlugin",
+				"--auth-params", "$clientAuthenticationParameters",
+				"functions", "download", "--path", "source:/public/default/test@v1", "--destination-file", "source-package.jar",
+			},
+			true,
+			false,
 		},
 	}
 
 	for _, v := range testData {
-		doTest(v.downloadPath, v.componentPackage, v.expectedCommand)
+		doTest(v.downloadPath, v.componentPackage, v.expectedCommand, v.authProvided, v.tlsProvided)
 	}
 }
 

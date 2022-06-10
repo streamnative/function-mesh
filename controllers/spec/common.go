@@ -204,6 +204,19 @@ func getDownloadCommand(downloadPath, componentPackage string, authProvided, tls
 		"--admin-url",
 		"$webServiceURL",
 	}
+	if tlsProvided {
+		args = []string{
+			"if [ \"b$tlsAllowInsecureConnection\" = \"btrue\" ]; then export ALLOW_INSECURE=\"--tls-allow-insecure\"; fi && ",
+			"if [ \"b$tlsHostnameVerificationEnable\" = \"btrue\" ]; then export ENABLE_HOSTNAME_VERIFY=\"--tls-enable-hostname-verification\"; fi && ",
+			PulsarAdminExecutableFile,
+			"--admin-url",
+			"$webServiceURL",
+			"$ALLOW_INSECURE",
+			"$ENABLE_HOSTNAME_VERIFY",
+			"--tls-trust-cert-path",
+			"$tlsTrustCertsFilePath",
+		}
+	}
 	if authProvided {
 		args = append(args, []string{
 			"--auth-plugin",
@@ -212,16 +225,6 @@ func getDownloadCommand(downloadPath, componentPackage string, authProvided, tls
 			"$clientAuthenticationParameters"}...)
 	}
 
-	if tlsProvided {
-		args = append(args, []string{
-			"--tls-allow-insecure",
-			"$tlsAllowInsecureConnection",
-			"--tls-enable-hostname-verification",
-			"$tlsHostnameVerificationEnable",
-			"--tls-trust-cert-path",
-			"$tlsTrustCertsFilePath",
-		}...)
-	}
 	if hasPackageNamePrefix(downloadPath) {
 		args = append(args, []string{
 			"packages",
