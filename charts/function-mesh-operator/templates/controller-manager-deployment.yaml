@@ -38,6 +38,12 @@ spec:
         resources:
 {{ toYaml .Values.controllerManager.resources | indent 12 }}
         {{- end }}
+        {{- if .Values.admissionWebhook.enabled }}
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        {{- end}}
         command:
           - /manager
         args:
@@ -53,10 +59,9 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
           - name: ENABLE_WEBHOOKS
-            value: "false"
+            value: {{ .Values.admissionWebhook.enabled | quote }}
         volumeMounts:
-          - name: cfg
-            mountPath: /etc/config/
+        {{- include "function-mesh-operator.volumeMounts" . | nindent 8 }}
       {{- with .Values.controllerManager.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
@@ -73,7 +78,4 @@ spec:
       priorityClassName: {{ .Values.controllerManager.priorityClassName }}
       {{- end }}
       volumes:
-        - name: cfg
-          configMap:
-            name: function-mesh-controller-manager-configs
-            defaultMode: 420
+      {{- include "function-mesh-operator.volumes" . | nindent 6 -}}

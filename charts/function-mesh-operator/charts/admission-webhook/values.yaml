@@ -1,0 +1,12 @@
+# Default values for admission-webhook.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+admissionWebhook:
+  enabled: true
+  failurePolicy: Fail
+  certificate:
+    ## The available providers are:
+    ##   "cert-manager": manage certificates with Cert-Manager, default
+    ##   "custom": provide custom certificates, you need to install the `function-mesh-secrets-webhook` chart first
+    provider: "cert-manager"

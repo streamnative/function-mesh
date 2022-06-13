@@ -1,0 +1,27 @@
+{{- if and .Values.admissionWebhook.enabled (eq .Values.admissionWebhook.certificate.provider "cert-manager") }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "function-mesh-operator.certificate.secret" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "function-mesh-operator.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+    - {{ include "function-mesh-operator.certificate.commonName" . }}
+  issuerRef:
+    kind: Issuer
+    name: function-mesh-selfsigned-issuer
+  secretName: {{ include "function-mesh-operator.certificate.secret" . }}
+
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: function-mesh-selfsigned-issuer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "function-mesh-operator.labels" . | nindent 4 }}
+spec:
+  selfSigned: {}
+{{- end }}

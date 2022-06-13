@@ -1,0 +1,9 @@
+Make sure function-mesh-secrets-webhook components are running:
+
+- For checking CA secret:
+
+    kubectl get secrets --namespace {{ .Release.Namespace }} function-mesh-admission-webhook-server-cert-ca
+
+- For checking webhook secret:
+
+    kubectl get secrets --namespace {{ .Release.Namespace }} function-mesh-admission-webhook-server-cert

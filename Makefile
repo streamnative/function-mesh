@@ -45,8 +45,6 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-YQ=yq
-
 all: manager
 
 # Run tests
@@ -104,50 +102,21 @@ image-push:
 
 # find or download controller-gen
 # download controller-gen if necessary
+CONTROLLER_GEN=$(shell pwd)/bin/controller-gen
 controller-gen:
-ifeq (, $(shell which controller-gen))
-	@{ \
-	set -e ;\
-	if [ "$(GO_MINOR_VERSION)" -ge "17" ]; then \
-		go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2 ;\
-	else \
-		CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-		cd $$CONTROLLER_GEN_TMP_DIR ;\
-		go mod init tmp ;\
-		go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2 ;\
-		rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	fi ;\
-	}
-CONTROLLER_GEN=$(GOBIN)/controller-gen
-else
-CONTROLLER_GEN=$(shell which controller-gen)
-endif
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2)
 
-kustomize:
-ifeq (, $(shell which kustomize))
-	@{ \
-	set -e ;\
-	echo "Installing kustomize..." ;\
-	if [ "$(GO_MINOR_VERSION)" -ge "17" ]; then \
-		echo "Installing kustomize with go install..." ;\
-		go install sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
-	else \
-		echo "Installing kustomize with go get..." ;\
-		KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
-		cd $$KUSTOMIZE_GEN_TMP_DIR ;\
-		go mod init tmp ;\
-		go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
-		rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
-		fi ;\
-	}
-KUSTOMIZE=$(GOBIN)/kustomize
-else
-KUSTOMIZE=$(shell which kustomize)
-endif
+KUSTOMIZE=$(shell pwd)/bin/kustomize
+kustomize: ## Download kustomize locally if necessary.
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v4.5.5)
+
+YQ = $(shell pwd)/bin/yq
+yq: ## Download yq locally if necessary.
+	$(call go-get-tool,$(YQ),github.com/mikefarah/yq/v4@latest)
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
-bundle: manifests
+bundle: yq kustomize manifests
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
@@ -243,3 +212,21 @@ function-mesh-docker-image-name:
 # Build the docker image without tests
 docker-build-skip-test:
 	docker build . -t ${IMG}
+
+# go-get-tool will 'go get' any package $2 and install it to $1.
+PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+define go-get-tool
+	@[ -f $(1) ] || { \
+	set -e ;\
+	echo "Installing $(2)" ;\
+	if [ "$(GO_MINOR_VERSION)" -ge "17" ]; then \
+		GOBIN=$(PROJECT_DIR)/bin go install -v $(2) ;\
+	else \
+		CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
+		cd $$CONTROLLER_GEN_TMP_DIR ;\
+		go mod init tmp ;\
+		GOBIN=$(PROJECT_DIR)/bin go get -v $(2) ;\
+		rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+	fi ;\
+}
+endef

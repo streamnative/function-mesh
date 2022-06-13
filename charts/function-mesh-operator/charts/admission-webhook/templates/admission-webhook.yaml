@@ -1,0 +1,193 @@
+{{- if .Values.admissionWebhook.enabled }}
+  {{- $caBundle := "" -}}
+  {{- if eq .Values.admissionWebhook.certificate.provider "custom" }}
+    {{- $caSecret := (lookup "v1" "Secret" "default" (include "function-mesh-operator.certificate.caSecret" .)) -}}
+    {{- if $caSecret }}
+      {{- $caCert := (b64dec (get $caSecret.data "tls.crt")) -}}
+      {{- $caBundle = (printf (include "function-mesh-operator.caBundle" .) (b64enc $caCert)) -}}
+    {{- end }}
+  {{- end }}
+
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  {{- if eq .Values.admissionWebhook.certificate.provider "cert-manager" }}
+  annotations:
+    {{- include "function-mesh-operator.certManager.annotation" . | nindent 4 -}}
+  {{- end }}
+  name: {{ .Release.Name }}-mutating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
+      service:
+        name: {{ include "function-mesh-operator.webhook.service" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-compute-functionmesh-io-v1alpha1-function
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: mfunction.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - functions
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
+      service:
+        name: {{ include "function-mesh-operator.webhook.service" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-compute-functionmesh-io-v1alpha1-sink
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: msink.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - sinks
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
+      service:
+        name: {{ include "function-mesh-operator.webhook.service" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-compute-functionmesh-io-v1alpha1-source
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: msource.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - sources
+    sideEffects: None
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  {{- if eq .Values.admissionWebhook.certificate.provider "cert-manager" }}
+  annotations:
+    {{- include "function-mesh-operator.certManager.annotation" . | nindent 4 -}}
+  {{- end }}
+  name: {{ .Release.Name }}-validating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
+      service:
+        name: {{ include "function-mesh-operator.webhook.service" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-compute-functionmesh-io-v1alpha1-function
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: vfunction.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - functions
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
+      service:
+        name: {{ include "function-mesh-operator.webhook.service" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-compute-functionmesh-io-v1alpha1-sink
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: vsink.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - sinks
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1beta1
+      - v1
+    clientConfig:
+      {{- if and $caBundle (eq .Values.admissionWebhook.certificate.provider "custom") }}
+        {{ $caBundle | nindent 6 }}
+      {{- end }}
+      service:
+        name: {{ include "function-mesh-operator.webhook.service" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-compute-functionmesh-io-v1alpha1-source
+    failurePolicy: {{ .Values.admissionWebhook.failurePolicy }}
+    name: vsource.kb.io
+    rules:
+      - apiGroups:
+          - compute.functionmesh.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - sources
+    sideEffects: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "function-mesh-operator.webhook.service" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "function-mesh-operator.labels" . | nindent 4 }}
+spec:
+  ports:
+    - name: webhook
+      port: 443
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: controller-manager
+{{- end}}

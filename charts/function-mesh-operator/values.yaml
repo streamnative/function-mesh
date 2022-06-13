@@ -69,3 +69,6 @@ controllerManager:
   pprof:
     enable: false
     port: 8090
+
+admissionWebhook:
+  enabled: true
