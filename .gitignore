@@ -1,5 +1,23 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin
+
 # Intellij
 .idea
+*.iml
+*.swp
+*.swo
+*~
+bundle*/
+
+bundle
+bundle.Dockerfile
+index.Dockerfile*
+index_build_*/
 
 # Mac
 **/.DS_Store
