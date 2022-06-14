@@ -36,8 +36,6 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-const DefaultElectionNamespace string = "default"
-
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -50,23 +48,10 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 }
 
-func getLeaderElectionNamespace() string {
-	// Check whether running in k8s cluster.
-	// If not, we need to specify the election namespace
-	if _, present := os.LookupEnv("KUBERNETES_SERVICE_HOST"); !present {
-		namespace, isSet := os.LookupEnv("LEADER_ELECTION_NAMESPACE")
-		if isSet {
-			return namespace
-		}
-		return DefaultElectionNamespace
-	}
-
-	return ""
-}
-
 func main() {
 	var metricsAddr, pprofAddr string
 	var leaderElectionID string
+	var leaderElectionNamespace string
 	var certDir string
 	var healthProbeAddr string
 	var enableLeaderElection, enablePprof bool
@@ -75,6 +60,8 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id", "a3f45fce.functionmesh.io",
 		"the name of the configmap that leader election will use for holding the leader lock.")
+	flag.StringVar(&leaderElectionNamespace, "leader-election-namespace", "",
+		"the namespace in which the leader election configmap will be created")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", true,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -114,7 +101,7 @@ func main() {
 		HealthProbeBindAddress:  healthProbeAddr,
 		Port:                    9443,
 		LeaderElection:          enableLeaderElection,
-		LeaderElectionNamespace: getLeaderElectionNamespace(),
+		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        leaderElectionID,
 		Namespace:               namespace,
 		CertDir:                 certDir,
