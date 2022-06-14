@@ -57,7 +57,7 @@ manager: generate fmt vet
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
-	go run ./main.go --leader-election-namespace default
+	go run ./main.go --enable-leader-election=false
 
 # Install CRDs into a cluster
 install: manifests kustomize crd
