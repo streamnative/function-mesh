@@ -25,20 +25,52 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-NEW_VERSION=$1
-echo "Bumping function mesh to $NEW_VERSION"
+NEW_APP_VERSION=$1
+NEW_CAHRT_VERSION=$2
+
+### version self-increment
+## $1: number of part: 0 – major, 1 – minor, 2 – patch
+generate_increment_version() {
+    pattern='version:.*([0-9]+\.[0-9]+\.[0-9]+)'
+    content=$(grep -i "^version:" charts/function-mesh-operator/Chart.yaml)
+    [[ $content =~ $pattern ]]
+    current_version=${BASH_REMATCH[1]}
+
+    if [ ! "$current_version" ]; then
+        echo "failed to get current chart version"
+        exit 1
+    fi
+
+    local delimiter=.
+    local array=($(echo "$current_version" | tr $delimiter '\n'))
+    array[$1]=$((array[$1]+1))
+    NEW_CAHRT_VERSION=$(local IFS=$delimiter ; echo "${array[*]}")
+}
+
+if [ ! "$NEW_CAHRT_VERSION" ]; then
+    # increment the patch value in version semantics by default
+    generate_increment_version 2
+fi
+
+echo "Bumping function mesh to $NEW_APP_VERSION"
+echo "Bumping function mesh helm charts to $NEW_CAHRT_VERSION"
 
 # change Makefile version
-sed -i.bak -E "s/(VERSION \?= )(.+)/\1$NEW_VERSION/" Makefile
+sed -i.bak -E "s/(VERSION \?= )(.+)/\1$NEW_APP_VERSION/" Makefile
 
-# change chart version
-sed -i.bak -E "s/(version\: )(.+)/\1$NEW_VERSION/" charts/function-mesh-operator/Chart.yaml
+# change chart appVersion
+sed -i.bak -E "s/(appVersion\: )(.+)/\1$NEW_APP_VERSION/" charts/function-mesh-operator/Chart.yaml
+sed -i.bak -E "s/(appVersion\: )(.+)/\1$NEW_APP_VERSION/" charts/function-mesh-operator/charts/admission-webhook/Chart.yaml
 
 # change chart value version
-sed -i.bak -E "s/(operatorImage\: streamnative\/function\-mesh\:v)(.+)/\1$NEW_VERSION/" charts/function-mesh-operator/values.yaml
+sed -i.bak -E "s/(operatorImage\: streamnative\/function\-mesh\:v)(.+)/\1$NEW_APP_VERSION/" charts/function-mesh-operator/values.yaml
 
 # change install.sh
-sed -i.bak -E "s/(local fm_version\=)(.+)/\1\"v$NEW_VERSION\"/" install.sh
+sed -i.bak -E "s/(local fm_version\=)(.+)/\1\"v$NEW_APP_VERSION\"/" install.sh
 
 # change README.md
-sed -i.bak -E "s/(.+)v(.+)(\/install.sh)/\1v$NEW_VERSION\3/" README.md
+sed -i.bak -E "s/(.+)v(.+)(\/install.sh)/\1v$NEW_APP_VERSION\3/" README.md
+
+# change chart version
+sed -i.bak -E "s/(version\: )(.+)/\1$NEW_CAHRT_VERSION/" charts/function-mesh-operator/Chart.yaml
+sed -i.bak -E "s/(version\: )(.+)/\1$NEW_CAHRT_VERSION/" charts/function-mesh-operator/charts/admission-webhook/Chart.yaml
