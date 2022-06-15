@@ -64,9 +64,6 @@ jobs:
       - name: Create kind cluster
         run: hack/kind-cluster-build.sh --name chart-testing -c 3 -v 10
         if: steps.list-changed.outputs.changed == 'true'
-        with:
-          node_image: kindest/node:v1.17.17
-          wait: 600s
 
       - name: Set up GO 1.18
         if: steps.list-changed.outputs.changed == 'true'

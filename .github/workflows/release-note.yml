@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-    path-ignores:
+    path-ignore:
       - 'docs/**'
       - 'README.md'
       - 'CONTRIBUTING.md'
