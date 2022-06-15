@@ -96,6 +96,10 @@ generate: controller-gen
 docker-build: test
 	docker build . -t ${IMG}
 
+# Build image for red hat certification
+docker-build-redhat:
+	docker build -f redhat.Dockerfile . -t ${IMG} --build-arg VERSION=${VERSION} --no-cache
+
 # Push the docker image
 image-push:
 	docker push ${IMG}
