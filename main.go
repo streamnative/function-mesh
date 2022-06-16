@@ -51,6 +51,7 @@ func init() {
 func main() {
 	var metricsAddr, pprofAddr string
 	var leaderElectionID string
+	var leaderElectionNamespace string
 	var certDir string
 	var healthProbeAddr string
 	var enableLeaderElection, enablePprof bool
@@ -59,7 +60,9 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id", "a3f45fce.functionmesh.io",
 		"the name of the configmap that leader election will use for holding the leader lock.")
-	flag.BoolVar(&enableLeaderElection, "enable-leader-election", true,
+	flag.StringVar(&leaderElectionNamespace, "leader-election-namespace", "",
+		"the namespace in which the leader election configmap will be created")
+	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&healthProbeAddr, "health-probe-addr", ":8000", "The address the healthz/readyz endpoint binds to.")
@@ -93,14 +96,15 @@ func main() {
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		HealthProbeBindAddress: healthProbeAddr,
-		Port:                   9443,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       leaderElectionID,
-		Namespace:              namespace,
-		CertDir:                certDir,
+		Scheme:                  scheme,
+		MetricsBindAddress:      metricsAddr,
+		HealthProbeBindAddress:  healthProbeAddr,
+		Port:                    9443,
+		LeaderElection:          enableLeaderElection,
+		LeaderElectionNamespace: leaderElectionNamespace,
+		LeaderElectionID:        leaderElectionID,
+		Namespace:               namespace,
+		CertDir:                 certDir,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
