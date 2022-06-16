@@ -92,6 +92,13 @@ jobs:
           make operator-docker-image
           kind load docker-image ${IMG} --name chart-testing
 
+      - name: Setup cert-manager
+        if: steps.list-changed.outputs.changed == 'true'
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm install cert-manager jetstack/cert-manager --set installCRDs=true
+
       - name: Run chart-testing (install)
         run: ct install --config .ci/ct.yaml
         if: steps.list-changed.outputs.changed == 'true'
