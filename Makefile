@@ -143,7 +143,7 @@ crd: manifests
 rbac: manifests
 	$(KUSTOMIZE) build config/rbac > manifests/rbac.yaml
 
-release: manifests crd rbac manager operator-docker-image helm-crds
+release: manifests kustomize crd rbac manager operator-docker-image helm-crds
 
 operator-docker-image: manager test
 	docker build -f operator.Dockerfile -t $(OPERATOR_IMG) .
