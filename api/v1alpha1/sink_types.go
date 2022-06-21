@@ -30,8 +30,7 @@ import (
 type SinkSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	// +kubebuilder:validation:Required
-	Name        string `json:"name"`
+	Name        string `json:"name,omitempty"`
 	ClassName   string `json:"className,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	Tenant      string `json:"tenant,omitempty"`
