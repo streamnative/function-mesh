@@ -31,7 +31,7 @@ type SinkSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	// +kubebuilder:validation:Required
-	Name        string `json:"name,omitempty"`
+	Name        string `json:"name"`
 	ClassName   string `json:"className,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	Tenant      string `json:"tenant,omitempty"`
@@ -39,7 +39,7 @@ type SinkSpec struct {
 	SinkType    string `json:"sinkType,omitempty"` // refer to `--sink-type` as builtin connector
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum=1
-	Replicas *int32 `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas"`
 
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
 	// If provided, a default HPA with CPU at average of 80% will be used.
