@@ -21,3 +21,12 @@ index_build_*/
 
 # Mac
 **/.DS_Store
+
+# Others
+*.bak
+*.out
+
+# Charts
+.chart-index/
+.chart-packages/
+charts/
