@@ -1,3 +1,15 @@
+# Function Mesh v0.3.0 Release Notes
+
+## v0.3.0 What's New
+
+- [Helm Charts] Support deploying the of webhook-enabled operator through Helm Charts ([#319](https://github.com/streamnative/function-mesh/issues/319))
+- [Controller] Support converting memory values to a decimal format ([#375](https://github.com/streamnative/function-mesh/issues/375))
+- [Controller] Support specifying an object as an unmanaged object ([#376](https://github.com/streamnative/function-mesh/issues/376), [#377](https://github.com/streamnative/function-mesh/pull/377))
+- [Controller] Fix the Python runner Protobuf version ([#379](https://github.com/streamnative/function-mesh/issues/379))
+- [Controller] Pass `LeaderElectionNamespace` when running the Function Mesh operator outside of a Kubernetes cluster ([#382](https://github.com/streamnative/function-mesh/issues/382))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-06+is%3Aclosed).
+
 # Function Mesh v0.2.0 Release Notes
 
 ## v0.2.0 What's New
