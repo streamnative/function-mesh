@@ -76,9 +76,9 @@ deploy: manifests kustomize
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-helm-crds: manifests
-	rm -rf charts/function-mesh-operator/crds/*.yaml
-	cp -r config/crd/bases/*.yaml charts/function-mesh-operator/crds/
+helm-crds: manifests yq kustomize
+	chmod +x ./hack/gen-helm-crd-templates.sh
+	./hack/gen-helm-crd-templates.sh $(KUSTOMIZE) $(YQ)
 
 # Run go fmt against code
 fmt:
