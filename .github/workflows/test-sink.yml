@@ -3,6 +3,14 @@ on:
   pull_request:
     branches:
       - '*'
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'PROJECT'
+      - 'LICENSE'
+      - 'mesh-worker-service/README.md'
+      - 'tools/README.md'
 jobs:
   lint-test:
     runs-on: ubuntu-latest
