@@ -50,6 +50,8 @@ spec:
                             type: string
                           goLocation:
                             type: string
+                        required:
+                          - go
                         type: object
                       image:
                         type: string
@@ -135,6 +137,8 @@ spec:
                             type: string
                           jarLocation:
                             type: string
+                        required:
+                          - jar
                         type: object
                       logTopic:
                         type: string
@@ -2539,6 +2543,8 @@ spec:
                             type: string
                           pyLocation:
                             type: string
+                        required:
+                          - py
                         type: object
                       replicas:
                         format: int32
@@ -2629,6 +2635,8 @@ spec:
                             - name
                           type: object
                         type: array
+                    required:
+                      - replicas
                     type: object
                   type: array
                 sinks:
@@ -2650,6 +2658,8 @@ spec:
                             type: string
                           goLocation:
                             type: string
+                        required:
+                          - go
                         type: object
                       image:
                         type: string
@@ -2735,6 +2745,8 @@ spec:
                             type: string
                           jarLocation:
                             type: string
+                        required:
+                          - jar
                         type: object
                       maxMessageRetry:
                         format: int32
@@ -5078,6 +5090,8 @@ spec:
                             type: string
                           pyLocation:
                             type: string
+                        required:
+                          - py
                         type: object
                       replicas:
                         format: int32
@@ -5152,6 +5166,8 @@ spec:
                             - name
                           type: object
                         type: array
+                    required:
+                      - replicas
                     type: object
                   type: array
                 sources:
@@ -5169,6 +5185,8 @@ spec:
                             type: string
                           goLocation:
                             type: string
+                        required:
+                          - go
                         type: object
                       image:
                         type: string
@@ -5182,6 +5200,8 @@ spec:
                             type: string
                           jarLocation:
                             type: string
+                        required:
+                          - jar
                         type: object
                       maxReplicas:
                         format: int32
@@ -7578,6 +7598,8 @@ spec:
                             type: string
                           pyLocation:
                             type: string
+                        required:
+                          - py
                         type: object
                       replicas:
                         format: int32
@@ -7639,6 +7661,8 @@ spec:
                             - name
                           type: object
                         type: array
+                    required:
+                      - replicas
                     type: object
                   type: array
               type: object
