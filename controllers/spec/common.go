@@ -608,7 +608,9 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 	consumerConfs map[string]v1alpha1.ConsumerConfig, trustCert v1alpha1.CryptoSecret) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
-	mounts = append(mounts, generateVolumeMountFromCryptoSecret(&trustCert))
+	if trustCert.SecretName != "" {
+		mounts = append(mounts, generateVolumeMountFromCryptoSecret(&trustCert))
+	}
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)
 	return mounts
@@ -618,7 +620,9 @@ func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.Produ
 	consumerConfs map[string]v1alpha1.ConsumerConfig, trustCert v1alpha1.CryptoSecret) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	volumes = append(volumes, podVolumes...)
-	volumes = append(volumes, generateVolumeFromCryptoSecret(&trustCert))
+	if trustCert.SecretName != "" {
+		volumes = append(volumes, generateVolumeFromCryptoSecret(&trustCert))
+	}
 	volumes = append(volumes, generateContainerVolumesFromProducerConf(producerConf)...)
 	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(consumerConfs)...)
 	return volumes
