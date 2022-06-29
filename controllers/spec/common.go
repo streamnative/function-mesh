@@ -43,6 +43,9 @@ const (
 	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 
+	DefaultForAllowInsecure              = "false"
+	DefaultForEnableHostNameVerification = "true"
+
 	AppFunctionMesh   = "function-mesh"
 	ComponentSource   = "source"
 	ComponentSink     = "sink"
@@ -214,11 +217,9 @@ func getDownloadCommand(downloadPath, componentPackage string, authProvided, tls
 	if tlsProvided {
 		args = append(args, []string{
 			"--tls-allow-insecure",
-			"$tlsAllowInsecureConnection",
+			"${tlsAllowInsecureConnection:-" + DefaultForAllowInsecure + "}",
 			"--tls-enable-hostname-verification",
-			"$tlsHostnameVerificationEnable",
-			"--tls-trust-cert-path",
-			"$tlsTrustCertsFilePath",
+			"${tlsHostnameVerificationEnable:-" + DefaultForEnableHostNameVerification + "}",
 		}...)
 
 		if trustCert.SecretName != "" {
@@ -369,9 +370,9 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 			"--use_tls",
 			"true",
 			"--tls_allow_insecure",
-			"$tlsAllowInsecureConnection",
+			"${tlsAllowInsecureConnection:-" + DefaultForAllowInsecure + "}",
 			"--hostname_verification_enabled",
-			"$tlsHostnameVerificationEnable",
+			"${tlsHostnameVerificationEnable:-" + DefaultForEnableHostNameVerification + "}",
 		}...)
 
 		// only set --tls_trust_cert_path when it's mounted
