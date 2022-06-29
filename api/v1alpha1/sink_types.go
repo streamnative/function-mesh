@@ -69,7 +69,8 @@ type SinkSpec struct {
 	Pod PodPolicy `json:"pod,omitempty"`
 
 	// +kubebuilder:validation:Required
-	Messaging `json:",inline"`
+	Messaging    `json:",inline"`
+	TlsTrustCert CryptoSecret `json:"tlsTrustCert,omitempty"`
 	// +kubebuilder:validation:Required
 	Runtime `json:",inline"`
 

@@ -30,7 +30,7 @@ import (
 
 func TestGetDownloadCommand(t *testing.T) {
 	doTest := func(downloadPath, componentPackage string, expectedCommand []string) {
-		actualResult := getDownloadCommand(downloadPath, componentPackage, false, false)
+		actualResult := getDownloadCommand(downloadPath, componentPackage, false, false, v1alpha1.CryptoSecret{})
 		assert.Equal(t, expectedCommand, actualResult)
 	}
 

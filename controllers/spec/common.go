@@ -59,9 +59,7 @@ const (
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
 
 	DefaultRunnerUserID  int64 = 10000
-	DefaultRunnerUser          = "pulsar"
 	DefaultRunnerGroupID int64 = 10001
-	DefaultRunnerGroup         = "pulsar"
 )
 
 var GRPCPort = corev1.ContainerPort{
@@ -159,26 +157,26 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 }
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory, extraDependenciesDir, uid string,
-	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful) []string {
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, trustCert v1alpha1.CryptoSecret) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, details,
-			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state), " ")
+			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, trustCert), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided, trustCert), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
 }
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details, uid string,
-	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful) []string {
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, trustCert v1alpha1.CryptoSecret) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
-			details, uid, authProvided, tlsProvided, secretMaps, state), " ")
+			details, uid, authProvided, tlsProvided, secretMaps, state, trustCert), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided, trustCert), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -190,13 +188,13 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath,
-			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != ""), " ")
+			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != "", function.Spec.TlsTrustCert), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
 }
 
-func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool) []string {
+func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool, trustCert v1alpha1.CryptoSecret) []string {
 	// The download path is the path that the package saved in the pulsar.
 	// By default, it's the path that the package saved in the pulsar, we can use package name
 	// to replace it for downloading packages from packages management service.
@@ -222,6 +220,13 @@ func getDownloadCommand(downloadPath, componentPackage string, authProvided, tls
 			"--tls-trust-cert-path",
 			"$tlsTrustCertsFilePath",
 		}...)
+
+		if trustCert.SecretName != "" {
+			args = append(args, []string{
+				"--tls-trust-cert-path",
+				getTlsTrustCertPath(trustCert),
+			}...)
+		}
 	}
 	if hasPackageNamePrefix(downloadPath) {
 		args = append(args, []string{
@@ -256,7 +261,7 @@ func setShardIDEnvironmentVariableCommand() string {
 }
 
 func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, extraDependenciesDir, uid string,
-	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful) []string {
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, trustCert v1alpha1.CryptoSecret) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
@@ -275,7 +280,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, 
 		"--jar",
 		packageName,
 	}
-	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, trustCert)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getJavaSecretProviderArgs(secretMaps)
@@ -295,7 +300,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, 
 }
 
 func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid string, authProvided, tlsProvided bool,
-	secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful) []string {
+	secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, trustCert v1alpha1.CryptoSecret) []string {
 	args := []string{
 		"exec",
 		"python",
@@ -310,7 +315,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 		"/pulsar/conf/functions-logging/console_logging_config.ini",
 		// TODO: Maybe we don't need installUserCodeDependencies, dependency_repository, and pythonExtraDependencyRepository
 	}
-	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, trustCert)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getPythonSecretProviderArgs(secretMaps)
@@ -327,7 +332,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 }
 
 // This method is suitable for Java and Python runtime, not include Go runtime.
-func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool) []string {
+func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool, trustCert v1alpha1.CryptoSecret) []string {
 	args := []string{
 		"--instance_id",
 		"${" + EnvShardID + "}",
@@ -367,9 +372,15 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 			"$tlsAllowInsecureConnection",
 			"--hostname_verification_enabled",
 			"$tlsHostnameVerificationEnable",
-			"--tls_trust_cert_path",
-			"$tlsTrustCertsFilePath",
 		}...)
+
+		// only set --tls_trust_cert_path when it's mounted
+		if trustCert.SecretName != "" {
+			args = append(args, []string{
+				"--tls_trust_cert_path",
+				getTlsTrustCertPath(trustCert),
+			}...)
+		}
 	} else {
 		args = append(args, []string{
 			"--use_tls",
@@ -593,18 +604,20 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 }
 
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig) []corev1.VolumeMount {
+	consumerConfs map[string]v1alpha1.ConsumerConfig, trustCert v1alpha1.CryptoSecret) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
+	mounts = append(mounts, generateVolumeMountFromCryptoSecret(&trustCert))
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)
 	return mounts
 }
 
 func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig) []corev1.Volume {
+	consumerConfs map[string]v1alpha1.ConsumerConfig, trustCert v1alpha1.CryptoSecret) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	volumes = append(volumes, podVolumes...)
+	volumes = append(volumes, generateVolumeFromCryptoSecret(&trustCert))
 	volumes = append(volumes, generateContainerVolumesFromProducerConf(producerConf)...)
 	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(consumerConfs)...)
 	return volumes
@@ -716,4 +729,8 @@ func getDecimalSIMemory(quantity *resource.Quantity) string {
 		return quantity.String()
 	}
 	return resource.NewQuantity(quantity.Value(), resource.DecimalSI).String()
+}
+
+func getTlsTrustCertPath(trustCert v1alpha1.CryptoSecret) string {
+	return fmt.Sprintf("%s/%s", trustCert.AsVolume, trustCert.SecretKey)
 }
