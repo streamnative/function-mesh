@@ -2617,6 +2617,18 @@ spec:
                     timeout:
                       format: int32
                       type: integer
+                    tlsTrustCert:
+                      properties:
+                        asVolume:
+                          type: string
+                        secretKey:
+                          type: string
+                        secretName:
+                          type: string
+                      required:
+                      - secretKey
+                      - secretName
+                      type: object
                     volumeMounts:
                       items:
                         properties:
@@ -5148,6 +5160,18 @@ spec:
                     timeout:
                       format: int32
                       type: integer
+                    tlsTrustCert:
+                      properties:
+                        asVolume:
+                          type: string
+                        secretKey:
+                          type: string
+                        secretName:
+                          type: string
+                      required:
+                      - secretKey
+                      - secretName
+                      type: object
                     volumeMounts:
                       items:
                         properties:
@@ -7643,6 +7667,18 @@ spec:
                       type: string
                     tenant:
                       type: string
+                    tlsTrustCert:
+                      properties:
+                        asVolume:
+                          type: string
+                        secretKey:
+                          type: string
+                        secretName:
+                          type: string
+                      required:
+                      - secretKey
+                      - secretName
+                      type: object
                     volumeMounts:
                       items:
                         properties:

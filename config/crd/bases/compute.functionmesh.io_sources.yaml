@@ -2496,6 +2496,18 @@ spec:
                 type: string
               tenant:
                 type: string
+              tlsTrustCert:
+                properties:
+                  asVolume:
+                    type: string
+                  secretKey:
+                    type: string
+                  secretName:
+                    type: string
+                required:
+                - secretKey
+                - secretName
+                type: object
               volumeMounts:
                 items:
                   properties:
