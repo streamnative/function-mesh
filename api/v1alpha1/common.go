@@ -154,7 +154,7 @@ type Runtime struct {
 // +kubebuilder:validation:Optional
 type JavaRuntime struct {
 	// +kubebuilder:validation:Required
-	Jar                  string `json:"jar,omitempty"`
+	Jar                  string `json:"jar"`
 	JarLocation          string `json:"jarLocation,omitempty"`
 	ExtraDependenciesDir string `json:"extraDependenciesDir,omitempty"`
 }
@@ -163,7 +163,7 @@ type JavaRuntime struct {
 // +kubebuilder:validation:Optional
 type PythonRuntime struct {
 	// +kubebuilder:validation:Required
-	Py         string `json:"py,omitempty"`
+	Py         string `json:"py"`
 	PyLocation string `json:"pyLocation,omitempty"`
 }
 
@@ -171,7 +171,7 @@ type PythonRuntime struct {
 // +kubebuilder:validation:Optional
 type GoRuntime struct {
 	// +kubebuilder:validation:Required
-	Go         string `json:"go,omitempty"`
+	Go         string `json:"go"`
 	GoLocation string `json:"goLocation,omitempty"`
 }
 
