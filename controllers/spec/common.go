@@ -191,7 +191,7 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath,
-			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != "", function.Spec.TlsTrustCert), " ")
+			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != "", function.Spec.TLSTrustCert), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -225,7 +225,7 @@ func getDownloadCommand(downloadPath, componentPackage string, authProvided, tls
 		if trustCert.SecretName != "" {
 			args = append(args, []string{
 				"--tls-trust-cert-path",
-				getTlsTrustCertPath(trustCert),
+				getTLSTrustCertPath(trustCert),
 			}...)
 		}
 	}
@@ -379,7 +379,7 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 		if trustCert.SecretName != "" {
 			args = append(args, []string{
 				"--tls_trust_cert_path",
-				getTlsTrustCertPath(trustCert),
+				getTLSTrustCertPath(trustCert),
 			}...)
 		}
 	} else {
@@ -736,6 +736,6 @@ func getDecimalSIMemory(quantity *resource.Quantity) string {
 	return resource.NewQuantity(quantity.Value(), resource.DecimalSI).String()
 }
 
-func getTlsTrustCertPath(trustCert v1alpha1.CryptoSecret) string {
+func getTLSTrustCertPath(trustCert v1alpha1.CryptoSecret) string {
 	return fmt.Sprintf("%s/%s", trustCert.AsVolume, trustCert.SecretKey)
 }

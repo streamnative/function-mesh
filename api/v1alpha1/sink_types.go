@@ -70,7 +70,7 @@ type SinkSpec struct {
 
 	// +kubebuilder:validation:Required
 	Messaging    `json:",inline"`
-	TlsTrustCert CryptoSecret `json:"tlsTrustCert,omitempty"`
+	TLSTrustCert CryptoSecret `json:"tlsTrustCert,omitempty"`
 	// +kubebuilder:validation:Required
 	Runtime `json:",inline"`
 

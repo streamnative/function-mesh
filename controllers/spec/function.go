@@ -73,14 +73,14 @@ func makeFunctionVolumes(function *v1alpha1.Function) []corev1.Volume {
 	return generatePodVolumes(function.Spec.Pod.Volumes,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
-		function.Spec.TlsTrustCert)
+		function.Spec.TLSTrustCert)
 }
 
 func makeFunctionVolumeMounts(function *v1alpha1.Function) []corev1.VolumeMount {
 	return generateContainerVolumeMounts(function.Spec.VolumeMounts,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
-		function.Spec.TlsTrustCert)
+		function.Spec.TLSTrustCert)
 }
 
 func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
@@ -122,14 +122,14 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.TlsTrustCert)
+				function.Spec.StateConfig, function.Spec.TLSTrustCert)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
 				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function), string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.TlsTrustCert)
+				function.Spec.StateConfig, function.Spec.TLSTrustCert)
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {

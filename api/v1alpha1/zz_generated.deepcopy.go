@@ -364,7 +364,7 @@ func (in *FunctionSpec) DeepCopyInto(out *FunctionSpec) {
 	}
 	in.Pod.DeepCopyInto(&out.Pod)
 	in.Messaging.DeepCopyInto(&out.Messaging)
-	out.TlsTrustCert = in.TlsTrustCert
+	out.TLSTrustCert = in.TLSTrustCert
 	in.Runtime.DeepCopyInto(&out.Runtime)
 	if in.StateConfig != nil {
 		in, out := &in.StateConfig, &out.StateConfig
@@ -867,7 +867,7 @@ func (in *SinkSpec) DeepCopyInto(out *SinkSpec) {
 	}
 	in.Pod.DeepCopyInto(&out.Pod)
 	in.Messaging.DeepCopyInto(&out.Messaging)
-	out.TlsTrustCert = in.TlsTrustCert
+	out.TLSTrustCert = in.TLSTrustCert
 	in.Runtime.DeepCopyInto(&out.Runtime)
 }
 
@@ -1002,7 +1002,7 @@ func (in *SourceSpec) DeepCopyInto(out *SourceSpec) {
 	}
 	in.Pod.DeepCopyInto(&out.Pod)
 	in.Messaging.DeepCopyInto(&out.Messaging)
-	out.TlsTrustCert = in.TlsTrustCert
+	out.TLSTrustCert = in.TLSTrustCert
 	in.Runtime.DeepCopyInto(&out.Runtime)
 }
 
