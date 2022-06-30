@@ -18,6 +18,7 @@
 package spec
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"strings"
 	"testing"
 
@@ -245,5 +246,322 @@ func makeGoFunctionSample(functionName string) *v1alpha1.Function {
 				},
 			},
 		},
+	}
+}
+
+func TestGeneratePodVolumes(t *testing.T) {
+	type args struct {
+		podVolumes    []corev1.Volume
+		producerConf  *v1alpha1.ProducerConfig
+		consumerConfs map[string]v1alpha1.ConsumerConfig
+		trustCert     v1alpha1.CryptoSecret
+	}
+	tests := []struct {
+		name string
+		args args
+		want []corev1.Volume
+	}{
+		{
+			name: "keep given pod volumes",
+			args: args{
+				podVolumes: []corev1.Volume{{
+					Name: "test-volume",
+				}},
+			},
+			want: []corev1.Volume{{
+				Name: "test-volume",
+			}},
+		},
+		{
+			name: "generate pod volumes from producer conf",
+			args: args{
+				producerConf: &v1alpha1.ProducerConfig{
+					CryptoConfig: &v1alpha1.CryptoConfig{
+						CryptoSecrets: []v1alpha1.CryptoSecret{{
+							SecretName: "test-producer-secret",
+							SecretKey:  "test-producer-key",
+						}},
+					},
+				},
+			},
+			want: []corev1.Volume{{
+				Name: "test-producer-secret-test-producer-key",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: "test-producer-secret",
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "test-producer-key",
+								Path: "test-producer-key",
+							},
+						},
+					},
+				},
+			}},
+		},
+		{
+			name: "generate pod volumes from consumer conf",
+			args: args{
+				podVolumes: nil,
+				producerConf: &v1alpha1.ProducerConfig{
+					CryptoConfig: &v1alpha1.CryptoConfig{
+						CryptoSecrets: []v1alpha1.CryptoSecret{{
+							SecretName: "test-producer-secret",
+							SecretKey:  "test-producer-key",
+						}},
+					},
+				},
+				consumerConfs: map[string]v1alpha1.ConsumerConfig{
+					"test-consumer": {
+						CryptoConfig: &v1alpha1.CryptoConfig{
+							CryptoSecrets: []v1alpha1.CryptoSecret{{
+								SecretName: "test-consumer-secret",
+								SecretKey:  "test-consumer-key",
+							}},
+						},
+					},
+				},
+			},
+			want: []corev1.Volume{
+				{
+					Name: "test-producer-secret-test-producer-key",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: "test-producer-secret",
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "test-producer-key",
+									Path: "test-producer-key",
+								},
+							},
+						},
+					},
+				},
+				{
+					Name: "test-consumer-secret-test-consumer-key",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: "test-consumer-secret",
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "test-consumer-key",
+									Path: "test-consumer-key",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "generate pod volumes from trust cert",
+			args: args{
+				podVolumes: nil,
+				producerConf: &v1alpha1.ProducerConfig{
+					CryptoConfig: &v1alpha1.CryptoConfig{
+						CryptoSecrets: []v1alpha1.CryptoSecret{{
+							SecretName: "test-producer-secret",
+							SecretKey:  "test-producer-key",
+						}},
+					},
+				},
+				consumerConfs: map[string]v1alpha1.ConsumerConfig{
+					"test-consumer": {
+						CryptoConfig: &v1alpha1.CryptoConfig{
+							CryptoSecrets: []v1alpha1.CryptoSecret{{
+								SecretName: "test-consumer-secret",
+								SecretKey:  "test-consumer-key",
+							}},
+						},
+					},
+				},
+				trustCert: v1alpha1.CryptoSecret{
+					SecretName: "test-trust-secret",
+					SecretKey:  "test-trust-key",
+				},
+			},
+			want: []corev1.Volume{
+				{
+					Name: "test-trust-secret-test-trust-key",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: "test-trust-secret",
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "test-trust-key",
+									Path: "test-trust-key",
+								},
+							},
+						},
+					},
+				},
+				{
+					Name: "test-producer-secret-test-producer-key",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: "test-producer-secret",
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "test-producer-key",
+									Path: "test-producer-key",
+								},
+							},
+						},
+					},
+				},
+				{
+					Name: "test-consumer-secret-test-consumer-key",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: "test-consumer-secret",
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "test-consumer-key",
+									Path: "test-consumer-key",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, generatePodVolumes(tt.args.podVolumes, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert), "generatePodVolumes(%v, %v, %v, %v)", tt.args.podVolumes, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
+		})
+	}
+}
+
+func TestGenerateContainerVolumeMounts(t *testing.T) {
+	type args struct {
+		volumeMounts  []corev1.VolumeMount
+		producerConf  *v1alpha1.ProducerConfig
+		consumerConfs map[string]v1alpha1.ConsumerConfig
+		trustCert     v1alpha1.CryptoSecret
+	}
+	tests := []struct {
+		name string
+		args args
+		want []corev1.VolumeMount
+	}{
+		{
+			name: "generate volume mounts from producerConf",
+			args: args{
+				producerConf: &v1alpha1.ProducerConfig{
+					CryptoConfig: &v1alpha1.CryptoConfig{
+						CryptoSecrets: []v1alpha1.CryptoSecret{{
+							SecretName: "test-producer-secret",
+							SecretKey:  "test-producer-key",
+							AsVolume:   "/test-producer",
+						}},
+					},
+				},
+			},
+			want: []corev1.VolumeMount{
+				{
+					Name:      "test-producer-secret-test-producer-key",
+					MountPath: "/test-producer",
+				},
+			},
+		},
+		{
+			name: "not generate volume mounts if AsVolume is not set",
+			args: args{
+				producerConf: &v1alpha1.ProducerConfig{
+					CryptoConfig: &v1alpha1.CryptoConfig{
+						CryptoSecrets: []v1alpha1.CryptoSecret{{
+							SecretName: "test-producer-secret",
+							SecretKey:  "test-producer-key",
+						}},
+					},
+				},
+			},
+			want: []corev1.VolumeMount{},
+		},
+		{
+			name: "generate volume mounts from consumerConf",
+			args: args{
+				producerConf: &v1alpha1.ProducerConfig{
+					CryptoConfig: &v1alpha1.CryptoConfig{
+						CryptoSecrets: []v1alpha1.CryptoSecret{{
+							SecretName: "test-producer-secret",
+							SecretKey:  "test-producer-key",
+							AsVolume:   "/test-producer",
+						}},
+					},
+				},
+				consumerConfs: map[string]v1alpha1.ConsumerConfig{
+					"test-consumer": {
+						CryptoConfig: &v1alpha1.CryptoConfig{
+							CryptoSecrets: []v1alpha1.CryptoSecret{{
+								SecretName: "test-consumer-secret",
+								SecretKey:  "test-consumer-key",
+								AsVolume:   "/test-consumer",
+							}},
+						},
+					},
+				},
+			},
+			want: []corev1.VolumeMount{
+				{
+					Name:      "test-producer-secret-test-producer-key",
+					MountPath: "/test-producer",
+				},
+				{
+					Name:      "test-consumer-secret-test-consumer-key",
+					MountPath: "/test-consumer",
+				},
+			},
+		},
+		{
+			name: "generate volume mounts from trustCert",
+			args: args{
+				producerConf: &v1alpha1.ProducerConfig{
+					CryptoConfig: &v1alpha1.CryptoConfig{
+						CryptoSecrets: []v1alpha1.CryptoSecret{{
+							SecretName: "test-producer-secret",
+							SecretKey:  "test-producer-key",
+							AsVolume:   "/test-producer",
+						}},
+					},
+				},
+				consumerConfs: map[string]v1alpha1.ConsumerConfig{
+					"test-consumer": {
+						CryptoConfig: &v1alpha1.CryptoConfig{
+							CryptoSecrets: []v1alpha1.CryptoSecret{{
+								SecretName: "test-consumer-secret",
+								SecretKey:  "test-consumer-key",
+								AsVolume:   "/test-consumer",
+							}},
+						},
+					},
+				},
+				trustCert: v1alpha1.CryptoSecret{
+					SecretName: "test-trust-secret",
+					SecretKey:  "test-trust-key",
+					AsVolume:   "/test-trust",
+				},
+			},
+			want: []corev1.VolumeMount{
+				{
+					Name:      "test-trust-secret-test-trust-key",
+					MountPath: "/test-trust",
+				},
+				{
+					Name:      "test-producer-secret-test-producer-key",
+					MountPath: "/test-producer",
+				},
+				{
+					Name:      "test-consumer-secret-test-consumer-key",
+					MountPath: "/test-consumer",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, generateContainerVolumeMounts(tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert), "generateContainerVolumeMounts(%v, %v, %v, %v)", tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
+		})
 	}
 }

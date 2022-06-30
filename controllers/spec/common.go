@@ -608,7 +608,7 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 	consumerConfs map[string]v1alpha1.ConsumerConfig, trustCert v1alpha1.CryptoSecret) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
-	if trustCert.SecretName != "" {
+	if trustCert.SecretName != "" && trustCert.AsVolume != "" {
 		mounts = append(mounts, generateVolumeMountFromCryptoSecret(&trustCert))
 	}
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
