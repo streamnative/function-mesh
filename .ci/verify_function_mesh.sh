@@ -37,8 +37,6 @@ case ${1} in
     ;;
   compute_v1alpha1_function)
     ci::verify_function_mesh function-sample
-    sleep 60
-    ci::print_function_log function-sample
     ci::verify_java_function function-sample
     ;;
   compute_v1alpha1_py_function)

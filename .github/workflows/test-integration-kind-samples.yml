@@ -65,21 +65,22 @@ jobs:
       #          operator-sdk create api --group compute --version v1alpha1 --kind Function --resource=true --controller=true
       #          operator-sdk create webhook --group compute.functionmesh.io --version v1alpha1 --kind Function --defaulting --programmatic-validation
 
-      - name: Deploy function mesh server
+      - name: Build and load function-mesh operator image
         run: |
           make generate
-          make install
-          make docker-build-skip-test
-          IMG=$(make function-mesh-docker-image-name)
+          make helm-crds
+          image="function-mesh-operator:latest"
+          IMG=${image} make docker-build-skip-test
           clusters=$(kind get clusters)
-          echo $clusters
-          for cluster in $clusters
-          do
-          kind load docker-image --name ${cluster} ${IMG}
+          for cluster in $clusters; do
+            kind load docker-image --name ${cluster} ${image}
           done
-          make deploy
-          kubectl get crds
-          kubectl wait --for condition=ready --timeout=360s pod -l app=function-mesh-operator,control-plane=controller-manager
+
+      - name: Deploy function mesh server
+        run: |
+          helm install function-mesh -n function-mesh --set operatorImage=function-mesh-operator:latest --create-namespace charts/function-mesh-operator
+          kubectl wait --for=condition=Ready -l app.kubernetes.io/name=function-mesh-operator pods -n function-mesh --timeout=5m
+          kubectl get pods -n function-mesh
 
       - name: Test Function kind - Java Function
         run: |

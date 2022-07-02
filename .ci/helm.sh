@@ -122,20 +122,29 @@ function ci::test_pulsar_producer() {
 
 function ci::verify_function_mesh() {
     FUNCTION_NAME=$1
-    WC=$(${KUBECTL} get pods -lname=${FUNCTION_NAME} --field-selector=status.phase=Running | wc -l)
-    while [[ ${WC} -lt 1 ]]; do
-      echo ${WC};
-      sleep 15
-      ${KUBECTL} get pods -A
-      WC=$(${KUBECTL} get pods -lname=${FUNCTION_NAME} | wc -l)
-      if [[ ${WC} -gt 1 ]]; then
-        ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
-      fi
-      WC=$(${KUBECTL} get pods -lname=${FUNCTION_NAME} --field-selector=status.phase=Running | wc -l)
+
+    while true; do
+        num=$(${KUBECTL} get pods -lname="${FUNCTION_NAME}" | wc -l)
+        if [ "$num" -gt 1 ]; then
+            break
+        else
+            ${KUBECTL} get pods -A
+            sleep 2s
+        fi
     done
-    ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
-    sleep 30
-    ${KUBECTL} logs -lname=${FUNCTION_NAME}  --all-containers=true
+
+    ${KUBECTL} wait -lname="${FUNCTION_NAME}" --for=condition=Ready pod --timeout=5m && true
+    if [ $? -eq 0 ]; then
+        while true; do
+            num=$(${KUBECTL} logs -lname="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer" | wc -l)
+            if [ "$num" -gt 0 ]; then
+                break
+            else
+                ${KUBECTL} logs -lname="${FUNCTION_NAME}" --all-containers=true --tail=-1 || true
+                sleep 5s
+            fi
+        done
+    fi
 }
 
 function ci::verify_hpa() {
@@ -211,10 +220,6 @@ function ci::verify_go_function() {
 }
 
 function ci::verify_java_function() {
-    FUNCTION_NAME=$1
-    ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
-    sleep 120
-    ${KUBECTL} logs -lname=${FUNCTION_NAME}  --all-containers=true
     ci:verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 30
 }
 
@@ -237,17 +242,17 @@ function ci::print_function_log() {
 }
 
 function ci:verify_exclamation_function() {
-  inputtopic=$1
-  outputtopic=$2
-  inputmessage=$3
-  outputmessage=$4
-  timesleep=$5
-  ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m ${inputmessage} -n 1 ${inputtopic}
-  sleep $timesleep
-  MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest ${outputtopic})
-  echo $MESSAGE
-  if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
-    return 0
-  fi
-  return 1
+    inputtopic=$1
+    outputtopic=$2
+    inputmessage=$3
+    outputmessage=$4
+    timesleep=$5
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
+    sleep "$timesleep"
+    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${outputtopic}")
+    echo "$MESSAGE"
+    if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
+        return 0
+    fi
+    return 1
 }
