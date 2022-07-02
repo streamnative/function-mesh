@@ -213,9 +213,6 @@ function ci::test_function_runners() {
 }
 
 function ci::verify_go_function() {
-    FUNCTION_NAME=$1
-    ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
-    ${KUBECTL} logs -lname=${FUNCTION_NAME}  --all-containers=true
     ci:verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 30
 }
 
@@ -224,9 +221,6 @@ function ci::verify_java_function() {
 }
 
 function ci::verify_python_function() {
-    FUNCTION_NAME=$1
-    ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
-    ${KUBECTL} logs -lname=${FUNCTION_NAME}  --all-containers=true
     ci:verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 30
 }
 
