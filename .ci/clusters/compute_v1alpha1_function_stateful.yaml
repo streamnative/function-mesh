@@ -33,7 +33,7 @@ spec:
   autoAck: true
   statefulConfig:
     pulsar:
-      serviceUrl: "bk://sn-platform-pulsar-bk.default.svc.cluster.local:4181"
+      serviceUrl: "bk://sn-platform-pulsar-bookie.default.svc.cluster.local:4181"
 ---
 apiVersion: v1
 kind: ConfigMap
