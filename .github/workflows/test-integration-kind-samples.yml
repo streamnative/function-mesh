@@ -142,15 +142,15 @@ jobs:
           .ci/verify_function_mesh.sh compute_v1alpha1_function_builtin_hpa
           kubectl delete -f .ci/clusters/compute_v1alpha1_function_builtin_hpa.yaml
 
-      - name: Test Java Stateful Function
-        run: |
-          kubectl apply -f .ci/clusters/compute_v1alpha1_function_stateful.yaml
-          kubectl get all
-
-      - name: Verify Java Stateful Function
-        run: |
-          .ci/verify_function_mesh.sh compute_v1alpha1_function_stateful
-          kubectl delete -f .ci/clusters/compute_v1alpha1_function_stateful.yaml
+#       - name: Test Java Stateful Function
+#         run: |
+#           kubectl apply -f .ci/clusters/compute_v1alpha1_function_stateful.yaml
+#           kubectl get all
+#
+#       - name: Verify Java Stateful Function
+#         run: |
+#           .ci/verify_function_mesh.sh compute_v1alpha1_function_stateful
+#           kubectl delete -f .ci/clusters/compute_v1alpha1_function_stateful.yaml
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3

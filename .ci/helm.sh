@@ -111,13 +111,17 @@ function ci::install_pulsar_charts() {
 }
 
 function ci::test_pulsar_producer() {
-    sleep 120
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup sn-platform-pulsar-broker; do sleep 3; done'
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- df -h
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- cat conf/bookkeeper.conf
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin tenants create sn-platform
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin namespaces create sn-platform/test
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" sn-platform/test/test-topic
+    ${KUBECTL} wait -n ${NAMESPACE} -l app=pulsar --for=condition=Ready pod --timeout=2m && true
+    if [ $? -eq 0 ]; then
+        ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup sn-platform-pulsar-broker; do sleep 3; done'
+        ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- df -h
+        ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- cat conf/bookkeeper.conf
+        ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin tenants create sn-platform
+        ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin namespaces create sn-platform/test
+        ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" sn-platform/test/test-topic
+    else
+        ${KUBECTL} get pods -n ${NAMESPACE} -l app=pulsar && false
+    fi
 }
 
 function ci::verify_function_mesh() {
@@ -133,7 +137,7 @@ function ci::verify_function_mesh() {
         fi
     done
 
-    ${KUBECTL} wait -lname="${FUNCTION_NAME}" --for=condition=Ready pod --timeout=5m && true
+    ${KUBECTL} wait -lname="${FUNCTION_NAME}" --for=condition=Ready pod --timeout=2m && true
     if [ $? -eq 0 ]; then
         while true; do
             num=$(${KUBECTL} logs -lname="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer" | wc -l)
@@ -225,7 +229,7 @@ function ci::verify_python_function() {
 }
 
 function ci::verify_mesh_function() {
-    ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 120
+    ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 30
 }
 
 function ci::print_function_log() {
