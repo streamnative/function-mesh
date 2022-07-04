@@ -3,7 +3,12 @@ kind: ClusterServiceVersion
 metadata:
   annotations:
     alm-examples: '[]'
-    capabilities: Basic Install
+    capabilities: Seamless Upgrades
+    categories: Streaming & Messaging
+    containerImage: streamnative/function-mesh-operator:v0.0.0
+    description: The Function Mesh Operator manages the Pulsar Functions and Connectors deployed on a Kubernetes cluster.
+    repository: https://github.com/streamnative/function-mesh
+    support: StreamNative
   name: function-mesh.v0.0.0
   namespace: placeholder
 spec:
@@ -11,11 +16,16 @@ spec:
   customresourcedefinitions:
     owned:
     - description: FunctionMesh is the Schema for the functionmeshes API
-      displayName: Function Mesh
+      displayName: Mesh
       kind: FunctionMesh
       name: functionmeshes.compute.functionmesh.io
       version: v1alpha1
-    - description: Topic is the Schema for the sinks API
+    - description: Function is the Schema for the functions API
+      displayName: Function
+      kind: Function
+      name: functions.compute.functionmesh.io
+      version: v1alpha1
+    - description: Sink is the Schema for the sinks API
       displayName: Sink
       kind: Sink
       name: sinks.compute.functionmesh.io
@@ -25,11 +35,14 @@ spec:
       kind: Source
       name: sources.compute.functionmesh.io
       version: v1alpha1
-  description: function mesh
-  displayName: function-mesh
+  description: |
+    [Function Mesh](https://functionmesh.io/) is a serverless framework purpose-built for stream processing applications. It brings powerful event-streaming capabilities to your applications by orchestrating multiple [Pulsar Functions](http://pulsar.apache.org/docs/en/next/functions-overview/) and [Pulsar IO connectors](http://pulsar.apache.org/docs/en/next/io-overview/) for complex stream processing jobs on Kubernetes.
+    Prerequisites:
+    - Install cert-manager operator first.
+  displayName: Function Mesh Operator
   icon:
-  - base64data: ""
-    mediatype: ""
+  - base64data: PHN2ZyBpZD0i5Zu+5bGCXzEiIGRhdGEtbmFtZT0i5Zu+5bGCIDEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHZpZXdCb3g9IjAgMCA3NC4xIDc1LjU2Ij48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6dXJsKCPmnKrlkb3lkI3nmoTmuJDlj5gpO30uY2xzLTJ7ZmlsbDp1cmwoI+acquWRveWQjeeahOa4kOWPmF8yKTt9LmNscy0ze2ZpbGw6dXJsKCPmnKrlkb3lkI3nmoTmuJDlj5hfMyk7fTwvc3R5bGU+PGxpbmVhckdyYWRpZW50IGlkPSLmnKrlkb3lkI3nmoTmuJDlj5giIHgxPSIwLjg5IiB5MT0iLTEzMS41OCIgeDI9IjczLjI3IiB5Mj0iLTEzMS41OCIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCgxLCAwLCAwLCAtMSwgMCwgLTkzLjg1KSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzAyZDBmNyIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzBkNjVmYiIvPjwvbGluZWFyR3JhZGllbnQ+PGxpbmVhckdyYWRpZW50IGlkPSLmnKrlkb3lkI3nmoTmuJDlj5hfMiIgeDE9IjQ1LjYzIiB5MT0iLTEzNi4yOCIgeDI9IjU4LjA1IiB5Mj0iLTEzNi4yOCIgeGxpbms6aHJlZj0iI+acquWRveWQjeeahOa4kOWPmCIvPjxsaW5lYXJHcmFkaWVudCBpZD0i5pyq5ZG95ZCN55qE5riQ5Y+YXzMiIHgxPSIxNS45NSIgeTE9Ii0xMjcuMDgiIHgyPSIyOC4zNyIgeTI9Ii0xMjcuMDgiIHhsaW5rOmhyZWY9IiPmnKrlkb3lkI3nmoTmuJDlj5giLz48L2RlZnM+PHRpdGxlPnB1bHNhciBmdW5jdGlvbnM8L3RpdGxlPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTcwLjQzLDI5LjYzbC0xNC45LTZzLTMuNC0xLjctOC4yLjVsLTE0LjksNi4yYTEwLjQ2LDEwLjQ2LDAsMSwxLTIuNy01di0uMWwxMy01LjYtMi42LTEuNUE0LjMxLDQuMzEsMCwwLDAsMzYsMThsLTcuMywzLTEuNC0zLjMsOC4xLTMuNWE1LjIsNS4yLDAsMCwxLDUsLjJjMS42LjksNC4xLDIuNCw2LDMuNWwuMy0uMXM1LjgtMi45LDEwLjItLjZjLjguMywxLjUuOCwzLjEsMS41TDQ2LjYzLDUuMzNhMTMuNDYsMTMuNDYsMCwwLDAtMTkuMSwwTDQuODMsMjhhMTMuNjUsMTMuNjUsMCwwLDAtMS41LDE3LjRsMTQuOSw2czMuNCwxLjcsOC4yLS41bDE0LjktNi4yYTEwLjQ2LDEwLjQ2LDAsMSwxLDIuNyw1di4xbC0xMy4yLDUuNywzLjksMi4yYTQuMzEsNC4zMSwwLDAsMCw0LjEuMWw3LjMtMywxLjQsMy4zLTguMSwzLjVhNS4yLDUuMiwwLDAsMS01LS4yYy0yLTEuMS01LjQtMy4xLTcuMy00LjJIMjdzLTUuOCwyLjktMTAuMi42Yy0xLjMtLjYtMi40LTEuMi0zLjYtMS45bDE0LjIsMTQuMmExMy40NiwxMy40NiwwLDAsMCwxOS4xLDBsMjIuNy0yMi43QTEzLjM2LDEzLjM2LDAsMCwwLDcwLjQzLDI5LjYzWiIvPjxjaXJjbGUgY2xhc3M9ImNscy0yIiBjeD0iNTEuODMiIGN5PSI0Mi40MyIgcj0iNi4yIi8+PGNpcmNsZSBjbGFzcz0iY2xzLTMiIGN4PSIyMi4xMyIgY3k9IjMzLjIzIiByPSI2LjIiLz48L3N2Zz4=
+    mediatype: image/svg+xml
   install:
     spec:
       deployments: null
@@ -46,10 +59,19 @@ spec:
   keywords:
   - pulsar
   - function-mesh
+  - serverless
+  - pulsar-functions
+  - pulsar-io-connectors
+  - StreamNative
   links:
   - name: Function Mesh
-    url: https://function-mesh.domain
+    url: https://function-mesh.io
+  maintainers:
+  - email: function-mesh@streamnative.io
+    name: Function Mesh
   maturity: alpha
+  minKubeVersion: "1.17"
   provider:
-    name: streamnative
+    name: StreamNative
+    url: https://streamnative.io
   version: 0.0.0

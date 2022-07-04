@@ -1,6 +1,7 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-# - compute_v1alpha1_functionmesh.yaml
+- compute_v1alpha1_functionmesh.yaml
+- compute_v1alpha1_function.yaml
 - compute_v1alpha1_source.yaml
 - compute_v1alpha1_sink.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

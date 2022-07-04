@@ -45,6 +45,8 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+BUILD_DATETIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
 all: manager
 
 # Run tests
@@ -129,6 +131,8 @@ bundle: yq kustomize manifests
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(YQ) eval -i ".metadata.annotations.\"olm.skipRange\" = \"<$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.createdAt = \"$(BUILD_DATETIME)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.containerImage = \"streamnative/function-mesh-operator:$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	operator-sdk bundle validate ./bundle
 
 # Build the bundle image.
@@ -241,3 +245,25 @@ define go-get-tool
 	fi ;\
 }
 endef
+
+
+# Generate bundle manifests and metadata, then validate generated files.
+.PHONY: redhat-certificated-bundle
+redhat-certificated-bundle: yq kustomize manifests
+	operator-sdk generate kustomize manifests -q
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(YQ) eval -i ".metadata.annotations.\"olm.skipRange\" = \"<$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.createdAt = \"$(BUILD_DATETIME)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.containerImage = \"quay.io/streamnativeio/function-mesh-operator:$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	operator-sdk bundle validate ./bundle
+
+# Build the bundle image.
+.PHONY: redhat-certificated-bundle-build
+redhat-certificated-bundle-build:
+	docker build -f redhat.Dockerfile . -t ${OPERATOR_IMG} --build-arg VERSION=${VERSION} --no-cache
+
+.PHONY: bundle-push
+redhat-certificated-bundle-push: ## Push the bundle image.
+	echo $(OPERATOR_IMG)
+	$(MAKE) image-push IMG=$(OPERATOR_IMG)

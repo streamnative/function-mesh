@@ -90,34 +90,97 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
 
-#      - name: Set up JDK 1.8
-#        uses: actions/setup-java@v1
-#        with:
-#          java-version: 1.8
-#
-#      - name: Login to GitHub Packages Docker Registry
-#        uses: docker/login-action@v1
-#        with:
-#          registry: docker.pkg.github.com
-#          username: tuteng
-#          password: ${{ secrets.IMAGE_GITHUB_TOKEN }}
-#
-#      - name: Auto generate crd model
-#        run: cd mesh-worker-service && ./tool/generate-crd.sh
-#
-#      - name: Format license
-#        run: cd mesh-worker-service && mvn license:format
-#
-#      - name: Run mesh worker service unit test
-#        run: |
-#          cd mesh-worker-service
-#          mvn clean install
-#
-#      - name: Upload mesh worker service nar package to release
-#        uses: svenstaro/upload-release-action@v2
-#        with:
-#          repo_token: ${{ secrets.GITHUB_TOKEN }}
-#          file: mesh-worker-service/target/mesh-worker-service-${{ github.event.release.tag_name }}.nar
-#          asset_name: mesh-worker-service-${{ github.event.release.tag_name }}.nar
-#          tag: ${{ github.ref }}
-#          overwrite: true
+      - name: Login to Quay
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_DOCKER_USERNAME }}
+          password: ${{ secrets.QUAY_DOCKER_PASSWORD }}
+
+      - name: Build RedHat certificated bundle And Publish to Quay
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+          DOCKER_REPO: quay.io/streamnativeio
+        run: |
+          # convert vx.y.z to x.y.z because a valid semver is needed in creating the bundle
+          VERSION=$(echo $VERSION|cut -c 2-)
+          echo $VERSION
+          make redhat-certificated-bundle
+          make redhat-certificated-bundle-build
+          make redhat-certificated-bundle-push
+
+  openshift:
+    name: Upload Release files
+      runs-on: ubuntu-latest
+      steps:
+        - name: clean disk
+          run: |
+            sudo swapoff -a
+            sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
+            sudo apt clean
+            docker rmi $(docker images -q) -f
+            df -h
+
+        - name: checkout
+          uses: actions/checkout@v2
+
+        - name: Login to Docker Hub
+          uses: docker/login-action@v1
+          with:
+            username: ${{ secrets.DOCKER_USER }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+
+        - name: Set up GO 1.18
+          uses: actions/setup-go@v1
+          with:
+            go-version: 1.18
+          id: go
+
+        - name: InstallKubebuilder
+          run: |
+            curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz | tar -xz -C /tmp/
+            sudo mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
+            export PATH=$PATH:/usr/local/kubebuilder/bin
+
+        - name: Install operator-sdk
+          run: |
+            RELEASE_VERSION=v1.6.1
+            curl -LO "https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk_linux_amd64"
+            chmod +x operator-sdk_linux_amd64 && sudo mkdir -p /usr/local/bin/ && sudo mv operator-sdk_linux_amd64 /usr/local/bin/operator-sdk
+
+        - name: Set up yq
+          run: |
+            sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.0/yq_linux_amd64 -O /usr/bin/yq
+            sudo chmod +x /usr/bin/yq
+            yq --help
+
+        - name: build release
+          id: build_release
+          env:
+            VERSION: ${{ github.event.release.tag_name }}
+            IMAGE_TAG_BASE: streamnative/function-mesh
+            CATALOG_BRANCH_TAG: latest
+          run: |
+            # convert vx.y.z to x.y.z because a valid semver is needed in creating the bundle
+            VERSION=$(echo $VERSION|cut -c 2-)
+            make release
+
+        - name: Login to Quay
+          uses: docker/login-action@v1
+          with:
+            registry: quay.io
+            username: ${{ secrets.QUAY_DOCKER_USERNAME }}
+            password: ${{ secrets.QUAY_DOCKER_PASSWORD }}
+
+        - name: Build RedHat certificated bundle And Publish to Quay
+          env:
+            VERSION: ${{ github.event.release.tag_name }}
+            DOCKER_REPO: quay.io/streamnativeio
+          run: |
+            # convert vx.y.z to x.y.z because a valid semver is needed in creating the bundle
+            VERSION=$(echo $VERSION|cut -c 2-)
+            echo $VERSION
+            make redhat-certificated-bundle
+            make redhat-certificated-bundle-build
+            make redhat-certificated-bundle-push
+
