@@ -2534,6 +2534,19 @@ spec:
                             type: string
                           pulsarConfig:
                             type: string
+                          tlsConfig:
+                            properties:
+                              allowInsecure:
+                                type: boolean
+                              certSecretKey:
+                                type: string
+                              certSecretName:
+                                type: string
+                              enabled:
+                                type: boolean
+                              hostnameVerification:
+                                type: boolean
+                            type: object
                           tlsSecret:
                             type: string
                         type: object
@@ -2615,18 +2628,6 @@ spec:
                       timeout:
                         format: int32
                         type: integer
-                      tlsTrustCert:
-                        properties:
-                          asVolume:
-                            type: string
-                          secretKey:
-                            type: string
-                          secretName:
-                            type: string
-                        required:
-                          - secretKey
-                          - secretName
-                        type: object
                       volumeMounts:
                         items:
                           properties:
@@ -5093,6 +5094,19 @@ spec:
                             type: string
                           pulsarConfig:
                             type: string
+                          tlsConfig:
+                            properties:
+                              allowInsecure:
+                                type: boolean
+                              certSecretKey:
+                                type: string
+                              certSecretName:
+                                type: string
+                              enabled:
+                                type: boolean
+                              hostnameVerification:
+                                type: boolean
+                            type: object
                           tlsSecret:
                             type: string
                         type: object
@@ -5158,18 +5172,6 @@ spec:
                       timeout:
                         format: int32
                         type: integer
-                      tlsTrustCert:
-                        properties:
-                          asVolume:
-                            type: string
-                          secretKey:
-                            type: string
-                          secretName:
-                            type: string
-                        required:
-                          - secretKey
-                          - secretName
-                        type: object
                       volumeMounts:
                         items:
                           properties:
@@ -7613,6 +7615,19 @@ spec:
                             type: string
                           pulsarConfig:
                             type: string
+                          tlsConfig:
+                            properties:
+                              allowInsecure:
+                                type: boolean
+                              certSecretKey:
+                                type: string
+                              certSecretName:
+                                type: string
+                              enabled:
+                                type: boolean
+                              hostnameVerification:
+                                type: boolean
+                            type: object
                           tlsSecret:
                             type: string
                         type: object
@@ -7665,18 +7680,6 @@ spec:
                         type: string
                       tenant:
                         type: string
-                      tlsTrustCert:
-                        properties:
-                          asVolume:
-                            type: string
-                          secretKey:
-                            type: string
-                          secretName:
-                            type: string
-                        required:
-                          - secretKey
-                          - secretName
-                        type: object
                       volumeMounts:
                         items:
                           properties:

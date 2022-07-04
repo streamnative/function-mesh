@@ -32,7 +32,8 @@ import (
 
 func TestGetDownloadCommand(t *testing.T) {
 	doTest := func(downloadPath, componentPackage string, expectedCommand []string) {
-		actualResult := getDownloadCommand(downloadPath, componentPackage, false, false, v1alpha1.CryptoSecret{})
+		var tlsConfig *v1alpha1.PulsarTLSConfig
+		actualResult := getDownloadCommand(downloadPath, componentPackage, false, false, tlsConfig)
 		assert.Equal(t, expectedCommand, actualResult)
 	}
 
@@ -255,7 +256,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 		podVolumes    []corev1.Volume
 		producerConf  *v1alpha1.ProducerConfig
 		consumerConfs map[string]v1alpha1.ConsumerConfig
-		trustCert     v1alpha1.CryptoSecret
+		trustCert     *v1alpha1.PulsarTLSConfig
 	}
 	tests := []struct {
 		name string
@@ -376,9 +377,14 @@ func TestGeneratePodVolumes(t *testing.T) {
 						},
 					},
 				},
-				trustCert: v1alpha1.CryptoSecret{
-					SecretName: "test-trust-secret",
-					SecretKey:  "test-trust-key",
+				trustCert: &v1alpha1.PulsarTLSConfig{
+					TLSConfig: v1alpha1.TLSConfig{
+						Enabled:              true,
+						AllowInsecure:        true,
+						HostnameVerification: true,
+						CertSecretName:       "test-trust-secret",
+						CertSecretKey:        "test-trust-key",
+					},
 				},
 			},
 			want: []corev1.Volume{
@@ -439,7 +445,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		volumeMounts  []corev1.VolumeMount
 		producerConf  *v1alpha1.ProducerConfig
 		consumerConfs map[string]v1alpha1.ConsumerConfig
-		trustCert     v1alpha1.CryptoSecret
+		trustCert     *v1alpha1.PulsarTLSConfig
 	}
 	tests := []struct {
 		name string
@@ -538,16 +544,20 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 						},
 					},
 				},
-				trustCert: v1alpha1.CryptoSecret{
-					SecretName: "test-trust-secret",
-					SecretKey:  "test-trust-key",
-					AsVolume:   "/test-trust",
+				trustCert: &v1alpha1.PulsarTLSConfig{
+					TLSConfig: v1alpha1.TLSConfig{
+						Enabled:              true,
+						AllowInsecure:        true,
+						HostnameVerification: true,
+						CertSecretName:       "test-trust-secret",
+						CertSecretKey:        "test-trust-key",
+					},
 				},
 			},
 			want: []corev1.VolumeMount{
 				{
 					Name:      "test-trust-secret-test-trust-key",
-					MountPath: "/test-trust",
+					MountPath: "/etc/tls/pulsar-functions",
 				},
 				{
 					Name:      "test-producer-secret-test-producer-key",

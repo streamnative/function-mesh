@@ -75,8 +75,6 @@ type FunctionSpec struct {
 	// +kubebuilder:validation:Required
 	Messaging `json:",inline"`
 
-	TLSTrustCert CryptoSecret `json:"tlsTrustCert,omitempty"`
-
 	// +kubebuilder:validation:Required
 	Runtime `json:",inline"`
 

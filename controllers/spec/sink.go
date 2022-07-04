@@ -100,11 +100,11 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 }
 
 func makeSinkVolumes(sink *v1alpha1.Sink) []corev1.Volume {
-	return generatePodVolumes(sink.Spec.Pod.Volumes, nil, sink.Spec.Input.SourceSpecs, sink.Spec.TLSTrustCert)
+	return generatePodVolumes(sink.Spec.Pod.Volumes, nil, sink.Spec.Input.SourceSpecs, sink.Spec.Pulsar.TLSConfig)
 }
 
 func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
-	return generateContainerVolumeMounts(sink.Spec.VolumeMounts, nil, sink.Spec.Input.SourceSpecs, sink.Spec.TLSTrustCert)
+	return generateContainerVolumeMounts(sink.Spec.VolumeMounts, nil, sink.Spec.Input.SourceSpecs, sink.Spec.Pulsar.TLSConfig)
 }
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
@@ -112,7 +112,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName, generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),
-		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil, spec.TLSTrustCert)
+		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil, spec.Pulsar.TLSConfig)
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {

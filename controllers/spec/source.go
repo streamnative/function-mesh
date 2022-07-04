@@ -95,11 +95,11 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 }
 
 func makeSourceVolumes(source *v1alpha1.Source) []corev1.Volume {
-	return generatePodVolumes(source.Spec.Pod.Volumes, source.Spec.Output.ProducerConf, nil, source.Spec.TLSTrustCert)
+	return generatePodVolumes(source.Spec.Pod.Volumes, source.Spec.Output.ProducerConf, nil, source.Spec.Pulsar.TLSConfig)
 }
 
 func makeSourceVolumeMounts(source *v1alpha1.Source) []corev1.VolumeMount {
-	return generateContainerVolumeMounts(source.Spec.VolumeMounts, source.Spec.Output.ProducerConf, nil, source.Spec.TLSTrustCert)
+	return generateContainerVolumeMounts(source.Spec.VolumeMounts, source.Spec.Output.ProducerConf, nil, source.Spec.Pulsar.TLSConfig)
 }
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
@@ -107,7 +107,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName, generateSourceDetailsInJSON(source),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(source.UID),
-		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil, spec.TLSTrustCert)
+		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil, spec.Pulsar.TLSConfig)
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {
