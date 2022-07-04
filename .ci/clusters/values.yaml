@@ -58,6 +58,10 @@ images:
   proxy:
     repository: streamnative/pulsar-all
     tag: 2.10.0.0-rc10
+  presto:
+    repository: streamnative/pulsar-all
+    tag: 2.10.0.0-rc10
+    pullPolicy: IfNotPresent
 
 zookeeper:
   replicaCount: 1
