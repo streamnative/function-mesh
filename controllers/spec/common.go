@@ -239,12 +239,13 @@ func getDownloadCommand(downloadPath, componentPackage string, authProvided, tls
 		}
 	} else {
 		if tlsConfig.IsEnabled() {
-			args = append(args, []string{
-				"--tls-allow-insecure",
-				tlsConfig.AllowInsecureConnection(),
-				"--tls-enable-hostname-verification",
-				tlsConfig.EnableHostnameVerification(),
-			}...)
+			if tlsConfig.AllowInsecureConnection() == "true" {
+				args = append(args, "--tls-allow-insecure")
+			}
+
+			if tlsConfig.EnableHostnameVerification() == "true" {
+				args = append(args, "--tls-enable-hostname-verification")
+			}
 
 			if tlsConfig.HasSecretVolume() {
 				args = append(args, []string{

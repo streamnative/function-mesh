@@ -276,12 +276,6 @@ type CryptoSecret struct {
 	//AsEnv      string `json:"asEnv,omitempty"`
 }
 
-type SecretVolume struct {
-	SecretName string `json:"secretName"`
-	SecretKey  string `json:"secretKey"`
-	AsVolume   string `json:"asVolume"`
-}
-
 // SubscribePosition enum type
 // +kubebuilder:validation:Enum=latest;earliest
 type SubscribePosition string
