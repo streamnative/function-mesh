@@ -19,6 +19,13 @@ spec:
         ports:
         - containerPort: 8443
           name: https
+        resources:
+          limits:
+            cpu: 500m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
       - name: manager
         args:
         - "--metrics-addr=127.0.0.1:8080"

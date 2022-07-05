@@ -6,7 +6,9 @@ metadata:
     capabilities: Seamless Upgrades
     categories: Streaming & Messaging
     containerImage: streamnative/function-mesh-operator:v0.0.0
-    description: The Function Mesh Operator manages the Pulsar Functions and Connectors deployed on a Kubernetes cluster.
+    description: The Function Mesh Operator manages the Pulsar Functions and Connectors
+      deployed on a Kubernetes cluster.
+    operatorhub.io/ui-metadata-max-k8s-version: "1.21"
     repository: https://github.com/streamnative/function-mesh
     support: StreamNative
   name: function-mesh.v0.0.0

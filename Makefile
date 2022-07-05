@@ -132,7 +132,7 @@ bundle: yq kustomize manifests
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(YQ) eval -i ".metadata.annotations.\"olm.skipRange\" = \"<$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i ".metadata.annotations.createdAt = \"$(BUILD_DATETIME)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
-	$(YQ) eval -i ".metadata.annotations.containerImage = \"streamnative/function-mesh-operator:$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(OPERATOR_IMG)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	operator-sdk bundle validate ./bundle
 
 # Build the bundle image.
@@ -251,19 +251,20 @@ endef
 .PHONY: redhat-certificated-bundle
 redhat-certificated-bundle: yq kustomize manifests
 	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(OPERATOR_IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(YQ) eval -i ".metadata.annotations.\"olm.skipRange\" = \"<$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i ".metadata.annotations.createdAt = \"$(BUILD_DATETIME)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
-	$(YQ) eval -i ".metadata.annotations.containerImage = \"quay.io/streamnativeio/function-mesh-operator:$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
-	operator-sdk bundle validate ./bundle
+	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(OPERATOR_IMG)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	operator-sdk bundle validate ./bundle --select-optional name=operatorhub
+	operator-sdk bundle validate ./bundle --select-optional suite=operatorframework
 
 # Build the bundle image.
-.PHONY: redhat-certificated-bundle-build
-redhat-certificated-bundle-build:
+.PHONY: redhat-certificated-image-build
+redhat-certificated-image-build:
 	docker build -f redhat.Dockerfile . -t ${OPERATOR_IMG} --build-arg VERSION=${VERSION} --no-cache
 
-.PHONY: bundle-push
-redhat-certificated-bundle-push: ## Push the bundle image.
+.PHONY: redhat-certificated-image-push
+redhat-certificated-image-push: ## Push the bundle image.
 	echo $(OPERATOR_IMG)
 	$(MAKE) image-push IMG=$(OPERATOR_IMG)
