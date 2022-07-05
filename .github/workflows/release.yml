@@ -157,11 +157,11 @@ jobs:
           env:
             VERSION: ${{ github.event.release.tag_name }}
             DOCKER_REPO: quay.io/streamnativeio
+            IMAGE_TAG_BASE: quay.io/streamnativeio/function-mesh
+            CATALOG_BRANCH_TAG: latest
           run: |
             # convert vx.y.z to x.y.z because a valid semver is needed in creating the bundle
             VERSION=$(echo $VERSION|cut -c 2-)
             echo $VERSION
-            make redhat-certificated-bundle
-            make redhat-certificated-image-build
-            make redhat-certificated-image-push
+            make redhat-certificated-image-build redhat-certificated-image-push redhat-certificated-bundle redhat-certificated-bundle-build redhat-certificated-bundle-push
 

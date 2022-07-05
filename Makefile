@@ -170,7 +170,7 @@ ifeq (,$(shell which opm 2>/dev/null))
 	set -e ;\
 	mkdir -p $(dir $(OPM)) ;\
 	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.15.1/$${OS}-$${ARCH}-opm ;\
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.15.3/$${OS}-$${ARCH}-opm ;\
 	chmod +x $(OPM) ;\
 	}
 else
@@ -258,6 +258,16 @@ redhat-certificated-bundle: yq kustomize manifests
 	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(OPERATOR_IMG)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	operator-sdk bundle validate ./bundle --select-optional name=operatorhub
 	operator-sdk bundle validate ./bundle --select-optional suite=operatorframework
+
+# Build the bundle image.
+.PHONY: redhat-certificated-bundle-build
+redhat-certificated-bundle-build:
+	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+.PHONY: redhat-certificated-bundle-push
+redhat-certificated-bundle-push: ## Push the bundle image.
+	echo $(BUNDLE_IMG)
+	$(MAKE) image-push IMG=$(BUNDLE_IMG)
 
 # Build the bundle image.
 .PHONY: redhat-certificated-image-build
