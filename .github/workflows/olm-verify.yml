@@ -85,6 +85,32 @@ jobs:
           echo $VERSION
           make redhat-certificated-image-build redhat-certificated-image-push redhat-certificated-bundle redhat-certificated-bundle-build redhat-certificated-bundle-push
 
+      - name: Install the Operator Lifecycle Manager
+        run: |
+          operator-sdk olm install
+          operator-sdk olm status
+          kubectl get pods -n olm
+
+      - name: Adding the catalog containing function mesh Operator
+        run: |
+          kubectl apply -f .ci/olm-tests/catalog.yml
+          kubectl get catalogsource -n olm
+          kubectl get catalogsource my-test-catalog -n olm -o yaml
+          kubectl get pod -n olm
+          kubectl get packagemanifests | grep function-mesh
+
+      - name: Create an OperatorGroup
+        run: |
+          kubectl apply -f .ci/olm-tests/operatorgroup.yml
+
+      - name: Create a Subscription
+        run: |
+          kubectl apply -f .ci/olm-tests/subs.yaml
+
+      - name: Verify Operator health
+        run: |
+          kubectl wait deployment/function-mesh-controller-manager --for=condition=Available --timeout=30s
+
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
 

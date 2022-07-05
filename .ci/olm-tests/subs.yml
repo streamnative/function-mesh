@@ -1,0 +1,11 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: function-mesh-subscription
+  namespace: default
+spec:
+  channel: alpha
+  name: function-mesh
+  startingCSV: function-mesh.v0.3.0
+  source: my-test-catalog
+  sourceNamespace: olm
