@@ -57,17 +57,6 @@ jobs:
           sudo chmod +x /usr/bin/yq
           yq --help
 
-      - name: build release
-        id: build_release
-        env:
-          VERSION: ${{ github.event.release.tag_name }}
-          IMAGE_TAG_BASE: streamnative/function-mesh
-          CATALOG_BRANCH_TAG: latest
-        run: |
-          # convert vx.y.z to x.y.z because a valid semver is needed in creating the bundle
-          VERSION=$(echo $VERSION|cut -c 2-)
-          make release
-
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v1
         with:
@@ -75,13 +64,10 @@ jobs:
 
       - name: Build RedHat certificated bundle And Publish to Quay
         env:
-          VERSION: ${{ github.event.release.tag_name }}
           DOCKER_REPO: kind-registry:5000/streamnativeio
           IMAGE_TAG_BASE: kind-registry:5000/streamnativeio/function-mesh
           CATALOG_BRANCH_TAG: latest
         run: |
-          # convert vx.y.z to x.y.z because a valid semver is needed in creating the bundle
-          VERSION=$(echo $VERSION|cut -c 2-)
           echo $VERSION
           make redhat-certificated-image-build redhat-certificated-image-push redhat-certificated-bundle redhat-certificated-bundle-build redhat-certificated-bundle-push
 
