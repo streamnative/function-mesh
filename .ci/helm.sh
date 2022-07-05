@@ -112,12 +112,15 @@ function ci::install_pulsar_charts() {
 
 function ci::test_pulsar_producer() {
     sleep 120
+    # broker
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup sn-platform-pulsar-broker; do sleep 3; done'
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- df -h
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- cat conf/bookkeeper.conf
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin tenants create sn-platform
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin namespaces create sn-platform/test
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "test-message" sn-platform/test/test-topic
+    # bookkeeper
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- df -h
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- cat conf/bookkeeper.conf
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0 -- nc -zv 127.0.0.1 4181
 }
 
 function ci::verify_function_mesh() {
@@ -213,19 +216,23 @@ function ci::test_function_runners() {
 }
 
 function ci::verify_go_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 30
+    ci:verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_java_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 30
+    ci:verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_python_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 30
+    ci:verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 10
+}
+
+function ci::verify_stateful_function() {
+    ci:verify_wordcount_function "persistent://public/default/python-function-stateful-input-topic" "persistent://public/default/logging-stateful-function-logs" "apple apple apple" "The value is 3" 10
 }
 
 function ci::verify_mesh_function() {
-    ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 30
+    ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 10
 }
 
 function ci::print_function_log() {
@@ -250,3 +257,20 @@ function ci:verify_exclamation_function() {
     fi
     return 1
 }
+
+function ci:verify_wordcount_function() {
+    inputtopic=$1
+    outputtopic=$2
+    inputmessage=$3
+    outputmessage=$4
+    timesleep=$5
+    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
+    sleep "$timesleep"
+    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 3 -s "sub" --subscription-position Earliest "${outputtopic}")
+    echo "$MESSAGE"
+    if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
+        return 0
+    fi
+    return 1
+}
+

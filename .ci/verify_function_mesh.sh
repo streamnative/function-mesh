@@ -60,7 +60,7 @@ case ${1} in
     ci::verify_hpa function-builtin-hpa-sample
     ;;
   compute_v1alpha1_function_stateful)
-    ci::verify_function_mesh java-function-stateful-sample
-    ci::verify_java_function
+    ci::verify_function_mesh python-function-stateful-sample
+    ci::verify_stateful_function
     ;;
 esac
