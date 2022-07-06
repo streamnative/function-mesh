@@ -99,6 +99,9 @@ function ci::install_pulsar_charts() {
       echo ${WC};
       sleep 20
       ${KUBECTL} get pods -n ${NAMESPACE}
+      for po in $(${KUBECTL} get pods -l app=pulsar --no-headers | grep -v "Running" | awk '{ print 1 }'); do
+        ${KUBECTL} logs "$po" --all-containers=true --tail=50
+      done
       WC=$(${KUBECTL} get pods -n ${NAMESPACE} | grep ${CLUSTER}-pulsar-broker | wc -l)
       if [[ ${WC} -gt 1 ]]; then
         ${KUBECTL} describe pod -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0
