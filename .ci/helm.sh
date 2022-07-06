@@ -91,7 +91,7 @@ function ci::install_pulsar_charts() {
     cd charts
     helm repo add loki https://grafana.github.io/loki/charts
     helm dependency update pulsar
-    ${HELM} install sn-platform --values ./pulsar/mini_values.yaml ./pulsar --debug
+    ${HELM} install sn-platform --set initialize=true --values ./pulsar/mini_values.yaml ./pulsar --debug
 
     echo "wait until broker is alive"
     WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-pulsar-broker | wc -l)
@@ -99,6 +99,9 @@ function ci::install_pulsar_charts() {
       echo ${WC};
       sleep 20
       ${KUBECTL} get pods -n ${NAMESPACE}
+      for po in $(${KUBECTL} get pods -l app=pulsar --no-headers | grep -v "Running" | awk '{ print 1 }'); do
+        ${KUBECTL} logs "$po" --all-containers=true --tail=50
+      done
       WC=$(${KUBECTL} get pods -n ${NAMESPACE} | grep ${CLUSTER}-pulsar-broker | wc -l)
       if [[ ${WC} -gt 1 ]]; then
         ${KUBECTL} describe pod -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0

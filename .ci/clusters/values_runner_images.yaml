@@ -40,31 +40,31 @@ monitoring:
 images:
   zookeeper:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   bookie:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   autorecovery:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   broker:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   proxy:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   functions:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   presto:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
 
 zookeeper:
@@ -75,8 +75,15 @@ bookkeeper:
   metadata:
     image:
       repository: streamnative/pulsar-all
-      tag: 2.10.0.0-rc10
+      tag: 2.9.2.23
   configData:
+    PULSAR_PREFIX_autoRecoveryDaemonEnabled: "false"
+    PULSAR_PREFIX_dlog.bkcEnsembleSize: "1"
+    PULSAR_PREFIX_dlog.bkcWriteQuorumSize: "1"
+    PULSAR_PREFIX_dlog.bkcAckQuorumSize: "1"
+    PULSAR_PREFIX_storage.range.store.dirs: "/pulsar/data/bookkeeper/ranges"
+    PULSAR_PREFIX_storage.serve.readonly.tables: "false"
+    PULSAR_PREFIX_storageserver.grpc.port: "4181"
     # `BOOKIE_MEM` is used for `bookie shell`
     BOOKIE_MEM: >
       -Xms128m
@@ -105,7 +112,7 @@ bookkeeper:
 pulsar_metadata:
   image:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
 
 broker:
@@ -126,6 +133,7 @@ proxy:
 ## templates/function-worker-configmap.yaml
 ##
 functions:
+  functionState: true
   component: functions-worker
   enableCustomizerRuntime: false
   runtimeCustomizerClassName: "org.apache.pulsar.functions.runtime.kubernetes.BasicKubernetesManifestCustomizer"
@@ -165,9 +173,9 @@ functions:
     disk: 1048576000
   functionRuntimeFactoryConfigs:
     functionDockerImages:
-      JAVA: "streamnative/pulsar-functions-java-runner:2.10.0.0-rc10"
-      PYTHON: "streamnative/pulsar-functions-python-runner:2.10.0.0-rc10"
-      GO: "streamnative/pulsar-functions-go-runner:2.10.0.0-rc10"
+      JAVA: "streamnative/pulsar-functions-java-runner:2.9.2.23"
+      PYTHON: "streamnative/pulsar-functions-python-runner:2.9.2.23"
+      GO: "streamnative/pulsar-functions-go-runner:2.9.2.23"
     functionInstanceMinResources:
       cpu: 0.1
       ram: 10485760

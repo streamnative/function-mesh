@@ -152,6 +152,48 @@ jobs:
           .ci/verify_function_mesh.sh compute_v1alpha1_function_stateful
           kubectl delete -f .ci/clusters/compute_v1alpha1_function_stateful.yaml
 
+      - name: Test Sink Kind - Install ES Server
+        run: |
+          kubectl apply -f https://download.elastic.co/downloads/eck/1.2.1/all-in-one.yaml
+          kubectl apply -f config/samples/elasticsearch.yaml
+
+      - name: Test Sink Kind - Start Sink Kind
+        run: |
+          kubectl apply -f config/samples/compute_v1alpha1_sink.yaml
+          kubectl get sinks
+
+      - name: Verify Sink
+        run: |
+          .ci/verify_function_mesh.sh sink-sample
+          kubectl delete -f config/samples/compute_v1alpha1_sink.yaml
+          kubectl delete -f config/samples/elasticsearch.yaml
+          kubectl delete -f https://download.elastic.co/downloads/eck/1.2.1/all-in-one.yaml
+
+      - name: Test Source Kind - Install Mongo DB Server
+        run: |
+          kubectl apply -f config/samples/mongodb-dbz.yaml
+
+      - name: Test Source Kind - Start Source Kind
+        run: |
+          kubectl apply -f config/samples/compute_v1alpha1_source.yaml
+          kubectl get sources
+
+      - name: Verify Source
+        run: |
+          .ci/verify_function_mesh.sh source-sample
+          kubectl delete -f config/samples/compute_v1alpha1_source.yaml
+          kubectl delete -f config/samples/mongodb-dbz.yaml
+
+      - name: Test Crypto Function kind
+        run: |
+          kubectl apply -f config/samples/compute_v1alpha1_function_crypto.yaml
+          kubectl get all
+
+      - name: Verify Crypto Function Mesh
+        run: |
+          .ci/verify_function_mesh.sh function-crypto-sample
+          kubectl delete -f config/samples/compute_v1alpha1_function_crypto.yaml
+
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         if: failure()
