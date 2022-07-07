@@ -80,7 +80,14 @@ jobs:
         run: |
           helm install function-mesh -n function-mesh --set operatorImage=function-mesh-operator:latest --create-namespace charts/function-mesh-operator
           kubectl wait --for=condition=Ready -l app.kubernetes.io/name=function-mesh-operator pods -n function-mesh --timeout=5m
-          kubectl get pods -n function-mesh
+          while true; do
+            kubectl get pods -n function-mesh
+            kubectl logs -n function-mesh -l app.kubernetes.io/name=function-mesh-operator --tail=-1 | grep "serving webhook server"
+            if [ $? -eq 0 ]; then
+              break
+            fi
+            sleep 5s
+          done
 
       - name: Test Function kind - Java Function
         run: |
