@@ -38,11 +38,14 @@ jobs:
           retry_on: error
           command: |
             .ci/deploy_pulsar_cluster.sh
-            helm repo add jetstack https://charts.jetstack.io
-            helm repo update
-            helm install cert-manager jetstack/cert-manager --set installCRDs=true
           on_retry_command: |
             .ci/cleanup.sh
+
+      - name: Install cert manager
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm install cert-manager jetstack/cert-manager --set installCRDs=true
 
       - name: Build runner images
         run: |
@@ -190,16 +193,25 @@ jobs:
 #           .ci/verify_function_mesh.sh source-sample
 #           kubectl delete -f config/samples/compute_v1alpha1_source.yaml
 #           kubectl delete -f config/samples/mongodb-dbz.yaml
-
-      - name: Test Crypto Function kind
-        run: |
-          kubectl apply -f config/samples/compute_v1alpha1_function_crypto.yaml
-          kubectl get all
-
-      - name: Verify Crypto Function Mesh
-        run: |
-          .ci/verify_function_mesh.sh function-crypto-sample
-          kubectl delete -f config/samples/compute_v1alpha1_function_crypto.yaml
+#
+#       - name: Test Function kind
+#         run: |
+#           kubectl apply -f config/samples/compute_v1alpha1_function_key_based_batcher.yaml
+#           kubectl get all
+#
+#       - name: Verify Function Mesh
+#         run: |
+#           .ci/verify_function_mesh.sh java-function-batcher-sample
+#
+#       - name: Test Crypto Function kind
+#         run: |
+#           kubectl apply -f config/samples/compute_v1alpha1_function_crypto.yaml
+#           kubectl get all
+#
+#       - name: Verify Crypto Function Mesh
+#         run: |
+#           .ci/verify_function_mesh.sh function-crypto-sample
+#           kubectl delete -f config/samples/compute_v1alpha1_function_crypto.yaml
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3

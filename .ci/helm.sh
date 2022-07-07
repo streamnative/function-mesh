@@ -93,25 +93,21 @@ function ci::install_pulsar_charts() {
     helm dependency update pulsar
     ${HELM} install sn-platform --set initialize=true --values ./pulsar/mini_values.yaml ./pulsar --debug
 
-    echo "wait until broker is alive"
-    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-pulsar-broker | wc -l)
-    while [[ ${WC} -lt 1 ]]; do
-      echo ${WC};
-      sleep 20
-      ${KUBECTL} get pods -n ${NAMESPACE}
-      WC=$(${KUBECTL} get pods -n ${NAMESPACE} | grep ${CLUSTER}-pulsar-broker | wc -l)
-      if [[ ${WC} -gt 1 ]]; then
-        ${KUBECTL} describe pod -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0
-        ${KUBECTL} describe pod -n ${NAMESPACE} ${CLUSTER}-pulsar-bookie-0
-      fi
-      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep ${CLUSTER}-pulsar-broker | wc -l)
+    echo "wait until pulsar init job is completed"
+    succeeded_num=0
+    while [[ ${succeeded_num} -lt 1 ]]; do
+      sleep 10s
+      kubectl get pods -n ${NAMESPACE}
+      succeeded_num=$(kubectl get jobs -n ${NAMESPACE} sn-platform-pulsar-pulsar-init -o jsonpath='{.status.succeeded}')
     done
+    kubectl scale statefulset --replicas=1 -n ${NAMESPACE} sn-platform-pulsar-bookie
 
+    echo "wait until pulsar cluster is active"
+    ${KUBECTL} wait --for=condition=Ready -n ${NAMESPACE} -l app=pulsar pods --timeout=5m
     ${KUBECTL} get service -n ${NAMESPACE}
 }
 
 function ci::test_pulsar_producer() {
-    sleep 120
     # broker
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-toolset-0 -- bash -c 'until nslookup sn-platform-pulsar-broker; do sleep 3; done'
     ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin tenants create sn-platform
