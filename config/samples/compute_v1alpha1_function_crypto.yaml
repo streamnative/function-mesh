@@ -4,6 +4,7 @@ metadata:
   name: java-function-crypto-sample
   namespace: default
 spec:
+  image: streamnative/pulsar-functions-java-sample:2.9.2.23
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
@@ -53,7 +54,6 @@ spec:
     pulsarConfig: "test-pulsar"
   java:
     jar: pulsar-functions-api-examples.jar
-    jarLocation: public/default/nlu-test-java-function
   # to be delete & use admission hook
   clusterName: test-pulsar
   autoAck: true
@@ -63,8 +63,8 @@ kind: ConfigMap
 metadata:
   name: test-pulsar
 data:
-  webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
-  brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
 ---
 apiVersion: v1
 data:
