@@ -35,13 +35,13 @@ FUNCTION_NAME=$1
 
 function ci::create_cluster() {
     echo "Creating a kind cluster ..."
-    ${FUNCTION_MESH_HOME}/hack/kind-cluster-build.sh --name sn-platform-${CLUSTER_ID} -c 3 -v 10
+    ${FUNCTION_MESH_HOME}/hack/kind-cluster-build.sh --name sn-platform-"${CLUSTER_ID}" -c 3 -v 10
     echo "Successfully created a kind cluster."
 }
 
 function ci::delete_cluster() {
     echo "Deleting a kind cluster ..."
-    kind delete cluster --name=sn-platform-${CLUSTER_ID}
+    kind delete cluster --name=sn-platform-"${CLUSTER_ID}"
     echo "Successfully delete a kind cluster."
 }
 
@@ -71,10 +71,10 @@ function ci::install_metrics_server() {
     echo "Successfully installed the metrics-server."
     WC=$(${KUBECTL} get pods -n kube-system --field-selector=status.phase=Running | grep metrics-server | wc -l)
     while [[ ${WC} -lt 1 ]]; do
-      echo ${WC};
-      sleep 20
-      ${KUBECTL} get pods -n kube-system
-      WC=$(${KUBECTL} get pods -n kube-system --field-selector=status.phase=Running | grep metrics-server | wc -l)
+        echo ${WC};
+        sleep 20
+        ${KUBECTL} get pods -n kube-system
+        WC=$(${KUBECTL} get pods -n kube-system --field-selector=status.phase=Running | grep metrics-server | wc -l)
     done
 }
 
@@ -100,11 +100,12 @@ function ci::install_pulsar_charts() {
         kubectl get pods -n ${NAMESPACE}
         succeeded_num=$(kubectl get jobs -n ${NAMESPACE} sn-platform-pulsar-pulsar-init -o jsonpath='{.status.succeeded}')
     done
+    # start bookkeeper after the pulsar init job is completed
     kubectl scale statefulset --replicas=1 -n ${NAMESPACE} sn-platform-pulsar-bookie
 
     echo "wait until pulsar cluster is active"
-    ${KUBECTL} wait --for=condition=Ready -n ${NAMESPACE} -l app=pulsar pods --timeout=5m
-    ${KUBECTL} get service -n ${NAMESPACE}
+    kubectl wait --for=condition=Ready -n ${NAMESPACE} -l app=pulsar pods --timeout=5m
+    kubectl get service -n ${NAMESPACE}
 }
 
 function ci::test_pulsar_producer() {
@@ -122,28 +123,22 @@ function ci::test_pulsar_producer() {
 function ci::verify_function_mesh() {
     FUNCTION_NAME=$1
 
-    while true; do
-        num=$(${KUBECTL} get pods -lname="${FUNCTION_NAME}" | wc -l)
-        if [ "$num" -gt 1 ]; then
-            break
-        else
-            ${KUBECTL} get pods -A
-            sleep 2s
-        fi
+    num=0
+    while [[ ${num} -lt 1 ]]; do
+        sleep 5s
+        kubectl get pods
+        num=$(kubectl get pods -l name="${FUNCTION_NAME}" | wc -l)
     done
 
-    ${KUBECTL} wait -lname="${FUNCTION_NAME}" --for=condition=Ready pod --timeout=2m && true
-    if [ $? -eq 0 ]; then
-        while true; do
-            num=$(${KUBECTL} logs -lname="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer" | wc -l)
-            if [ "$num" -gt 0 ]; then
-                break
-            else
-                ${KUBECTL} logs -lname="${FUNCTION_NAME}" --all-containers=true --tail=-1 || true
-                sleep 5s
-            fi
-        done
-    fi
+    kubectl wait -l name="${FUNCTION_NAME}" --for=condition=Ready pod --timeout=2m && true
+
+    num=0
+    while [[ ${num} -lt 1 ]]; do
+        sleep 5s
+        kubectl get pods -l name="${FUNCTION_NAME}"
+        kubectl logs -l name="${FUNCTION_NAME}" --all-containers=true --tail=50 || true
+        num=$(kubectl logs -lname="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer" | wc -l)
+    done
 }
 
 function ci::verify_hpa() {
@@ -155,59 +150,59 @@ function ci::verify_hpa() {
     ${KUBECTL} describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
     WC=$(${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}' | grep False | wc -l)
     while [[ ${WC} -lt 0 ]]; do
-      echo ${WC};
-      sleep 20
-      ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o yaml
-      ${KUBECTL} describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
-      ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}'
-      WC=$(${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}' | grep False | wc -l)
+        echo ${WC};
+        sleep 20
+        ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o yaml
+        ${KUBECTL} describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
+        ${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}'
+        WC=$(${KUBECTL} get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}' | grep False | wc -l)
     done
 }
 
 function ci::test_function_runners() {
-  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-java --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/test-java-input --jar /pulsar/examples/api-examples.jar --cpu 0.1
-  function_num=0
-  while [[ ${function_num} -lt 1 ]]; do
-    sleep 5s
-    kubectl get pods -n ${NAMESPACE}
-    function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-java --no-headers | wc -l)
-  done
-  kubectl wait --for=condition=Ready -n ${NAMESPACE} -l name=test-java pods && true
-  if [ $? -ne 0 ]; then
-    exit 1
-  fi
-  echo "java runner test done"
-  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-java
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-java --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/test-java-input --jar /pulsar/examples/api-examples.jar --cpu 0.1
+    function_num=0
+    while [[ ${function_num} -lt 1 ]]; do
+        sleep 5s
+        kubectl get pods -n ${NAMESPACE}
+        function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-java --no-headers | wc -l)
+    done
+    kubectl wait --for=condition=Ready -n ${NAMESPACE} -l name=test-java pods && true
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+    echo "java runner test done"
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-java
 
-  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-python --classname exclamation_function.ExclamationFunction --inputs persistent://public/default/test-python-input --py /pulsar/examples/python-examples/exclamation_function.py --cpu 0.1
-  function_num=0
-  while [[ ${function_num} -lt 1 ]]; do
-    sleep 5s
-    kubectl get pods -n ${NAMESPACE}
-    function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-python --no-headers | wc -l)
-  done
-  kubectl wait --for=condition=Ready -n ${NAMESPACE} -l name=test-python pods && true
-  if [ $? -ne 0 ]; then
-    exit 1
-  fi
-  echo "python runner test done"
-  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-python
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-python --classname exclamation_function.ExclamationFunction --inputs persistent://public/default/test-python-input --py /pulsar/examples/python-examples/exclamation_function.py --cpu 0.1
+    function_num=0
+    while [[ ${function_num} -lt 1 ]]; do
+        sleep 5s
+        kubectl get pods -n ${NAMESPACE}
+        function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-python --no-headers | wc -l)
+    done
+    kubectl wait --for=condition=Ready -n ${NAMESPACE} -l name=test-python pods && true
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+    echo "python runner test done"
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-python
 
-  kubectl cp "${FUNCTION_MESH_HOME}/.ci/examples/go-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-0:/pulsar/"
-  sleep 1
-  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-go --inputs persistent://public/default/test-go-input --go /pulsar/go-examples/exclamationFunc --cpu 0.1
-  function_num=0
-  while [[ ${function_num} -lt 1 ]]; do
-    sleep 5s
-    kubectl get pods -n ${NAMESPACE}
-    function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-go --no-headers | wc -l)
-  done
-  kubectl wait --for=condition=Ready -n ${NAMESPACE} -l name=test-go pods && true
-  if [ $? -ne 0 ]; then
-    exit 1
-  fi
-  echo "golang runner test done"
-  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-go
+    kubectl cp "${FUNCTION_MESH_HOME}/.ci/examples/go-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-0:/pulsar/"
+    sleep 1
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-go --inputs persistent://public/default/test-go-input --go /pulsar/go-examples/exclamationFunc --cpu 0.1
+    function_num=0
+    while [[ ${function_num} -lt 1 ]]; do
+        sleep 5s
+        kubectl get pods -n ${NAMESPACE}
+        function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-go --no-headers | wc -l)
+    done
+    kubectl wait --for=condition=Ready -n ${NAMESPACE} -l name=test-go pods && true
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+    echo "golang runner test done"
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-go
 }
 
 function ci::verify_go_function() {
@@ -230,22 +225,15 @@ function ci::verify_mesh_function() {
     ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 10
 }
 
-function ci::print_function_log() {
-    FUNCTION_NAME=$1
-    ${KUBECTL} describe pod -lname=${FUNCTION_NAME}
-    sleep 120
-    ${KUBECTL} logs -lname=${FUNCTION_NAME}  --all-containers=true
-}
-
 function ci:verify_exclamation_function() {
     inputtopic=$1
     outputtopic=$2
     inputmessage=$3
     outputmessage=$4
     timesleep=$5
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
     sleep "$timesleep"
-    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${outputtopic}")
+    MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${outputtopic}")
     echo "$MESSAGE"
     if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
         return 0
@@ -259,9 +247,9 @@ function ci:verify_wordcount_function() {
     inputmessage=$3
     outputmessage=$4
     timesleep=$5
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
     sleep "$timesleep"
-    MESSAGE=$(${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 3 -s "sub" --subscription-position Earliest "${outputtopic}")
+    MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 3 -s "sub" --subscription-position Earliest "${outputtopic}")
     echo "$MESSAGE"
     if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
         return 0
