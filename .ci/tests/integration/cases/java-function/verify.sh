@@ -47,4 +47,4 @@ if [ $? -eq 0 ]; then
 else
   echo "$verify_java_result"
 fi
-kubectl delete -f "${BASE}"/.ci/tests/integration/cases/java-function/manifests.yaml > /dev/null 2>&1 || true
+kubectl delete -f "${BASE_DIR}"/.ci/tests/integration/cases/java-function/manifests.yaml > /dev/null 2>&1 || true

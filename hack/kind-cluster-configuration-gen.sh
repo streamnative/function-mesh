@@ -155,6 +155,7 @@ do
     mkdir -p "${data_dir}"/worker"${i}"
     cat <<EOF >>  "${output_file}"
   - role: worker
+    image: ${image}
     extraMounts:
 EOF
     for ((k=1;k<="${volume_num}";k++))
