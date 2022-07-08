@@ -83,7 +83,7 @@ function ci::install_pulsar_charts() {
     values=${1:-".ci/clusters/values.yaml"}
     echo $values
     if [ -d "pulsar-charts" ]; then
-      rm -rf pulsar-charts
+        rm -rf pulsar-charts
     fi
     git clone https://github.com/streamnative/charts.git pulsar-charts
     cp ${values} pulsar-charts/charts/pulsar/mini_values.yaml
@@ -96,9 +96,9 @@ function ci::install_pulsar_charts() {
     echo "wait until pulsar init job is completed"
     succeeded_num=0
     while [[ ${succeeded_num} -lt 1 ]]; do
-      sleep 10s
-      kubectl get pods -n ${NAMESPACE}
-      succeeded_num=$(kubectl get jobs -n ${NAMESPACE} sn-platform-pulsar-pulsar-init -o jsonpath='{.status.succeeded}')
+        sleep 10s
+        kubectl get pods -n ${NAMESPACE}
+        succeeded_num=$(kubectl get jobs -n ${NAMESPACE} sn-platform-pulsar-pulsar-init -o jsonpath='{.status.succeeded}')
     done
     kubectl scale statefulset --replicas=1 -n ${NAMESPACE} sn-platform-pulsar-bookie
 
@@ -165,50 +165,49 @@ function ci::verify_hpa() {
 }
 
 function ci::test_function_runners() {
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-java --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/test-java-input --jar /pulsar/examples/api-examples.jar --cpu 0.1
-    sleep 15
-    ${KUBECTL} get pods -A
-    sleep 5
-    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-java" | wc -l)
-    while [[ ${WC} -lt 1 ]]; do
-      echo ${WC};
-      sleep 20
-      ${KUBECTL} get pods -n ${NAMESPACE}
-      ${KUBECTL} describe pod pf-public-default-test-java-0 
-      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-java" | wc -l)
-    done
-    echo "java runner test done"
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-java
+  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-java --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/test-java-input --jar /pulsar/examples/api-examples.jar --cpu 0.1
+  function_num=0
+  while [[ ${function_num} -lt 1 ]]; do
+    sleep 5s
+    kubectl get pods -n ${NAMESPACE}
+    function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-java --no-headers | wc -l)
+  done
+  kubectl wait --for=condition=Ready -n ${NAMESPACE} -l name=test-java pods && true
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+  echo "java runner test done"
+  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-java
 
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-python --classname exclamation_function.ExclamationFunction --inputs persistent://public/default/test-python-input --py /pulsar/examples/python-examples/exclamation_function.py --cpu 0.1
-    sleep 15
-    ${KUBECTL} get pods -A
-    sleep 5
-    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-python" | wc -l)
-    while [[ ${WC} -lt 1 ]]; do
-      echo ${WC};
-      sleep 20
-      ${KUBECTL} get pods -n ${NAMESPACE}
-      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-python" | wc -l)
-    done
-    echo "python runner test done"
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-python
+  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-python --classname exclamation_function.ExclamationFunction --inputs persistent://public/default/test-python-input --py /pulsar/examples/python-examples/exclamation_function.py --cpu 0.1
+  function_num=0
+  while [[ ${function_num} -lt 1 ]]; do
+    sleep 5s
+    kubectl get pods -n ${NAMESPACE}
+    function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-python --no-headers | wc -l)
+  done
+  kubectl wait --for=condition=Ready -n ${NAMESPACE} -l name=test-python pods && true
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+  echo "python runner test done"
+  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-python
 
-    ${KUBECTL} cp "${FUNCTION_MESH_HOME}/.ci/examples/go-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-0:/pulsar/"
-    sleep 1
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-go --inputs persistent://public/default/test-go-input --go /pulsar/go-examples/exclamationFunc --cpu 0.1
-    sleep 15
-    ${KUBECTL} get pods -A
-    sleep 5
-    WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-go" | wc -l)
-    while [[ ${WC} -lt 1 ]]; do
-      echo ${WC};
-      sleep 20
-      ${KUBECTL} get pods -n ${NAMESPACE}
-      WC=$(${KUBECTL} get pods -n ${NAMESPACE} --field-selector=status.phase=Running | grep "test-go" | wc -l)
-    done
-    echo "golang runner test done"
-    ${KUBECTL} exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-go
+  kubectl cp "${FUNCTION_MESH_HOME}/.ci/examples/go-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-0:/pulsar/"
+  sleep 1
+  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-go --inputs persistent://public/default/test-go-input --go /pulsar/go-examples/exclamationFunc --cpu 0.1
+  function_num=0
+  while [[ ${function_num} -lt 1 ]]; do
+    sleep 5s
+    kubectl get pods -n ${NAMESPACE}
+    function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-go --no-headers | wc -l)
+  done
+  kubectl wait --for=condition=Ready -n ${NAMESPACE} -l name=test-go pods && true
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+  echo "golang runner test done"
+  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions delete --tenant public --namespace default --name test-go
 }
 
 function ci::verify_go_function() {
