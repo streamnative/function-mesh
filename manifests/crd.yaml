@@ -51,6 +51,10 @@ spec:
                       type: string
                     deadLetterTopic:
                       type: string
+                    env:
+                      additionalProperties:
+                        type: string
+                      type: object
                     forwardSourceMessageProperty:
                       type: boolean
                     funcConfig:
@@ -2664,6 +2668,10 @@ spec:
                       type: string
                     deadLetterTopic:
                       type: string
+                    env:
+                      additionalProperties:
+                        type: string
+                      type: object
                     golang:
                       properties:
                         go:
@@ -5189,6 +5197,10 @@ spec:
                       type: string
                     clusterName:
                       type: string
+                    env:
+                      additionalProperties:
+                        type: string
+                      type: object
                     forwardSourceMessageProperty:
                       type: boolean
                     golang:
@@ -7776,6 +7788,10 @@ spec:
                 type: string
               deadLetterTopic:
                 type: string
+              env:
+                additionalProperties:
+                  type: string
+                type: object
               forwardSourceMessageProperty:
                 type: boolean
               funcConfig:
@@ -10465,6 +10481,10 @@ spec:
                 type: string
               deadLetterTopic:
                 type: string
+              env:
+                additionalProperties:
+                  type: string
+                type: object
               golang:
                 properties:
                   go:
@@ -13066,6 +13086,10 @@ spec:
                 type: string
               clusterName:
                 type: string
+              env:
+                additionalProperties:
+                  type: string
+                type: object
               forwardSourceMessageProperty:
                 type: boolean
               golang:

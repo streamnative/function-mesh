@@ -92,7 +92,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		Image:           getFunctionRunnerImage(&function.Spec),
 		Command:         makeFunctionCommand(function),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
-		Env:             generateContainerEnv(function.Spec.SecretsMap),
+		Env:             generateContainerEnv(function.Spec.SecretsMap, function.Spec.Env),
 		Resources:       function.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,

@@ -469,7 +469,7 @@ func getUserConfig(configs *v1alpha1.Config) string {
 	return string(bytes)
 }
 
-func generateContainerEnv(secrets map[string]v1alpha1.SecretRef) []corev1.EnvVar {
+func generateContainerEnv(secrets map[string]v1alpha1.SecretRef, env map[string]string) []corev1.EnvVar {
 	vars := []corev1.EnvVar{{
 		Name:      "POD_NAME",
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
@@ -484,6 +484,13 @@ func generateContainerEnv(secrets map[string]v1alpha1.SecretRef) []corev1.EnvVar
 					Key:                  secretRef.Key,
 				},
 			},
+		})
+	}
+
+	for envName, envValue := range env {
+		vars = append(vars, corev1.EnvVar{
+			Name:  envName,
+			Value: envValue,
 		})
 	}
 

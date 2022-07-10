@@ -340,6 +340,13 @@ func (in *FunctionSpec) DeepCopyInto(out *FunctionSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
 		*out = make([]v1.VolumeMount, len(*in))
@@ -852,6 +859,13 @@ func (in *SinkSpec) DeepCopyInto(out *SinkSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
 		*out = make([]v1.VolumeMount, len(*in))
@@ -982,6 +996,13 @@ func (in *SourceSpec) DeepCopyInto(out *SourceSpec) {
 	if in.SecretsMap != nil {
 		in, out := &in.SecretsMap, &out.SecretsMap
 		*out = make(map[string]SecretRef, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}
