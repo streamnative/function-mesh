@@ -51,7 +51,6 @@ type SinkSpec struct {
 	SinkConfig   *Config                     `json:"sinkConfig,omitempty"`
 	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
 	SecretsMap   map[string]SecretRef        `json:"secretsMap,omitempty"`
-	Env          map[string]string           `json:"env,omitempty"`
 	VolumeMounts []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
 
 	Timeout                      int32            `json:"timeout,omitempty"`

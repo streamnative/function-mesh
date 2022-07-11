@@ -76,7 +76,7 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		Image:           getSourceRunnerImage(&source.Spec),
 		Command:         makeSourceCommand(source),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
-		Env:             generateContainerEnv(source.Spec.SecretsMap, source.Spec.Env),
+		Env:             generateContainerEnv(source.Spec.SecretsMap, source.Spec.Pod.Env),
 		Resources:       source.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret,

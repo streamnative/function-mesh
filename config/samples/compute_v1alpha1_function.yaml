@@ -32,8 +32,6 @@ spec:
     "pwd":
         path: "test-secret"
         key: "password"
-  env:
-    "EXAMPLE_VARIABLE": "exampleValue"
   pulsar:
     pulsarConfig: "test-pulsar"
     authSecret: "test-auth"
@@ -42,6 +40,9 @@ spec:
     - mountPath: /cache
       name: cache-volume
   pod:
+    env:
+    - name: EXAMPLE_VARIABLE
+      value: exampleValue
     labels:
       "locaction": "mtv"
     annotations:

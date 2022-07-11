@@ -51,10 +51,6 @@ spec:
                       type: string
                     deadLetterTopic:
                       type: string
-                    env:
-                      additionalProperties:
-                        type: string
-                      type: object
                     forwardSourceMessageProperty:
                       type: boolean
                     funcConfig:
@@ -780,6 +776,66 @@ spec:
                         builtinAutoscaler:
                           items:
                             type: string
+                          type: array
+                        env:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  configMapKeyRef:
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                  fieldRef:
+                                    properties:
+                                      apiVersion:
+                                        type: string
+                                      fieldPath:
+                                        type: string
+                                    required:
+                                    - fieldPath
+                                    type: object
+                                  resourceFieldRef:
+                                    properties:
+                                      containerName:
+                                        type: string
+                                      divisor:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                        x-kubernetes-int-or-string: true
+                                      resource:
+                                        type: string
+                                    required:
+                                    - resource
+                                    type: object
+                                  secretKeyRef:
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                type: object
+                            required:
+                            - name
+                            type: object
                           type: array
                         imagePullSecrets:
                           items:
@@ -2668,10 +2724,6 @@ spec:
                       type: string
                     deadLetterTopic:
                       type: string
-                    env:
-                      additionalProperties:
-                        type: string
-                      type: object
                     golang:
                       properties:
                         go:
@@ -3331,6 +3383,66 @@ spec:
                         builtinAutoscaler:
                           items:
                             type: string
+                          type: array
+                        env:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  configMapKeyRef:
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                  fieldRef:
+                                    properties:
+                                      apiVersion:
+                                        type: string
+                                      fieldPath:
+                                        type: string
+                                    required:
+                                    - fieldPath
+                                    type: object
+                                  resourceFieldRef:
+                                    properties:
+                                      containerName:
+                                        type: string
+                                      divisor:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                        x-kubernetes-int-or-string: true
+                                      resource:
+                                        type: string
+                                    required:
+                                    - resource
+                                    type: object
+                                  secretKeyRef:
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                type: object
+                            required:
+                            - name
+                            type: object
                           type: array
                         imagePullSecrets:
                           items:
@@ -5197,10 +5309,6 @@ spec:
                       type: string
                     clusterName:
                       type: string
-                    env:
-                      additionalProperties:
-                        type: string
-                      type: object
                     forwardSourceMessageProperty:
                       type: boolean
                     golang:
@@ -5843,6 +5951,66 @@ spec:
                         builtinAutoscaler:
                           items:
                             type: string
+                          type: array
+                        env:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  configMapKeyRef:
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                  fieldRef:
+                                    properties:
+                                      apiVersion:
+                                        type: string
+                                      fieldPath:
+                                        type: string
+                                    required:
+                                    - fieldPath
+                                    type: object
+                                  resourceFieldRef:
+                                    properties:
+                                      containerName:
+                                        type: string
+                                      divisor:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                        x-kubernetes-int-or-string: true
+                                      resource:
+                                        type: string
+                                    required:
+                                    - resource
+                                    type: object
+                                  secretKeyRef:
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                type: object
+                            required:
+                            - name
+                            type: object
                           type: array
                         imagePullSecrets:
                           items:
@@ -7788,10 +7956,6 @@ spec:
                 type: string
               deadLetterTopic:
                 type: string
-              env:
-                additionalProperties:
-                  type: string
-                type: object
               forwardSourceMessageProperty:
                 type: boolean
               funcConfig:
@@ -8517,6 +8681,66 @@ spec:
                   builtinAutoscaler:
                     items:
                       type: string
+                    type: array
+                  env:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        value:
+                          type: string
+                        valueFrom:
+                          properties:
+                            configMapKeyRef:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                            fieldRef:
+                              properties:
+                                apiVersion:
+                                  type: string
+                                fieldPath:
+                                  type: string
+                              required:
+                              - fieldPath
+                              type: object
+                            resourceFieldRef:
+                              properties:
+                                containerName:
+                                  type: string
+                                divisor:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                resource:
+                                  type: string
+                              required:
+                              - resource
+                              type: object
+                            secretKeyRef:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                          type: object
+                      required:
+                      - name
+                      type: object
                     type: array
                   imagePullSecrets:
                     items:
@@ -10481,10 +10705,6 @@ spec:
                 type: string
               deadLetterTopic:
                 type: string
-              env:
-                additionalProperties:
-                  type: string
-                type: object
               golang:
                 properties:
                   go:
@@ -11144,6 +11364,66 @@ spec:
                   builtinAutoscaler:
                     items:
                       type: string
+                    type: array
+                  env:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        value:
+                          type: string
+                        valueFrom:
+                          properties:
+                            configMapKeyRef:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                            fieldRef:
+                              properties:
+                                apiVersion:
+                                  type: string
+                                fieldPath:
+                                  type: string
+                              required:
+                              - fieldPath
+                              type: object
+                            resourceFieldRef:
+                              properties:
+                                containerName:
+                                  type: string
+                                divisor:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                resource:
+                                  type: string
+                              required:
+                              - resource
+                              type: object
+                            secretKeyRef:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                          type: object
+                      required:
+                      - name
+                      type: object
                     type: array
                   imagePullSecrets:
                     items:
@@ -13086,10 +13366,6 @@ spec:
                 type: string
               clusterName:
                 type: string
-              env:
-                additionalProperties:
-                  type: string
-                type: object
               forwardSourceMessageProperty:
                 type: boolean
               golang:
@@ -13732,6 +14008,66 @@ spec:
                   builtinAutoscaler:
                     items:
                       type: string
+                    type: array
+                  env:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        value:
+                          type: string
+                        valueFrom:
+                          properties:
+                            configMapKeyRef:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                            fieldRef:
+                              properties:
+                                apiVersion:
+                                  type: string
+                                fieldPath:
+                                  type: string
+                              required:
+                              - fieldPath
+                              type: object
+                            resourceFieldRef:
+                              properties:
+                                containerName:
+                                  type: string
+                                divisor:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                resource:
+                                  type: string
+                              required:
+                              - resource
+                              type: object
+                            secretKeyRef:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                          type: object
+                      required:
+                      - name
+                      type: object
                     type: array
                   imagePullSecrets:
                     items:

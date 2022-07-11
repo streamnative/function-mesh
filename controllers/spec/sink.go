@@ -81,7 +81,7 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		Image:           getSinkRunnerImage(&sink.Spec),
 		Command:         MakeSinkCommand(sink),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
-		Env:             generateContainerEnv(sink.Spec.SecretsMap, sink.Spec.Env),
+		Env:             generateContainerEnv(sink.Spec.SecretsMap, sink.Spec.Pod.Env),
 		Resources:       sink.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret,

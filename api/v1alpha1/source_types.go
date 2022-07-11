@@ -50,7 +50,6 @@ type SourceSpec struct {
 	SourceConfig *Config                     `json:"sourceConfig,omitempty"`
 	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
 	SecretsMap   map[string]SecretRef        `json:"secretsMap,omitempty"`
-	Env          map[string]string           `json:"env,omitempty"`
 
 	ProcessingGuarantee          ProcessGuarantee     `json:"processingGuarantee,omitempty"`
 	RuntimeFlags                 string               `json:"runtimeFlags,omitempty"`
