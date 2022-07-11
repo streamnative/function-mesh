@@ -379,6 +379,10 @@ func generateVolumeNameFromCryptoSecrets(c *v1alpha1.CryptoSecret) string {
 	return sanitizeVolumeName(c.SecretName + "-" + c.SecretKey)
 }
 
+func generateVolumeNameFromTLSConfig(c TLSConfig) string {
+	return sanitizeVolumeName(c.SecretName() + "-" + c.SecretKey())
+}
+
 var invalidDNS1123Characters = regexp.MustCompile("[^-a-z0-9]+")
 
 // sanitizeVolumeName ensures that the given volume name is a valid DNS-1123 label
