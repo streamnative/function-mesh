@@ -44,7 +44,7 @@ git clone https://github.com/streamnative/function-mesh.git
 - install operator-sdk and use it to add CRD, controller or webhooks
 
 ```bash
-operator-sdk create api --group compute --version v1alpha1 --kind Function --resource=true --controller-true
+operator-sdk create api --group compute --version v1alpha1 --kind Function --resource=true --controller=true
 ```
 
 ```bash
