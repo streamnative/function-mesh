@@ -2540,6 +2540,19 @@ spec:
                           type: string
                         pulsarConfig:
                           type: string
+                        tlsConfig:
+                          properties:
+                            allowInsecure:
+                              type: boolean
+                            certSecretKey:
+                              type: string
+                            certSecretName:
+                              type: string
+                            enabled:
+                              type: boolean
+                            hostnameVerification:
+                              type: boolean
+                          type: object
                         tlsSecret:
                           type: string
                       type: object
@@ -5091,6 +5104,19 @@ spec:
                           type: string
                         pulsarConfig:
                           type: string
+                        tlsConfig:
+                          properties:
+                            allowInsecure:
+                              type: boolean
+                            certSecretKey:
+                              type: string
+                            certSecretName:
+                              type: string
+                            enabled:
+                              type: boolean
+                            hostnameVerification:
+                              type: boolean
+                          type: object
                         tlsSecret:
                           type: string
                       type: object
@@ -7603,6 +7629,19 @@ spec:
                           type: string
                         pulsarConfig:
                           type: string
+                        tlsConfig:
+                          properties:
+                            allowInsecure:
+                              type: boolean
+                            certSecretKey:
+                              type: string
+                            certSecretName:
+                              type: string
+                            enabled:
+                              type: boolean
+                            hostnameVerification:
+                              type: boolean
+                          type: object
                         tlsSecret:
                           type: string
                       type: object
