@@ -47,15 +47,14 @@ type SourceSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
-	SourceConfig *Config                     `json:"sourceConfig,omitempty"`
-	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
-	SecretsMap   map[string]SecretRef        `json:"secretsMap,omitempty"`
-
-	ProcessingGuarantee          ProcessGuarantee     `json:"processingGuarantee,omitempty"`
-	RuntimeFlags                 string               `json:"runtimeFlags,omitempty"`
-	VolumeMounts                 []corev1.VolumeMount `json:"volumeMounts,omitempty"`
-	ForwardSourceMessageProperty *bool                `json:"forwardSourceMessageProperty,omitempty"`
-	Pod                          PodPolicy            `json:"pod,omitempty"`
+	SourceConfig                 *Config                     `json:"sourceConfig,omitempty"`
+	Resources                    corev1.ResourceRequirements `json:"resources,omitempty"`
+	SecretsMap                   map[string]SecretRef        `json:"secretsMap,omitempty"`
+	ProcessingGuarantee          ProcessGuarantee            `json:"processingGuarantee,omitempty"`
+	RuntimeFlags                 string                      `json:"runtimeFlags,omitempty"`
+	VolumeMounts                 []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
+	ForwardSourceMessageProperty *bool                       `json:"forwardSourceMessageProperty,omitempty"`
+	Pod                          PodPolicy                   `json:"pod,omitempty"`
 
 	// +kubebuilder:validation:Required
 	Messaging `json:",inline"`
