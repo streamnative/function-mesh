@@ -38,16 +38,19 @@ jobs:
           retry_on: error
           command: |
             .ci/deploy_pulsar_cluster.sh
-            helm repo add jetstack https://charts.jetstack.io
-            helm repo update
-            helm install cert-manager jetstack/cert-manager --set installCRDs=true
           on_retry_command: |
             .ci/cleanup.sh
 
+      - name: Install cert manager
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm install cert-manager jetstack/cert-manager --set installCRDs=true
+
       - name: Build runner images
         run: |
-          PULSAR_IMAGE_TAG=2.10.0.0-rc10 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=true images/build.sh
-          PULSAR_IMAGE_TAG=2.10.0.0-rc10 KIND_PUSH=true images/samples/build.sh
+          PULSAR_IMAGE_TAG=2.9.2.23 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=true images/build.sh
+          PULSAR_IMAGE_TAG=2.9.2.23 KIND_PUSH=true images/samples/build.sh
 
       - name: Install operator-sdk
         run: |
@@ -65,21 +68,27 @@ jobs:
       #          operator-sdk create api --group compute --version v1alpha1 --kind Function --resource=true --controller=true
       #          operator-sdk create webhook --group compute.functionmesh.io --version v1alpha1 --kind Function --defaulting --programmatic-validation
 
-      - name: Deploy function mesh server
+      - name: Build and load function-mesh operator image
         run: |
           make generate
-          make install
-          make docker-build-skip-test
-          IMG=$(make function-mesh-docker-image-name)
+          make helm-crds
+          image="function-mesh-operator:latest"
+          IMG=${image} make docker-build-skip-test
           clusters=$(kind get clusters)
-          echo $clusters
-          for cluster in $clusters
-          do
-          kind load docker-image --name ${cluster} ${IMG}
+          for cluster in $clusters; do
+            kind load docker-image --name ${cluster} ${image}
           done
-          make deploy
-          kubectl get crds
-          kubectl wait --for condition=ready --timeout=360s pod -l app=function-mesh-operator,control-plane=controller-manager
+
+      - name: Deploy function mesh server
+        run: |
+          helm install function-mesh -n function-mesh --set operatorImage=function-mesh-operator:latest --create-namespace charts/function-mesh-operator
+          kubectl wait --for=condition=Ready -l app.kubernetes.io/name=function-mesh-operator pods -n function-mesh --timeout=5m
+          num=0
+          while [[ ${num} -lt 1 ]]; do
+            sleep 5s
+            kubectl get pods -n function-mesh
+            num=$(kubectl logs -n function-mesh -l app.kubernetes.io/name=function-mesh-operator --tail=-1 | grep "serving webhook server" | wc -l)
+          done
 
       - name: Test Function kind - Java Function
         run: |
@@ -141,15 +150,66 @@ jobs:
           .ci/verify_function_mesh.sh compute_v1alpha1_function_builtin_hpa
           kubectl delete -f .ci/clusters/compute_v1alpha1_function_builtin_hpa.yaml
 
-      - name: Test Java Stateful Function
+      - name: Test Python Stateful Function
         run: |
           kubectl apply -f .ci/clusters/compute_v1alpha1_function_stateful.yaml
           kubectl get all
 
-      - name: Verify Java Stateful Function
+      - name: Verify Python Stateful Function
         run: |
           .ci/verify_function_mesh.sh compute_v1alpha1_function_stateful
           kubectl delete -f .ci/clusters/compute_v1alpha1_function_stateful.yaml
+
+#       - name: Test Sink Kind - Install ES Server
+#         run: |
+#           kubectl apply -f https://download.elastic.co/downloads/eck/1.2.1/all-in-one.yaml
+#           kubectl apply -f config/samples/elasticsearch.yaml
+#
+#       - name: Test Sink Kind - Start Sink Kind
+#         run: |
+#           kubectl apply -f config/samples/compute_v1alpha1_sink.yaml
+#           kubectl get sinks
+#
+#       - name: Verify Sink
+#         run: |
+#           .ci/verify_function_mesh.sh sink-sample
+#           kubectl delete -f config/samples/compute_v1alpha1_sink.yaml
+#           kubectl delete -f config/samples/elasticsearch.yaml
+#           kubectl delete -f https://download.elastic.co/downloads/eck/1.2.1/all-in-one.yaml
+#
+#       - name: Test Source Kind - Install Mongo DB Server
+#         run: |
+#           kubectl apply -f config/samples/mongodb-dbz.yaml
+#
+#       - name: Test Source Kind - Start Source Kind
+#         run: |
+#           kubectl apply -f config/samples/compute_v1alpha1_source.yaml
+#           kubectl get sources
+#
+#       - name: Verify Source
+#         run: |
+#           .ci/verify_function_mesh.sh source-sample
+#           kubectl delete -f config/samples/compute_v1alpha1_source.yaml
+#           kubectl delete -f config/samples/mongodb-dbz.yaml
+#
+#       - name: Test Function kind
+#         run: |
+#           kubectl apply -f config/samples/compute_v1alpha1_function_key_based_batcher.yaml
+#           kubectl get all
+#
+#       - name: Verify Function Mesh
+#         run: |
+#           .ci/verify_function_mesh.sh java-function-batcher-sample
+#
+#       - name: Test Crypto Function kind
+#         run: |
+#           kubectl apply -f config/samples/compute_v1alpha1_function_crypto.yaml
+#           kubectl get all
+#
+#       - name: Verify Crypto Function Mesh
+#         run: |
+#           .ci/verify_function_mesh.sh function-crypto-sample
+#           kubectl delete -f config/samples/compute_v1alpha1_function_crypto.yaml
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3

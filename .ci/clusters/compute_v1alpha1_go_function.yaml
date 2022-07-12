@@ -4,7 +4,7 @@ metadata:
   name: go-function-sample
   namespace: default
 spec:
-  image: streamnative/pulsar-functions-go-sample:2.10.0.0-rc10
+  image: streamnative/pulsar-functions-go-sample:2.9.2.23
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1

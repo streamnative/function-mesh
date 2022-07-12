@@ -29,6 +29,8 @@ affinity:
 components:
   autorecovery: false
   pulsar_manager: false
+  sql_worker: false
+  proxy: false
 
 ## disable monitoring stack
 monitoring:
@@ -38,37 +40,46 @@ monitoring:
   grafana: false
   # monitoring - node_exporter
   node_exporter: false
+  loki: false
 
 images:
   zookeeper:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
   bookie:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
   autorecovery:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
   broker:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
   functions:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
   proxy:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
+  presto:
+    repository: streamnative/pulsar-all
+    tag: 2.9.2.23
 
 zookeeper:
   replicaCount: 1
 
 bookkeeper:
-  replicaCount: 1
+  # Ensure that the bookkeeper starts after the pulsar-init job is completed
+  replicaCount: 0
   metadata:
     image:
       repository: streamnative/pulsar-all
-      tag: 2.10.0.0-rc10
+      tag: 2.9.2.23
   configData:
+    PULSAR_PREFIX_autoRecoveryDaemonEnabled: "false"
+    PULSAR_PREFIX_dlog.bkcEnsembleSize: "1"
+    PULSAR_PREFIX_dlog.bkcWriteQuorumSize: "1"
+    PULSAR_PREFIX_dlog.bkcAckQuorumSize: "1"
     # `BOOKIE_MEM` is used for `bookie shell`
     BOOKIE_MEM: >
       -Xms128m
@@ -97,7 +108,7 @@ bookkeeper:
 pulsar_metadata:
   image:
     repository: streamnative/pulsar-all
-    tag: 2.10.0.0-rc10
+    tag: 2.9.2.23
 
 broker:
   replicaCount: 1
@@ -109,9 +120,6 @@ broker:
     managedLedgerDefaultEnsembleSize: "1"
     managedLedgerDefaultWriteQuorum: "1"
     managedLedgerDefaultAckQuorum: "1"
-
-proxy:
-  replicaCount: 1
 
 functions:
   functionState: true
