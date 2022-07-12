@@ -24,7 +24,6 @@ import (
 	"github.com/streamnative/function-mesh/controllers/spec"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -174,12 +173,8 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 	mesh *v1alpha1.FunctionMesh) error {
 	for _, functionSpec := range mesh.Spec.Functions {
 		condition := mesh.Status.FunctionConditions[functionSpec.Name]
-		if condition.Status == metav1.ConditionTrue {
-			continue
-		}
-
 		function := spec.MakeFunctionComponent(makeComponentName(mesh.Name, functionSpec.Name), mesh, &functionSpec)
-		if err := r.HandleAction(ctx, function, condition.Action); err != nil {
+		if err := r.CreateOrUpdateFunction(ctx, function, function.Spec); err != nil {
 			r.Log.Error(err, "failed to handle function", "name", functionSpec.Name, "action", condition.Action)
 			return err
 		}
@@ -187,11 +182,8 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 
 	for _, sourceSpec := range mesh.Spec.Sources {
 		condition := mesh.Status.SourceConditions[sourceSpec.Name]
-		if condition.Status == metav1.ConditionTrue {
-			continue
-		}
 		source := spec.MakeSourceComponent(makeComponentName(mesh.Name, sourceSpec.Name), mesh, &sourceSpec)
-		if err := r.HandleAction(ctx, source, condition.Action); err != nil {
+		if err := r.CreateOrUpdateSource(ctx, source, source.Spec); err != nil {
 			r.Log.Error(err, "failed to handle soure", "name", sourceSpec.Name, "action", condition.Action)
 			return err
 		}
@@ -199,11 +191,8 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 
 	for _, sinkSpec := range mesh.Spec.Sinks {
 		condition := mesh.Status.SinkConditions[sinkSpec.Name]
-		if condition.Status == metav1.ConditionTrue {
-			continue
-		}
-		source := spec.MakeSinkComponent(makeComponentName(mesh.Name, sinkSpec.Name), mesh, &sinkSpec)
-		if err := r.HandleAction(ctx, source, condition.Action); err != nil {
+		sink := spec.MakeSinkComponent(makeComponentName(mesh.Name, sinkSpec.Name), mesh, &sinkSpec)
+		if err := r.CreateOrUpdateSink(ctx, sink, sink.Spec); err != nil {
 			r.Log.Error(err, "failed to handle sink", "name", sinkSpec.Name, "action", condition.Action)
 			return err
 		}
@@ -212,19 +201,38 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 	return nil
 }
 
-func (r *FunctionMeshReconciler) HandleAction(ctx context.Context, obj runtime.Object,
-	action v1alpha1.ReconcileAction) error {
-	switch action {
-	case v1alpha1.Create:
-		if err := r.Create(ctx, obj); err != nil {
-			return err
-		}
-	case v1alpha1.Update:
-		if err := r.Update(ctx, obj); err != nil {
-			return err
-		}
-	case v1alpha1.Wait:
-		// do nothing
+func (r *FunctionMeshReconciler) CreateOrUpdateFunction(ctx context.Context, function *v1alpha1.Function, functionSpec v1alpha1.FunctionSpec) error {
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, function, func() error {
+		// function mutate logic
+		function.Spec = functionSpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error create or update function", "namespace", function.Namespace, "name", function.Name)
+		return err
+	}
+	return nil
+}
+
+func (r *FunctionMeshReconciler) CreateOrUpdateSink(ctx context.Context, sink *v1alpha1.Sink, sinkSpec v1alpha1.SinkSpec) error {
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, sink, func() error {
+		// sink mutate logic
+		sink.Spec = sinkSpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error create or update sink", "namespace", sink.Namespace, "name", sink.Name)
+		return err
+	}
+	return nil
+}
+
+func (r *FunctionMeshReconciler) CreateOrUpdateSource(ctx context.Context, source *v1alpha1.Source, sourceSpec v1alpha1.SourceSpec) error {
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, source, func() error {
+		// source mutate logic
+		source.Spec = sourceSpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error create or update source", "namespace", source.Namespace, "name", source.Name)
+		return err
 	}
 	return nil
 }

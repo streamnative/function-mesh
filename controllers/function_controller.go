@@ -91,7 +91,7 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	err = r.ApplyFunctionStatefulSet(ctx, req, function)
+	err = r.ApplyFunctionStatefulSet(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
