@@ -12,7 +12,6 @@ on:
       - 'mesh-worker-service/README.md'
       - 'tools/README.md'
 jobs:
-
   integration:
     runs-on: ubuntu-latest
     steps:
