@@ -186,6 +186,9 @@ type PodPolicy struct {
 	// If not set, the default HPAScalingRules for scale up and scale down are used.
 	// +optional
 	AutoScalingBehavior *autov2beta2.HorizontalPodAutoscalerBehavior `json:"autoScalingBehavior,omitempty"`
+
+	// Env Environment variables to expose on the pulsar-function containers
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 type Runtime struct {
