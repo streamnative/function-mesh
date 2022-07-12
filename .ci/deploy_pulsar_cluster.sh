@@ -49,3 +49,5 @@ ci::install_pulsar_charts "$VALUES_FILE"
 # test producer
 ci::test_pulsar_producer
 
+# enable stream storage server
+#ci::enable_stream_storage_server

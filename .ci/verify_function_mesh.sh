@@ -31,54 +31,36 @@ source ${PULSAR_HOME}/.ci/helm.sh
 case ${1} in
   compute_v1alpha1_go_function)
     ci::verify_function_mesh go-function-sample
-    sleep 60
-    ci::print_function_log go-function-sample
-    ci::verify_go_function go-function-sample
+    ci::verify_go_function
     ;;
   compute_v1alpha1_function)
     ci::verify_function_mesh function-sample
-    sleep 60
-    ci::print_function_log function-sample
-    ci::verify_java_function function-sample
+    ci::verify_java_function
     ;;
   compute_v1alpha1_py_function)
     ci::verify_function_mesh py-function-sample
-    sleep 60
-    ci::print_function_log py-function-sample
-    ci::verify_python_function py-function-sample
+    ci::verify_python_function
     ;;
   compute_v1alpha1_functionmesh)
     ci::verify_function_mesh functionmesh-sample-java-function
     ci::verify_function_mesh functionmesh-sample-golang-function
     ci::verify_function_mesh functionmesh-sample-python-function
-    sleep 60
-    ci::print_function_log functionmesh-sample-java-function
-    ci::print_function_log functionmesh-sample-golang-function
-    ci::print_function_log functionmesh-sample-python-function
     ci::verify_mesh_function
     ;;
   compute_v1alpha1_function_hpa)
     ci::verify_function_mesh function-hpa-sample
     ci::verify_hpa function-hpa-sample
-    sleep 60
-    ci::print_function_log function-hpa-sample
-    ci::verify_java_function function-hpa-sample
+    ci::verify_java_function
     ci::verify_hpa function-hpa-sample
     ;;
   compute_v1alpha1_function_builtin_hpa)
     ci::verify_function_mesh function-builtin-hpa-sample
     ci::verify_hpa function-builtin-hpa-sample
-    sleep 60
-    ci::print_function_log function-builtin-hpa-sample
-    ci::verify_java_function function-builtin-hpa-sample
+    ci::verify_java_function
     ci::verify_hpa function-builtin-hpa-sample
     ;;
   compute_v1alpha1_function_stateful)
-    ci::verify_function_mesh java-function-stateful-sample
-    sleep 60
-    ci::print_function_log java-function-stateful-sample
-    ci::verify_java_function java-function-stateful-sample
-    sleep 60
-    ci::print_function_log java-function-stateful-sample
+    ci::verify_function_mesh python-function-stateful-sample
+    ci::verify_stateful_function
     ;;
 esac
