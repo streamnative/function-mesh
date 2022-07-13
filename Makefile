@@ -120,7 +120,7 @@ yq: ## Download yq locally if necessary.
 
 E2E=$(shell pwd)/bin/e2e
 skywalking-e2e: ## Download e2e locally if necessary.
-	$(call go-get-tool,$(E2E),github.com/apache/skywalking-infra-e2e/cmd/e2e@2a33478)
+	$(call go-get-tool,$(E2E),github.com/apache/skywalking-infra-e2e/cmd/e2e@v1.2.0)
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle

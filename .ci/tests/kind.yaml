@@ -25,7 +25,7 @@ nodes:
     image: kindest/node:v1.18.20
     extraPortMappings:
       - containerPort: 31234
-        hostPort: 80
+        hostPort: 31234
         # optional: set the bind address on the host
         # 0.0.0.0 is the current default
         listenAddress: "127.0.0.1"
