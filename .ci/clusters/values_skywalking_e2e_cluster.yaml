@@ -30,6 +30,7 @@ components:
   autorecovery: false
   pulsar_manager: false
   sql_worker: false
+  proxy: false
 
 ## disable monitoring stack
 monitoring:
@@ -47,24 +48,19 @@ images:
   bookie:
     repository: streamnative/pulsar-all
     tag: 2.9.2.23
-  autorecovery:
-    repository: streamnative/pulsar-all
-    tag: 2.9.2.23
   broker:
     repository: streamnative/pulsar-all
     tag: 2.9.2.23
   functions:
     repository: streamnative/pulsar-all
     tag: 2.9.2.23
-  proxy:
-    repository: streamnative/pulsar-all
-    tag: 2.9.2.23
-  presto:
-    repository: streamnative/pulsar-all
-    tag: 2.9.2.23
 
 zookeeper:
   replicaCount: 1
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 50m
 
 bookkeeper:
   replicaCount: 0
@@ -72,6 +68,10 @@ bookkeeper:
     image:
       repository: streamnative/pulsar-all
       tag: 2.9.2.23
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 50m
   configData:
     PULSAR_PREFIX_autoRecoveryDaemonEnabled: "false"
     PULSAR_PREFIX_dlog.bkcEnsembleSize: "1"
@@ -101,6 +101,7 @@ bookkeeper:
       -XX:-ResizePLAB
       -XX:+ExitOnOutOfMemoryError
       -XX:+PerfDisableSharedMem
+
 pulsar_metadata:
   image:
     repository: streamnative/pulsar-all
@@ -116,9 +117,10 @@ broker:
     managedLedgerDefaultEnsembleSize: "1"
     managedLedgerDefaultWriteQuorum: "1"
     managedLedgerDefaultAckQuorum: "1"
-
-proxy:
-  replicaCount: 1
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 50m
 
 functions:
   functionState: true

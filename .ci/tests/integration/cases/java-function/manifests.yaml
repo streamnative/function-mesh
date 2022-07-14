@@ -20,7 +20,7 @@ spec:
     typeClassName: java.lang.String
   resources:
     requests:
-      cpu: "0.1"
+      cpu: 50m
       memory: 1G
     limits:
       cpu: "0.2"

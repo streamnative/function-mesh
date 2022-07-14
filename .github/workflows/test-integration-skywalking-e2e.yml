@@ -1,0 +1,47 @@
+name: Precommit - Integration Tests based on Skywalking-e2e
+on:
+  pull_request:
+    branches:
+      - '*'
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'PROJECT'
+      - 'LICENSE'
+      - 'mesh-worker-service/README.md'
+      - 'tools/README.md'
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        case:
+          - name: integration test
+            e2e: ".ci/tests/integration/e2e.yaml"
+    steps:
+      - name: clean disk
+        run: |
+          sudo swapoff -a
+          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt clean
+          docker rmi $(docker images -q) -f
+          df -h
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: apache/skywalking-infra-e2e@main
+        with:
+          e2e-file: ${{matrix.case.e2e}}
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: failure()
+
+      - name: Cleanup
+        if: ${{ failure() }}
+        run: e2e cleanup -c ${{matrix.case.e2e}}
