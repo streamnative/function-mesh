@@ -80,30 +80,17 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, req ctrl.Re
 	return nil
 }
 
-func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, req ctrl.Request,
-	sink *v1alpha1.Sink) error {
-	condition := sink.Status.Conditions[v1alpha1.StatefulSet]
-
-	if condition.Status == metav1.ConditionTrue {
-		return nil
-	}
+func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha1.Sink) error {
 	desiredStatefulSet := spec.MakeSinkStatefulSet(sink)
-
-	switch condition.Action {
-	case v1alpha1.Create:
-		if err := r.Create(ctx, desiredStatefulSet); err != nil {
-			r.Log.Error(err, "failed to create new sink statefulSet")
-			return err
-		}
-	case v1alpha1.Update:
-		if err := r.Update(ctx, desiredStatefulSet); err != nil {
-			r.Log.Error(err, "failed to update the sink statefulSet")
-			return err
-		}
-	case v1alpha1.Wait, v1alpha1.NoAction:
-		// do nothing
+	desiredStatefulSetSpec := desiredStatefulSet.Spec
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
+		// sink statefulset mutate logic
+		desiredStatefulSet.Spec = desiredStatefulSetSpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error create or update statefulSet workload", "namespace", desiredStatefulSet.Namespace, "name", desiredStatefulSet.Name)
+		return err
 	}
-
 	return nil
 }
 

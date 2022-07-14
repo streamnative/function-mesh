@@ -83,29 +83,17 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, req ctrl.Request,
-	function *v1alpha1.Function) error {
-	condition := function.Status.Conditions[v1alpha1.StatefulSet]
-	if condition.Status == metav1.ConditionTrue {
-		return nil
-	}
+func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function) error {
 	desiredStatefulSet := spec.MakeFunctionStatefulSet(function)
-
-	switch condition.Action {
-	case v1alpha1.Create:
-		if err := r.Create(ctx, desiredStatefulSet); err != nil {
-			r.Log.Error(err, "Failed to create new function statefulSet")
-			return err
-		}
-	case v1alpha1.Update:
-		if err := r.Update(ctx, desiredStatefulSet); err != nil {
-			r.Log.Error(err, "Failed to update the function statefulSet")
-			return err
-		}
-	case v1alpha1.Wait:
-		// do nothing
+	desiredStatefulSetSpec := desiredStatefulSet.Spec
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
+		// function statefulset mutate logic
+		desiredStatefulSet.Spec = desiredStatefulSetSpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error create or update statefulSet workload", "namespace", desiredStatefulSet.Namespace, "name", desiredStatefulSet.Name)
+		return err
 	}
-
 	return nil
 }
 

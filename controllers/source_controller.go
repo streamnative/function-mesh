@@ -90,7 +90,7 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	err = r.ApplySourceStatefulSet(ctx, req, source)
+	err = r.ApplySourceStatefulSet(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

@@ -80,30 +80,17 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, req ctr
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, req ctrl.Request,
-	source *v1alpha1.Source) error {
-	condition := source.Status.Conditions[v1alpha1.StatefulSet]
-
-	if condition.Status == metav1.ConditionTrue {
-		return nil
-	}
+func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v1alpha1.Source) error {
 	desiredStatefulSet := spec.MakeSourceStatefulSet(source)
-
-	switch condition.Action {
-	case v1alpha1.Create:
-		if err := r.Create(ctx, desiredStatefulSet); err != nil {
-			r.Log.Error(err, "failed to create new source statefulSet")
-			return err
-		}
-	case v1alpha1.Update:
-		if err := r.Update(ctx, desiredStatefulSet); err != nil {
-			r.Log.Error(err, "failed to update the source statefulSet")
-			return err
-		}
-	case v1alpha1.Wait, v1alpha1.NoAction:
-		// do nothing
+	desiredStatefulSetSpec := desiredStatefulSet.Spec
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
+		// source statefulset mutate logic
+		desiredStatefulSet.Spec = desiredStatefulSetSpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error create or update statefulSet workload", "namespace", desiredStatefulSet.Namespace, "name", desiredStatefulSet.Name)
+		return err
 	}
-
 	return nil
 }
 

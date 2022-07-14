@@ -90,7 +90,7 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	err = r.ApplySinkStatefulSet(ctx, req, sink)
+	err = r.ApplySinkStatefulSet(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
