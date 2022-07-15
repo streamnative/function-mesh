@@ -114,9 +114,13 @@ KUSTOMIZE=$(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v4.5.5)
 
-YQ = $(shell pwd)/bin/yq
+YQ=$(shell pwd)/bin/yq
 yq: ## Download yq locally if necessary.
 	$(call go-get-tool,$(YQ),github.com/mikefarah/yq/v4@latest)
+
+E2E=$(shell pwd)/bin/e2e
+skywalking-e2e: ## Download e2e locally if necessary.
+	$(call go-get-tool,$(E2E),github.com/apache/skywalking-infra-e2e/cmd/e2e@v1.2.0)
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
@@ -216,6 +220,9 @@ function-mesh-docker-image-name:
 # Build the docker image without tests
 docker-build-skip-test:
 	docker build . -t ${IMG}
+
+e2e: skywalking-e2e yq
+	$(E2E) run -c .ci/tests/integration/e2e.yaml
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
