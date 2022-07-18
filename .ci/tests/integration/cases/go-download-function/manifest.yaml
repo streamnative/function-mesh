@@ -1,23 +1,22 @@
 apiVersion: compute.functionmesh.io/v1alpha1
 kind: Function
 metadata:
-  name: py-function-download-sample
+  name: go-function-download-sample
   namespace: default
 spec:
-  className: exclamation_function.ExclamationFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1
-  maxReplicas: 1
-  logTopic: persistent://public/default/py-function-logs
+  maxReplicas: 3
+  logTopic: persistent://public/default/go-function-logs
   input:
     topics:
-      - persistent://public/default/input-download-python-topic
+    - persistent://public/default/input-download-go-topic
   output:
-    topic: persistent://public/default/output-download-python-topic
+    topic: persistent://public/default/output-download-go-topic
   resources:
     requests:
-      cpu: "0.1"
+      cpu: 50m
       memory: 1G
     limits:
       cpu: "0.2"
@@ -25,17 +24,17 @@ spec:
   # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
   secretsMap:
     "name":
-      path: "test-py-secret"
-      key: "username"
+        path: "test-go-secret"
+        key: "username"
     "pwd":
-      path: "test-py-secret"
-      key: "password"
+        path: "test-go-secret"
+        key: "password"
   pulsar:
-    pulsarConfig: "test-py-pulsar"
+    pulsarConfig: "test-go-pulsar"
     #authConfig: "test-auth"
-  python:
-    py: exclamation_function.py
-    pyLocation: function://public/default/test-py-function
+  golang:
+    go: /pulsar/go_func_all
+    goLocation: function://public/default/test-go-function
   # to be delete & use admission hook
   clusterName: test
   autoAck: true
@@ -43,7 +42,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-py-pulsar
+  name: test-go-pulsar
 data:
   webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
   brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
@@ -66,5 +65,5 @@ data:
   password: MWYyZDFlMmU2N2Rm
 kind: Secret
 metadata:
-  name: test-py-secret
+  name: test-go-secret
 type: Opaque

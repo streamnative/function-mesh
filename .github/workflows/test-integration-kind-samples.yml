@@ -119,39 +119,6 @@ jobs:
           .ci/verify_function_mesh.sh compute_v1alpha1_go_function
           kubectl delete -f .ci/clusters/compute_v1alpha1_go_function.yaml
 
-      - name: Test Function kind - Java Function with download from pulsar
-        run: |
-          .ci/upload_function.sh java
-          kubectl apply -f .ci/clusters/compute_v1alpha1_download_function.yaml
-          kubectl get all
-
-      - name: Verify Function kind - Java Function with download from pulsar
-        run: |
-          .ci/verify_function_mesh.sh compute_v1alpha1_download_function
-          kubectl delete -f .ci/clusters/compute_v1alpha1_download_function.yaml
-
-      - name: Test Function kind - Go Function with download from pulsar
-        run: |
-          .ci/upload_function.sh go
-          kubectl apply -f .ci/clusters/compute_v1alpha1_download_go_function.yaml
-          kubectl get all
-
-      - name: Verify Function kind - Go Function with download from pulsar
-        run: |
-          .ci/verify_function_mesh.sh compute_v1alpha1_download_go_function
-          kubectl delete -f .ci/clusters/compute_v1alpha1_download_go_function.yaml
-
-      - name: Test Function kind - Python Function with download from pulsar
-        run: |
-          .ci/upload_function.sh py
-          kubectl apply -f .ci/clusters/compute_v1alpha1_download_py_function.yaml
-          kubectl get all
-
-      - name: Verify Function kind - Python Function with download from pulsar
-        run: |
-          .ci/verify_function_mesh.sh compute_v1alpha1_download_py_function
-          kubectl delete -f .ci/clusters/compute_v1alpha1_download_py_function.yaml
-
       - name: Test Mesh kind
         run: |
           kubectl apply -f .ci/clusters/compute_v1alpha1_functionmesh.yaml

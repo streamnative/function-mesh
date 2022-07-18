@@ -12,14 +12,14 @@ spec:
   logTopic: persistent://public/default/logging-function-logs
   input:
     topics:
-      - persistent://public/default/input-download-java-topic
+    - persistent://public/default/input-download-java-topic
     typeClassName: java.lang.String
   output:
     topic: persistent://public/default/output-download-java-topic
     typeClassName: java.lang.String
   resources:
     requests:
-      cpu: "0.1"
+      cpu: 50m
       memory: 1G
     limits:
       cpu: "0.2"
@@ -27,11 +27,11 @@ spec:
   # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
   secretsMap:
     "name":
-      path: "test-secret"
-      key: "username"
+        path: "test-secret"
+        key: "username"
     "pwd":
-      path: "test-secret"
-      key: "password"
+        path: "test-secret"
+        key: "password"
   pulsar:
     pulsarConfig: "test-pulsar"
     #authConfig: "test-auth"

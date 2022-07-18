@@ -47,18 +47,6 @@ case ${1} in
     ci::verify_function_mesh functionmesh-sample-python-function
     ci::verify_mesh_function
     ;;
-  compute_v1alpha1_download_go_function)
-    ci::verify_function_mesh go-function-download-sample
-    ci::verify_download_go_function
-    ;;
-  compute_v1alpha1_download_function)
-    ci::verify_function_mesh function-download-sample
-    ci::verify_download_java_function
-    ;;
-  compute_v1alpha1_download_py_function)
-    ci::verify_function_mesh py-function-download-sample
-    ci::verify_download_python_function
-    ;;
   compute_v1alpha1_function_hpa)
     ci::verify_function_mesh function-hpa-sample
     ci::verify_hpa function-hpa-sample
