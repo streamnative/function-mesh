@@ -1,3 +1,25 @@
+# Function Mesh v0.4.0 Release Notes
+
+## v0.4.0 What's New
+
+- [Makefile] Add `kustomize` before `crd` in `release` command in Makefile ([#395](https://github.com/streamnative/function-mesh/pull/395))
+- [Makefile] remove `helm-crds` from `release` command in Makefile ([#396](https://github.com/streamnative/function-mesh/pull/396))
+- [Makefile] Some small types fixed in readme and makefile ([#423](https://github.com/streamnative/function-mesh/pull/423))
+- [Test] wait for controller POD ready in Github Action ([#406](https://github.com/streamnative/function-mesh/pull/406))
+- [Test] add `paths-ignore` configuration ([#410](https://github.com/streamnative/function-mesh/pull/410))
+- [Test] update CI workflow ([#420](https://github.com/streamnative/function-mesh/pull/420))
+- [Test] Add `make e2e` command for e2e tests based on skywalking-e2e-infra ([#422](https://github.com/streamnative/function-mesh/pull/422))
+- [Helm Charts] Remove invalid caBundle in webhook patches ([#398](https://github.com/streamnative/function-mesh/pull/398))
+- [Helm Charts] Improve tools for generating helm chart templates ([#409](https://github.com/streamnative/function-mesh/pull/409))
+- [Controller] update the codeowners ([#407](https://github.com/streamnative/function-mesh/pull/407))
+- [Controller] Fix dockerfile comment ([#405](https://github.com/streamnative/function-mesh/pull/405))
+- [Controller] Remove useless omitempty ([#402](https://github.com/streamnative/function-mesh/pull/402))
+- [Controller] Use secret for trust path ([#414](https://github.com/streamnative/function-mesh/pull/414))
+- [Controller] Allow key-value Environment variable passthrough. ([#424](https://github.com/streamnative/function-mesh/pull/424))
+- [Controller] use ctrl.CreateOrUpdate to apply resource ([#427](https://github.com/streamnative/function-mesh/pull/427))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-07+is%3Aclosed).
+
 # Function Mesh v0.3.0 Release Notes
 
 ## v0.3.0 What's New
