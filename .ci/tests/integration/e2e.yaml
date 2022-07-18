@@ -91,3 +91,9 @@ verify:
       # java function test
     - query: bash .ci/tests/integration/cases/java-function/verify.sh
       expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/java-download-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/go-download-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/py-download-function/verify.sh
+      expected: expected.data.yaml
