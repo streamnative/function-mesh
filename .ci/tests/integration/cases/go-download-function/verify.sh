@@ -32,7 +32,7 @@ if [ ! "$KUBECONFIG" ]; then
   export KUBECONFIG=${E2E_KUBECONFIG}
 fi
 
-"${BASE_DIR}"/.ci/upload_functions.sh go
+"${BASE_DIR}"/.ci/upload_function.sh go
 
 kubectl apply -f "${BASE_DIR}"/.ci/tests/integration/cases/go-download-function/manifests.yaml > /dev/null 2>&1
 
