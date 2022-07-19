@@ -1,3 +1,25 @@
+# Function Mesh v0.4.0 Release Notes
+
+## v0.4.0 What's New
+
+- [Makefile] Add `kustomize` before `crd` in the `release` command in Makefile ([#395](https://github.com/streamnative/function-mesh/pull/395))
+- [Makefile] Remove `helm-crds` from the `release` command in Makefile ([#396](https://github.com/streamnative/function-mesh/pull/396))
+- [Makefile] Fix some small typos in README and Makefile ([#423](https://github.com/streamnative/function-mesh/pull/423))
+- [Test] Fix failed actions to wait for the controller POD ready in Github Action ([#406](https://github.com/streamnative/function-mesh/pull/406))
+- [Test] Add the `paths-ignore` configuration to allow changing some files without triggering the CI test workflow. ([#410](https://github.com/streamnative/function-mesh/pull/410))
+- [Test] Update the CI test workflow ([#420](https://github.com/streamnative/function-mesh/pull/420))
+- [Test] Add the `make e2e` command for E2E tests based on [SkyWalking Infra E2E](https://github.com/apache/skywalking-infra-e2e) ([#422](https://github.com/streamnative/function-mesh/pull/422))
+- [Helm Charts] Remove invalid caBundle in webhook patches ([#398](https://github.com/streamnative/function-mesh/pull/398))
+- [Helm Charts] Improve tools for generating helm chart templates ([#409](https://github.com/streamnative/function-mesh/pull/409))
+- [Controller] Update the codeowners ([#407](https://github.com/streamnative/function-mesh/pull/407))
+- [Controller] Fix comments on the Dockerfile ([#405](https://github.com/streamnative/function-mesh/pull/405))
+- [Controller] Remove useless omitempty ([#402](https://github.com/streamnative/function-mesh/pull/402))
+- [Controller] Support mounting secrets to provide sensitive information to Function Mesh ([#414](https://github.com/streamnative/function-mesh/pull/414))
+- [Controller] Allow key-value environment variable passthrough ([#424](https://github.com/streamnative/function-mesh/pull/424))
+- [Controller] Use `ctrl.CreateOrUpdate` to determine whether a resource should be updated or created ([#427](https://github.com/streamnative/function-mesh/pull/427))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-07+is%3Aclosed).
+
 # Function Mesh v0.3.0 Release Notes
 
 ## v0.3.0 What's New
