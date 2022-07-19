@@ -32,8 +32,6 @@ if [ ! "$KUBECONFIG" ]; then
   export KUBECONFIG=${E2E_KUBECONFIG}
 fi
 
-"${BASE_DIR}"/.ci/upload_function.sh py
-
 kubectl apply -f "${BASE_DIR}"/.ci/tests/integration/cases/py-download-function/manifests.yaml > /dev/null 2>&1
 
 verify_fm_result=$(ci::verify_function_mesh py-function-download-sample 2>&1)
