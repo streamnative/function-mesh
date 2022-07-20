@@ -4,7 +4,7 @@ metadata:
   name: py-function-download-pip-sample
   namespace: default
 spec:
-  className: exclamation
+  className: pulsarfunction.exclamation.ExclamationFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1
