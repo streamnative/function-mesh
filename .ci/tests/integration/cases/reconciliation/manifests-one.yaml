@@ -1,0 +1,105 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: FunctionMesh
+metadata:
+  name: functionmesh-sample
+spec:
+  sinks:
+    - name: sink-one
+      image: streamnative/pulsar-io-elastic-search:2.9.2.23
+      className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
+      replicas: 1
+      maxReplicas: 1
+      input:
+        topics:
+        - persistent://public/default/elasticsearch-sink
+        typeClassName: "org.apache.pulsar.client.api.schema.GenericObject"
+      sinkConfig:
+        elasticSearchUrl: "http://quickstart-es-http.default.svc.cluster.local:9200"
+        indexName: "my_index"
+        typeName: "doc"
+        username: "elastic"
+        password: "wJ757TmoXEd941kXm07Z2GW3"
+      pulsar:
+        pulsarConfig: "mesh-test-pulsar"
+      resources:
+        limits:
+          cpu: "0.2"
+          memory: 1.1G
+        requests:
+          cpu: "0.1"
+          memory: 1G
+      java:
+        jar: connectors/pulsar-io-elastic-search-2.9.2.23.nar
+        jarLocation: "" # use pulsar provided connectors
+      clusterName: test-pulsar
+      autoAck: true
+  functions:
+    - name: function-one
+      image: streamnative/pulsar-functions-java-sample:2.9.2.23
+      className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+      replicas: 1
+      maxReplicas: 1
+      input:
+        topics:
+          - persistent://public/default/functionmesh-input-topic
+        typeClassName: java.lang.String
+      output:
+        topic: persistent://public/default/functionmesh-java-topic
+        typeClassName: java.lang.String
+      pulsar:
+        pulsarConfig: "mesh-test-pulsar"
+      java:
+        jar: /pulsar/examples/api-examples.jar
+      forwardSourceMessageProperty: true
+      autoAck: true
+      resources:
+        requests:
+          cpu: "0.1"
+          memory: 1G
+        limits:
+          cpu: "0.2"
+          memory: 1.1G
+      clusterName: test
+  sources:
+    - name: source-one
+      className: org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource
+      replicas: 1
+      maxReplicas: 1
+      output:
+        producerConf:
+          maxPendingMessages: 1000
+          maxPendingMessagesAcrossPartitions: 50000
+          useThreadLocalProducers: true
+        topic: persistent://public/default/destination
+        typeClassName: org.apache.pulsar.common.schema.KeyValue
+      forwardSourceMessageProperty: true
+      resources:
+        limits:
+          cpu: "0.2"
+          memory: 1.1G
+        requests:
+          cpu: "0.1"
+          memory: 1G
+      sourceConfig:
+        mongodb.hosts: rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017
+        mongodb.name: dbserver1
+        mongodb.user: debezium
+        mongodb.password: dbz
+        mongodb.task.id: "1"
+        database.whitelist: inventory
+        pulsar.service.url: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
+      pulsar:
+        pulsarConfig: "mesh-test-pulsar"
+      image: streamnative/pulsar-io-debezium-mongodb:2.9.2.23
+      java:
+        jar: connectors/pulsar-io-debezium-mongodb-2.9.2.23.nar
+        jarLocation: "" # use pulsar provided connectors
+      clusterName: test-pulsar
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mesh-test-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650

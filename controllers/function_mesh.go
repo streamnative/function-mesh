@@ -175,6 +175,8 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 	}
 
 	for _, sinkSpec := range mesh.Spec.Sinks {
+		delete(orphanedSinks, sinkSpec.Name)
+
 		// present the original name to use in Status, but underlying use the complete-name
 		condition, ok := mesh.Status.SinkConditions[sinkSpec.Name]
 		if !ok {
