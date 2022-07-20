@@ -91,3 +91,6 @@ verify:
       # java function test
     - query: bash .ci/tests/integration/cases/java-function/verify.sh
       expected: expected.data.yaml
+      # reconciliation test
+    - query: bash .ci/tests/integration/cases/reconciliation/verify.sh
+      expected: expected.data.yaml    
