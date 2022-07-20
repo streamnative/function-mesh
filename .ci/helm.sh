@@ -233,6 +233,10 @@ function ci::verify_download_python_zip_function() {
     ci:verify_exclamation_function "persistent://public/default/input-download-python-zip-topic" "persistent://public/default/output-download-python-zip-topic" "test-message" "test-message!" 10
 }
 
+function ci::verify_download_python_pip_function() {
+    ci:verify_exclamation_function "persistent://public/default/input-download-python-pip-topic" "persistent://public/default/output-download-python-pip-topic" "test-message" "test-message!" 10
+}
+
 function ci::verify_stateful_function() {
     ci:verify_wordcount_function "persistent://public/default/python-function-stateful-input-topic" "persistent://public/default/logging-stateful-function-logs" "apple apple apple" "The value is 3" 10
 }

@@ -1,7 +1,7 @@
 apiVersion: compute.functionmesh.io/v1alpha1
 kind: Function
 metadata:
-  name: py-function-download-zip-sample
+  name: py-function-download-pip-sample
   namespace: default
 spec:
   className: exclamation
@@ -12,9 +12,9 @@ spec:
   logTopic: persistent://public/default/py-function-logs
   input:
     topics:
-    - persistent://public/default/input-download-python-zip-topic
+    - persistent://public/default/input-download-python-pip-topic
   output:
-    topic: persistent://public/default/output-download-python-zip-topic
+    topic: persistent://public/default/output-download-python-pip-topic
   resources:
     requests:
       cpu: 50m
@@ -34,8 +34,8 @@ spec:
     pulsarConfig: "test-py-pulsar"
     #authConfig: "test-auth"
   python:
-    py: /pulsar/exclamation.zip
-    pyLocation: function://public/default/test-py-zip-function
+    py: /pulsar/pulsarfunction-1.0.0-py3-none-any.whl
+    pyLocation: function://public/default/test-py-pip-function
   # to be delete & use admission hook
   clusterName: test
   autoAck: true

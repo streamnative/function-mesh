@@ -67,6 +67,7 @@ setup:
         bash .ci/upload_function.sh java
         bash .ci/upload_function.sh py
         bash .ci/upload_function.sh pyzip
+        bash .ci/upload_function.sh pypip
         bash .ci/upload_function.sh go
 
     - name: install function-mesh operator
@@ -104,4 +105,8 @@ verify:
     - query: bash .ci/tests/integration/cases/go-download-function/verify.sh
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/py-download-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/py-download-zip-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/py-download-pip-function/verify.sh
       expected: expected.data.yaml
