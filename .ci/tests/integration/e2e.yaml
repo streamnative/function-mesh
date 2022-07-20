@@ -66,6 +66,7 @@ setup:
       command: |
         bash .ci/upload_function.sh java
         bash .ci/upload_function.sh py
+        bash .ci/upload_function.sh pyzip
         bash .ci/upload_function.sh go
 
     - name: install function-mesh operator

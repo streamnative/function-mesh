@@ -32,6 +32,10 @@ case ${1} in
   py)
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/test-py-function --path /pulsar/examples/python-examples/exclamation_function.py --description "test python function"
     ;;
+  pyzip)
+    kubectl cp "${PULSAR_HOME}/.ci/examples/py-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-0:/pulsar/"
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/test-py-zip-function --path /pulsar/py-examples/exclamation.zip --description "test python zip function"
+    ;;
   go)
     kubectl cp "${PULSAR_HOME}/.ci/examples/go-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-0:/pulsar/"
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/test-go-function --path /pulsar/go-examples/exclamationFunc --description "test golang function"
