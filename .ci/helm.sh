@@ -209,12 +209,32 @@ function ci::verify_go_function() {
     ci:verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 10
 }
 
+function ci::verify_download_go_function() {
+    ci:verify_exclamation_function "persistent://public/default/input-download-go-topic" "persistent://public/default/output-download-go-topic" "test-message" "test-message!" 10
+}
+
 function ci::verify_java_function() {
     ci:verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 10
 }
 
+function ci::verify_download_java_function() {
+    ci:verify_exclamation_function "persistent://public/default/input-download-java-topic" "persistent://public/default/output-download-java-topic" "test-message" "test-message!" 10
+}
+
 function ci::verify_python_function() {
     ci:verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 10
+}
+
+function ci::verify_download_python_function() {
+    ci:verify_exclamation_function "persistent://public/default/input-download-python-topic" "persistent://public/default/output-download-python-topic" "test-message" "test-message!" 10
+}
+
+function ci::verify_download_python_zip_function() {
+    ci:verify_exclamation_function "persistent://public/default/input-download-python-zip-topic" "persistent://public/default/output-download-python-zip-topic" "test-message" "test-message!" 10
+}
+
+function ci::verify_download_python_pip_function() {
+    ci:verify_exclamation_function "persistent://public/default/input-download-python-pip-topic" "persistent://public/default/output-download-python-pip-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_stateful_function() {

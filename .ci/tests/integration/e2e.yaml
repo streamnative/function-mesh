@@ -61,6 +61,15 @@ setup:
         kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-bookie-0 -- cat conf/bookkeeper.conf
         kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-bookie-0 -- nc -zv 127.0.0.1 4181
 
+    # upload packages here to avoid retry error
+    - name: upload packages
+      command: |
+        bash .ci/upload_function.sh java
+        bash .ci/upload_function.sh py
+        bash .ci/upload_function.sh pyzip
+        bash .ci/upload_function.sh pypip
+        bash .ci/upload_function.sh go
+
     - name: install function-mesh operator
       command: |
         make generate
@@ -90,4 +99,14 @@ verify:
   cases:
       # java function test
     - query: bash .ci/tests/integration/cases/java-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/java-download-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/go-download-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/py-download-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/py-download-zip-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/py-download-pip-function/verify.sh
       expected: expected.data.yaml

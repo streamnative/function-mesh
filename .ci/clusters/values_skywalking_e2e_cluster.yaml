@@ -117,6 +117,8 @@ broker:
     managedLedgerDefaultEnsembleSize: "1"
     managedLedgerDefaultWriteQuorum: "1"
     managedLedgerDefaultAckQuorum: "1"
+    enablePackagesManagement: "true"
+    PULSAR_PREFIX_enablePackagesManagement: "true"
   resources:
     requests:
       memory: 256Mi

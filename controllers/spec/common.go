@@ -340,6 +340,8 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 		fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		"--logging_config_file",
 		"/pulsar/conf/functions-logging/console_logging_config.ini",
+		"--install_usercode_dependencies",
+		"true",
 		// TODO: Maybe we don't need installUserCodeDependencies, dependency_repository, and pythonExtraDependencyRepository
 	}
 	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig)
