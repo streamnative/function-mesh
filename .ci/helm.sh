@@ -137,7 +137,7 @@ function ci::verify_function_mesh() {
         sleep 5s
         kubectl get pods -l name="${FUNCTION_NAME}"
         kubectl logs -l name="${FUNCTION_NAME}" --all-containers=true --tail=50 || true
-        num=$(kubectl logs -lname="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer" | wc -l)
+        num=$(kubectl logs -lname="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer\|Subscribed to topic" | wc -l)
     done
 }
 
@@ -206,46 +206,34 @@ function ci::test_function_runners() {
 }
 
 function ci::verify_go_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 10
-}
-
-function ci::verify_download_go_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-download-go-topic" "persistent://public/default/output-download-go-topic" "test-message" "test-message!" 10
+    ci::verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_java_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 10
-}
-
-function ci::verify_download_java_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-download-java-topic" "persistent://public/default/output-download-java-topic" "test-message" "test-message!" 10
+    ci::verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_python_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 10
-}
-
-function ci::verify_download_python_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-download-python-topic" "persistent://public/default/output-download-python-topic" "test-message" "test-message!" 10
-}
-
-function ci::verify_download_python_zip_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-download-python-zip-topic" "persistent://public/default/output-download-python-zip-topic" "test-message" "test-message!" 10
-}
-
-function ci::verify_download_python_pip_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-download-python-pip-topic" "persistent://public/default/output-download-python-pip-topic" "test-message" "test-message!" 10
+    ci::verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_stateful_function() {
-    ci:verify_wordcount_function "persistent://public/default/python-function-stateful-input-topic" "persistent://public/default/logging-stateful-function-logs" "apple apple apple" "The value is 3" 10
+    ci::verify_wordcount_function "persistent://public/default/python-function-stateful-input-topic" "persistent://public/default/logging-stateful-function-logs" "apple apple apple" "The value is 3" 10
 }
 
 function ci::verify_mesh_function() {
-    ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 10
+    ci::verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 10
 }
 
-function ci:verify_exclamation_function() {
+function ci::verify_sink() {
+    ci::verify_elasticsearch_sink "persistent://public/default/input-sink-topic" "{\"a\":1}" 10
+}
+
+function ci::verify_source() {
+    ci::verify_mongodb_source 10
+}
+
+function ci::verify_exclamation_function() {
     inputtopic=$1
     outputtopic=$2
     inputmessage=$3
@@ -261,7 +249,7 @@ function ci:verify_exclamation_function() {
     return 1
 }
 
-function ci:verify_wordcount_function() {
+function ci::verify_wordcount_function() {
     inputtopic=$1
     outputtopic=$2
     inputmessage=$3
@@ -322,4 +310,28 @@ function ci::verify_functionmesh_reconciliation() {
             find=true
         fi
     done
+}
+
+function ci::verify_elasticsearch_sink() {
+    inputtopic=$1
+    inputmessage=$2
+    timesleep=$3
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
+    sleep "$timesleep"
+    kubectl logs --all-containers=true --tail=-1 quickstart-es-default-0 | grep "creating index"
+    if [ $? -eq 0 ]; then
+        return 0
+    fi
+    return 1
+}
+
+function ci::verify_mongodb_source() {
+    timesleep=$1
+    kubectl exec mongo-dbz-0 -c mongo -- mongo -u debezium -p dbz --authenticationDatabase admin localhost:27017/inventory --eval 'db.products.update({"_id":NumberLong(104)},{$set:{weight:1.25}})'
+    sleep "$timesleep"
+    kubectl logs --all-containers=true --tail=-1 -l name=source-sample | grep "records sent"
+    if [ $? -eq 0 ]; then
+        return 0
+    fi
+    return 1
 }

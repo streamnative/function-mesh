@@ -93,14 +93,12 @@ verify:
   # verify with retry strategy
   retry:
     # max retry count
-    count: 60
+    count: 10
     # the interval between two attempts, e.g. 10s, 1m.
     interval: 10s
   cases:
-      # java function test
     - query: bash .ci/tests/integration/cases/java-function/verify.sh
       expected: expected.data.yaml
-      # reconciliation test
     - query: bash .ci/tests/integration/cases/reconciliation/verify.sh
       expected: expected.data.yaml    
     - query: bash .ci/tests/integration/cases/java-download-function/verify.sh
@@ -112,4 +110,10 @@ verify:
     - query: bash .ci/tests/integration/cases/py-download-zip-function/verify.sh
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/py-download-pip-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/elasticsearch-sink/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/mongodb-source/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/crypto-function/verify.sh
       expected: expected.data.yaml
