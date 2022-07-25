@@ -230,7 +230,7 @@ function ci::verify_sink() {
 }
 
 function ci::verify_source() {
-    ci::verify_mongodb_source 10
+    ci::verify_mongodb_source 30
 }
 
 function ci::verify_exclamation_function() {
