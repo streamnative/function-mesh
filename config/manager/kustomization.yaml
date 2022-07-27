@@ -3,6 +3,6 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- name: controller
+- digest: sha256:095bfca7fa34308d70d56818cfef781db5350163b4d53dde31cbb91f09263b93
+  name: controller
   newName: quay.io/streamnativeio/function-mesh
-  newTag: v0.3.0

@@ -251,11 +251,14 @@ endef
 .PHONY: redhat-certificated-bundle
 redhat-certificated-bundle: yq kustomize manifests
 	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(OPERATOR_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(YQ) eval -i ".metadata.annotations.\"olm.skipRange\" = \"<$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i ".metadata.annotations.createdAt = \"$(BUILD_DATETIME)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
-	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(OPERATOR_IMG)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".spec.relatedImages[0].image = \"$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i '.annotations += {"operators.operatorframework.io.bundle.channel.default.v1":"alpha"}' bundle/metadata/annotations.yaml
+	$(YQ) eval -i '.annotations += {"com.redhat.openshift.versions":"v4.6-v4.8"}' bundle/metadata/annotations.yaml
 	operator-sdk bundle validate ./bundle --select-optional name=operatorhub
 	operator-sdk bundle validate ./bundle --select-optional suite=operatorframework
 

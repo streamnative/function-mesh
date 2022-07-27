@@ -76,4 +76,9 @@ spec:
   provider:
     name: StreamNative
     url: https://streamnative.io
+  relatedImages:
+  - image: streamnative/function-mesh-operator:v0.0.0
+    name: function-mesh
+  - image: docker.cloudsmith.io/streamnative/mirrors/gcr.io/kubebuilder/kube-rbac-proxy@sha256:67ecb332573384515406ebd71816781366b70adb0eb66345e5980e92603373e1
+    name: kube-rbac-proxy
   version: 0.0.0
