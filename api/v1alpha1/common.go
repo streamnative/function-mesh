@@ -306,6 +306,8 @@ type ResourceCondition struct {
 type ResourceConditionType string
 
 const (
+	Orphaned ResourceConditionType = "Orphaned"
+
 	FunctionReady ResourceConditionType = "FunctionReady"
 	SourceReady   ResourceConditionType = "SourceReady"
 	SinkReady     ResourceConditionType = "SinkReady"
@@ -489,4 +491,13 @@ func collectAllInputTopics(inputs InputConf) []string {
 func isValidTopicName(topicName string) error {
 	_, err := pctlutil.GetTopicName(topicName)
 	return err
+}
+
+func CreateCondition(condType ResourceConditionType, status metav1.ConditionStatus, action ReconcileAction) ResourceCondition {
+	condition := ResourceCondition{
+		Condition: condType,
+		Status:    status,
+		Action:    action,
+	}
+	return condition
 }

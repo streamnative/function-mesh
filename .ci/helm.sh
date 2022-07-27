@@ -277,3 +277,49 @@ function ci:verify_wordcount_function() {
     return 1
 }
 
+function ci::verify_functionmesh_reconciliation() {
+    MESH_NAME=$1
+    POSTFIX=$2
+
+    function_name="${MESH_NAME}"-function-"${POSTFIX}"
+    find=false
+    while ! ${find}; do
+        sleep 5s
+        num=$(kubectl get functions.compute.functionmesh.io --no-headers | wc -l)
+        if [[ ${num} -ne 1 ]]; then
+            continue
+        fi
+        kubectl get functions.compute.functionmesh.io "${function_name}" > /dev/null 2>&1 && true
+        if [ $? -eq 0 ]; then
+            find=true
+        fi
+    done
+
+    sink_name="${MESH_NAME}"-sink-"${POSTFIX}"
+    find=false
+    while ! ${find}; do
+        sleep 5s
+        num=$(kubectl get sinks.compute.functionmesh.io --no-headers | wc -l)
+        if [[ ${num} -ne 1 ]]; then
+            continue
+        fi
+        kubectl get sinks.compute.functionmesh.io "${sink_name}" > /dev/null 2>&1 && true
+        if [ $? -eq 0 ]; then
+            find=true
+        fi
+    done
+
+    source_name="${MESH_NAME}"-source-"${POSTFIX}"
+    find=false
+    while ! ${find}; do
+        sleep 5s
+        num=$(kubectl get sources.compute.functionmesh.io --no-headers | wc -l)
+        if [[ ${num} -ne 1 ]]; then
+            continue
+        fi
+        kubectl get sources.compute.functionmesh.io "${source_name}" > /dev/null 2>&1 && true
+        if [ $? -eq 0 ]; then
+            find=true
+        fi
+    done
+}

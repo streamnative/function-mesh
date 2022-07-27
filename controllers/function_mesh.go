@@ -47,7 +47,17 @@ func (r *FunctionMeshReconciler) ObserveFunctionMesh(ctx context.Context, req ct
 }
 
 func (r *FunctionMeshReconciler) observeFunctions(ctx context.Context, mesh *v1alpha1.FunctionMesh) error {
+	orphanedFunctions := map[string]bool{}
+
+	if len(mesh.Status.FunctionConditions) > 0 {
+		for functionName := range mesh.Status.FunctionConditions {
+			orphanedFunctions[functionName] = true
+		}
+	}
+
 	for _, functionSpec := range mesh.Spec.Functions {
+		delete(orphanedFunctions, functionSpec.Name)
+
 		// present the original name to use in Status, but underlying use the complete-name
 		condition, ok := mesh.Status.FunctionConditions[functionSpec.Name]
 		if !ok {
@@ -84,11 +94,30 @@ func (r *FunctionMeshReconciler) observeFunctions(ctx context.Context, mesh *v1a
 		}
 	}
 
+	for functionName, isOrphaned := range orphanedFunctions {
+		if isOrphaned {
+			mesh.Status.FunctionConditions[functionName] = v1alpha1.CreateCondition(
+				v1alpha1.Orphaned,
+				metav1.ConditionTrue,
+				v1alpha1.Delete)
+		}
+	}
+
 	return nil
 }
 
 func (r *FunctionMeshReconciler) observeSources(ctx context.Context, mesh *v1alpha1.FunctionMesh) error {
+	orphanedSources := map[string]bool{}
+
+	if len(mesh.Status.SourceConditions) > 0 {
+		for sourceName := range mesh.Status.SourceConditions {
+			orphanedSources[sourceName] = true
+		}
+	}
+
 	for _, sourceSpec := range mesh.Spec.Sources {
+		delete(orphanedSources, sourceSpec.Name)
+
 		// present the original name to use in Status, but underlying use the complete-name
 		condition, ok := mesh.Status.SourceConditions[sourceSpec.Name]
 		if !ok {
@@ -125,11 +154,29 @@ func (r *FunctionMeshReconciler) observeSources(ctx context.Context, mesh *v1alp
 		}
 	}
 
+	for sourceName, isOrphaned := range orphanedSources {
+		if isOrphaned {
+			mesh.Status.SourceConditions[sourceName] = v1alpha1.CreateCondition(
+				v1alpha1.Orphaned,
+				metav1.ConditionTrue,
+				v1alpha1.Delete)
+		}
+	}
 	return nil
 }
 
 func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha1.FunctionMesh) error {
+	orphanedSinks := map[string]bool{}
+
+	if len(mesh.Status.SinkConditions) > 0 {
+		for sinkName := range mesh.Status.SinkConditions {
+			orphanedSinks[sinkName] = true
+		}
+	}
+
 	for _, sinkSpec := range mesh.Spec.Sinks {
+		delete(orphanedSinks, sinkSpec.Name)
+
 		// present the original name to use in Status, but underlying use the complete-name
 		condition, ok := mesh.Status.SinkConditions[sinkSpec.Name]
 		if !ok {
@@ -166,11 +213,27 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 		}
 	}
 
+	for sinkName, isOrphaned := range orphanedSinks {
+		if isOrphaned {
+			mesh.Status.SinkConditions[sinkName] = v1alpha1.CreateCondition(
+				v1alpha1.Orphaned,
+				metav1.ConditionTrue,
+				v1alpha1.Delete)
+		}
+	}
+
 	return nil
 }
 
 func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctrl.Request,
 	mesh *v1alpha1.FunctionMesh) error {
+	defer func() {
+		err := r.Status().Update(ctx, mesh)
+		if err != nil {
+			r.Log.Error(err, "failed to update mesh status")
+		}
+	}()
+
 	for _, functionSpec := range mesh.Spec.Functions {
 		condition := mesh.Status.FunctionConditions[functionSpec.Name]
 		function := spec.MakeFunctionComponent(makeComponentName(mesh.Name, functionSpec.Name), mesh, &functionSpec)
@@ -195,6 +258,82 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 		if err := r.CreateOrUpdateSink(ctx, sink, sink.Spec); err != nil {
 			r.Log.Error(err, "failed to handle sink", "name", sinkSpec.Name, "action", condition.Action)
 			return err
+		}
+	}
+
+	// handle logic for cleaning up orphaned subcomponents
+	if len(mesh.Spec.Functions) != len(mesh.Status.FunctionConditions) {
+		for functionName, functionCondition := range mesh.Status.FunctionConditions {
+			if functionCondition.Condition == v1alpha1.Orphaned {
+				// clean up the orphaned functions
+				function := &v1alpha1.Function{}
+				if err := r.Get(ctx, types.NamespacedName{
+					Namespace: mesh.Namespace,
+					Name:      makeComponentName(mesh.Name, functionName),
+				}, function); err != nil {
+					if errors.IsNotFound(err) {
+						delete(mesh.Status.FunctionConditions, functionName)
+						continue
+					}
+					r.Log.Error(err, "failed to get orphaned function", "name", functionName)
+					return err
+				}
+				if err := r.Delete(ctx, function); err != nil && !errors.IsNotFound(err) {
+					r.Log.Error(err, "failed to delete orphaned function", "name", functionName)
+					return err
+				}
+				delete(mesh.Status.FunctionConditions, functionName)
+			}
+		}
+	}
+
+	if len(mesh.Spec.Sources) != len(mesh.Status.SourceConditions) {
+		for sourceName, sourceCondition := range mesh.Status.SourceConditions {
+			if sourceCondition.Condition == v1alpha1.Orphaned {
+				// clean up the orphaned sources
+				source := &v1alpha1.Source{}
+				if err := r.Get(ctx, types.NamespacedName{
+					Namespace: mesh.Namespace,
+					Name:      makeComponentName(mesh.Name, sourceName),
+				}, source); err != nil {
+					if errors.IsNotFound(err) {
+						delete(mesh.Status.SourceConditions, sourceName)
+						continue
+					}
+					r.Log.Error(err, "failed to get orphaned source", "name", sourceName)
+					return err
+				}
+				if err := r.Delete(ctx, source); err != nil && !errors.IsNotFound(err) {
+					r.Log.Error(err, "failed to delete orphaned source", "name", sourceName)
+					return err
+				}
+				delete(mesh.Status.SourceConditions, sourceName)
+			}
+		}
+	}
+
+	if len(mesh.Spec.Sinks) != len(mesh.Status.SinkConditions) {
+		for sinkName, sinkCondition := range mesh.Status.SinkConditions {
+			if sinkCondition.Condition == v1alpha1.Orphaned {
+				// clean up the orphaned sinks
+				sink := &v1alpha1.Sink{}
+				if err := r.Get(ctx, types.NamespacedName{
+					Namespace: mesh.Namespace,
+					Name:      makeComponentName(mesh.Name, sinkName),
+				}, sink); err != nil {
+					if errors.IsNotFound(err) {
+						delete(mesh.Status.SinkConditions, sinkName)
+						continue
+					}
+					r.Log.Error(err, "failed to get orphaned sink", "name", sinkName)
+					return err
+				}
+				if err := r.Delete(ctx, sink); err != nil && !errors.IsNotFound(err) {
+					r.Log.Error(err, "failed to delete orphaned sink", "name", sinkName)
+					return err
+				}
+				delete(mesh.Status.SinkConditions, sinkName)
+			}
 		}
 	}
 
