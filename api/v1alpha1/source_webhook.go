@@ -18,6 +18,8 @@
 package v1alpha1
 
 import (
+	"fmt"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -117,6 +119,10 @@ func (r *Source) ValidateCreate() error {
 	var allErrs field.ErrorList
 	var fieldErr *field.Error
 	var fieldErrs []*field.Error
+
+	if len(r.Name) > maxNameLength {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("name"), r.Name, fmt.Sprintf("source name must be no more than %d characters", maxNameLength)))
+	}
 
 	if r.Spec.SourceConfig == nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("sourceConfig"), r.Spec.SourceConfig,
