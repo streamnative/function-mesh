@@ -35,6 +35,12 @@ spec:
         key: "password"
   pulsar:
     pulsarConfig: "test-pulsar"
+    tlsConfig:
+      enabled: false
+      allowInsecure: false
+      hostnameVerification: true
+      certSecretName: sn-platform-tls-broker
+      certSecretKey: ""
     #authConfig: "test-auth"
   java:
     jar: /pulsar/examples/api-examples.jar

@@ -32,6 +32,10 @@ spec:
         key: "password"
   pulsar:
     pulsarConfig: "test-py-pulsar"
+    tlsConfig:
+      enabled: false
+      allowInsecure: true
+      hostnameVerification: true
     #authConfig: "test-auth"
   python:
     py: exclamation_function.py
