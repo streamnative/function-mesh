@@ -501,3 +501,7 @@ func CreateCondition(condType ResourceConditionType, status metav1.ConditionStat
 	}
 	return condition
 }
+
+const (
+	maxNameLength = 43
+)
