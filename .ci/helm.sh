@@ -137,7 +137,7 @@ function ci::verify_function_mesh() {
         sleep 5s
         kubectl get pods -l name="${FUNCTION_NAME}"
         kubectl logs -l name="${FUNCTION_NAME}" --all-containers=true --tail=50 || true
-        num=$(kubectl logs -lname="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer" | wc -l)
+        num=$(kubectl logs -lname="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer\|Subscribed to topic" | wc -l)
     done
 }
 
@@ -206,46 +206,58 @@ function ci::test_function_runners() {
 }
 
 function ci::verify_go_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 10
+    ci::verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_download_go_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-download-go-topic" "persistent://public/default/output-download-go-topic" "test-message" "test-message!" 10
+    ci::verify_exclamation_function "persistent://public/default/input-download-go-topic" "persistent://public/default/output-download-go-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_java_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 10
+    ci::verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_download_java_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-download-java-topic" "persistent://public/default/output-download-java-topic" "test-message" "test-message!" 10
+    ci::verify_exclamation_function "persistent://public/default/input-download-java-topic" "persistent://public/default/output-download-java-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_python_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 10
+    ci::verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_download_python_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-download-python-topic" "persistent://public/default/output-download-python-topic" "test-message" "test-message!" 10
+    ci::verify_exclamation_function "persistent://public/default/input-download-python-topic" "persistent://public/default/output-download-python-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_download_python_zip_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-download-python-zip-topic" "persistent://public/default/output-download-python-zip-topic" "test-message" "test-message!" 10
+    ci::verify_exclamation_function "persistent://public/default/input-download-python-zip-topic" "persistent://public/default/output-download-python-zip-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_download_python_pip_function() {
-    ci:verify_exclamation_function "persistent://public/default/input-download-python-pip-topic" "persistent://public/default/output-download-python-pip-topic" "test-message" "test-message!" 10
+    ci::verify_exclamation_function "persistent://public/default/input-download-python-pip-topic" "persistent://public/default/output-download-python-pip-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_stateful_function() {
-    ci:verify_wordcount_function "persistent://public/default/python-function-stateful-input-topic" "persistent://public/default/logging-stateful-function-logs" "apple apple apple" "The value is 3" 10
+    ci::verify_wordcount_function "persistent://public/default/python-function-stateful-input-topic" "persistent://public/default/logging-stateful-function-logs" "apple apple apple" "The value is 3" 10
 }
 
 function ci::verify_mesh_function() {
-    ci:verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 10
+    ci::verify_exclamation_function "persistent://public/default/functionmesh-input-topic" "persistent://public/default/functionmesh-python-topic" "test-message" "test-message!!!" 10
 }
 
-function ci:verify_exclamation_function() {
+function ci::verify_sink() {
+    ci::verify_elasticsearch_sink "persistent://public/default/input-sink-topic" "{\"a\":1}" 10
+}
+
+function ci::verify_source() {
+    ci::verify_mongodb_source 30
+}
+
+function ci::verify_crypto_function() {
+    ci::verify_function_with_encryption "persistent://public/default/java-function-crypto-input-topic" "persistent://public/default/java-function-crypto-output-topic" "test-message" "test-message!" 10
+}
+
+function ci::verify_exclamation_function() {
     inputtopic=$1
     outputtopic=$2
     inputmessage=$3
@@ -261,7 +273,7 @@ function ci:verify_exclamation_function() {
     return 1
 }
 
-function ci:verify_wordcount_function() {
+function ci::verify_wordcount_function() {
     inputtopic=$1
     outputtopic=$2
     inputmessage=$3
@@ -322,4 +334,58 @@ function ci::verify_functionmesh_reconciliation() {
             find=true
         fi
     done
+}
+
+function ci::verify_elasticsearch_sink() {
+    inputtopic=$1
+    inputmessage=$2
+    timesleep=$3
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
+    sleep "$timesleep"
+    kubectl logs --all-containers=true --tail=-1 quickstart-es-default-0 | grep "creating index"
+    if [ $? -eq 0 ]; then
+        return 0
+    fi
+    return 1
+}
+
+function ci::verify_mongodb_source() {
+    timesleep=$1
+    kubectl exec mongo-dbz-0 -c mongo -- mongo -u debezium -p dbz --authenticationDatabase admin localhost:27017/inventory --eval 'db.products.update({"_id":NumberLong(104)},{$set:{weight:1.25}})'
+    sleep "$timesleep"
+    kubectl logs --all-containers=true --tail=-1 -l name=source-sample | grep "records sent"
+    if [ $? -eq 0 ]; then
+        return 0
+    fi
+    return 1
+}
+
+function ci::verify_function_with_encryption() {
+    inputtopic=$1
+    outputtopic=$2
+    inputmessage=$3
+    outputmessage=$4
+    timesleep=$5
+
+    # correct pubkey
+    correct_pubkey="LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZZd0VBWUhLb1pJemowQ0FRWUZLNEVFQUFvRFFnQUUvZ0cxbko0SHBHVnB0WWR2YjRUWUVCUVRpS3kwSmF1TApqa0FXalpqTE5WVW5JaEtCUkttV1M3cjA1MWU1VHRwdFRvOWZEVDR3L29zMmVTTUhpWVl5dEE9PQotLS0tLUVORCBQVUJMSUMgS0VZLS0tLS0K"
+    # incorrect pubkey
+    incorrect_pubkey="LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQ1hUQ0NBZEFHQnlxR1NNNDlBZ0V3Z2dIREFnRUJNRTBHQnlxR1NNNDlBUUVDUWdILy8vLy8vLy8vLy8vLwovLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vCi8vLy8vLy8vL3pDQm53UkNBZi8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8KLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vOEJFSUFVWlUrdVdHT0hKb2ZrcG9ob0xhRgpRTzZpMm5KYm1iTVY4N2kwaVpHTzhRbmhWaGs1VWV4K2szc1dVc0M5TzdHL0J6VnozNGc5TERUeDcwVWYxR3RRClB3QURGUURRbm9nQUtSeTRVNWJNWnhjNU1vU3FvTnBrdWdTQmhRUUF4b1dPQnJjRUJPbk5uajdMWmlPVnRFS2MKWklFNUJUKzFJZmdvcjJCclRUMjZvVXRlZCsvbldTaitIY0Vub3YrbzNqTklzOEdGYWtLYitYNStNY0xsdldZQgpHRGtwYW5pYU84QUVYSXBmdEN4OUc5bVk5VVJKVjV0RWFCZXZ2UmNuUG1Zc2wrNXltVjcwSmtERlVMa0JQNjBICllUVThjSWFpY3NKQWlMNlVkcC9SWmxBQ1FnSC8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8KLy8vLy8vcFJob2VEdnkrV2EzL01BVWozQ2FYUU83WEp1SW1jUjY2N2I3Y2VrVGhrQ1FJQkFRT0JoZ0FFQWF3QwpXb2NQMTBndWJsb0hkYnJDNnVlSEpzM1VDNVRvbUZWanlCdWIvZHBjRVZ3VGZpOW54R1Jsa3lPZkZvM0NTZnVWCjVidE5wVXZveXhSMG1VZ0FDTWZrQWVzS2JkSkdyWHR5Tk1VTHVKeWtYNDBoSllmNDZRbzc2VlV1UUFCaXRrei8KMjhWNHlTbGcvZHZUbmVkMkIydUtyNHUrUjZzbHVNbWJYYi8xZ0lkUENZcDIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+
+    # incorrect pubkey test
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -ekn "myapp1" -ekv "data:application/x-pem-file;base64,${incorrect_pubkey}" -m "${inputmessage}" -n 1 "${inputtopic}"
+    sleep "$timesleep"
+    kubectl logs --all-containers=true --tail=-1 -l name=java-function-crypto-sample | grep "Message delivery failed since unable to decrypt incoming message"
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -ekn "myapp1" -ekv "data:application/x-pem-file;base64,${correct_pubkey}" -m "${inputmessage}" -n 1 "${inputtopic}"
+    sleep "$timesleep"
+    MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${outputtopic}")
+    echo "$MESSAGE"
+    if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
+        return 0
+    fi
+    return 1
 }
