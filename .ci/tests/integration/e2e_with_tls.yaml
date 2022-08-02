@@ -115,3 +115,9 @@ verify:
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/py-download-pip-function/verify.sh
       expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/elasticsearch-sink/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/mongodb-source/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/crypto-function/verify.sh
+      expected: expected.data.yaml
