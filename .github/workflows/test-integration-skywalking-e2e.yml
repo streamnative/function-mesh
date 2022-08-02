@@ -19,6 +19,8 @@ jobs:
         case:
           - name: integration test
             e2e: ".ci/tests/integration/e2e.yaml"
+          - name: integration test with tls
+            e2e: ".ci/tests/integration/e2e_with_tls.yaml"
     steps:
       - name: clean disk
         run: |

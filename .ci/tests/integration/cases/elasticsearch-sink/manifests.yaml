@@ -16,6 +16,12 @@ spec:
     password: "QqB1OtT6m79vfP7H9H0q2a82"
   pulsar:
     pulsarConfig: "test-sink"
+    tlsConfig:
+      enabled: false
+      allowInsecure: false
+      hostnameVerification: true
+      certSecretName: sn-platform-tls-broker
+      certSecretKey: ""
   resources:
     limits:
       cpu: "0.2"

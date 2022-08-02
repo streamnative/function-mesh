@@ -31,6 +31,12 @@ spec:
     pulsar.service.url: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
   pulsar:
     pulsarConfig: "test-source"
+    tlsConfig:
+      enabled: false
+      allowInsecure: false
+      hostnameVerification: true
+      certSecretName: sn-platform-tls-broker
+      certSecretKey: ""
   image: streamnative/pulsar-io-debezium-mongodb:2.9.2.23
   java:
     jar: connectors/pulsar-io-debezium-mongodb-2.9.2.23.nar
