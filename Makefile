@@ -258,7 +258,7 @@ redhat-certificated-bundle: yq kustomize manifests
 	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i ".spec.relatedImages[0].image = \"$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i '.annotations += {"operators.operatorframework.io.bundle.channel.default.v1":"alpha"}' bundle/metadata/annotations.yaml
-	$(YQ) eval -i '.annotations += {"com.redhat.openshift.versions":"v4.6-v4.8"}' bundle/metadata/annotations.yaml
+	hack/postprocess-bundle.sh
 	operator-sdk bundle validate ./bundle --select-optional name=operatorhub
 	operator-sdk bundle validate ./bundle --select-optional suite=operatorframework
 
