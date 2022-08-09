@@ -83,6 +83,7 @@ jobs:
           kubectl get catalogsource -n olm
           kubectl get catalogsource my-test-catalog -n olm -o yaml
           kubectl get pod -n olm
+          kubectl wait --for=condition=ready pod -l app=netshoot 
           kubectl get packagemanifests | grep function-mesh
 
       - name: Create an OperatorGroup
@@ -100,4 +101,6 @@ jobs:
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
 
-
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: failure()
