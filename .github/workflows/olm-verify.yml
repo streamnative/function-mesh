@@ -92,7 +92,7 @@ jobs:
 
       - name: Create a Subscription
         run: |
-          kubectl apply -f .ci/olm-tests/subs.yaml
+          kubectl apply -f .ci/olm-tests/subs.yml
 
       - name: Verify Operator health
         run: |
