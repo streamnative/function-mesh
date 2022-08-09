@@ -83,7 +83,7 @@ jobs:
           kubectl get catalogsource -n olm
           kubectl get catalogsource my-test-catalog -n olm -o yaml
           kubectl get pod -n olm
-          kubectl -n olm wait --for=condition=ready pod -l olm.catalogSource=my-test-catalog --timeout=90s
+          kubectl -n olm wait --for=condition=ready pod -l olm.catalogSource=my-test-catalog --timeout=600s
           kubectl get catalogsource my-test-catalog -n olm -o yaml
 
       - name: Create an OperatorGroup
@@ -93,11 +93,11 @@ jobs:
       - name: Create a Subscription
         run: |
           kubectl apply -f .ci/olm-tests/subs.yml
-          sleep 30s
+          sleep 60s
 
       - name: Verify Operator health
         run: |
-          kubectl wait deployment/function-mesh-controller-manager --for=condition=Available --timeout=30s
+          kubectl wait deployment/function-mesh-controller-manager --for=condition=Available --timeout=600s
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
