@@ -83,6 +83,7 @@ jobs:
           kubectl get catalogsource -n olm
           kubectl get catalogsource my-test-catalog -n olm -o yaml
           kubectl get pod -n olm
+          sleep 60s
           kubectl -n olm wait --for=condition=ready pod -l olm.catalogSource=my-test-catalog --timeout=600s
           kubectl get catalogsource my-test-catalog -n olm -o yaml
 
