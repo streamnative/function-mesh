@@ -64,6 +64,74 @@ const (
 
 	DefaultRunnerUserID  int64 = 10000
 	DefaultRunnerGroupID int64 = 10001
+
+	JavaLogConfigDirectory     = "/pulsar/conf/java-log/"
+	DefaultJavaLogConfigPath   = JavaLogConfigDirectory + "java_instance_log4j.xml"
+	PythonLogConifgDirectory   = "/pulsar/conf/python-log/"
+	DefaultPythonLogConfigPath = PythonLogConifgDirectory + "python_instance_logging.ini"
+
+	defaultJavaInstanceLog4jXML = `<Configuration>
+    <name>pulsar-functions-kubernetes-instance</name>
+    <monitorInterval>30</monitorInterval>
+    <Properties>
+        <Property>
+            <name>pulsar.log.level</name>
+            <value>INFO</value>
+        </Property>
+        <Property>
+            <name>bk.log.level</name>
+            <value>INFO</value>
+        </Property>
+    </Properties>
+    <Appenders>
+        <Console>
+            <name>Console</name>
+            <target>SYSTEM_OUT</target>
+            <PatternLayout>
+                <Pattern>%d{ISO8601_OFFSET_DATE_TIME_HHMM} [%t] %-5level %logger{36} - %msg%n</Pattern>
+            </PatternLayout>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger>
+            <name>org.apache.pulsar.functions.runtime.shaded.org.apache.bookkeeper</name>
+            <level>\${sys:bk.log.level}</level>
+            <additivity>false</additivity>
+            <AppenderRef>
+                <ref>Console</ref>
+            </AppenderRef>
+        </Logger>
+        <Root>
+            <level>\${sys:pulsar.log.level}</level>
+            <AppenderRef>
+                <ref>Console</ref>
+                <level>\${sys:pulsar.log.level}</level>
+            </AppenderRef>
+        </Root>
+    </Loggers>
+</Configuration>`
+	defaultPythonInstanceLoggingINI = `[loggers]
+keys=root
+
+[handlers]
+keys=stream_handler
+
+[formatters]
+keys=formatter
+
+[logger_root]
+level=INFO
+handlers=stream_handler
+
+[handler_stream_handler]
+class=StreamHandler
+level=INFO
+formatter=formatter
+args=(sys.stdout,)
+
+[formatter_formatter]
+format=[%(asctime)s] [%(levelname)s] %(filename)s: %(message)s
+datefmt=%Y-%m-%d %H:%M:%S %z`
 )
 
 var GRPCPort = corev1.ContainerPort{
@@ -76,6 +144,25 @@ var MetricsPort = corev1.ContainerPort{
 	Name:          "tcp-metrics",
 	ContainerPort: 9094,
 	Protocol:      corev1.ProtocolTCP,
+}
+
+var javaLogLevelMap = map[v1alpha1.LogLevel]string{
+	v1alpha1.LogLevelAll:   "ALL",
+	v1alpha1.LogLevelDebug: "DEBUG",
+	v1alpha1.LogLevelTrace: "TRACE",
+	v1alpha1.LogLevelInfo:  "INFO",
+	v1alpha1.LogLevelWarn:  "WARN",
+	v1alpha1.LogLevelError: "ERROR",
+	v1alpha1.LogLevelFatal: "FATAL",
+	v1alpha1.LogLevelOff:   "OFF",
+}
+
+var pythonLogLevelMap = map[v1alpha1.LogLevel]string{
+	v1alpha1.LogLevelDebug: "DEBUG",
+	v1alpha1.LogLevelInfo:  "INFO",
+	v1alpha1.LogLevelWarn:  "WARNING",
+	v1alpha1.LogLevelError: "ERROR",
+	v1alpha1.LogLevelFatal: "CRITICAL",
 }
 
 type TLSConfig interface {
@@ -170,10 +257,10 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	}
 }
 
-func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, details, memory, extraDependenciesDir, uid string,
+func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig) []string {
-	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
-		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, details,
+	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
+		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
@@ -183,9 +270,9 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, detai
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, details, uid string,
+func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig) []string {
-	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
+	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig), " ")
 	if downloadPath != "" {
@@ -276,6 +363,58 @@ func getDownloadCommand(downloadPath, componentPackage string, authProvided, tls
 	return args
 }
 
+func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
+	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
+		generateConfigFileCommand := []string{
+			"mkdir", "-p", JavaLogConfigDirectory, "&&",
+			"echo", fmt.Sprintf("\"%s\"", defaultJavaInstanceLog4jXML), ">", DefaultJavaLogConfigPath,
+			"&& ",
+		}
+		return strings.Join(generateConfigFileCommand, " ")
+	}
+	return ""
+}
+
+func generatePythonLogConfigCommand(runtime *v1alpha1.PythonRuntime) string {
+	commands := "sed -i.bak 's/^  Log.setLevel/#&/' /pulsar/instances/python-instance/log.py && "
+	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
+		generateConfigFileCommand := []string{
+			"mkdir", "-p", PythonLogConifgDirectory, "&&",
+			"echo", fmt.Sprintf("\"%s\"", defaultPythonInstanceLoggingINI), ">", DefaultPythonLogConfigPath,
+			"&& ",
+		}
+		level := parsePythonLogLevel(runtime)
+		hackCmd := ""
+		if level != "" {
+			hackCmd = fmt.Sprintf("sed -i.bak 's/^level=.*/level=%s/g' %s && ", level, DefaultPythonLogConfigPath)
+		}
+		return commands + strings.Join(generateConfigFileCommand, " ") + hackCmd
+	}
+	return commands
+}
+
+func parseJavaLogLevel(runtime *v1alpha1.JavaRuntime) string {
+	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
+		if level, exist := javaLogLevelMap[runtime.Log.Level]; exist {
+			return level
+		} else {
+			return javaLogLevelMap[v1alpha1.LogLevelInfo]
+		}
+	}
+	return ""
+}
+
+func parsePythonLogLevel(runtime *v1alpha1.PythonRuntime) string {
+	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
+		if level, exist := pythonLogLevelMap[runtime.Log.Level]; exist {
+			return level
+		} else {
+			return pythonLogLevelMap[v1alpha1.LogLevelInfo]
+		}
+	}
+	return ""
+}
+
 // TODO: do a more strict check for the package name https://github.com/streamnative/function-mesh/issues/49
 func hasPackageNamePrefix(packagesName string) bool {
 	return strings.HasPrefix(packagesName, PackageNameFunctionPrefix) ||
@@ -287,7 +426,7 @@ func setShardIDEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
-func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, extraDependenciesDir, uid string,
+func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
@@ -299,13 +438,19 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, details, memory, 
 		"-cp",
 		classPath,
 		fmt.Sprintf("-D%s=%s", FunctionsInstanceClasspath, "/pulsar/lib/*"),
-		"-Dlog4j.configurationFile=kubernetes_instance_log4j2.xml", // todo
+		"-Dlog4j.configurationFile=/pulsar/conf/java-log/java_instance_log4j.xml",
 		"-Dpulsar.function.log.dir=logs/functions",
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		"-Xmx" + memory,
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
 		packageName,
+	}
+	if logLevel != "" {
+		args = append(args,
+			fmt.Sprintf("-Dpulsar.log.level=%s", logLevel),
+			fmt.Sprintf("-Dbk.log.level=%s", logLevel),
+		)
 	}
 	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig)
 	args = append(args, sharedArgs...)
@@ -339,7 +484,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 		"--logging_file",
 		fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		"--logging_config_file",
-		"/pulsar/conf/functions-logging/console_logging_config.ini",
+		DefaultPythonLogConfigPath,
 		"--install_usercode_dependencies",
 		"true",
 		// TODO: Maybe we don't need installUserCodeDependencies, dependency_repository, and pythonExtraDependencyRepository
@@ -576,6 +721,51 @@ func generateContainerEnvFrom(messagingConfig string, authSecret string, tlsSecr
 	return envs
 }
 
+func generateContainerVolumesFromLogConfigs(confs map[int32]string) []corev1.Volume {
+	volumes := []corev1.Volume{}
+	if len(confs) > 0 {
+		if conf, exist := confs[javaRuntimeLog]; exist {
+			javaLogConfigVolume := &corev1.Volume{
+				Name: generateVolumeNameFromLogConfigs(conf, "java"),
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: conf,
+						},
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "config",
+								Path: "java_instance_log4j.xml",
+							},
+						},
+					},
+				},
+			}
+			volumes = append(volumes, *javaLogConfigVolume)
+		}
+		if conf, exist := confs[pythonRuntimeLog]; exist {
+			pythonLogConfigVolume := &corev1.Volume{
+				Name: generateVolumeNameFromLogConfigs(conf, "python"),
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: conf,
+						},
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "config",
+								Path: "python_instance_logging.ini",
+							},
+						},
+					},
+				},
+			}
+			volumes = append(volumes, *pythonLogConfigVolume)
+		}
+	}
+	return volumes
+}
+
 func generateContainerVolumesFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	if len(confs) > 0 {
@@ -634,6 +824,27 @@ func generateVolumeFromTLSConfig(tlsConfig TLSConfig) corev1.Volume {
 	}
 }
 
+func generateVolumeMountFromLogConfigs(confs map[int32]string) []corev1.VolumeMount {
+	volumeMounts := []corev1.VolumeMount{}
+	if len(confs) > 0 {
+		if conf, exist := confs[javaRuntimeLog]; exist {
+			javaLogConfigVolumeMount := &corev1.VolumeMount{
+				Name:      generateVolumeNameFromLogConfigs(conf, "java"),
+				MountPath: JavaLogConfigDirectory,
+			}
+			volumeMounts = append(volumeMounts, *javaLogConfigVolumeMount)
+		}
+		if conf, exist := confs[pythonRuntimeLog]; exist {
+			pythonLogConfigVolumeMount := &corev1.VolumeMount{
+				Name:      generateVolumeNameFromLogConfigs(conf, "python"),
+				MountPath: PythonLogConifgDirectory,
+			}
+			volumeMounts = append(volumeMounts, *pythonLogConfigVolumeMount)
+		}
+	}
+	return volumeMounts
+}
+
 func generateVolumeMountFromCryptoSecret(secret *v1alpha1.CryptoSecret) corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      generateVolumeNameFromCryptoSecrets(secret),
@@ -677,7 +888,7 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 }
 
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig) []corev1.VolumeMount {
+	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, logConfs map[int32]string) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
@@ -685,11 +896,12 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 	}
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)
+	mounts = append(mounts, generateVolumeMountFromLogConfigs(logConfs)...)
 	return mounts
 }
 
 func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig) []corev1.Volume {
+	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, logConf map[int32]string) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	volumes = append(volumes, podVolumes...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
@@ -697,6 +909,7 @@ func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.Produ
 	}
 	volumes = append(volumes, generateContainerVolumesFromProducerConf(producerConf)...)
 	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(consumerConfs)...)
+	volumes = append(volumes, generateContainerVolumesFromLogConfigs(logConf)...)
 	return volumes
 }
 
@@ -810,4 +1023,25 @@ func getDecimalSIMemory(quantity *resource.Quantity) string {
 
 func getTLSTrustCertPath(tlsVolume TLSConfig, path string) string {
 	return fmt.Sprintf("%s/%s", tlsVolume.GetMountPath(), path)
+}
+
+const (
+	javaRuntimeLog = iota
+	pythonRuntimeLog
+	golangRuntimeLog
+)
+
+func getRuntimeLogConfigNames(java *v1alpha1.JavaRuntime, python *v1alpha1.PythonRuntime, golang *v1alpha1.GoRuntime) map[int32]string {
+	logConfMap := map[int32]string{}
+
+	if java != nil && java.Log != nil && java.Log.LogConfig != "" {
+		logConfMap[javaRuntimeLog] = java.Log.LogConfig
+	}
+	if python != nil && python.Log != nil && python.Log.LogConfig != "" {
+		logConfMap[pythonRuntimeLog] = python.Log.LogConfig
+	}
+	if golang != nil && golang.Log != nil && golang.Log.LogConfig != "" {
+		logConfMap[golangRuntimeLog] = golang.Log.LogConfig
+	}
+	return logConfMap
 }

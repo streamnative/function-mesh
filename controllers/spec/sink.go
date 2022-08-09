@@ -100,17 +100,30 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 }
 
 func makeSinkVolumes(sink *v1alpha1.Sink) []corev1.Volume {
-	return generatePodVolumes(sink.Spec.Pod.Volumes, nil, sink.Spec.Input.SourceSpecs, sink.Spec.Pulsar.TLSConfig)
+	return generatePodVolumes(
+		sink.Spec.Pod.Volumes,
+		nil,
+		sink.Spec.Input.SourceSpecs,
+		sink.Spec.Pulsar.TLSConfig,
+		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
 }
 
 func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
-	return generateContainerVolumeMounts(sink.Spec.VolumeMounts, nil, sink.Spec.Input.SourceSpecs, sink.Spec.Pulsar.TLSConfig)
+	return generateContainerVolumeMounts(
+		sink.Spec.VolumeMounts,
+		nil,
+		sink.Spec.Input.SourceSpecs,
+		sink.Spec.Pulsar.TLSConfig,
+		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
 }
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
-		spec.Name, spec.ClusterName, generateSinkDetailsInJSON(sink),
+		spec.Name, spec.ClusterName,
+		generateJavaLogConfigCommand(sink.Spec.Java),
+		parseJavaLogLevel(sink.Spec.Java),
+		generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),
 		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil, spec.Pulsar.TLSConfig)
 }

@@ -201,25 +201,28 @@ type Runtime struct {
 // +kubebuilder:validation:Optional
 type JavaRuntime struct {
 	// +kubebuilder:validation:Required
-	Jar                  string `json:"jar"`
-	JarLocation          string `json:"jarLocation,omitempty"`
-	ExtraDependenciesDir string `json:"extraDependenciesDir,omitempty"`
+	Jar                  string            `json:"jar"`
+	JarLocation          string            `json:"jarLocation,omitempty"`
+	ExtraDependenciesDir string            `json:"extraDependenciesDir,omitempty"`
+	Log                  *RuntimeLogConfig `json:"log,omitempty"`
 }
 
 // PythonRuntime contains the python runtime configs
 // +kubebuilder:validation:Optional
 type PythonRuntime struct {
 	// +kubebuilder:validation:Required
-	Py         string `json:"py"`
-	PyLocation string `json:"pyLocation,omitempty"`
+	Py         string            `json:"py"`
+	PyLocation string            `json:"pyLocation,omitempty"`
+	Log        *RuntimeLogConfig `json:"log,omitempty"`
 }
 
 // GoRuntime contains the golang runtime configs
 // +kubebuilder:validation:Optional
 type GoRuntime struct {
 	// +kubebuilder:validation:Required
-	Go         string `json:"go"`
-	GoLocation string `json:"goLocation,omitempty"`
+	Go         string            `json:"go"`
+	GoLocation string            `json:"goLocation,omitempty"`
+	Log        *RuntimeLogConfig `json:"log,omitempty"`
 }
 
 type SecretRef struct {
@@ -505,3 +508,33 @@ func CreateCondition(condType ResourceConditionType, status metav1.ConditionStat
 const (
 	maxNameLength = 43
 )
+
+const (
+	// LogLevelOff indicates no logging and is only available for the Java runtime
+	LogLevelOff LogLevel = "off"
+	// LogLevelTrace indicates the detailed debugging purposes, available for Python, Go and Java runtime
+	LogLevelTrace LogLevel = "trace"
+	// LogLevelDebug indicates the debugging purposes, available for Python, Go and Java runtime
+	LogLevelDebug LogLevel = "debug"
+	// LogLevelInfo indicates the normal purposes, available for Python, Go and Java runtime
+	LogLevelInfo LogLevel = "info"
+	// LogLevelWarn indicates the unexpected purposes, available for Python, Go and Java runtime
+	LogLevelWarn LogLevel = "warn"
+	// LogLevelError indicates the errors have occurred, available for Python, Go and Java runtime
+	LogLevelError LogLevel = "error"
+	// LogLevelFatal indicates the server is unusable, available for Python, Go and Java runtime
+	LogLevelFatal LogLevel = "fatal"
+	// LogLevelAll indicates that all logs are logged and is only available for the Java runtime
+	LogLevelAll LogLevel = "all"
+	// LogLevelPanic indicates the server is panic and is only available for the Go runtime
+	LogLevelPanic LogLevel = "panic"
+)
+
+// LogLevel describes the level of the logging
+// +kubebuilder:validation:Enum=off;trace;debug;info;warn;error;fatal;all;panic
+type LogLevel string
+
+type RuntimeLogConfig struct {
+	Level     LogLevel `json:"level,omitempty"`
+	LogConfig string   `json:"logConfig,omitempty"`
+}
