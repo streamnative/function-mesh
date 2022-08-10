@@ -45,6 +45,8 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+BUILD_DATETIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
 all: manager
 
 # Run tests
@@ -129,6 +131,8 @@ bundle: yq kustomize manifests
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(YQ) eval -i ".metadata.annotations.\"olm.skipRange\" = \"<$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.createdAt = \"$(BUILD_DATETIME)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(OPERATOR_IMG)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	operator-sdk bundle validate ./bundle
 
 # Build the bundle image.
@@ -166,7 +170,7 @@ ifeq (,$(shell which opm 2>/dev/null))
 	set -e ;\
 	mkdir -p $(dir $(OPM)) ;\
 	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.15.1/$${OS}-$${ARCH}-opm ;\
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.15.3/$${OS}-$${ARCH}-opm ;\
 	chmod +x $(OPM) ;\
 	}
 else
@@ -241,3 +245,39 @@ define go-get-tool
 	fi ;\
 }
 endef
+
+
+# Generate bundle manifests and metadata, then validate generated files.
+.PHONY: redhat-certificated-bundle
+redhat-certificated-bundle: yq kustomize manifests
+	operator-sdk generate kustomize manifests -q
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(YQ) eval -i ".metadata.annotations.\"olm.skipRange\" = \"<$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.createdAt = \"$(BUILD_DATETIME)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".spec.relatedImages[0].image = \"$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i '.annotations += {"operators.operatorframework.io.bundle.channel.default.v1":"alpha"}' bundle/metadata/annotations.yaml
+	hack/postprocess-bundle.sh
+	operator-sdk bundle validate ./bundle --select-optional name=operatorhub
+	operator-sdk bundle validate ./bundle --select-optional suite=operatorframework
+
+# Build the bundle image.
+.PHONY: redhat-certificated-bundle-build
+redhat-certificated-bundle-build:
+	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+.PHONY: redhat-certificated-bundle-push
+redhat-certificated-bundle-push: ## Push the bundle image.
+	echo $(BUNDLE_IMG)
+	$(MAKE) image-push IMG=$(BUNDLE_IMG)
+
+# Build the bundle image.
+.PHONY: redhat-certificated-image-build
+redhat-certificated-image-build:
+	docker build -f redhat.Dockerfile . -t ${OPERATOR_IMG} --build-arg VERSION=${VERSION} --no-cache
+
+.PHONY: redhat-certificated-image-push
+redhat-certificated-image-push: ## Push the bundle image.
+	echo $(OPERATOR_IMG)
+	$(MAKE) image-push IMG=$(OPERATOR_IMG)
