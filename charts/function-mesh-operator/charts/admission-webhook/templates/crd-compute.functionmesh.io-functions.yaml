@@ -84,7 +84,15 @@ spec:
                             - panic
                           type: string
                         logConfig:
-                          type: string
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                          required:
+                            - key
+                            - name
+                          type: object
                       type: object
                   required:
                     - go
@@ -188,7 +196,15 @@ spec:
                             - panic
                           type: string
                         logConfig:
-                          type: string
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                          required:
+                            - key
+                            - name
+                          type: object
                       type: object
                   required:
                     - jar
@@ -2680,7 +2696,15 @@ spec:
                             - panic
                           type: string
                         logConfig:
-                          type: string
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                          required:
+                            - key
+                            - name
+                          type: object
                       type: object
                     py:
                       type: string

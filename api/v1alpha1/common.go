@@ -535,6 +535,11 @@ const (
 type LogLevel string
 
 type RuntimeLogConfig struct {
-	Level     LogLevel `json:"level,omitempty"`
-	LogConfig string   `json:"logConfig,omitempty"`
+	Level     LogLevel   `json:"level,omitempty"`
+	LogConfig *LogConfig `json:"logConfig,omitempty"`
+}
+
+type LogConfig struct {
+	Name string `json:"name"`
+	Key  string `json:"key"`
 }

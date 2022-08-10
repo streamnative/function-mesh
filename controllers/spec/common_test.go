@@ -257,7 +257,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 		producerConf  *v1alpha1.ProducerConfig
 		consumerConfs map[string]v1alpha1.ConsumerConfig
 		trustCert     *v1alpha1.PulsarTLSConfig
-		logConf       map[int32]string
+		logConf       map[int32]*v1alpha1.LogConfig
 	}
 	tests := []struct {
 		name string
@@ -436,9 +436,15 @@ func TestGeneratePodVolumes(t *testing.T) {
 		{
 			name: "generate pod volumes from runtime log configs",
 			args: args{
-				logConf: map[int32]string{
-					javaRuntimeLog:   "test-log-config",
-					pythonRuntimeLog: "test-log-config",
+				logConf: map[int32]*v1alpha1.LogConfig{
+					javaRuntimeLog: &v1alpha1.LogConfig{
+						Name: "test-log-config",
+						Key:  "java-xml",
+					},
+					pythonRuntimeLog: &v1alpha1.LogConfig{
+						Name: "test-log-config",
+						Key:  "python-xml",
+					},
 				},
 			},
 			want: []corev1.Volume{
@@ -451,7 +457,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 							},
 							Items: []corev1.KeyToPath{
 								{
-									Key:  "config",
+									Key:  "java-xml",
 									Path: "java_instance_log4j.xml",
 								},
 							},
@@ -467,7 +473,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 							},
 							Items: []corev1.KeyToPath{
 								{
-									Key:  "config",
+									Key:  "python-xml",
 									Path: "python_instance_logging.ini",
 								},
 							},
@@ -497,7 +503,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		producerConf  *v1alpha1.ProducerConfig
 		consumerConfs map[string]v1alpha1.ConsumerConfig
 		trustCert     *v1alpha1.PulsarTLSConfig
-		logConf       map[int32]string
+		logConf       map[int32]*v1alpha1.LogConfig
 	}
 	tests := []struct {
 		name string
@@ -624,9 +630,15 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		{
 			name: "generate volume mounts from runtime log config",
 			args: args{
-				logConf: map[int32]string{
-					javaRuntimeLog:   "test-log-config",
-					pythonRuntimeLog: "test-log-config",
+				logConf: map[int32]*v1alpha1.LogConfig{
+					javaRuntimeLog: &v1alpha1.LogConfig{
+						Name: "test-log-config",
+						Key:  "java-xml",
+					},
+					pythonRuntimeLog: &v1alpha1.LogConfig{
+						Name: "test-log-config",
+						Key:  "python-xml",
+					},
 				},
 			},
 			want: []corev1.VolumeMount{

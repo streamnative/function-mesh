@@ -66,9 +66,13 @@ const (
 	DefaultRunnerGroupID int64 = 10001
 
 	JavaLogConfigDirectory     = "/pulsar/conf/java-log/"
-	DefaultJavaLogConfigPath   = JavaLogConfigDirectory + "java_instance_log4j.xml"
+	JavaLogConfigFile          = "java_instance_log4j.xml"
+	DefaultJavaLogConfigPath   = JavaLogConfigDirectory + JavaLogConfigFile
 	PythonLogConifgDirectory   = "/pulsar/conf/python-log/"
-	DefaultPythonLogConfigPath = PythonLogConifgDirectory + "python_instance_logging.ini"
+	PythonLogConfigFile        = "python_instance_logging.ini"
+	DefaultPythonLogConfigPath = PythonLogConifgDirectory + PythonLogConfigFile
+
+	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
 
 	defaultJavaInstanceLog4jXML = `<Configuration>
     <name>pulsar-functions-kubernetes-instance</name>
@@ -345,37 +349,33 @@ func getDownloadCommand(downloadPath, componentPackage string, authProvided, tls
 }
 
 func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
-	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
-		generateConfigFileCommand := []string{
-			"mkdir", "-p", JavaLogConfigDirectory, "&&",
-			"echo", fmt.Sprintf("\"%s\"", defaultJavaInstanceLog4jXML), ">", DefaultJavaLogConfigPath,
-			"&& ",
-		}
-		return strings.Join(generateConfigFileCommand, " ")
+	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
+		return ""
 	}
-	return ""
+	generateConfigFileCommand := []string{
+		"mkdir", "-p", JavaLogConfigDirectory, "&&",
+		"echo", fmt.Sprintf("\"%s\"", defaultJavaInstanceLog4jXML), ">", DefaultJavaLogConfigPath,
+		"&& ",
+	}
+	return strings.Join(generateConfigFileCommand, " ")
 }
 
 func generatePythonLogConfigCommand(runtime *v1alpha1.PythonRuntime) string {
 	commands := "sed -i.bak 's/^  Log.setLevel/#&/' /pulsar/instances/python-instance/log.py && "
-	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
-		generateConfigFileCommand := []string{
-			"mkdir", "-p", PythonLogConifgDirectory, "&&",
-			"echo", fmt.Sprintf("\"%s\"", defaultPythonInstanceLoggingINI), ">", DefaultPythonLogConfigPath,
-			"&& ",
-		}
-		level := parsePythonLogLevel(runtime)
-		hackCmd := ""
-		if level != "" {
-			hackCmd = fmt.Sprintf("sed -i.bak 's/^level=.*/level=%s/g' %s && ", level, DefaultPythonLogConfigPath)
-		}
-		return commands + strings.Join(generateConfigFileCommand, " ") + hackCmd
+	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
+		return commands
 	}
-	return commands
-}
-
-func generateGolangLogConfigCommand(runtime *v1alpha1.GoRuntime) string {
-	return fmt.Sprintf("LOGGING_LEVEL=%s", parseGolangLogLevel(runtime))
+	generateConfigFileCommand := []string{
+		"mkdir", "-p", PythonLogConifgDirectory, "&&",
+		"echo", fmt.Sprintf("\"%s\"", defaultPythonInstanceLoggingINI), ">", DefaultPythonLogConfigPath,
+		"&& ",
+	}
+	level := parsePythonLogLevel(runtime)
+	hackCmd := ""
+	if level != "" {
+		hackCmd = fmt.Sprintf("sed -i.bak 's/^level=.*/level=%s/g' %s && ", level, DefaultPythonLogConfigPath)
+	}
+	return commands + strings.Join(generateConfigFileCommand, " ") + hackCmd
 }
 
 func parseJavaLogLevel(runtime *v1alpha1.JavaRuntime) string {
@@ -389,12 +389,11 @@ func parseJavaLogLevel(runtime *v1alpha1.JavaRuntime) string {
 		v1alpha1.LogLevelFatal: "FATAL",
 		v1alpha1.LogLevelOff:   "OFF",
 	}
-	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
+	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == nil {
 		if level, exist := levelMap[runtime.Log.Level]; exist {
 			return level
-		} else {
-			return levelMap[v1alpha1.LogLevelInfo]
 		}
+		return levelMap[v1alpha1.LogLevelInfo]
 	}
 	return ""
 }
@@ -407,34 +406,34 @@ func parsePythonLogLevel(runtime *v1alpha1.PythonRuntime) string {
 		v1alpha1.LogLevelError: "ERROR",
 		v1alpha1.LogLevelFatal: "CRITICAL",
 	}
-	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
+	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == nil {
 		if level, exist := levelMap[runtime.Log.Level]; exist {
 			return level
-		} else {
-			return levelMap[v1alpha1.LogLevelInfo]
 		}
+		return levelMap[v1alpha1.LogLevelInfo]
 	}
 	return ""
 }
 
 func parseGolangLogLevel(runtime *v1alpha1.GoRuntime) string {
-	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
-		var levelMap = map[v1alpha1.LogLevel]string{
-			v1alpha1.LogLevelDebug: "debug",
-			v1alpha1.LogLevelTrace: "trace",
-			v1alpha1.LogLevelInfo:  "info",
-			v1alpha1.LogLevelWarn:  "warn",
-			v1alpha1.LogLevelError: "error",
-			v1alpha1.LogLevelFatal: "fatal",
-			v1alpha1.LogLevelPanic: "panic",
-		}
+	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
+		return ""
+	}
+	var levelMap = map[v1alpha1.LogLevel]string{
+		v1alpha1.LogLevelDebug: "debug",
+		v1alpha1.LogLevelTrace: "trace",
+		v1alpha1.LogLevelInfo:  "info",
+		v1alpha1.LogLevelWarn:  "warn",
+		v1alpha1.LogLevelError: "error",
+		v1alpha1.LogLevelFatal: "fatal",
+		v1alpha1.LogLevelPanic: "panic",
+	}
+	if runtime.Log != nil && runtime.Log.Level != "" {
 		if level, exist := levelMap[runtime.Log.Level]; exist {
 			return level
-		} else {
-			return levelMap[v1alpha1.LogLevelInfo]
 		}
 	}
-	return ""
+	return levelMap[v1alpha1.LogLevelInfo]
 }
 
 // TODO: do a more strict check for the package name https://github.com/streamnative/function-mesh/issues/49
@@ -454,25 +453,29 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
 	}
+	setLogLevel := ""
+	if logLevel != "" {
+		setLogLevel = strings.Join(
+			[]string{
+				fmt.Sprintf("-Dpulsar.log.level=%s", logLevel),
+				fmt.Sprintf("-Dbk.log.level=%s", logLevel),
+			},
+			" ")
+	}
 	args := []string{
 		"exec",
 		"java",
 		"-cp",
 		classPath,
 		fmt.Sprintf("-D%s=%s", FunctionsInstanceClasspath, "/pulsar/lib/*"),
-		"-Dlog4j.configurationFile=/pulsar/conf/java-log/java_instance_log4j.xml",
+		fmt.Sprintf("-Dlog4j.configurationFile=%s", DefaultJavaLogConfigPath),
 		"-Dpulsar.function.log.dir=logs/functions",
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
+		setLogLevel,
 		"-Xmx" + memory,
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
 		packageName,
-	}
-	if logLevel != "" {
-		args = append(args,
-			fmt.Sprintf("-Dpulsar.log.level=%s", logLevel),
-			fmt.Sprintf("-Dbk.log.level=%s", logLevel),
-		)
 	}
 	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig)
 	args = append(args, sharedArgs...)
@@ -634,7 +637,6 @@ func getProcessGoRuntimeArgs(goExecFilePath string, function *v1alpha1.Function)
 		goExecFilePath,
 		"&&",
 		"exec",
-		generateGolangLogConfigCommand(function.Spec.Golang),
 		goExecFilePath,
 		"-instance-conf",
 		"${goFunctionConfigs}",
@@ -695,7 +697,20 @@ func getUserConfig(configs *v1alpha1.Config) string {
 	return string(bytes)
 }
 
-func generateContainerEnv(secrets map[string]v1alpha1.SecretRef, env []corev1.EnvVar) []corev1.EnvVar {
+func generateContainerEnv(function *v1alpha1.Function) []corev1.EnvVar {
+	envs := generateBasicContainerEnv(function.Spec.SecretsMap, function.Spec.Pod.Env)
+
+	// add env to set logging level for Go runtime
+	if level := parseGolangLogLevel(function.Spec.Golang); level != "" {
+		envs = append(envs, corev1.EnvVar{
+			Name:  EnvGoFunctionLogLevel,
+			Value: level,
+		})
+	}
+	return envs
+}
+
+func generateBasicContainerEnv(secrets map[string]v1alpha1.SecretRef, env []corev1.EnvVar) []corev1.EnvVar {
 	vars := []corev1.EnvVar{{
 		Name:      "POD_NAME",
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
@@ -744,21 +759,21 @@ func generateContainerEnvFrom(messagingConfig string, authSecret string, tlsSecr
 	return envs
 }
 
-func generateContainerVolumesFromLogConfigs(confs map[int32]string) []corev1.Volume {
+func generateContainerVolumesFromLogConfigs(confs map[int32]*v1alpha1.LogConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	if len(confs) > 0 {
 		if conf, exist := confs[javaRuntimeLog]; exist {
 			javaLogConfigVolume := &corev1.Volume{
-				Name: generateVolumeNameFromLogConfigs(conf, "java"),
+				Name: generateVolumeNameFromLogConfigs(conf.Name, "java"),
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: conf,
+							Name: conf.Name,
 						},
 						Items: []corev1.KeyToPath{
 							{
-								Key:  "config",
-								Path: "java_instance_log4j.xml",
+								Key:  conf.Key,
+								Path: JavaLogConfigFile,
 							},
 						},
 					},
@@ -768,16 +783,16 @@ func generateContainerVolumesFromLogConfigs(confs map[int32]string) []corev1.Vol
 		}
 		if conf, exist := confs[pythonRuntimeLog]; exist {
 			pythonLogConfigVolume := &corev1.Volume{
-				Name: generateVolumeNameFromLogConfigs(conf, "python"),
+				Name: generateVolumeNameFromLogConfigs(conf.Name, "python"),
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: conf,
+							Name: conf.Name,
 						},
 						Items: []corev1.KeyToPath{
 							{
-								Key:  "config",
-								Path: "python_instance_logging.ini",
+								Key:  conf.Key,
+								Path: PythonLogConfigFile,
 							},
 						},
 					},
@@ -847,19 +862,19 @@ func generateVolumeFromTLSConfig(tlsConfig TLSConfig) corev1.Volume {
 	}
 }
 
-func generateVolumeMountFromLogConfigs(confs map[int32]string) []corev1.VolumeMount {
+func generateVolumeMountFromLogConfigs(confs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{}
 	if len(confs) > 0 {
 		if conf, exist := confs[javaRuntimeLog]; exist {
 			javaLogConfigVolumeMount := &corev1.VolumeMount{
-				Name:      generateVolumeNameFromLogConfigs(conf, "java"),
+				Name:      generateVolumeNameFromLogConfigs(conf.Name, "java"),
 				MountPath: JavaLogConfigDirectory,
 			}
 			volumeMounts = append(volumeMounts, *javaLogConfigVolumeMount)
 		}
 		if conf, exist := confs[pythonRuntimeLog]; exist {
 			pythonLogConfigVolumeMount := &corev1.VolumeMount{
-				Name:      generateVolumeNameFromLogConfigs(conf, "python"),
+				Name:      generateVolumeNameFromLogConfigs(conf.Name, "python"),
 				MountPath: PythonLogConifgDirectory,
 			}
 			volumeMounts = append(volumeMounts, *pythonLogConfigVolumeMount)
@@ -911,7 +926,7 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 }
 
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, logConfs map[int32]string) []corev1.VolumeMount {
+	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, logConfs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
@@ -924,7 +939,7 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 }
 
 func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, logConf map[int32]string) []corev1.Volume {
+	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, logConf map[int32]*v1alpha1.LogConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	volumes = append(volumes, podVolumes...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
@@ -1054,16 +1069,16 @@ const (
 	golangRuntimeLog
 )
 
-func getRuntimeLogConfigNames(java *v1alpha1.JavaRuntime, python *v1alpha1.PythonRuntime, golang *v1alpha1.GoRuntime) map[int32]string {
-	logConfMap := map[int32]string{}
+func getRuntimeLogConfigNames(java *v1alpha1.JavaRuntime, python *v1alpha1.PythonRuntime, golang *v1alpha1.GoRuntime) map[int32]*v1alpha1.LogConfig {
+	logConfMap := map[int32]*v1alpha1.LogConfig{}
 
-	if java != nil && java.Log != nil && java.Log.LogConfig != "" {
+	if java != nil && java.Log != nil && java.Log.LogConfig != nil {
 		logConfMap[javaRuntimeLog] = java.Log.LogConfig
 	}
-	if python != nil && python.Log != nil && python.Log.LogConfig != "" {
+	if python != nil && python.Log != nil && python.Log.LogConfig != nil {
 		logConfMap[pythonRuntimeLog] = python.Log.LogConfig
 	}
-	if golang != nil && golang.Log != nil && golang.Log.LogConfig != "" {
+	if golang != nil && golang.Log != nil && golang.Log.LogConfig != nil {
 		logConfMap[golangRuntimeLog] = golang.Log.LogConfig
 	}
 	return logConfMap
