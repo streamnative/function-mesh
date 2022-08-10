@@ -146,25 +146,6 @@ var MetricsPort = corev1.ContainerPort{
 	Protocol:      corev1.ProtocolTCP,
 }
 
-var javaLogLevelMap = map[v1alpha1.LogLevel]string{
-	v1alpha1.LogLevelAll:   "ALL",
-	v1alpha1.LogLevelDebug: "DEBUG",
-	v1alpha1.LogLevelTrace: "TRACE",
-	v1alpha1.LogLevelInfo:  "INFO",
-	v1alpha1.LogLevelWarn:  "WARN",
-	v1alpha1.LogLevelError: "ERROR",
-	v1alpha1.LogLevelFatal: "FATAL",
-	v1alpha1.LogLevelOff:   "OFF",
-}
-
-var pythonLogLevelMap = map[v1alpha1.LogLevel]string{
-	v1alpha1.LogLevelDebug: "DEBUG",
-	v1alpha1.LogLevelInfo:  "INFO",
-	v1alpha1.LogLevelWarn:  "WARNING",
-	v1alpha1.LogLevelError: "ERROR",
-	v1alpha1.LogLevelFatal: "CRITICAL",
-}
-
 type TLSConfig interface {
 	IsEnabled() bool
 	AllowInsecureConnection() string
@@ -393,23 +374,64 @@ func generatePythonLogConfigCommand(runtime *v1alpha1.PythonRuntime) string {
 	return commands
 }
 
+func generateGolangLogConfigCommand(runtime *v1alpha1.GoRuntime) string {
+	return fmt.Sprintf("LOGGING_LEVEL=%s", parseGolangLogLevel(runtime))
+}
+
 func parseJavaLogLevel(runtime *v1alpha1.JavaRuntime) string {
+	var levelMap = map[v1alpha1.LogLevel]string{
+		v1alpha1.LogLevelAll:   "ALL",
+		v1alpha1.LogLevelDebug: "DEBUG",
+		v1alpha1.LogLevelTrace: "TRACE",
+		v1alpha1.LogLevelInfo:  "INFO",
+		v1alpha1.LogLevelWarn:  "WARN",
+		v1alpha1.LogLevelError: "ERROR",
+		v1alpha1.LogLevelFatal: "FATAL",
+		v1alpha1.LogLevelOff:   "OFF",
+	}
 	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
-		if level, exist := javaLogLevelMap[runtime.Log.Level]; exist {
+		if level, exist := levelMap[runtime.Log.Level]; exist {
 			return level
 		} else {
-			return javaLogLevelMap[v1alpha1.LogLevelInfo]
+			return levelMap[v1alpha1.LogLevelInfo]
 		}
 	}
 	return ""
 }
 
 func parsePythonLogLevel(runtime *v1alpha1.PythonRuntime) string {
+	var levelMap = map[v1alpha1.LogLevel]string{
+		v1alpha1.LogLevelDebug: "DEBUG",
+		v1alpha1.LogLevelInfo:  "INFO",
+		v1alpha1.LogLevelWarn:  "WARNING",
+		v1alpha1.LogLevelError: "ERROR",
+		v1alpha1.LogLevelFatal: "CRITICAL",
+	}
 	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
-		if level, exist := pythonLogLevelMap[runtime.Log.Level]; exist {
+		if level, exist := levelMap[runtime.Log.Level]; exist {
 			return level
 		} else {
-			return pythonLogLevelMap[v1alpha1.LogLevelInfo]
+			return levelMap[v1alpha1.LogLevelInfo]
+		}
+	}
+	return ""
+}
+
+func parseGolangLogLevel(runtime *v1alpha1.GoRuntime) string {
+	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == "" {
+		var levelMap = map[v1alpha1.LogLevel]string{
+			v1alpha1.LogLevelDebug: "debug",
+			v1alpha1.LogLevelTrace: "trace",
+			v1alpha1.LogLevelInfo:  "info",
+			v1alpha1.LogLevelWarn:  "warn",
+			v1alpha1.LogLevelError: "error",
+			v1alpha1.LogLevelFatal: "fatal",
+			v1alpha1.LogLevelPanic: "panic",
+		}
+		if level, exist := levelMap[runtime.Log.Level]; exist {
+			return level
+		} else {
+			return levelMap[v1alpha1.LogLevelInfo]
 		}
 	}
 	return ""
@@ -612,6 +634,7 @@ func getProcessGoRuntimeArgs(goExecFilePath string, function *v1alpha1.Function)
 		goExecFilePath,
 		"&&",
 		"exec",
+		generateGolangLogConfigCommand(function.Spec.Golang),
 		goExecFilePath,
 		"-instance-conf",
 		"${goFunctionConfigs}",
