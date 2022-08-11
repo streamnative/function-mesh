@@ -14,6 +14,7 @@ on:
 jobs:
   integration:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
       matrix:
         case:

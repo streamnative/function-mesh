@@ -443,7 +443,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 					},
 					pythonRuntimeLog: &v1alpha1.LogConfig{
 						Name: "test-log-config",
-						Key:  "python-xml",
+						Key:  "python-ini",
 					},
 				},
 			},
@@ -473,7 +473,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 							},
 							Items: []corev1.KeyToPath{
 								{
-									Key:  "python-xml",
+									Key:  "python-ini",
 									Path: "python_instance_logging.ini",
 								},
 							},
@@ -637,7 +637,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 					},
 					pythonRuntimeLog: &v1alpha1.LogConfig{
 						Name: "test-log-config",
-						Key:  "python-xml",
+						Key:  "python-ini",
 					},
 				},
 			},

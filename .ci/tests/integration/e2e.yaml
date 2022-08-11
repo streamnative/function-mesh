@@ -100,7 +100,7 @@ verify:
     - query: bash .ci/tests/integration/cases/java-function/verify.sh
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/reconciliation/verify.sh
-      expected: expected.data.yaml    
+      expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/java-download-function/verify.sh
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/go-download-function/verify.sh
@@ -116,4 +116,12 @@ verify:
     - query: bash .ci/tests/integration/cases/mongodb-source/verify.sh
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/crypto-function/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/java-log-config/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/java-log-level/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/python-log-config/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/python-log-level/verify.sh
       expected: expected.data.yaml
