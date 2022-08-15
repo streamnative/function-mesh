@@ -73,14 +73,16 @@ func makeFunctionVolumes(function *v1alpha1.Function) []corev1.Volume {
 	return generatePodVolumes(function.Spec.Pod.Volumes,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
-		function.Spec.Pulsar.TLSConfig)
+		function.Spec.Pulsar.TLSConfig,
+		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang))
 }
 
 func makeFunctionVolumeMounts(function *v1alpha1.Function) []corev1.VolumeMount {
 	return generateContainerVolumeMounts(function.Spec.VolumeMounts,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
-		function.Spec.Pulsar.TLSConfig)
+		function.Spec.Pulsar.TLSConfig,
+		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang))
 }
 
 func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
@@ -94,7 +96,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		Image:           getFunctionRunnerImage(&function.Spec),
 		Command:         makeFunctionCommand(function),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
-		Env:             generateContainerEnv(function.Spec.SecretsMap, function.Spec.Pod.Env),
+		Env:             generateContainerEnv(function),
 		Resources:       function.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
@@ -119,7 +121,10 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 	if spec.Java != nil {
 		if spec.Java.Jar != "" {
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
-				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function),
+				spec.Name, spec.ClusterName,
+				generateJavaLogConfigCommand(function.Spec.Java),
+				parseJavaLogLevel(function.Spec.Java),
+				generateFunctionDetailsInJSON(function),
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
 				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig)
@@ -127,7 +132,9 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
-				spec.Name, spec.ClusterName, generateFunctionDetailsInJSON(function), string(function.UID),
+				spec.Name, spec.ClusterName,
+				generatePythonLogConfigCommand(function.Spec.Python),
+				generateFunctionDetailsInJSON(function), string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
 				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig)
 		}

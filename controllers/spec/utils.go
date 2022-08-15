@@ -375,6 +375,10 @@ func getProducerProtoFailureAction(action string) proto.CryptoSpec_FailureAction
 	return proto.CryptoSpec_FAIL
 }
 
+func generateVolumeNameFromLogConfigs(name string, runtime string) string {
+	return sanitizeVolumeName(name + "-" + runtime + "-log-conf")
+}
+
 func generateVolumeNameFromCryptoSecrets(c *v1alpha1.CryptoSecret) string {
 	return sanitizeVolumeName(c.SecretName + "-" + c.SecretKey)
 }

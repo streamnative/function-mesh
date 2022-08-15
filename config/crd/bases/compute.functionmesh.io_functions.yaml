@@ -49,6 +49,31 @@ spec:
                     type: string
                   goLocation:
                     type: string
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                 required:
                 - go
                 type: object
@@ -136,6 +161,31 @@ spec:
                     type: string
                   jarLocation:
                     type: string
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                 required:
                 - jar
                 type: object
@@ -2611,6 +2661,31 @@ spec:
                 type: object
               python:
                 properties:
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                   py:
                     type: string
                   pyLocation:

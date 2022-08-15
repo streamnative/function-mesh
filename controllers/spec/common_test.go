@@ -257,6 +257,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 		producerConf  *v1alpha1.ProducerConfig
 		consumerConfs map[string]v1alpha1.ConsumerConfig
 		trustCert     *v1alpha1.PulsarTLSConfig
+		logConf       map[int32]*v1alpha1.LogConfig
 	}
 	tests := []struct {
 		name string
@@ -432,10 +433,66 @@ func TestGeneratePodVolumes(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "generate pod volumes from runtime log configs",
+			args: args{
+				logConf: map[int32]*v1alpha1.LogConfig{
+					javaRuntimeLog: &v1alpha1.LogConfig{
+						Name: "test-log-config",
+						Key:  "java-xml",
+					},
+					pythonRuntimeLog: &v1alpha1.LogConfig{
+						Name: "test-log-config",
+						Key:  "python-ini",
+					},
+				},
+			},
+			want: []corev1.Volume{
+				{
+					Name: "test-log-config-java-log-conf",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "test-log-config",
+							},
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "java-xml",
+									Path: "java_instance_log4j.xml",
+								},
+							},
+						},
+					},
+				},
+				{
+					Name: "test-log-config-python-log-conf",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "test-log-config",
+							},
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "python-ini",
+									Path: "python_instance_logging.ini",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, generatePodVolumes(tt.args.podVolumes, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert), "generatePodVolumes(%v, %v, %v, %v)", tt.args.podVolumes, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
+			assert.Equalf(t, tt.want,
+				generatePodVolumes(
+					tt.args.podVolumes,
+					tt.args.producerConf,
+					tt.args.consumerConfs,
+					tt.args.trustCert,
+					tt.args.logConf,
+				), "generatePodVolumes(%v, %v, %v, %v)", tt.args.podVolumes, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
 		})
 	}
 }
@@ -446,6 +503,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		producerConf  *v1alpha1.ProducerConfig
 		consumerConfs map[string]v1alpha1.ConsumerConfig
 		trustCert     *v1alpha1.PulsarTLSConfig
+		logConf       map[int32]*v1alpha1.LogConfig
 	}
 	tests := []struct {
 		name string
@@ -569,10 +627,42 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "generate volume mounts from runtime log config",
+			args: args{
+				logConf: map[int32]*v1alpha1.LogConfig{
+					javaRuntimeLog: &v1alpha1.LogConfig{
+						Name: "test-log-config",
+						Key:  "java-xml",
+					},
+					pythonRuntimeLog: &v1alpha1.LogConfig{
+						Name: "test-log-config",
+						Key:  "python-ini",
+					},
+				},
+			},
+			want: []corev1.VolumeMount{
+				{
+					Name:      "test-log-config-java-log-conf",
+					MountPath: "/pulsar/conf/java-log/",
+				},
+				{
+					Name:      "test-log-config-python-log-conf",
+					MountPath: "/pulsar/conf/python-log/",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, generateContainerVolumeMounts(tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert), "generateContainerVolumeMounts(%v, %v, %v, %v)", tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
+			assert.Equalf(t, tt.want,
+				generateContainerVolumeMounts(
+					tt.args.volumeMounts,
+					tt.args.producerConf,
+					tt.args.consumerConfs,
+					tt.args.trustCert,
+					tt.args.logConf,
+				), "generateContainerVolumeMounts(%v, %v, %v, %v)", tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
 		})
 	}
 }
