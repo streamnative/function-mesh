@@ -43,7 +43,7 @@ import (
 var log = logf.Log.WithName("function-resource-test")
 
 const (
-	timeout  = time.Second * 10
+	timeout  = time.Second * 120
 	interval = time.Millisecond * 250
 )
 

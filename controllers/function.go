@@ -19,7 +19,6 @@ package controllers
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
@@ -32,8 +31,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req ctrl.Request,
-	function *v1alpha1.Function) error {
+func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function) error {
 	condition, ok := function.Status.Conditions[v1alpha1.StatefulSet]
 	if !ok {
 		function.Status.Conditions[v1alpha1.StatefulSet] = v1alpha1.ResourceCondition{
@@ -60,10 +58,6 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, req
 			return nil
 		}
 		return err
-	}
-
-	if condition.Status == metav1.ConditionTrue && condition.Action == v1alpha1.NoAction {
-		return nil
 	}
 
 	selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
@@ -197,10 +191,6 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *v
 		return err
 	}
 
-	if condition.Status == metav1.ConditionTrue {
-		return nil
-	}
-
 	if r.checkIfHPANeedUpdate(hpa, function) {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
@@ -239,25 +229,9 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1a
 }
 
 func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet, function *v1alpha1.Function) bool {
-	if *statefulSet.Spec.Replicas != *function.Spec.Replicas {
-		return true
-	}
-	return false
+	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeFunctionStatefulSet(function).Spec)
 }
 
 func (r *FunctionReconciler) checkIfHPANeedUpdate(hpa *autov2beta2.HorizontalPodAutoscaler, function *v1alpha1.Function) bool {
-	if hpa.Spec.MaxReplicas != *function.Spec.MaxReplicas {
-		return true
-	}
-	if !reflect.DeepEqual(hpa.Spec.Metrics, function.Spec.Pod.AutoScalingMetrics) {
-		return true
-	}
-	if function.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior == nil {
-		return true
-	}
-	//if function.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior != nil &&
-	//	!reflect.DeepEqual(*hpa.Spec.Behavior, *function.Spec.Pod.AutoScalingBehavior) {
-	//	return true
-	//}
-	return false
+	return !spec.CheckIfHPASpecIsEqual(&hpa.Spec, &spec.MakeFunctionHPA(function).Spec)
 }

@@ -19,7 +19,6 @@ package controllers
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
@@ -33,10 +32,14 @@ import (
 )
 
 func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, sink *v1alpha1.Sink) error {
-	condition := v1alpha1.ResourceCondition{
-		Condition: v1alpha1.StatefulSetReady,
-		Status:    metav1.ConditionFalse,
-		Action:    v1alpha1.NoAction,
+	condition, ok := sink.Status.Conditions[v1alpha1.StatefulSet]
+	if !ok {
+		sink.Status.Conditions[v1alpha1.StatefulSet] = v1alpha1.ResourceCondition{
+			Condition: v1alpha1.StatefulSetReady,
+			Status:    metav1.ConditionFalse,
+			Action:    v1alpha1.Create,
+		}
+		return nil
 	}
 
 	statefulSet := &appsv1.StatefulSet{}
@@ -55,10 +58,6 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, sink *v1alp
 			return nil
 		}
 		return err
-	}
-
-	if condition.Status == metav1.ConditionTrue && condition.Action == v1alpha1.NoAction {
-		return nil
 	}
 
 	selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
@@ -192,10 +191,6 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, sink *v1alpha1.Sink
 		return err
 	}
 
-	if condition.Status == metav1.ConditionTrue {
-		return nil
-	}
-
 	if r.checkIfHPANeedUpdate(hpa, sink) {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
@@ -234,25 +229,9 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink) 
 }
 
 func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet, sink *v1alpha1.Sink) bool {
-	if *statefulSet.Spec.Replicas != *sink.Spec.Replicas {
-		return true
-	}
-	return false
+	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeSinkStatefulSet(sink).Spec)
 }
 
 func (r *SinkReconciler) checkIfHPANeedUpdate(hpa *autov2beta2.HorizontalPodAutoscaler, sink *v1alpha1.Sink) bool {
-	if hpa.Spec.MaxReplicas != *sink.Spec.MaxReplicas {
-		return true
-	}
-	if !reflect.DeepEqual(hpa.Spec.Metrics, sink.Spec.Pod.AutoScalingMetrics) {
-		return true
-	}
-	if sink.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior == nil {
-		return true
-	}
-	//if sink.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior != nil &&
-	//	!reflect.DeepEqual(*hpa.Spec.Behavior, *sink.Spec.Pod.AutoScalingBehavior) {
-	//	return true
-	//}
-	return false
+	return !spec.CheckIfHPASpecIsEqual(&hpa.Spec, &spec.MakeSinkHPA(sink).Spec)
 }

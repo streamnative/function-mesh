@@ -30,7 +30,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -127,7 +129,7 @@ func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.isSinkGenerationIncreased = false
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Sink{}).
-		Owns(&appsv1.StatefulSet{}).
+		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
 		Complete(r)

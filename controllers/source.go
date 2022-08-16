@@ -19,7 +19,6 @@ package controllers
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
@@ -59,10 +58,6 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, source 
 			return nil
 		}
 		return err
-	}
-
-	if condition.Status == metav1.ConditionTrue && condition.Action == v1alpha1.NoAction {
-		return nil
 	}
 
 	selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
@@ -196,10 +191,6 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, source *v1alpha
 		return err
 	}
 
-	if condition.Status == metav1.ConditionTrue {
-		return nil
-	}
-
 	if r.checkIfHPANeedUpdate(hpa, source) {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
@@ -238,25 +229,9 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.
 }
 
 func (r *SourceReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet, source *v1alpha1.Source) bool {
-	if *statefulSet.Spec.Replicas != *source.Spec.Replicas {
-		return true
-	}
-	return false
+	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeSourceStatefulSet(source).Spec)
 }
 
 func (r *SourceReconciler) checkIfHPANeedUpdate(hpa *autov2beta2.HorizontalPodAutoscaler, source *v1alpha1.Source) bool {
-	if hpa.Spec.MaxReplicas != *source.Spec.MaxReplicas {
-		return true
-	}
-	if !reflect.DeepEqual(hpa.Spec.Metrics, source.Spec.Pod.AutoScalingMetrics) {
-		return true
-	}
-	if source.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior == nil {
-		return true
-	}
-	//if source.Spec.Pod.AutoScalingBehavior != nil && hpa.Spec.Behavior != nil &&
-	//	!reflect.DeepEqual(*hpa.Spec.Behavior, *source.Spec.Pod.AutoScalingBehavior) {
-	//	return true
-	//}
-	return false
+	return !spec.CheckIfHPASpecIsEqual(&hpa.Spec, &spec.MakeSourceHPA(source).Spec)
 }

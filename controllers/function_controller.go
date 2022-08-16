@@ -30,7 +30,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -76,7 +78,7 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		function.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 	}
 
-	err = r.ObserveFunctionStatefulSet(ctx, req, function)
+	err = r.ObserveFunctionStatefulSet(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -129,7 +131,7 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.isFunctionGenerationIncreased = false
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Function{}).
-		Owns(&appsv1.StatefulSet{}).
+		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
 		Owns(&corev1.Secret{}).
