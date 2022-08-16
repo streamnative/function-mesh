@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
@@ -36,8 +37,10 @@ import (
 // FunctionReconciler reconciles a Function object
 type FunctionReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log                           logr.Logger
+	Scheme                        *runtime.Scheme
+	functionGenerations           *sync.Map
+	isFunctionGenerationIncreased bool
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functions,verbs=get;list;watch;create;update;patch;delete
@@ -56,6 +59,7 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	err := r.Get(ctx, req.NamespacedName, function)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			r.functionGenerations.Delete(function.Name)
 			return ctrl.Result{}, nil
 		}
 		r.Log.Error(err, "failed to get function")
@@ -76,11 +80,11 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveFunctionService(ctx, req, function)
+	err = r.ObserveFunctionService(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveFunctionHPA(ctx, req, function)
+	err = r.ObserveFunctionHPA(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -91,23 +95,38 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	r.checkIfFunctionGenerationsIsIncreased(function)
+
 	err = r.ApplyFunctionStatefulSet(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplyFunctionService(ctx, req, function)
+	err = r.ApplyFunctionService(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplyFunctionHPA(ctx, req, function)
+	err = r.ApplyFunctionHPA(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
+	r.functionGenerations.Store(function.Name, function.Generation)
 	return ctrl.Result{}, nil
 }
 
+func (r *FunctionReconciler) checkIfFunctionGenerationsIsIncreased(function *v1alpha1.Function) {
+	r.isFunctionGenerationIncreased = true
+	if lastGeneration, exist := r.functionGenerations.Load(function.Name); exist {
+		if lastGeneration == function.Generation {
+			r.isFunctionGenerationIncreased = false
+		}
+	}
+}
+
 func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// initial function reconciler
+	r.functionGenerations = &sync.Map{}
+	r.isFunctionGenerationIncreased = false
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Function{}).
 		Owns(&appsv1.StatefulSet{}).

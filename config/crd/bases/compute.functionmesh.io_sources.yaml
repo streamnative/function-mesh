@@ -111,6 +111,10 @@ spec:
               maxReplicas:
                 format: int32
                 type: integer
+              minReplicas:
+                format: int32
+                minimum: 1
+                type: integer
               name:
                 type: string
               namespace:
@@ -2606,6 +2610,7 @@ spec:
                 type: object
               replicas:
                 format: int32
+                minimum: 1
                 type: integer
               resources:
                 properties:
@@ -2664,8 +2669,6 @@ spec:
                   - name
                   type: object
                 type: array
-            required:
-            - replicas
             type: object
           status:
             properties:
