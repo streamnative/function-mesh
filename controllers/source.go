@@ -85,9 +85,9 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, source 
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v1alpha1.Source) error {
+func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
 	condition := source.Status.Conditions[v1alpha1.StatefulSet]
-	if condition.Status == metav1.ConditionTrue && !r.isSourceGenerationIncreased {
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
 	desiredStatefulSet := spec.MakeSourceStatefulSet(source)
@@ -139,9 +139,9 @@ func (r *SourceReconciler) ObserveSourceService(ctx context.Context, source *v1a
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alpha1.Source) error {
+func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
 	condition := source.Status.Conditions[v1alpha1.Service]
-	if condition.Status == metav1.ConditionTrue && !r.isSourceGenerationIncreased {
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
 	desiredService := spec.MakeSourceService(source)
@@ -204,13 +204,13 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, source *v1alpha
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.Source) error {
+func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
 	if source.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		return nil
 	}
 	condition := source.Status.Conditions[v1alpha1.HPA]
-	if condition.Status == metav1.ConditionTrue && !r.isSourceGenerationIncreased {
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
 	desiredHPA := spec.MakeSourceHPA(source)

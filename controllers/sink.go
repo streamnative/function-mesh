@@ -85,9 +85,9 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, sink *v1alp
 	return nil
 }
 
-func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha1.Sink) error {
+func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
 	condition := sink.Status.Conditions[v1alpha1.StatefulSet]
-	if condition.Status == metav1.ConditionTrue && !r.isSinkGenerationIncreased {
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
 	desiredStatefulSet := spec.MakeSinkStatefulSet(sink)
@@ -139,9 +139,9 @@ func (r *SinkReconciler) ObserveSinkService(ctx context.Context, sink *v1alpha1.
 	return nil
 }
 
-func (r *SinkReconciler) ApplySinkService(ctx context.Context, sink *v1alpha1.Sink) error {
+func (r *SinkReconciler) ApplySinkService(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
 	condition := sink.Status.Conditions[v1alpha1.Service]
-	if condition.Status == metav1.ConditionTrue && !r.isSinkGenerationIncreased {
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
 	desiredService := spec.MakeSinkService(sink)
@@ -204,13 +204,13 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, sink *v1alpha1.Sink
 	return nil
 }
 
-func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink) error {
+func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
 	if sink.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		return nil
 	}
 	condition := sink.Status.Conditions[v1alpha1.HPA]
-	if condition.Status == metav1.ConditionTrue && !r.isSinkGenerationIncreased {
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
 	desiredHPA := spec.MakeSinkHPA(sink)

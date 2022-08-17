@@ -39,10 +39,9 @@ import (
 // FunctionReconciler reconciles a Function object
 type FunctionReconciler struct {
 	client.Client
-	Log                           logr.Logger
-	Scheme                        *runtime.Scheme
-	functionGenerations           *sync.Map
-	isFunctionGenerationIncreased bool
+	Log                 logr.Logger
+	Scheme              *runtime.Scheme
+	functionGenerations *sync.Map
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functions,verbs=get;list;watch;create;update;patch;delete
@@ -61,7 +60,7 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	err := r.Get(ctx, req.NamespacedName, function)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.functionGenerations.Delete(function.Name)
+			r.functionGenerations.Delete(spec.GetNamespacedName(function, v1alpha1.FunctionComponent))
 			return ctrl.Result{}, nil
 		}
 		r.Log.Error(err, "failed to get function")
@@ -97,38 +96,38 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	r.checkIfFunctionGenerationsIsIncreased(function)
+	isNewGeneration := r.checkIfFunctionGenerationsIsIncreased(function)
 
-	err = r.ApplyFunctionStatefulSet(ctx, function)
+	err = r.ApplyFunctionStatefulSet(ctx, function, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplyFunctionService(ctx, function)
+	err = r.ApplyFunctionService(ctx, function, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplyFunctionHPA(ctx, function)
+	err = r.ApplyFunctionHPA(ctx, function, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	r.functionGenerations.Store(function.Name, function.Generation)
+	r.functionGenerations.Store(spec.GetNamespacedName(function, v1alpha1.FunctionComponent), function.Generation)
 	return ctrl.Result{}, nil
 }
 
-func (r *FunctionReconciler) checkIfFunctionGenerationsIsIncreased(function *v1alpha1.Function) {
-	r.isFunctionGenerationIncreased = true
-	if lastGeneration, exist := r.functionGenerations.Load(function.Name); exist {
+func (r *FunctionReconciler) checkIfFunctionGenerationsIsIncreased(function *v1alpha1.Function) bool {
+	isGenerationsIncreased := true
+	if lastGeneration, exist := r.functionGenerations.Load(spec.GetNamespacedName(function, v1alpha1.FunctionComponent)); exist {
 		if lastGeneration == function.Generation {
-			r.isFunctionGenerationIncreased = false
+			isGenerationsIncreased = false
 		}
 	}
+	return isGenerationsIncreased
 }
 
 func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// initial function reconciler
 	r.functionGenerations = &sync.Map{}
-	r.isFunctionGenerationIncreased = false
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Function{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).

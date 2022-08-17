@@ -39,10 +39,9 @@ import (
 // SinkReconciler reconciles a Topic object
 type SinkReconciler struct {
 	client.Client
-	Log                       logr.Logger
-	Scheme                    *runtime.Scheme
-	sinkGenerations           *sync.Map
-	isSinkGenerationIncreased bool
+	Log             logr.Logger
+	Scheme          *runtime.Scheme
+	sinkGenerations *sync.Map
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sinks,verbs=get;list;watch;create;update;patch;delete
@@ -62,7 +61,7 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
-		r.sinkGenerations.Delete(sink.Name)
+		r.sinkGenerations.Delete(spec.GetNamespacedName(sink, v1alpha1.SinkComponent))
 		r.Log.Error(err, "failed to get sink")
 		return reconcile.Result{}, err
 	}
@@ -95,38 +94,38 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	r.checkIfSinkGenerationsIsIncreased(sink)
+	isNewGeneration := r.checkIfSinkGenerationsIsIncreased(sink)
 
-	err = r.ApplySinkStatefulSet(ctx, sink)
+	err = r.ApplySinkStatefulSet(ctx, sink, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySinkService(ctx, sink)
+	err = r.ApplySinkService(ctx, sink, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySinkHPA(ctx, sink)
+	err = r.ApplySinkHPA(ctx, sink, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	r.sinkGenerations.Store(sink.Name, sink.Generation)
+	r.sinkGenerations.Store(spec.GetNamespacedName(sink, v1alpha1.SinkComponent), sink.Generation)
 	return ctrl.Result{}, nil
 }
 
-func (r *SinkReconciler) checkIfSinkGenerationsIsIncreased(sink *v1alpha1.Sink) {
-	r.isSinkGenerationIncreased = true
-	if lastGeneration, exist := r.sinkGenerations.Load(sink.Name); exist {
+func (r *SinkReconciler) checkIfSinkGenerationsIsIncreased(sink *v1alpha1.Sink) bool {
+	isGenerationsIncreased := true
+	if lastGeneration, exist := r.sinkGenerations.Load(spec.GetNamespacedName(sink, v1alpha1.SinkComponent)); exist {
 		if lastGeneration == sink.Generation {
-			r.isSinkGenerationIncreased = false
+			isGenerationsIncreased = false
 		}
 	}
+	return isGenerationsIncreased
 }
 
 func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// initial sink reconciler
 	r.sinkGenerations = &sync.Map{}
-	r.isSinkGenerationIncreased = false
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Sink{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).

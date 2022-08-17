@@ -85,9 +85,9 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, fun
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function) error {
+func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
 	condition := function.Status.Conditions[v1alpha1.StatefulSet]
-	if condition.Status == metav1.ConditionTrue && !r.isFunctionGenerationIncreased {
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
 	desiredStatefulSet := spec.MakeFunctionStatefulSet(function)
@@ -139,9 +139,9 @@ func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, functio
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function *v1alpha1.Function) error {
+func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
 	condition := function.Status.Conditions[v1alpha1.Service]
-	if condition.Status == metav1.ConditionTrue && !r.isFunctionGenerationIncreased {
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
 	desiredService := spec.MakeFunctionService(function)
@@ -204,13 +204,13 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *v
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1alpha1.Function) error {
+func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
 	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		return nil
 	}
 	condition := function.Status.Conditions[v1alpha1.HPA]
-	if condition.Status == metav1.ConditionTrue && !r.isFunctionGenerationIncreased {
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
 	desiredHPA := spec.MakeFunctionHPA(function)

@@ -43,7 +43,7 @@ import (
 var log = logf.Log.WithName("function-resource-test")
 
 const (
-	timeout  = time.Second * 120
+	timeout  = time.Second * 10
 	interval = time.Millisecond * 250
 )
 
@@ -272,47 +272,32 @@ func createFunction(function *v1alpha1.Function) {
 		log.Info("deleted resource", "namespace", key.Namespace, "name", key.Name, "test",
 			CurrentGinkgoTestDescription().FullTestText)
 
-		statefulsets := new(appsv1.StatefulSetList)
-		err = k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
+		statefulset := new(appsv1.StatefulSet)
+		statefulsetKey := key
+		statefulsetKey.Name = spec.MakeFunctionObjectMeta(function).Name
+		err = k8sClient.Get(context.Background(), statefulsetKey, statefulset)
 		Expect(err).Should(BeNil())
-		for _, item := range statefulsets.Items {
-			log.Info("deleting statefulset resource", "namespace", key.Namespace, "name", key.Name, "test",
-				CurrentGinkgoTestDescription().FullTestText)
-			Expect(k8sClient.Delete(context.Background(), &item)).To(Succeed())
-		}
-		log.Info("waiting for StatefulSet resource to disappear", "namespace", key.Namespace, "name", key.Name, "test",
-			CurrentGinkgoTestDescription().FullTestText)
+		Expect(k8sClient.Delete(context.Background(), statefulset)).To(Succeed())
 		Eventually(func() bool {
-			err := k8sClient.List(context.Background(), statefulsets, client.InNamespace(function.Namespace))
-			log.Info("delete statefulset result", "err", err, "statefulsets", statefulsets)
-			containsFunction := false
-			for _, item := range statefulsets.Items {
-				if item.Name == function.Name {
-					containsFunction = true
-				}
-			}
-			return err == nil && !containsFunction
+			err := k8sClient.Get(context.Background(), statefulsetKey, statefulset)
+			log.Info("delete statefulset result", "err", err, "statefulset", statefulset)
+			return err != nil && strings.Contains(err.Error(), "not found")
 		}, timeout, interval).Should(BeTrue())
 		log.Info("StatefulSet resource deleted", "namespace", key.Namespace, "name", key.Name, "test",
 			CurrentGinkgoTestDescription().FullTestText)
 
-		hpas := new(autov2beta2.HorizontalPodAutoscalerList)
-		err = k8sClient.List(context.Background(), hpas, client.InNamespace(function.Namespace))
+		hpa := new(autov2beta2.HorizontalPodAutoscaler)
+		hpaKey := key
+		hpaKey.Name = spec.MakeFunctionObjectMeta(function).Name
+		err = k8sClient.Get(context.Background(), hpaKey, hpa)
 		Expect(err).Should(BeNil())
-		for _, item := range hpas.Items {
-			log.Info("deleting HPA resource", "namespace", key.Namespace, "name", key.Name, "test",
-				CurrentGinkgoTestDescription().FullTestText)
-			log.Info("deleting HPA", "item", item)
-			Expect(k8sClient.Delete(context.Background(), &item)).To(Succeed())
-		}
-		log.Info("waiting for HPA resource to disappear", "namespace", key.Namespace, "name", key.Name, "test",
-			CurrentGinkgoTestDescription().FullTestText)
+		Expect(k8sClient.Delete(context.Background(), hpa)).To(Succeed())
 		Eventually(func() bool {
-			err := k8sClient.List(context.Background(), hpas, client.InNamespace(function.Namespace))
-			return err == nil && len(hpas.Items) == 0
+			err := k8sClient.Get(context.Background(), hpaKey, hpa)
+			log.Info("delete hpa result", "err", err, "hpa", hpa)
+			return err != nil && strings.Contains(err.Error(), "not found")
 		}, timeout, interval).Should(BeTrue())
 		log.Info("HPA resource deleted", "namespace", key.Namespace, "name", key.Name, "test",
 			CurrentGinkgoTestDescription().FullTestText)
-
 	})
 }
