@@ -50,7 +50,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-verify_log_level_result=$(kubectl logs -l name=python-log-config --tail=-1 | grep "Got a message from topic" 2>&1)
+verify_log_level_result=$(kubectl logs -l compute.functionmesh.io/name=python-log-config --tail=-1 | grep "Got a message from topic" 2>&1)
 if [ $? -eq 0 ]; then
   echo "e2e-test: ok" | yq eval -
 else

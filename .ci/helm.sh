@@ -127,17 +127,17 @@ function ci::verify_function_mesh() {
     while [[ ${num} -lt 1 ]]; do
         sleep 5s
         kubectl get pods
-        num=$(kubectl get pods -l name="${FUNCTION_NAME}" | wc -l)
+        num=$(kubectl get pods -l compute.functionmesh.io/name="${FUNCTION_NAME}" | wc -l)
     done
 
-    kubectl wait -l name="${FUNCTION_NAME}" --for=condition=Ready pod --timeout=2m && true
+    kubectl wait -l compute.functionmesh.io/name="${FUNCTION_NAME}" --for=condition=Ready pod --timeout=2m && true
 
     num=0
     while [[ ${num} -lt 1 ]]; do
         sleep 5s
-        kubectl get pods -l name="${FUNCTION_NAME}"
-        kubectl logs -l name="${FUNCTION_NAME}" --all-containers=true --tail=50 || true
-        num=$(kubectl logs -lname="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer\|Subscribed to topic" | wc -l)
+        kubectl get pods -l compute.functionmesh.io/name="${FUNCTION_NAME}"
+        kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --all-containers=true --tail=50 || true
+        num=$(kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer\|Subscribed to topic" | wc -l)
     done
 }
 
@@ -159,6 +159,7 @@ function ci::verify_hpa() {
     done
 }
 
+# TODO: replace label `name` with `compute.functionmesh.io/name`
 function ci::test_function_runners() {
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-java --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/test-java-input --jar /pulsar/examples/api-examples.jar --cpu 0.1
     function_num=0
@@ -353,7 +354,7 @@ function ci::verify_mongodb_source() {
     timesleep=$1
     kubectl exec mongo-dbz-0 -c mongo -- mongo -u debezium -p dbz --authenticationDatabase admin localhost:27017/inventory --eval 'db.products.update({"_id":NumberLong(104)},{$set:{weight:1.25}})'
     sleep "$timesleep"
-    kubectl logs --all-containers=true --tail=-1 -l name=source-sample | grep "records sent"
+    kubectl logs --all-containers=true --tail=-1 -l compute.functionmesh.io/name=source-sample | grep "records sent"
     if [ $? -eq 0 ]; then
         return 0
     fi
@@ -375,7 +376,7 @@ function ci::verify_function_with_encryption() {
     # incorrect pubkey test
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -ekn "myapp1" -ekv "data:application/x-pem-file;base64,${incorrect_pubkey}" -m "${inputmessage}" -n 1 "${inputtopic}"
     sleep "$timesleep"
-    kubectl logs --all-containers=true --tail=-1 -l name=java-function-crypto-sample | grep "Message delivery failed since unable to decrypt incoming message"
+    kubectl logs --all-containers=true --tail=-1 -l compute.functionmesh.io/name=java-function-crypto-sample | grep "Message delivery failed since unable to decrypt incoming message"
     if [ $? -ne 0 ]; then
         return 1
     fi
