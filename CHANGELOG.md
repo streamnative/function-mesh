@@ -1,3 +1,19 @@
+# Function Mesh v0.5.0 Release Notes
+
+## v0.5.0 What's New
+
+- [Test] Add tests for packages download ([#429](https://github.com/streamnative/function-mesh/pull/429))
+- [Test] refine test cases of the Sink/Source/Crypto function ([#435](https://github.com/streamnative/function-mesh/pull/435))
+- [Test] Use v1.8.2 for cert-manager tests ([#433](https://github.com/streamnative/function-mesh/pull/433))
+- [Helm Charts] Add handle logic for FunctionMesh to clean up orphaned subcomponents ([#431](https://github.com/streamnative/function-mesh/pull/431))
+- [Controller] Add the ability to set logging levels ([#445](https://github.com/streamnative/function-mesh/pull/445))
+- [Controller] Update CSV for openshift ([#417](https://github.com/streamnative/function-mesh/pull/417))
+- [Controller] Add sky-walking workflow for self-signed tls pulsar cluster ([#439](https://github.com/streamnative/function-mesh/pull/439))
+- [Controller] Add a limit to the resource name ([#437](https://github.com/streamnative/function-mesh/pull/437/files))
+- [Function Mesh Worker service] Support subscriptionPosition for function&sink ([#322](https://github.com/streamnative/function-mesh-worker-service/pull/322))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-08+is%3Aclosed).
+
 # Function Mesh v0.4.0 Release Notes
 
 ## v0.4.0 What's New
