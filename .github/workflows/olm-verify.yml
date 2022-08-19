@@ -67,7 +67,7 @@ jobs:
 
       - name: Install the Operator Lifecycle Manager
         run: |
-          operator-sdk olm install
+          operator-sdk olm install --version v0.21.2
           operator-sdk olm status
           kubectl get pods -n olm
 
