@@ -4,7 +4,7 @@
 
 - [Test] Add tests for package download ([#429](https://github.com/streamnative/function-mesh/pull/429))
 - [Test] Refine the test cases of the sinks, sources, and Crypto functions ([#435](https://github.com/streamnative/function-mesh/pull/435))
-- [Test] Use v1.8.2 for cert-manager tests ([#433](https://github.com/streamnative/function-mesh/pull/433))
+- [Test] Use cert-manager v1.8.2 for tests ([#433](https://github.com/streamnative/function-mesh/pull/433))
 - [Helm Charts] Add handle logic for FunctionMesh to clean up orphaned subcomponents ([#431](https://github.com/streamnative/function-mesh/pull/431))
 - [Controller] Add the ability to set logging levels ([#445](https://github.com/streamnative/function-mesh/pull/445))
 - [Controller] Update CSV for openshift ([#417](https://github.com/streamnative/function-mesh/pull/417))
