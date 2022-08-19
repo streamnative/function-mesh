@@ -2,7 +2,7 @@
 
 ## v0.5.0 What's New
 
-- [Test] Add tests for packages download ([#429](https://github.com/streamnative/function-mesh/pull/429))
+- [Test] Add tests for package download ([#429](https://github.com/streamnative/function-mesh/pull/429))
 - [Test] Refine the test cases of the sinks, sources, and Crypto functions ([#435](https://github.com/streamnative/function-mesh/pull/435))
 - [Test] Use v1.8.2 for cert-manager tests ([#433](https://github.com/streamnative/function-mesh/pull/433))
 - [Helm Charts] Add handle logic for FunctionMesh to clean up orphaned subcomponents ([#431](https://github.com/streamnative/function-mesh/pull/431))
