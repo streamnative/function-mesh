@@ -10,7 +10,6 @@
 - [Controller] Update the CSV for OpenShift ([#417](https://github.com/streamnative/function-mesh/pull/417))
 - [Controller] Add the sky-walking workflow for the Pulsar cluster enabled with the self-signed TLS certificate ([#439](https://github.com/streamnative/function-mesh/pull/439))
 - [Controller] Add a limit to the resource name ([#437](https://github.com/streamnative/function-mesh/pull/437/files))
-- [Function Mesh Worker service] Support the `subscriptionPosition` for functions and sinks ([#322](https://github.com/streamnative/function-mesh-worker-service/pull/322))
 
 For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-08+is%3Aclosed).
 
