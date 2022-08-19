@@ -8,7 +8,7 @@
 - [Helm Charts] Add the handle logic for Function Mesh to clean up orphaned subcomponents ([#431](https://github.com/streamnative/function-mesh/pull/431))
 - [Controller] Support setting the logging levels ([#445](https://github.com/streamnative/function-mesh/pull/445))
 - [Controller] Update the CSV for OpenShift ([#417](https://github.com/streamnative/function-mesh/pull/417))
-- [Controller] Add sky-walking workflow for self-signed tls pulsar cluster ([#439](https://github.com/streamnative/function-mesh/pull/439))
+- [Controller] Add the sky-walking workflow for the Pulsar cluster enabled with the self-signed TLS certificate ([#439](https://github.com/streamnative/function-mesh/pull/439))
 - [Controller] Add a limit to the resource name ([#437](https://github.com/streamnative/function-mesh/pull/437/files))
 - [Function Mesh Worker service] Support subscriptionPosition for function&sink ([#322](https://github.com/streamnative/function-mesh-worker-service/pull/322))
 
