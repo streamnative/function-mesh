@@ -106,12 +106,20 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 }
 
 func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
-	labels := make(map[string]string)
-	labels["app"] = AppFunctionMesh
-	labels["component"] = ComponentFunction
-	labels["name"] = function.Name
-	labels["namespace"] = function.Namespace
-
+	jobName := makeJobName(function.Name, v1alpha1.FunctionComponent)
+	labels := map[string]string{
+		"app.kubernetes.io/name":            jobName,
+		"app.kubernetes.io/instance":        jobName,
+		"compute.functionmesh.io/app":       AppFunctionMesh,
+		"compute.functionmesh.io/component": ComponentFunction,
+		"compute.functionmesh.io/name":      function.Name,
+		"compute.functionmesh.io/namespace": function.Namespace,
+		// The following will be deprecated after two releases
+		"app":       AppFunctionMesh,
+		"component": ComponentFunction,
+		"name":      function.Name,
+		"namespace": function.Namespace,
+	}
 	return labels
 }
 

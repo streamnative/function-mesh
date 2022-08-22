@@ -86,11 +86,18 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 }
 
 func makeSourceLabels(source *v1alpha1.Source) map[string]string {
-	labels := make(map[string]string)
-	labels["component"] = ComponentSource
-	labels["name"] = source.Name
-	labels["namespace"] = source.Namespace
-
+	jobName := makeJobName(source.Name, v1alpha1.SourceComponent)
+	labels := map[string]string{
+		"app.kubernetes.io/name":            jobName,
+		"app.kubernetes.io/instance":        jobName,
+		"compute.functionmesh.io/component": ComponentSource,
+		"compute.functionmesh.io/name":      source.Name,
+		"compute.functionmesh.io/namespace": source.Namespace,
+		// The following will be deprecated after two releases
+		"component": ComponentSource,
+		"name":      source.Name,
+		"namespace": source.Namespace,
+	}
 	return labels
 }
 

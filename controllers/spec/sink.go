@@ -91,11 +91,18 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 }
 
 func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
-	labels := make(map[string]string)
-	labels["component"] = ComponentSink
-	labels["name"] = sink.Name
-	labels["namespace"] = sink.Namespace
-
+	jobName := makeJobName(sink.Name, v1alpha1.SinkComponent)
+	labels := map[string]string{
+		"app.kubernetes.io/name":            jobName,
+		"app.kubernetes.io/instance":        jobName,
+		"compute.functionmesh.io/component": ComponentSink,
+		"compute.functionmesh.io/name":      sink.Name,
+		"compute.functionmesh.io/namespace": sink.Namespace,
+		// The following will be deprecated after two releases
+		"component": ComponentSink,
+		"name":      sink.Name,
+		"namespace": sink.Namespace,
+	}
 	return labels
 }
 

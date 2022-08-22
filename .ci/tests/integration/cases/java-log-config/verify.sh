@@ -50,7 +50,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-verify_log_config_result=$(kubectl logs -l name=java-log-config --tail=-1 | grep "Got result: object:" 2>&1)
+verify_log_config_result=$(kubectl logs -l compute.functionmesh.io/name=java-log-config --tail=-1 | grep "Got result: object:" 2>&1)
 if [ $? -eq 0 ]; then
   echo "e2e-test: ok" | yq eval -
 else
