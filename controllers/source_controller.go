@@ -19,7 +19,6 @@ package controllers
 
 import (
 	"context"
-	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
@@ -39,9 +38,8 @@ import (
 // SourceReconciler reconciles a Source object
 type SourceReconciler struct {
 	client.Client
-	Log               logr.Logger
-	Scheme            *runtime.Scheme
-	sourceGenerations *sync.Map
+	Log    logr.Logger
+	Scheme *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sources,verbs=get;list;watch;create;update;patch;delete
@@ -59,7 +57,6 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	err := r.Get(ctx, req.NamespacedName, source)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.sourceGenerations.Delete(spec.GetNamespacedName(source, v1alpha1.SourceComponent))
 			return ctrl.Result{}, nil
 		}
 		r.Log.Error(err, "failed to get source")
@@ -109,23 +106,20 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	r.sourceGenerations.Store(spec.GetNamespacedName(source, v1alpha1.SourceComponent), source.Generation)
+	source.Status.ObservedGeneration = source.Generation
+	err = r.Status().Update(ctx, source)
+	if err != nil {
+		r.Log.Error(err, "failed to update source status")
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 
 func (r *SourceReconciler) checkIfSourceGenerationsIsIncreased(source *v1alpha1.Source) bool {
-	isGenerationsIncreased := true
-	if lastGeneration, exist := r.sourceGenerations.Load(spec.GetNamespacedName(source, v1alpha1.SourceComponent)); exist {
-		if lastGeneration == source.Generation {
-			isGenerationsIncreased = false
-		}
-	}
-	return isGenerationsIncreased
+	return source.Generation != source.Status.ObservedGeneration
 }
 
 func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// initial source reconciler
-	r.sourceGenerations = &sync.Map{}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Source{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).

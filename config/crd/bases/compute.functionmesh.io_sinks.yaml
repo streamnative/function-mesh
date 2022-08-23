@@ -2718,6 +2718,9 @@ spec:
                       type: string
                   type: object
                 type: object
+              observedGeneration:
+                format: int64
+                type: integer
               replicas:
                 format: int32
                 type: integer

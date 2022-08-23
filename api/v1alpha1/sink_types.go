@@ -85,9 +85,10 @@ type SinkSpec struct {
 type SinkStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Conditions map[Component]ResourceCondition `json:"conditions"`
-	Replicas   int32                           `json:"replicas"`
-	Selector   string                          `json:"selector"`
+	Conditions         map[Component]ResourceCondition `json:"conditions"`
+	Replicas           int32                           `json:"replicas"`
+	Selector           string                          `json:"selector"`
+	ObservedGeneration int64                           `json:"observedGeneration,omitempty"`
 }
 
 // +kubebuilder:object:root=true

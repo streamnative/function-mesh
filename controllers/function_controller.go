@@ -19,7 +19,6 @@ package controllers
 
 import (
 	"context"
-	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
@@ -39,9 +38,8 @@ import (
 // FunctionReconciler reconciles a Function object
 type FunctionReconciler struct {
 	client.Client
-	Log                 logr.Logger
-	Scheme              *runtime.Scheme
-	functionGenerations *sync.Map
+	Log    logr.Logger
+	Scheme *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functions,verbs=get;list;watch;create;update;patch;delete
@@ -60,7 +58,6 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	err := r.Get(ctx, req.NamespacedName, function)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.functionGenerations.Delete(spec.GetNamespacedName(function, v1alpha1.FunctionComponent))
 			return ctrl.Result{}, nil
 		}
 		r.Log.Error(err, "failed to get function")
@@ -111,23 +108,20 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	r.functionGenerations.Store(spec.GetNamespacedName(function, v1alpha1.FunctionComponent), function.Generation)
+	function.Status.ObservedGeneration = function.Generation
+	err = r.Status().Update(ctx, function)
+	if err != nil {
+		r.Log.Error(err, "failed to update function status")
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 
 func (r *FunctionReconciler) checkIfFunctionGenerationsIsIncreased(function *v1alpha1.Function) bool {
-	isGenerationsIncreased := true
-	if lastGeneration, exist := r.functionGenerations.Load(spec.GetNamespacedName(function, v1alpha1.FunctionComponent)); exist {
-		if lastGeneration == function.Generation {
-			isGenerationsIncreased = false
-		}
-	}
-	return isGenerationsIncreased
+	return function.Generation != function.Status.ObservedGeneration
 }
 
 func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// initial function reconciler
-	r.functionGenerations = &sync.Map{}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Function{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).

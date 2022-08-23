@@ -19,7 +19,6 @@ package controllers
 
 import (
 	"context"
-	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
@@ -39,9 +38,8 @@ import (
 // SinkReconciler reconciles a Topic object
 type SinkReconciler struct {
 	client.Client
-	Log             logr.Logger
-	Scheme          *runtime.Scheme
-	sinkGenerations *sync.Map
+	Log    logr.Logger
+	Scheme *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sinks,verbs=get;list;watch;create;update;patch;delete
@@ -61,7 +59,6 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
-		r.sinkGenerations.Delete(spec.GetNamespacedName(sink, v1alpha1.SinkComponent))
 		r.Log.Error(err, "failed to get sink")
 		return reconcile.Result{}, err
 	}
@@ -109,23 +106,20 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	r.sinkGenerations.Store(spec.GetNamespacedName(sink, v1alpha1.SinkComponent), sink.Generation)
+	sink.Status.ObservedGeneration = sink.Generation
+	err = r.Status().Update(ctx, sink)
+	if err != nil {
+		r.Log.Error(err, "failed to update sink status")
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 
 func (r *SinkReconciler) checkIfSinkGenerationsIsIncreased(sink *v1alpha1.Sink) bool {
-	isGenerationsIncreased := true
-	if lastGeneration, exist := r.sinkGenerations.Load(spec.GetNamespacedName(sink, v1alpha1.SinkComponent)); exist {
-		if lastGeneration == sink.Generation {
-			isGenerationsIncreased = false
-		}
-	}
-	return isGenerationsIncreased
+	return sink.Generation != sink.Status.ObservedGeneration
 }
 
 func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// initial sink reconciler
-	r.sinkGenerations = &sync.Map{}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Sink{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
