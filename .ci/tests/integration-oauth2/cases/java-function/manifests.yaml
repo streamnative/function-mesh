@@ -1,0 +1,87 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: function-sample
+  namespace: default
+spec:
+  image: streamnative/pulsar-functions-java-sample:2.9.2.23
+  className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+  forwardSourceMessageProperty: true
+  maxPendingAsyncRequests: 1000
+  replicas: 1
+  logTopic: persistent://public/default/logging-function-logs
+  input:
+    topics:
+    - persistent://public/default/input-java-topic
+    typeClassName: java.lang.String
+  output:
+    topic: persistent://public/default/output-java-topic
+    typeClassName: java.lang.String
+  resources:
+    requests:
+      cpu: 50m
+      memory: 1G
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+  pod:
+    volumes:
+      - name: "private-key"
+        secret:
+         secretName: "sn-platform-oauth2-private-key"
+         defaultMode: 0400
+         items:
+           - key: auth.json
+             path: auth.json
+  volumeMounts:
+    - name: "private-key"
+      mountPath: "/mnt/secret/auth.json"
+      subPath: "auth.json"
+  # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
+  secretsMap:
+    "name":
+        path: "test-secret"
+        key: "username"
+    "pwd":
+        path: "test-secret"
+        key: "password"
+  pulsar:
+    pulsarConfig: "test-pulsar"
+    tlsConfig:
+      enabled: false
+      allowInsecure: false
+      hostnameVerification: true
+      certSecretName: sn-platform-tls-broker
+      certSecretKey: ""
+    authSecret: "test-auth"
+  java:
+    jar: /pulsar/examples/api-examples.jar
+  # to be delete & use admission hook
+  clusterName: test
+  autoAck: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
+---
+apiVersion: v1
+kind: Secret
+data:
+  clientAuthenticationPlugin: b3JnLmFwYWNoZS5wdWxzYXIuY2xpZW50LmltcGwuYXV0aC5vYXV0aDIuQXV0aGVudGljYXRpb25PQXV0aDI=
+  clientAuthenticationParameters: eyJwcml2YXRlS2V5IjoiZmlsZTovLy9tbnQvc2VjcmV0L2F1dGguanNvbiIsImlzc3VlclVybCI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0LzA2YThhMDg2LWFlNmUtNDViNS1hMjJlLWFkOTBkZTIzMDEzZS92Mi4wIiwiYXVkaWVuY2UiOiJhcGk6Ly81NmMxYmQxNC0zYmE3LTQ4MDQtYjQ3Yi1kNDZkZTZkY2UzM2UvLmRlZmF1bHQiLCJzY29wZSI6ImFwaTovLzU2YzFiZDE0LTNiYTctNDgwNC1iNDdiLWQ0NmRlNmRjZTMzZS8uZGVmYXVsdCJ9
+metadata:
+  name: test-auth
+type: Opaque
+---
+apiVersion: v1
+data:
+  username: YWRtaW4=
+  password: MWYyZDFlMmU2N2Rm
+kind: Secret
+metadata:
+  name: test-secret
+type: Opaque
