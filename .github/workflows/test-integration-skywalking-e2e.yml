@@ -22,6 +22,8 @@ jobs:
             e2e: ".ci/tests/integration/e2e.yaml"
           - name: integration test with tls
             e2e: ".ci/tests/integration/e2e_with_tls.yaml"
+          - name: integration test with oauth2
+            e2e: ".ci/tests/integration-oauth2/e2e.yaml"
     steps:
       - name: clean disk
         run: |

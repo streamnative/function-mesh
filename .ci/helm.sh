@@ -215,11 +215,21 @@ function ci::verify_download_go_function() {
 }
 
 function ci::verify_java_function() {
-    ci::verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 10
+    authEnabled=$1
+    if [[ "$authEnabled" == "true" ]]; then
+      ci::verify_exclamation_function_with_auth "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 10
+    else
+      ci::verify_exclamation_function "persistent://public/default/input-java-topic" "persistent://public/default/output-java-topic" "test-message" "test-message!" 10
+    fi
 }
 
 function ci::verify_download_java_function() {
+    authEnabled=$1
+    if [[ "$authEnabled" == "true" ]]; then
+    ci::verify_exclamation_function_with_auth "persistent://public/default/input-download-java-topic" "persistent://public/default/output-download-java-topic" "test-message" "test-message!" 10
+    else
     ci::verify_exclamation_function "persistent://public/default/input-download-java-topic" "persistent://public/default/output-download-java-topic" "test-message" "test-message!" 10
+    fi
 }
 
 function ci::verify_python_function() {
@@ -267,6 +277,24 @@ function ci::verify_exclamation_function() {
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
     sleep "$timesleep"
     MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${outputtopic}")
+    echo "$MESSAGE"
+    if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
+        return 0
+    fi
+    return 1
+}
+
+function ci::verify_exclamation_function_with_auth() {
+    inputtopic=$1
+    outputtopic=$2
+    inputmessage=$3
+    outputmessage=$4
+    timesleep=$5
+    command="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-client --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters produce -m \"${inputmessage}\" -n 1 \"${inputtopic}\"'"
+    sh -c "$command"
+    sleep "$timesleep"
+    consumeCommand="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-client --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters consume -n 1 -s "sub" --subscription-position Earliest \"${outputtopic}\"'"
+    MESSAGE=$(sh -c "$consumeCommand")
     echo "$MESSAGE"
     if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
         return 0
