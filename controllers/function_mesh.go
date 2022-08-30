@@ -226,7 +226,7 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 }
 
 func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctrl.Request,
-	mesh *v1alpha1.FunctionMesh) error {
+	mesh *v1alpha1.FunctionMesh, newGeneration bool) error {
 	defer func() {
 		err := r.Status().Update(ctx, mesh)
 		if err != nil {
@@ -236,6 +236,12 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 
 	for _, functionSpec := range mesh.Spec.Functions {
 		condition := mesh.Status.FunctionConditions[functionSpec.Name]
+		if !newGeneration &&
+			functionSpec.MaxReplicas != nil &&
+			condition.Status == metav1.ConditionTrue &&
+			condition.Action == v1alpha1.NoAction {
+			continue
+		}
 		function := spec.MakeFunctionComponent(makeComponentName(mesh.Name, functionSpec.Name), mesh, &functionSpec)
 		if err := r.CreateOrUpdateFunction(ctx, function, function.Spec); err != nil {
 			r.Log.Error(err, "failed to handle function", "name", functionSpec.Name, "action", condition.Action)
@@ -245,6 +251,12 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 
 	for _, sourceSpec := range mesh.Spec.Sources {
 		condition := mesh.Status.SourceConditions[sourceSpec.Name]
+		if !newGeneration &&
+			sourceSpec.MaxReplicas != nil &&
+			condition.Status == metav1.ConditionTrue &&
+			condition.Action == v1alpha1.NoAction {
+			continue
+		}
 		source := spec.MakeSourceComponent(makeComponentName(mesh.Name, sourceSpec.Name), mesh, &sourceSpec)
 		if err := r.CreateOrUpdateSource(ctx, source, source.Spec); err != nil {
 			r.Log.Error(err, "failed to handle soure", "name", sourceSpec.Name, "action", condition.Action)
@@ -254,6 +266,12 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 
 	for _, sinkSpec := range mesh.Spec.Sinks {
 		condition := mesh.Status.SinkConditions[sinkSpec.Name]
+		if !newGeneration &&
+			sinkSpec.MaxReplicas != nil &&
+			condition.Status == metav1.ConditionTrue &&
+			condition.Action == v1alpha1.NoAction {
+			continue
+		}
 		sink := spec.MakeSinkComponent(makeComponentName(mesh.Name, sinkSpec.Name), mesh, &sinkSpec)
 		if err := r.CreateOrUpdateSink(ctx, sink, sink.Spec); err != nil {
 			r.Log.Error(err, "failed to handle sink", "name", sinkSpec.Name, "action", condition.Action)
