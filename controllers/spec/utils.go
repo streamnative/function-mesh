@@ -40,7 +40,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		ClassName:            function.Spec.ClassName,
 		LogTopic:             function.Spec.LogTopic,
 		ProcessingGuarantees: convertProcessingGuarantee(function.Spec.ProcessingGuarantee),
-		UserConfig:           getUserConfig(function.Spec.FuncConfig),
+		UserConfig:           getUserConfig(generateFunctionConfig(function)),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              getBoolFromPtrOrDefault(function.Spec.AutoAck, true),
 		Parallelism:          getInt32FromPtrOrDefault(function.Spec.Replicas, 1),
@@ -62,6 +62,18 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 	}
 
 	return fd
+}
+
+func generateFunctionConfig(function *v1alpha1.Function) *v1alpha1.Config {
+	if function.Spec.WindowConfig != nil {
+		if function.Spec.FuncConfig == nil {
+			function.Spec.FuncConfig = &v1alpha1.Config{
+				Data: map[string]interface{}{},
+			}
+		}
+		function.Spec.FuncConfig.Data["__WINDOWCONFIGS__"] = *function.Spec.WindowConfig
+	}
+	return function.Spec.FuncConfig
 }
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
