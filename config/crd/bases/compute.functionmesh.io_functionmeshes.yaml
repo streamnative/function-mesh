@@ -188,6 +188,15 @@ spec:
                               - key
                               - name
                               type: object
+                            rotatePolicy:
+                              enum:
+                              - CronTriggeringPolicyWithDaily
+                              - CronTriggeringPolicyWithWeekly
+                              - CronTriggeringPolicyWithMonthly
+                              - SizeBasedTriggeringPolicyWith10MB
+                              - SizeBasedTriggeringPolicyWith50MB
+                              - SizeBasedTriggeringPolicyWith100MB
+                              type: string
                           type: object
                       required:
                       - jar
@@ -2944,6 +2953,15 @@ spec:
                               - key
                               - name
                               type: object
+                            rotatePolicy:
+                              enum:
+                              - CronTriggeringPolicyWithDaily
+                              - CronTriggeringPolicyWithWeekly
+                              - CronTriggeringPolicyWithMonthly
+                              - SizeBasedTriggeringPolicyWith10MB
+                              - SizeBasedTriggeringPolicyWith50MB
+                              - SizeBasedTriggeringPolicyWith100MB
+                              type: string
                           type: object
                       required:
                       - jar
@@ -5547,6 +5565,15 @@ spec:
                               - key
                               - name
                               type: object
+                            rotatePolicy:
+                              enum:
+                              - CronTriggeringPolicyWithDaily
+                              - CronTriggeringPolicyWithWeekly
+                              - CronTriggeringPolicyWithMonthly
+                              - SizeBasedTriggeringPolicyWith10MB
+                              - SizeBasedTriggeringPolicyWith50MB
+                              - SizeBasedTriggeringPolicyWith100MB
+                              type: string
                           type: object
                       required:
                       - jar

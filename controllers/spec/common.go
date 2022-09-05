@@ -18,8 +18,10 @@
 package spec
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"reflect"
 	"strconv"
 	"strings"
@@ -74,46 +76,6 @@ const (
 
 	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
 
-	defaultJavaInstanceLog4jXML = `<Configuration>
-    <name>pulsar-functions-kubernetes-instance</name>
-    <monitorInterval>30</monitorInterval>
-    <Properties>
-        <Property>
-            <name>pulsar.log.level</name>
-            <value>INFO</value>
-        </Property>
-        <Property>
-            <name>bk.log.level</name>
-            <value>INFO</value>
-        </Property>
-    </Properties>
-    <Appenders>
-        <Console>
-            <name>Console</name>
-            <target>SYSTEM_OUT</target>
-            <PatternLayout>
-                <Pattern>%d{ISO8601_OFFSET_DATE_TIME_HHMM} [%t] %-5level %logger{36} - %msg%n</Pattern>
-            </PatternLayout>
-        </Console>
-    </Appenders>
-    <Loggers>
-        <Logger>
-            <name>org.apache.pulsar.functions.runtime.shaded.org.apache.bookkeeper</name>
-            <level>\${sys:bk.log.level}</level>
-            <additivity>false</additivity>
-            <AppenderRef>
-                <ref>Console</ref>
-            </AppenderRef>
-        </Logger>
-        <Root>
-            <level>\${sys:pulsar.log.level}</level>
-            <AppenderRef>
-                <ref>Console</ref>
-                <level>\${sys:pulsar.log.level}</level>
-            </AppenderRef>
-        </Root>
-    </Loggers>
-</Configuration>`
 	defaultPythonInstanceLoggingINI = `[loggers]
 keys=root
 
@@ -352,12 +314,63 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return ""
 	}
-	generateConfigFileCommand := []string{
-		"mkdir", "-p", JavaLogConfigDirectory, "&&",
-		"echo", fmt.Sprintf("\"%s\"", defaultJavaInstanceLog4jXML), ">", DefaultJavaLogConfigPath,
-		"&& ",
+	if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime); err == nil {
+		generateConfigFileCommand := []string{
+			"mkdir", "-p", JavaLogConfigDirectory, "&&",
+			"echo", fmt.Sprintf("\"%s\"", log4jXML), ">", DefaultJavaLogConfigPath,
+			"&& ",
+		}
+		return strings.Join(generateConfigFileCommand, " ")
 	}
-	return strings.Join(generateConfigFileCommand, " ")
+	return ""
+}
+
+func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, error) {
+	tmpl := template.Must(template.New("spec").Parse(javaLog4jXMLTemplate))
+	var tpl bytes.Buffer
+	type logConfig struct {
+		RollingEnabled bool
+		Level          string
+		Policy         template.HTML
+		LogFile        string
+	}
+	lc := &logConfig{}
+	lc.Level = string(runtime.Log.Level)
+	if runtime.Log.RotatePolicy != nil {
+		lc.RollingEnabled = true
+		switch *runtime.Log.RotatePolicy {
+		case v1alpha1.CronTriggeringPolicyWithDaily:
+			lc.Policy = template.HTML(`<CronTriggeringPolicy>
+                    <schedule>"0 0 0 \* \* \? \*"</schedule>
+                </CronTriggeringPolicy>`)
+		case v1alpha1.CronTriggeringPolicyWithWeekly:
+			lc.Policy = template.HTML(`<CronTriggeringPolicy>
+                    <schedule>"0 0 0 \? \* 1 *"</schedule>
+                </CronTriggeringPolicy>`)
+		case v1alpha1.CronTriggeringPolicyWithMonthly:
+			lc.Policy = template.HTML(`<CronTriggeringPolicy>
+                    <schedule>"0 0 0 1 \* \? \*"</schedule>
+                </CronTriggeringPolicy>`)
+		case v1alpha1.SizeBasedTriggeringPolicyWith10MB:
+			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
+                    <size>10MB</size>
+                </SizeBasedTriggeringPolicy>`)
+		case v1alpha1.SizeBasedTriggeringPolicyWith50MB:
+			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
+                    <size>50MB</size>
+                </SizeBasedTriggeringPolicy>`)
+		case v1alpha1.SizeBasedTriggeringPolicyWith100MB:
+			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
+                    <size>100MB</size>
+                </SizeBasedTriggeringPolicy>`)
+		}
+	}
+
+	if err := tmpl.Execute(&tpl, lc); err != nil {
+		log.Error(err, "failed to render java instance log4j template")
+		return "", err
+	}
+	return tpl.String(), nil
 }
 
 func generatePythonLogConfigCommand(runtime *v1alpha1.PythonRuntime) string {
