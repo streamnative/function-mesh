@@ -19,6 +19,7 @@ package v1alpha1
 
 import (
 	"encoding/json"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"strconv"
 
 	"fmt"
@@ -217,6 +218,9 @@ type PodPolicy struct {
 	// +optional
 	AutoScalingBehavior *autov2beta2.HorizontalPodAutoscalerBehavior `json:"autoScalingBehavior,omitempty"`
 
+	// VPA indicates whether to enable the VerticalPodAutoscaler, it should not be used with HPA
+	VPA *VPASpec `json:"vpa,omitempty"`
+
 	// Env Environment variables to expose on the pulsar-function containers
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }
@@ -327,6 +331,7 @@ const (
 	StatefulSet Component = "StatefulSet"
 	Service     Component = "Service"
 	HPA         Component = "HorizontalPodAutoscaler"
+	VPA         Component = "VerticalPodAutoscaler"
 )
 
 // The `Status` of a given `Condition` and the `Action` needed to reach the `Status`
@@ -348,6 +353,7 @@ const (
 	StatefulSetReady ResourceConditionType = "StatefulSetReady"
 	ServiceReady     ResourceConditionType = "ServiceReady"
 	HPAReady         ResourceConditionType = "HPAReady"
+	VPAReady         ResourceConditionType = "VPAReady"
 )
 
 type ReconcileAction string
@@ -598,4 +604,16 @@ type WindowConfig struct {
 	MaxLagMs                      *int64  `json:"maxLagMs,omitempty"`
 	WatermarkEmitIntervalMs       *int64  `json:"watermarkEmitIntervalMs,omitempty"`
 	TimestampExtractorClassName   *string `json:"timestampExtractorClassName,omitempty"`
+}
+
+type VPASpec struct {
+	// Describes the rules on how changes are applied to the pods.
+	// If not specified, all fields in the `PodUpdatePolicy` are set to their
+	// default values.
+	// +optional
+	UpdatePolicy *vpav1.PodUpdatePolicy `json:"updatePolicy,omitempty"`
+
+	// Controls how the autoscaler computes recommended resources.
+	// +optional
+	ResourcePolicy *vpav1.PodResourcePolicy `json:"resourcePolicy,omitempty"`
 }

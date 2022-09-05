@@ -154,6 +154,11 @@ func (r *Source) ValidateCreate() error {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
+	if r.Spec.MaxReplicas != nil && r.Spec.Pod.VPA != nil {
+		allErrs = append(allErrs,
+			field.Invalid(field.NewPath("spec").Child("maxReplicas"), r.Spec.Runtime, "you can not enable HPA and VPA at the same time"))
+	}
+
 	fieldErr = validateResourceRequirement(r.Spec.Resources)
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)

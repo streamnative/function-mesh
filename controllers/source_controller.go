@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -47,6 +48,7 @@ type SourceReconciler struct {
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=autoscaling.k8s.io,resources=verticalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
 func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
@@ -84,6 +86,10 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	err = r.ObserveSourceVPA(ctx, source)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	err = r.Status().Update(ctx, source)
 	if err != nil {
@@ -102,6 +108,10 @@ func (r *SourceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 	err = r.ApplySourceHPA(ctx, source, isNewGeneration)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	err = r.ApplySourceVPA(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -125,5 +135,6 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
+		Owns(&vpav1.VerticalPodAutoscaler{}).
 		Complete(r)
 }

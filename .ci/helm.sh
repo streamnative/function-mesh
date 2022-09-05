@@ -232,6 +232,41 @@ function ci::verify_download_java_function() {
     fi
 }
 
+function ci::verify_vpa_java_function() {
+  kubectl wait -l name=function-sample-vpa --for=condition=RecommendationProvided --timeout=5m vpa && true
+  cpu=`kubectl get vpa function-sample-vpa -o jsonpath='{.status.recommendation.containerRecommendations[0].target.cpu}'`
+  memory=`kubectl get vpa function-sample-vpa -o jsonpath='{.status.recommendation.containerRecommendations[0].target.memory}'`
+  resources='{"limits":{"cpu":"'$cpu'","memory":"'$memory'"},"requests":{"cpu":"'$cpu'","memory":"'$memory'"}}'
+  realResource1=`kubectl get pod function-sample-vpa-0 -o jsonpath='{.spec.containers[0].resources}'`
+  retry=10
+  while [[ "$resources" != "$realResource1" ]]; do
+    if [[ $retry -lt 1 ]]; then
+      echo "vpa tests failed"
+      kubectl describe vpa function-sample-vpa
+      exit 1
+    fi
+    sleep 5s
+    realResource1=`kubectl get pod function-sample-vpa-0 -o jsonpath='{.spec.containers[0].resources}'`
+    retry=$((retry - 1))
+  done
+
+  realResource2=`kubectl get pod function-sample-vpa-1 -o jsonpath='{.spec.containers[0].resources}'`
+  retry=10
+  while [[ "$resources" != "$realResource2" ]]; do
+    if [[ $retry -lt 1 ]]; then
+      echo "vpa tests failed"
+      kubectl describe vpa function-sample-vpa
+      exit 1
+    fi
+    sleep 5s
+    realResource2=`kubectl get pod java-function-sample-function-1 -o jsonpath='{.spec.containers[0].resources}'`
+    retry=$((retry - 1))
+  done
+  echo "vpa tests passed"
+
+  ci::verify_exclamation_function "persistent://public/default/input-vpa-java-topic" "persistent://public/default/output-vpa-java-topic" "test-message" "test-message!" 10
+}
+
 function ci::verify_python_function() {
     ci::verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 10
 }

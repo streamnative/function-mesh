@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v0.1.0
+	github.com/go-logr/logr v0.4.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.4.3
 	github.com/onsi/ginkgo v1.14.2
@@ -16,6 +16,7 @@ require (
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6
+	k8s.io/autoscaler/vertical-pod-autoscaler v0.11.0
 	k8s.io/client-go v0.18.6
 	sigs.k8s.io/controller-runtime v0.6.2
 )
@@ -33,7 +34,7 @@ require (
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/go-logr/zapr v0.1.0 // indirect
+	github.com/go-logr/zapr v0.4.0 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/google/go-cmp v0.5.1 // indirect
@@ -82,7 +83,7 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	k8s.io/apiextensions-apiserver v0.18.6 // indirect
 	k8s.io/klog v1.0.0 // indirect
-	k8s.io/klog/v2 v2.0.0 // indirect
+	k8s.io/klog/v2 v2.9.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6 // indirect
 	k8s.io/utils v0.0.0-20200603063816-c1c6865ac451 // indirect
 	sigs.k8s.io/structured-merge-diff/v3 v3.0.0 // indirect

@@ -1446,6 +1446,10 @@ func CheckIfStatefulSetSpecIsEqual(spec *appsv1.StatefulSetSpec, desiredSpec *ap
 					return desiredContainerEnvFrom[i].Prefix < desiredContainerEnvFrom[j].Prefix
 				})
 
+				if desiredContainer.ImagePullPolicy == "" {
+					desiredContainer.ImagePullPolicy = corev1.PullIfNotPresent
+				}
+
 				if !reflect.DeepEqual(container.Command, desiredContainer.Command) ||
 					container.Image != desiredContainer.Image ||
 					container.ImagePullPolicy != desiredContainer.ImagePullPolicy ||

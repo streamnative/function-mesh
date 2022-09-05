@@ -111,6 +111,8 @@ verify:
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/java-function/verify.sh
       expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/java-function-vpa/verify.sh
+      expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/reconciliation/verify.sh
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/java-download-function/verify.sh
