@@ -45,10 +45,11 @@ type FunctionSpec struct {
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
 	// If provided, a default HPA with CPU at average of 80% will be used.
 	// For complex HPA strategies, please refer to Pod.HPAutoscaler.
-	MaxReplicas *int32     `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Input       InputConf  `json:"input,omitempty"`
-	Output      OutputConf `json:"output,omitempty"`
-	LogTopic    string     `json:"logTopic,omitempty"`
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
+
+	Input    InputConf  `json:"input,omitempty"`
+	Output   OutputConf `json:"output,omitempty"`
+	LogTopic string     `json:"logTopic,omitempty"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	FuncConfig   *Config                     `json:"funcConfig,omitempty"`
