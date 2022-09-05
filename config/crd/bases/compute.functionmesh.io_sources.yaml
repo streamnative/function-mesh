@@ -64,6 +64,15 @@ spec:
                         - key
                         - name
                         type: object
+                      rotatePolicy:
+                        enum:
+                        - TimedPolicyWithDaily
+                        - TimedPolicyWithWeekly
+                        - TimedPolicyWithMonthly
+                        - SizedPolicyWith10MB
+                        - SizedPolicyWith50MB
+                        - SizedPolicyWith100MB
+                        type: string
                     type: object
                 required:
                 - go
@@ -106,12 +115,12 @@ spec:
                         type: object
                       rotatePolicy:
                         enum:
-                        - CronTriggeringPolicyWithDaily
-                        - CronTriggeringPolicyWithWeekly
-                        - CronTriggeringPolicyWithMonthly
-                        - SizeBasedTriggeringPolicyWith10MB
-                        - SizeBasedTriggeringPolicyWith50MB
-                        - SizeBasedTriggeringPolicyWith100MB
+                        - TimedPolicyWithDaily
+                        - TimedPolicyWithWeekly
+                        - TimedPolicyWithMonthly
+                        - SizedPolicyWith10MB
+                        - SizedPolicyWith50MB
+                        - SizedPolicyWith100MB
                         type: string
                     type: object
                 required:
@@ -2605,6 +2614,15 @@ spec:
                         - key
                         - name
                         type: object
+                      rotatePolicy:
+                        enum:
+                        - TimedPolicyWithDaily
+                        - TimedPolicyWithWeekly
+                        - TimedPolicyWithMonthly
+                        - SizedPolicyWith10MB
+                        - SizedPolicyWith50MB
+                        - SizedPolicyWith100MB
+                        type: string
                     type: object
                   py:
                     type: string

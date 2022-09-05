@@ -201,28 +201,28 @@ type Runtime struct {
 // +kubebuilder:validation:Optional
 type JavaRuntime struct {
 	// +kubebuilder:validation:Required
-	Jar                  string         `json:"jar"`
-	JarLocation          string         `json:"jarLocation,omitempty"`
-	ExtraDependenciesDir string         `json:"extraDependenciesDir,omitempty"`
-	Log                  *JavaLogConfig `json:"log,omitempty"`
+	Jar                  string            `json:"jar"`
+	JarLocation          string            `json:"jarLocation,omitempty"`
+	ExtraDependenciesDir string            `json:"extraDependenciesDir,omitempty"`
+	Log                  *RuntimeLogConfig `json:"log,omitempty"`
 }
 
 // PythonRuntime contains the python runtime configs
 // +kubebuilder:validation:Optional
 type PythonRuntime struct {
 	// +kubebuilder:validation:Required
-	Py         string           `json:"py"`
-	PyLocation string           `json:"pyLocation,omitempty"`
-	Log        *PythonLogConfig `json:"log,omitempty"`
+	Py         string            `json:"py"`
+	PyLocation string            `json:"pyLocation,omitempty"`
+	Log        *RuntimeLogConfig `json:"log,omitempty"`
 }
 
 // GoRuntime contains the golang runtime configs
 // +kubebuilder:validation:Optional
 type GoRuntime struct {
 	// +kubebuilder:validation:Required
-	Go         string       `json:"go"`
-	GoLocation string       `json:"goLocation,omitempty"`
-	Log        *GoLogConfig `json:"log,omitempty"`
+	Go         string            `json:"go"`
+	GoLocation string            `json:"goLocation,omitempty"`
+	Log        *RuntimeLogConfig `json:"log,omitempty"`
 }
 
 type SecretRef struct {
@@ -534,36 +534,26 @@ const (
 // +kubebuilder:validation:Enum=off;trace;debug;info;warn;error;fatal;all;panic
 type LogLevel string
 
-type JavaLogConfig struct {
-	Level        LogLevel              `json:"level,omitempty"`
-	RotatePolicy *JavaTriggeringPolicy `json:"rotatePolicy,omitempty"`
-	LogConfig    *LogConfig            `json:"logConfig,omitempty"`
+const (
+	TimedPolicyWithDaily   TriggeringPolicy = "TimedPolicyWithDaily"
+	TimedPolicyWithWeekly  TriggeringPolicy = "TimedPolicyWithWeekly"
+	TimedPolicyWithMonthly TriggeringPolicy = "TimedPolicyWithMonthly"
+	SizedPolicyWith10MB    TriggeringPolicy = "SizedPolicyWith10MB"
+	SizedPolicyWith50MB    TriggeringPolicy = "SizedPolicyWith50MB"
+	SizedPolicyWith100MB   TriggeringPolicy = "SizedPolicyWith100MB"
+)
+
+// TriggeringPolicy is using to determine if a rollover should occur.
+// +kubebuilder:validation:Enum=TimedPolicyWithDaily;TimedPolicyWithWeekly;TimedPolicyWithMonthly;SizedPolicyWith10MB;SizedPolicyWith50MB;SizedPolicyWith100MB
+type TriggeringPolicy string
+
+type RuntimeLogConfig struct {
+	Level        LogLevel          `json:"level,omitempty"`
+	RotatePolicy *TriggeringPolicy `json:"rotatePolicy,omitempty"`
+	LogConfig    *LogConfig        `json:"logConfig,omitempty"`
 }
 
 type LogConfig struct {
 	Name string `json:"name"`
 	Key  string `json:"key"`
-}
-
-const (
-	CronTriggeringPolicyWithDaily      JavaTriggeringPolicy = "CronTriggeringPolicyWithDaily"
-	CronTriggeringPolicyWithWeekly     JavaTriggeringPolicy = "CronTriggeringPolicyWithWeekly"
-	CronTriggeringPolicyWithMonthly    JavaTriggeringPolicy = "CronTriggeringPolicyWithMonthly"
-	SizeBasedTriggeringPolicyWith10MB  JavaTriggeringPolicy = "SizeBasedTriggeringPolicyWith10MB"
-	SizeBasedTriggeringPolicyWith50MB  JavaTriggeringPolicy = "SizeBasedTriggeringPolicyWith50MB"
-	SizeBasedTriggeringPolicyWith100MB JavaTriggeringPolicy = "SizeBasedTriggeringPolicyWith100MB"
-)
-
-// JavaTriggeringPolicy is using to determine if a rollover should occur.
-// +kubebuilder:validation:Enum=CronTriggeringPolicyWithDaily;CronTriggeringPolicyWithWeekly;CronTriggeringPolicyWithMonthly;SizeBasedTriggeringPolicyWith10MB;SizeBasedTriggeringPolicyWith50MB;SizeBasedTriggeringPolicyWith100MB
-type JavaTriggeringPolicy string
-
-type PythonLogConfig struct {
-	Level     LogLevel   `json:"level,omitempty"`
-	LogConfig *LogConfig `json:"logConfig,omitempty"`
-}
-
-type GoLogConfig struct {
-	Level     LogLevel   `json:"level,omitempty"`
-	LogConfig *LogConfig `json:"logConfig,omitempty"`
 }

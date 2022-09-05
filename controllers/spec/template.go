@@ -1,6 +1,7 @@
 package spec
 
-const javaLog4jXMLTemplate = `<Configuration>
+const (
+	javaLog4jXMLTemplate = `<Configuration>
     <name>pulsar-functions-kubernetes-instance</name>
     <monitorInterval>30</monitorInterval>
     <Properties>
@@ -62,3 +63,30 @@ const javaLog4jXMLTemplate = `<Configuration>
         </Root>
     </Loggers>
 </Configuration>`
+	pythonLoggingINITemplate = `[loggers]
+keys=root
+
+[handlers]
+keys={{ .Handlers }}
+
+[formatters]
+keys=formatter
+
+[logger_root]
+level={{ .Level }}
+handlers={{ .Handlers }}
+
+{{- if .RollingEnabled }}
+{{ .Policy }}
+{{- end }}
+
+[handler_stream_handler]
+class=StreamHandler
+level={{ .Level }}
+formatter=formatter
+args=(sys.stdout,)
+
+[formatter_formatter]
+format=[%(asctime)s] [%(levelname)s] aa %(filename)s: %(message)s
+datefmt=%Y-%m-%d %H:%M:%S %z`
+)

@@ -75,29 +75,6 @@ const (
 	DefaultPythonLogConfigPath = PythonLogConifgDirectory + PythonLogConfigFile
 
 	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
-
-	defaultPythonInstanceLoggingINI = `[loggers]
-keys=root
-
-[handlers]
-keys=stream_handler
-
-[formatters]
-keys=formatter
-
-[logger_root]
-level=INFO
-handlers=stream_handler
-
-[handler_stream_handler]
-class=StreamHandler
-level=INFO
-formatter=formatter
-args=(sys.stdout,)
-
-[formatter_formatter]
-format=[%(asctime)s] [%(levelname)s] %(filename)s: %(message)s
-datefmt=%Y-%m-%d %H:%M:%S %z`
 )
 
 var GRPCPort = corev1.ContainerPort{
@@ -332,34 +309,33 @@ func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, 
 		RollingEnabled bool
 		Level          string
 		Policy         template.HTML
-		LogFile        string
 	}
 	lc := &logConfig{}
 	lc.Level = string(runtime.Log.Level)
 	if runtime.Log.RotatePolicy != nil {
 		lc.RollingEnabled = true
 		switch *runtime.Log.RotatePolicy {
-		case v1alpha1.CronTriggeringPolicyWithDaily:
+		case v1alpha1.TimedPolicyWithDaily:
 			lc.Policy = template.HTML(`<CronTriggeringPolicy>
                     <schedule>"0 0 0 \* \* \? \*"</schedule>
                 </CronTriggeringPolicy>`)
-		case v1alpha1.CronTriggeringPolicyWithWeekly:
+		case v1alpha1.TimedPolicyWithWeekly:
 			lc.Policy = template.HTML(`<CronTriggeringPolicy>
                     <schedule>"0 0 0 \? \* 1 *"</schedule>
                 </CronTriggeringPolicy>`)
-		case v1alpha1.CronTriggeringPolicyWithMonthly:
+		case v1alpha1.TimedPolicyWithMonthly:
 			lc.Policy = template.HTML(`<CronTriggeringPolicy>
                     <schedule>"0 0 0 1 \* \? \*"</schedule>
                 </CronTriggeringPolicy>`)
-		case v1alpha1.SizeBasedTriggeringPolicyWith10MB:
+		case v1alpha1.SizedPolicyWith10MB:
 			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
                     <size>10MB</size>
                 </SizeBasedTriggeringPolicy>`)
-		case v1alpha1.SizeBasedTriggeringPolicyWith50MB:
+		case v1alpha1.SizedPolicyWith50MB:
 			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
                     <size>50MB</size>
                 </SizeBasedTriggeringPolicy>`)
-		case v1alpha1.SizeBasedTriggeringPolicyWith100MB:
+		case v1alpha1.SizedPolicyWith100MB:
 			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
                     <size>100MB</size>
                 </SizeBasedTriggeringPolicy>`)
@@ -373,22 +349,92 @@ func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, 
 	return tpl.String(), nil
 }
 
-func generatePythonLogConfigCommand(runtime *v1alpha1.PythonRuntime) string {
+func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime) string {
 	commands := "sed -i.bak 's/^  Log.setLevel/#&/' /pulsar/instances/python-instance/log.py && "
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return commands
 	}
-	generateConfigFileCommand := []string{
-		"mkdir", "-p", PythonLogConifgDirectory, "&&",
-		"echo", fmt.Sprintf("\"%s\"", defaultPythonInstanceLoggingINI), ">", DefaultPythonLogConfigPath,
-		"&& ",
+	if loggingINI, err := renderPythonInstanceLoggingINITemplate(name, runtime); err == nil {
+		generateConfigFileCommand := []string{
+			"mkdir", "-p", PythonLogConifgDirectory, "logs/functions", "&&",
+			"echo", fmt.Sprintf("\"%s\"", loggingINI), ">", DefaultPythonLogConfigPath,
+			"&& ",
+		}
+		level := parsePythonLogLevel(runtime)
+		hackCmd := ""
+		if level != "" {
+			hackCmd = fmt.Sprintf("sed -i.bak 's/^level=.*/level=%s/g' %s && ", level, DefaultPythonLogConfigPath)
+		}
+		return commands + strings.Join(generateConfigFileCommand, " ") + hackCmd
 	}
-	level := parsePythonLogLevel(runtime)
-	hackCmd := ""
-	if level != "" {
-		hackCmd = fmt.Sprintf("sed -i.bak 's/^level=.*/level=%s/g' %s && ", level, DefaultPythonLogConfigPath)
+	return ""
+}
+
+func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.PythonRuntime) (string, error) {
+	tmpl := template.Must(template.New("spec").Parse(pythonLoggingINITemplate))
+	var tpl bytes.Buffer
+	type logConfig struct {
+		RollingEnabled bool
+		Level          string
+		Policy         template.HTML
+		Handlers       string
 	}
-	return commands + strings.Join(generateConfigFileCommand, " ") + hackCmd
+	lc := &logConfig{}
+	lc.Level = string(runtime.Log.Level)
+	if runtime.Log.RotatePolicy != nil {
+		lc.RollingEnabled = true
+		logFile := fmt.Sprintf("logs/functions/%s-${%s}", name, EnvShardID)
+		switch *runtime.Log.RotatePolicy {
+		case v1alpha1.TimedPolicyWithDaily:
+			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+args=(\"%s\", 'D', 1, 5,)
+class=handlers.TimedRotatingFileHandler
+level=%s 
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.TimedPolicyWithWeekly:
+			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+args=(\"%s\", 'W0', 1, 5,)
+class=handlers.TimedRotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.TimedPolicyWithMonthly:
+			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+args=(\"%s\", 'D', 30, 5,)
+class=handlers.TimedRotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.SizedPolicyWith10MB:
+			lc.Handlers = "stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(\"%s\", 'a', 10485760, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.SizedPolicyWith50MB:
+			lc.Handlers = "handler_stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(%s, 'a', 52428800, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.SizedPolicyWith100MB:
+			lc.Handlers = "handler_stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(%s, 'a', 104857600, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		}
+	}
+
+	if err := tmpl.Execute(&tpl, lc); err != nil {
+		log.Error(err, "failed to render python instance logging template")
+		return "", err
+	}
+	return tpl.String(), nil
 }
 
 func parseJavaLogLevel(runtime *v1alpha1.JavaRuntime) string {
