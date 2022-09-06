@@ -384,7 +384,7 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return ""
 	}
-	if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime.Log); err == nil {
+	if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime); err == nil {
 		generateConfigFileCommand := []string{
 			"mkdir", "-p", JavaLogConfigDirectory, "&&",
 			"echo", fmt.Sprintf("\"%s\"", log4jXML), ">", DefaultJavaLogConfigPath,
@@ -395,7 +395,7 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 	return ""
 }
 
-func renderJavaInstanceLog4jXMLTemplate(runtimeLog *v1alpha1.RuntimeLogConfig) (string, error) {
+func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, error) {
 	tmpl := template.Must(template.New("spec").Parse(javaLog4jXMLTemplate))
 	var tpl bytes.Buffer
 	type logConfig struct {
@@ -404,38 +404,39 @@ func renderJavaInstanceLog4jXMLTemplate(runtimeLog *v1alpha1.RuntimeLogConfig) (
 		Policy         template.HTML
 	}
 	lc := &logConfig{}
-	if runtimeLog == nil {
-		lc.Level = "INFO"
-	} else {
-		lc.Level = string(runtimeLog.Level)
-		if runtimeLog.RotatePolicy != nil {
-			lc.RollingEnabled = true
-			switch *runtimeLog.RotatePolicy {
-			case v1alpha1.TimedPolicyWithDaily:
-				lc.Policy = template.HTML(`<CronTriggeringPolicy>
+	lc.Level = "INFO"
+	if runtime.Log != nil && runtime.Log.Level != "" {
+		if level := parseJavaLogLevel(runtime); level != "" {
+			lc.Level = level
+		}
+	}
+	if runtime.Log != nil && runtime.Log.RotatePolicy != nil {
+		lc.RollingEnabled = true
+		switch *runtime.Log.RotatePolicy {
+		case v1alpha1.TimedPolicyWithDaily:
+			lc.Policy = template.HTML(`<CronTriggeringPolicy>
                     <schedule>"0 0 0 \* \* \? \*"</schedule>
                 </CronTriggeringPolicy>`)
-			case v1alpha1.TimedPolicyWithWeekly:
-				lc.Policy = template.HTML(`<CronTriggeringPolicy>
+		case v1alpha1.TimedPolicyWithWeekly:
+			lc.Policy = template.HTML(`<CronTriggeringPolicy>
                     <schedule>"0 0 0 \? \* 1 *"</schedule>
                 </CronTriggeringPolicy>`)
-			case v1alpha1.TimedPolicyWithMonthly:
-				lc.Policy = template.HTML(`<CronTriggeringPolicy>
+		case v1alpha1.TimedPolicyWithMonthly:
+			lc.Policy = template.HTML(`<CronTriggeringPolicy>
                     <schedule>"0 0 0 1 \* \? \*"</schedule>
                 </CronTriggeringPolicy>`)
-			case v1alpha1.SizedPolicyWith10MB:
-				lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
+		case v1alpha1.SizedPolicyWith10MB:
+			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
                     <size>10MB</size>
                 </SizeBasedTriggeringPolicy>`)
-			case v1alpha1.SizedPolicyWith50MB:
-				lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
+		case v1alpha1.SizedPolicyWith50MB:
+			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
                     <size>50MB</size>
                 </SizeBasedTriggeringPolicy>`)
-			case v1alpha1.SizedPolicyWith100MB:
-				lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
+		case v1alpha1.SizedPolicyWith100MB:
+			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
                     <size>100MB</size>
                 </SizeBasedTriggeringPolicy>`)
-			}
 		}
 	}
 	if err := tmpl.Execute(&tpl, lc); err != nil {
@@ -450,7 +451,7 @@ func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return commands
 	}
-	if loggingINI, err := renderPythonInstanceLoggingINITemplate(name, runtime.Log); err == nil {
+	if loggingINI, err := renderPythonInstanceLoggingINITemplate(name, runtime); err == nil {
 		generateConfigFileCommand := []string{
 			"mkdir", "-p", PythonLogConifgDirectory, "logs/functions", "&&",
 			"echo", fmt.Sprintf("\"%s\"", loggingINI), ">", DefaultPythonLogConfigPath,
@@ -466,7 +467,7 @@ func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime
 	return ""
 }
 
-func renderPythonInstanceLoggingINITemplate(name string, runtimeLog *v1alpha1.RuntimeLogConfig) (string, error) {
+func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.PythonRuntime) (string, error) {
 	tmpl := template.Must(template.New("spec").Parse(pythonLoggingINITemplate))
 	var tpl bytes.Buffer
 	type logConfig struct {
@@ -476,58 +477,59 @@ func renderPythonInstanceLoggingINITemplate(name string, runtimeLog *v1alpha1.Ru
 		Handlers       string
 	}
 	lc := &logConfig{}
-	if runtimeLog == nil {
-		lc.Level = "INFO"
-		lc.Handlers = "stream_handler"
-	} else {
-		lc.Level = string(runtimeLog.Level)
-		if runtimeLog.RotatePolicy != nil {
-			lc.RollingEnabled = true
-			logFile := fmt.Sprintf("logs/functions/%s-${%s}", name, EnvShardID)
-			switch *runtimeLog.RotatePolicy {
-			case v1alpha1.TimedPolicyWithDaily:
-				lc.Handlers = "stream_handler,timed_rotating_file_handler"
-				lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+	lc.Level = "INFO"
+	lc.Handlers = "stream_handler"
+	if runtime.Log != nil && runtime.Log.Level != "" {
+		if level := parsePythonLogLevel(runtime); level != "" {
+			lc.Level = level
+		}
+	}
+	if runtime.Log != nil && runtime.Log.RotatePolicy != nil {
+		lc.RollingEnabled = true
+		logFile := fmt.Sprintf("logs/functions/%s-${%s}", name, EnvShardID)
+		switch *runtime.Log.RotatePolicy {
+		case v1alpha1.TimedPolicyWithDaily:
+			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
 args=(\"%s\", 'D', 1, 5,)
 class=handlers.TimedRotatingFileHandler
 level=%s 
 formatter=formatter`, logFile, lc.Level))
-			case v1alpha1.TimedPolicyWithWeekly:
-				lc.Handlers = "stream_handler,timed_rotating_file_handler"
-				lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+		case v1alpha1.TimedPolicyWithWeekly:
+			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
 args=(\"%s\", 'W0', 1, 5,)
 class=handlers.TimedRotatingFileHandler
 level=%s
 formatter=formatter`, logFile, lc.Level))
-			case v1alpha1.TimedPolicyWithMonthly:
-				lc.Handlers = "stream_handler,timed_rotating_file_handler"
-				lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+		case v1alpha1.TimedPolicyWithMonthly:
+			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
 args=(\"%s\", 'D', 30, 5,)
 class=handlers.TimedRotatingFileHandler
 level=%s
 formatter=formatter`, logFile, lc.Level))
-			case v1alpha1.SizedPolicyWith10MB:
-				lc.Handlers = "stream_handler,rotating_file_handler"
-				lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+		case v1alpha1.SizedPolicyWith10MB:
+			lc.Handlers = "stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
 args=(\"%s\", 'a', 10485760, 5,)
 class=handlers.RotatingFileHandler
 level=%s
 formatter=formatter`, logFile, lc.Level))
-			case v1alpha1.SizedPolicyWith50MB:
-				lc.Handlers = "handler_stream_handler,rotating_file_handler"
-				lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+		case v1alpha1.SizedPolicyWith50MB:
+			lc.Handlers = "handler_stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
 args=(%s, 'a', 52428800, 5,)
 class=handlers.RotatingFileHandler
 level=%s
 formatter=formatter`, logFile, lc.Level))
-			case v1alpha1.SizedPolicyWith100MB:
-				lc.Handlers = "handler_stream_handler,rotating_file_handler"
-				lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+		case v1alpha1.SizedPolicyWith100MB:
+			lc.Handlers = "handler_stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
 args=(%s, 'a', 104857600, 5,)
 class=handlers.RotatingFileHandler
 level=%s
 formatter=formatter`, logFile, lc.Level))
-			}
 		}
 	}
 	if err := tmpl.Execute(&tpl, lc); err != nil {
