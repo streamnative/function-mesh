@@ -37,10 +37,10 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		Tenant:               function.Spec.Tenant,
 		Namespace:            function.Spec.Namespace,
 		Name:                 function.Spec.Name,
-		ClassName:            function.Spec.ClassName,
+		ClassName:            fetchClassName(function),
 		LogTopic:             function.Spec.LogTopic,
 		ProcessingGuarantees: convertProcessingGuarantee(function.Spec.ProcessingGuarantee),
-		UserConfig:           getUserConfig(function.Spec.FuncConfig),
+		UserConfig:           getUserConfig(generateFunctionConfig(function)),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              getBoolFromPtrOrDefault(function.Spec.AutoAck, true),
 		Parallelism:          getInt32FromPtrOrDefault(function.Spec.Replicas, 1),
@@ -62,6 +62,26 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 	}
 
 	return fd
+}
+
+func generateFunctionConfig(function *v1alpha1.Function) *v1alpha1.Config {
+	if function.Spec.WindowConfig != nil {
+		if function.Spec.FuncConfig == nil {
+			function.Spec.FuncConfig = &v1alpha1.Config{
+				Data: map[string]interface{}{},
+			}
+		}
+		function.Spec.WindowConfig.ActualWindowFunctionClassName = function.Spec.ClassName
+		function.Spec.FuncConfig.Data[WindowFunctionConfigKeyName] = *function.Spec.WindowConfig
+	}
+	return function.Spec.FuncConfig
+}
+
+func fetchClassName(function *v1alpha1.Function) string {
+	if function.Spec.WindowConfig != nil {
+		return WindowFunctionExecutorClass
+	}
+	return function.Spec.ClassName
 }
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {

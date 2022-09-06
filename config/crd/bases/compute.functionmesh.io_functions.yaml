@@ -2782,6 +2782,35 @@ spec:
                   - name
                   type: object
                 type: array
+              windowConfig:
+                properties:
+                  actualWindowFunctionClassName:
+                    type: string
+                  lateDataTopic:
+                    type: string
+                  maxLagMs:
+                    format: int64
+                    type: integer
+                  slidingIntervalCount:
+                    format: int32
+                    type: integer
+                  slidingIntervalDurationMs:
+                    format: int64
+                    type: integer
+                  timestampExtractorClassName:
+                    type: string
+                  watermarkEmitIntervalMs:
+                    format: int64
+                    type: integer
+                  windowLengthCount:
+                    format: int32
+                    type: integer
+                  windowLengthDurationMs:
+                    format: int64
+                    type: integer
+                required:
+                - actualWindowFunctionClassName
+                type: object
             required:
             - replicas
             type: object
