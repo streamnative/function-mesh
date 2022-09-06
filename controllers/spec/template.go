@@ -64,9 +64,11 @@ const (
             <AppenderRef>
                 <ref>Console</ref>
             </AppenderRef>
+            {{- if .RollingEnabled }}
             <AppenderRef>
                 <ref>RollingRandomAccessFile</ref>
             </AppenderRef>
+            {{- end }}
         </Logger>
         <Root>
             <level>\${sys:pulsar.log.level}</level>
@@ -74,9 +76,11 @@ const (
                 <ref>Console</ref>
                 <level>\${sys:pulsar.log.level}</level>
             </AppenderRef>
+            {{- if .RollingEnabled }}
             <AppenderRef>
                 <ref>RollingRandomAccessFile</ref>
             </AppenderRef>
+            {{- end }}
         </Root>
     </Loggers>
 </Configuration>`
