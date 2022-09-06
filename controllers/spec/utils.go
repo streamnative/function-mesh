@@ -37,7 +37,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		Tenant:               function.Spec.Tenant,
 		Namespace:            function.Spec.Namespace,
 		Name:                 function.Spec.Name,
-		ClassName:            function.Spec.ClassName,
+		ClassName:            fetchClassName(function),
 		LogTopic:             function.Spec.LogTopic,
 		ProcessingGuarantees: convertProcessingGuarantee(function.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(generateFunctionConfig(function)),
@@ -71,9 +71,17 @@ func generateFunctionConfig(function *v1alpha1.Function) *v1alpha1.Config {
 				Data: map[string]interface{}{},
 			}
 		}
-		function.Spec.FuncConfig.Data["__WINDOWCONFIGS__"] = *function.Spec.WindowConfig
+		function.Spec.WindowConfig.ActualWindowFunctionClassName = function.Spec.ClassName
+		function.Spec.FuncConfig.Data[WindowFunctionConfigKeyName] = *function.Spec.WindowConfig
 	}
 	return function.Spec.FuncConfig
+}
+
+func fetchClassName(function *v1alpha1.Function) string {
+	if function.Spec.WindowConfig != nil {
+		return WindowFunctionExecutorClass
+	}
+	return function.Spec.ClassName
 }
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {

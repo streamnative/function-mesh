@@ -545,7 +545,6 @@ type LogConfig struct {
 }
 
 type WindowConfig struct {
-	// +kubebuilder:validation:Required
 	ActualWindowFunctionClassName string  `json:"actualWindowFunctionClassName"`
 	WindowLengthCount             *int32  `json:"windowLengthCount,omitempty"`
 	WindowLengthDurationMs        *int64  `json:"windowLengthDurationMs,omitempty"`
