@@ -220,6 +220,10 @@ spec:
                 maxReplicas:
                   format: int32
                   type: integer
+                minReplicas:
+                  format: int32
+                  minimum: 1
+                  type: integer
                 name:
                   type: string
                 namespace:
@@ -2847,6 +2851,9 @@ spec:
                         type: string
                     type: object
                   type: object
+                observedGeneration:
+                  format: int64
+                  type: integer
                 replicas:
                   format: int32
                   type: integer

@@ -49,9 +49,19 @@ var _ webhook.Defaulter = &Source{}
 func (r *Source) Default() {
 	sourcelog.Info("default", "name", r.Name)
 
-	if r.Spec.Replicas == nil {
-		r.Spec.Replicas = new(int32)
-		*r.Spec.Replicas = 1
+	if !(r.Spec.Replicas != nil && r.Spec.MinReplicas != nil) {
+		if r.Spec.MinReplicas != nil && r.Spec.Replicas == nil {
+			r.Spec.Replicas = new(int32)
+			*r.Spec.Replicas = *r.Spec.MinReplicas
+		} else if r.Spec.MinReplicas == nil && r.Spec.Replicas != nil {
+			r.Spec.MinReplicas = new(int32)
+			*r.Spec.MinReplicas = *r.Spec.Replicas
+		} else {
+			r.Spec.Replicas = new(int32)
+			*r.Spec.Replicas = 1
+			r.Spec.MinReplicas = new(int32)
+			*r.Spec.MinReplicas = 1
+		}
 	}
 
 	if r.Spec.ProcessingGuarantee == "" {
@@ -139,7 +149,7 @@ func (r *Source) ValidateCreate() error {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	fieldErrs = validateReplicasAndMaxReplicas(r.Spec.Replicas, r.Spec.MaxReplicas)
+	fieldErrs = validateReplicasAndMinReplicasAndMaxReplicas(r.Spec.Replicas, r.Spec.MinReplicas, r.Spec.MaxReplicas)
 	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}

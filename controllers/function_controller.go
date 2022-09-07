@@ -29,7 +29,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -72,15 +74,15 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		function.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 	}
 
-	err = r.ObserveFunctionStatefulSet(ctx, req, function)
+	err = r.ObserveFunctionStatefulSet(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveFunctionService(ctx, req, function)
+	err = r.ObserveFunctionService(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveFunctionHPA(ctx, req, function)
+	err = r.ObserveFunctionHPA(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -91,26 +93,38 @@ func (r *FunctionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	err = r.ApplyFunctionStatefulSet(ctx, function)
+	isNewGeneration := r.checkIfFunctionGenerationsIsIncreased(function)
+
+	err = r.ApplyFunctionStatefulSet(ctx, function, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplyFunctionService(ctx, req, function)
+	err = r.ApplyFunctionService(ctx, function, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplyFunctionHPA(ctx, req, function)
+	err = r.ApplyFunctionHPA(ctx, function, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
+	function.Status.ObservedGeneration = function.Generation
+	err = r.Status().Update(ctx, function)
+	if err != nil {
+		r.Log.Error(err, "failed to update function status")
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
+}
+
+func (r *FunctionReconciler) checkIfFunctionGenerationsIsIncreased(function *v1alpha1.Function) bool {
+	return function.Generation != function.Status.ObservedGeneration
 }
 
 func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Function{}).
-		Owns(&appsv1.StatefulSet{}).
+		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
 		Owns(&corev1.Secret{}).

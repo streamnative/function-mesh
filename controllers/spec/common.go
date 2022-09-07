@@ -21,13 +21,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
-
 	appsv1 "k8s.io/api/apps/v1"
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1085,4 +1086,138 @@ func getRuntimeLogConfigNames(java *v1alpha1.JavaRuntime, python *v1alpha1.Pytho
 		logConfMap[golangRuntimeLog] = golang.Log.LogConfig
 	}
 	return logConfMap
+}
+
+func CheckIfStatefulSetSpecIsEqual(spec *appsv1.StatefulSetSpec, desiredSpec *appsv1.StatefulSetSpec) bool {
+	if *spec.Replicas != *desiredSpec.Replicas {
+		return false
+	}
+
+	if len(spec.Template.Spec.Containers) != len(desiredSpec.Template.Spec.Containers) {
+		return false
+	}
+
+	for _, container := range spec.Template.Spec.Containers {
+		containerMatch := false
+		for _, desiredContainer := range desiredSpec.Template.Spec.Containers {
+			if container.Name == desiredContainer.Name {
+				containerMatch = true
+				// sort container ports
+				ports := container.Ports
+				desiredPorts := desiredContainer.Ports
+				sort.Slice(ports, func(i, j int) bool {
+					return ports[i].Name < ports[j].Name
+				})
+				sort.Slice(desiredPorts, func(i, j int) bool {
+					return desiredPorts[i].Name < desiredPorts[j].Name
+				})
+				// sort container envFrom
+				containerEnvFrom := container.EnvFrom
+				desiredContainerEnvFrom := desiredContainer.EnvFrom
+				sort.Slice(containerEnvFrom, func(i, j int) bool {
+					return containerEnvFrom[i].Prefix < containerEnvFrom[j].Prefix
+				})
+				sort.Slice(desiredContainerEnvFrom, func(i, j int) bool {
+					return desiredContainerEnvFrom[i].Prefix < desiredContainerEnvFrom[j].Prefix
+				})
+
+				if !reflect.DeepEqual(container.Command, desiredContainer.Command) ||
+					container.Image != desiredContainer.Image ||
+					container.ImagePullPolicy != desiredContainer.ImagePullPolicy ||
+					!reflect.DeepEqual(ports, desiredPorts) ||
+					!reflect.DeepEqual(containerEnvFrom, desiredContainerEnvFrom) ||
+					!reflect.DeepEqual(container.Resources, desiredContainer.Resources) {
+					return false
+				}
+
+				if len(container.Env) != len(desiredContainer.Env) {
+					return false
+				}
+			}
+		}
+		if !containerMatch {
+			return false
+		}
+	}
+	return true
+}
+
+func CheckIfHPASpecIsEqual(spec *autov2beta2.HorizontalPodAutoscalerSpec, desiredSpec *autov2beta2.HorizontalPodAutoscalerSpec) bool {
+	if spec.MaxReplicas != desiredSpec.MaxReplicas || *spec.MinReplicas != *desiredSpec.MinReplicas {
+		return false
+	}
+	if !reflect.DeepEqual(spec.Metrics, desiredSpec.Metrics) {
+		return false
+	}
+	if objectXOROperator(spec.Behavior, desiredSpec.Behavior) {
+		return false
+	}
+	if desiredSpec.Behavior != nil {
+		if objectXOROperator(spec.Behavior.ScaleUp, desiredSpec.Behavior.ScaleUp) ||
+			objectXOROperator(spec.Behavior.ScaleDown, desiredSpec.Behavior.ScaleDown) {
+			return false
+		}
+		if desiredSpec.Behavior.ScaleUp != nil {
+			if objectXOROperator(spec.Behavior.ScaleUp.StabilizationWindowSeconds, desiredSpec.Behavior.ScaleUp.StabilizationWindowSeconds) ||
+				objectXOROperator(spec.Behavior.ScaleUp.SelectPolicy, desiredSpec.Behavior.ScaleUp.SelectPolicy) ||
+				objectXOROperator(spec.Behavior.ScaleUp.Policies, desiredSpec.Behavior.ScaleUp.Policies) {
+				return false
+			}
+			if desiredSpec.Behavior.ScaleUp.StabilizationWindowSeconds != nil && *desiredSpec.Behavior.ScaleUp.StabilizationWindowSeconds != *spec.Behavior.ScaleUp.StabilizationWindowSeconds {
+				return false
+			}
+			if desiredSpec.Behavior.ScaleUp.SelectPolicy != nil && *desiredSpec.Behavior.ScaleUp.SelectPolicy != *spec.Behavior.ScaleUp.SelectPolicy {
+				return false
+			}
+			// sort policies
+			desiredPolicies := desiredSpec.Behavior.ScaleUp.Policies
+			specPolicies := spec.Behavior.ScaleUp.Policies
+			sort.Slice(desiredPolicies, func(i, j int) bool {
+				return desiredPolicies[i].Type < desiredPolicies[j].Type
+			})
+			sort.Slice(specPolicies, func(i, j int) bool {
+				return specPolicies[i].Type < specPolicies[j].Type
+			})
+			if !reflect.DeepEqual(desiredPolicies, specPolicies) {
+				return false
+			}
+		}
+		if desiredSpec.Behavior.ScaleDown != nil {
+			if objectXOROperator(spec.Behavior.ScaleDown.StabilizationWindowSeconds, desiredSpec.Behavior.ScaleDown.StabilizationWindowSeconds) ||
+				objectXOROperator(spec.Behavior.ScaleDown.SelectPolicy, desiredSpec.Behavior.ScaleDown.SelectPolicy) ||
+				objectXOROperator(spec.Behavior.ScaleDown.Policies, desiredSpec.Behavior.ScaleDown.Policies) {
+				return false
+			}
+			if desiredSpec.Behavior.ScaleDown.StabilizationWindowSeconds != nil && *desiredSpec.Behavior.ScaleDown.StabilizationWindowSeconds != *spec.Behavior.ScaleDown.StabilizationWindowSeconds {
+				return false
+			}
+			if desiredSpec.Behavior.ScaleDown.SelectPolicy != nil && *desiredSpec.Behavior.ScaleDown.SelectPolicy != *spec.Behavior.ScaleDown.SelectPolicy {
+				return false
+			}
+			// sort policies
+			desiredPolicies := desiredSpec.Behavior.ScaleDown.Policies
+			specPolicies := spec.Behavior.ScaleDown.Policies
+			sort.Slice(desiredPolicies, func(i, j int) bool {
+				return desiredPolicies[i].Type < desiredPolicies[j].Type
+			})
+			sort.Slice(specPolicies, func(i, j int) bool {
+				return specPolicies[i].Type < specPolicies[j].Type
+			})
+			if !reflect.DeepEqual(desiredPolicies, specPolicies) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func objectXOROperator(first interface{}, second interface{}) bool {
+	return (first != nil && second == nil) || (first == nil && second != nil)
+}
+
+func GetNamespacedName(object metav1.Object, component string) string {
+	if len(object.GetNamespace()) > 0 {
+		return component + "/" + object.GetNamespace() + "/" + object.GetName()
+	}
+	return component + "/" + object.GetName()
 }

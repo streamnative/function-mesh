@@ -87,13 +87,25 @@ func (r *FunctionMeshReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		return ctrl.Result{}, err
 	}
 
+	isNewGeneration := r.checkIfFunctionMeshGenerationsIsIncreased(mesh)
+
 	// apply changes
-	err = r.UpdateFunctionMesh(ctx, req, mesh)
+	err = r.UpdateFunctionMesh(ctx, req, mesh, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
+	mesh.Status.ObservedGeneration = mesh.Generation
+	err = r.Status().Update(ctx, mesh)
+	if err != nil {
+		r.Log.Error(err, "failed to update functionmesh status")
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
+}
+
+func (r *FunctionMeshReconciler) checkIfFunctionMeshGenerationsIsIncreased(mesh *v1alpha1.FunctionMesh) bool {
+	return mesh.Generation != mesh.Status.ObservedGeneration
 }
 
 func (r *FunctionMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {

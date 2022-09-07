@@ -209,6 +209,7 @@ func makeSampleObjectMeta(name string) *metav1.ObjectMeta {
 func makeGoFunctionSample(functionName string) *v1alpha1.Function {
 	maxPending := int32(1000)
 	replicas := int32(1)
+	minReplicas := int32(1)
 	maxReplicas := int32(5)
 	trueVal := true
 	return &v1alpha1.Function{
@@ -234,6 +235,7 @@ func makeGoFunctionSample(functionName string) *v1alpha1.Function {
 			MaxMessageRetry:              0,
 			ForwardSourceMessageProperty: &trueVal,
 			Replicas:                     &replicas,
+			MinReplicas:                  &minReplicas,
 			MaxReplicas:                  &maxReplicas,
 			AutoAck:                      &trueVal,
 			MaxPendingAsyncRequests:      &maxPending,

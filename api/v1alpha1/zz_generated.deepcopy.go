@@ -321,6 +321,11 @@ func (in *FunctionSpec) DeepCopyInto(out *FunctionSpec) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.MinReplicas != nil {
+		in, out := &in.MinReplicas, &out.MinReplicas
+		*out = new(int32)
+		**out = **in
+	}
 	if in.MaxReplicas != nil {
 		in, out := &in.MaxReplicas, &out.MaxReplicas
 		*out = new(int32)
@@ -917,6 +922,11 @@ func (in *SinkSpec) DeepCopyInto(out *SinkSpec) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.MinReplicas != nil {
+		in, out := &in.MinReplicas, &out.MinReplicas
+		*out = new(int32)
+		**out = **in
+	}
 	if in.MaxReplicas != nil {
 		in, out := &in.MaxReplicas, &out.MaxReplicas
 		*out = new(int32)
@@ -1048,6 +1058,11 @@ func (in *SourceSpec) DeepCopyInto(out *SourceSpec) {
 	*out = *in
 	if in.Replicas != nil {
 		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
+	}
+	if in.MinReplicas != nil {
+		in, out := &in.MinReplicas, &out.MinReplicas
 		*out = new(int32)
 		**out = **in
 	}

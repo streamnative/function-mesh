@@ -41,6 +41,7 @@ type FunctionMeshStatus struct {
 	SourceConditions   map[string]ResourceCondition `json:"sourceConditions,omitempty"`
 	SinkConditions     map[string]ResourceCondition `json:"sinkConditions,omitempty"`
 	FunctionConditions map[string]ResourceCondition `json:"functionConditions,omitempty"`
+	ObservedGeneration int64                        `json:"observedGeneration,omitempty"`
 }
 
 // +kubebuilder:object:root=true

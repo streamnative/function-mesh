@@ -20,17 +20,18 @@ package controllers
 import (
 	"context"
 
-	"github.com/streamnative/function-mesh/controllers/spec"
-
 	"github.com/go-logr/logr"
-	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -52,7 +53,7 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("sink", req.NamespacedName)
 
 	// your logic here
-	sink := &computev1alpha1.Sink{}
+	sink := &v1alpha1.Sink{}
 	err := r.Get(ctx, req.NamespacedName, sink)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -68,18 +69,18 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if sink.Status.Conditions == nil {
-		sink.Status.Conditions = make(map[computev1alpha1.Component]computev1alpha1.ResourceCondition)
+		sink.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 	}
 
-	err = r.ObserveSinkStatefulSet(ctx, req, sink)
+	err = r.ObserveSinkStatefulSet(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveSinkService(ctx, req, sink)
+	err = r.ObserveSinkService(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveSinkHPA(ctx, req, sink)
+	err = r.ObserveSinkHPA(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -90,26 +91,38 @@ func (r *SinkReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	err = r.ApplySinkStatefulSet(ctx, sink)
+	isNewGeneration := r.checkIfSinkGenerationsIsIncreased(sink)
+
+	err = r.ApplySinkStatefulSet(ctx, sink, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySinkService(ctx, req, sink)
+	err = r.ApplySinkService(ctx, sink, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySinkHPA(ctx, req, sink)
+	err = r.ApplySinkHPA(ctx, sink, isNewGeneration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
+	sink.Status.ObservedGeneration = sink.Generation
+	err = r.Status().Update(ctx, sink)
+	if err != nil {
+		r.Log.Error(err, "failed to update sink status")
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
+}
+
+func (r *SinkReconciler) checkIfSinkGenerationsIsIncreased(sink *v1alpha1.Sink) bool {
+	return sink.Generation != sink.Status.ObservedGeneration
 }
 
 func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&computev1alpha1.Sink{}).
-		Owns(&appsv1.StatefulSet{}).
+		For(&v1alpha1.Sink{}).
+		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
 		Complete(r)

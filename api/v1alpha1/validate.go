@@ -91,13 +91,13 @@ func validateGolangRuntime(golang *GoRuntime) []*field.Error {
 	return allErrs
 }
 
-func validateReplicasAndMaxReplicas(replicas, maxReplicas *int32) []*field.Error {
+func validateReplicasAndMinReplicasAndMaxReplicas(replicas, minReplicas, maxReplicas *int32) []*field.Error {
 	var allErrs field.ErrorList
 	// TODO: allow 0 replicas, currently hpa's min value has to be 1
-	if replicas == nil {
-		e := field.Invalid(field.NewPath("spec").Child("replicas"), nil, "replicas cannot be nil")
-		allErrs = append(allErrs, e)
-	}
+	//if replicas == nil {
+	//	e := field.Invalid(field.NewPath("spec").Child("replicas"), nil, "replicas cannot be nil")
+	//	allErrs = append(allErrs, e)
+	//}
 
 	if replicas != nil && *replicas <= 0 {
 		e := field.Invalid(field.NewPath("spec").Child("replicas"), *replicas, "replicas cannot be zero or negative")
@@ -107,6 +107,23 @@ func validateReplicasAndMaxReplicas(replicas, maxReplicas *int32) []*field.Error
 	if maxReplicas != nil && replicas != nil && *replicas > *maxReplicas {
 		e := field.Invalid(field.NewPath("spec").Child("maxReplicas"), *maxReplicas,
 			"maxReplicas must be greater than or equal to replicas")
+		allErrs = append(allErrs, e)
+	}
+
+	if minReplicas != nil && *minReplicas <= 0 {
+		e := field.Invalid(field.NewPath("spec").Child("minReplicas"), *replicas, "minReplicas cannot be zero or negative")
+		allErrs = append(allErrs, e)
+	}
+
+	if minReplicas != nil && replicas != nil && *minReplicas > *replicas {
+		e := field.Invalid(field.NewPath("spec").Child("minReplicas"), *replicas,
+			"minReplicas must be less than or equal to replicas")
+		allErrs = append(allErrs, e)
+	}
+
+	if minReplicas != nil && maxReplicas != nil && *minReplicas > *maxReplicas {
+		e := field.Invalid(field.NewPath("spec").Child("minReplicas"), *maxReplicas,
+			"minReplicas must be less than or equal to maxReplicas")
 		allErrs = append(allErrs, e)
 	}
 	return allErrs

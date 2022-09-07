@@ -36,9 +36,10 @@ type SourceSpec struct {
 	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	SourceType  string `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
-	// +kubebuilder:validation:Required
-	Replicas *int32 `json:"replicas"`
-
+	// +kubebuilder:validation:Minimum=1
+	Replicas *int32 `json:"replicas,omitempty"`
+	// +kubebuilder:validation:Minimum=1
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
 	// If provided, a default HPA with CPU at average of 80% will be used.
 	// For complex HPA strategies, please refer to Pod.HPAutoscaler.
@@ -74,9 +75,10 @@ type SourceSpec struct {
 type SourceStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Conditions map[Component]ResourceCondition `json:"conditions"`
-	Replicas   int32                           `json:"replicas"`
-	Selector   string                          `json:"selector"`
+	Conditions         map[Component]ResourceCondition `json:"conditions"`
+	Replicas           int32                           `json:"replicas"`
+	Selector           string                          `json:"selector"`
+	ObservedGeneration int64                           `json:"observedGeneration,omitempty"`
 }
 
 // +kubebuilder:object:root=true

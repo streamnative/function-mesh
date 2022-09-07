@@ -201,6 +201,10 @@ spec:
                       maxReplicas:
                         format: int32
                         type: integer
+                      minReplicas:
+                        format: int32
+                        minimum: 1
+                        type: integer
                       name:
                         type: string
                       namespace:
@@ -2981,6 +2985,10 @@ spec:
                       maxReplicas:
                         format: int32
                         type: integer
+                      minReplicas:
+                        format: int32
+                        minimum: 1
+                        type: integer
                       name:
                         type: string
                       namespace:
@@ -5491,8 +5499,6 @@ spec:
                             - name
                           type: object
                         type: array
-                    required:
-                      - replicas
                     type: object
                   type: array
                 sources:
@@ -5580,6 +5586,10 @@ spec:
                         type: object
                       maxReplicas:
                         format: int32
+                        type: integer
+                      minReplicas:
+                        format: int32
+                        minimum: 1
                         type: integer
                       name:
                         type: string
@@ -8076,6 +8086,7 @@ spec:
                         type: object
                       replicas:
                         format: int32
+                        minimum: 1
                         type: integer
                       resources:
                         properties:
@@ -8134,8 +8145,6 @@ spec:
                             - name
                           type: object
                         type: array
-                    required:
-                      - replicas
                     type: object
                   type: array
               type: object
@@ -8152,6 +8161,9 @@ spec:
                         type: string
                     type: object
                   type: object
+                observedGeneration:
+                  format: int64
+                  type: integer
                 sinkConditions:
                   additionalProperties:
                     properties:
