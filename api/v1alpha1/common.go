@@ -543,3 +543,15 @@ type LogConfig struct {
 	Name string `json:"name"`
 	Key  string `json:"key"`
 }
+
+type WindowConfig struct {
+	ActualWindowFunctionClassName string  `json:"actualWindowFunctionClassName"`
+	WindowLengthCount             *int32  `json:"windowLengthCount,omitempty"`
+	WindowLengthDurationMs        *int64  `json:"windowLengthDurationMs,omitempty"`
+	SlidingIntervalCount          *int32  `json:"slidingIntervalCount,omitempty"`
+	SlidingIntervalDurationMs     *int64  `json:"slidingIntervalDurationMs,omitempty"`
+	LateDataTopic                 string  `json:"lateDataTopic,omitempty"`
+	MaxLagMs                      *int64  `json:"maxLagMs,omitempty"`
+	WatermarkEmitIntervalMs       *int64  `json:"watermarkEmitIntervalMs,omitempty"`
+	TimestampExtractorClassName   *string `json:"timestampExtractorClassName,omitempty"`
+}

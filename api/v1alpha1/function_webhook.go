@@ -119,6 +119,22 @@ func (r *Function) Default() {
 	if r.Spec.Output.TypeClassName == "" {
 		r.Spec.Output.TypeClassName = "[B"
 	}
+
+	// mutate windowConfig
+	if r.Spec.WindowConfig != nil {
+		if r.Spec.WindowConfig.WindowLengthDurationMs != nil && r.Spec.WindowConfig.SlidingIntervalDurationMs == nil {
+			r.Spec.WindowConfig.SlidingIntervalDurationMs = r.Spec.WindowConfig.WindowLengthDurationMs
+		}
+		if r.Spec.WindowConfig.WindowLengthCount != nil && r.Spec.WindowConfig.SlidingIntervalCount == nil {
+			if r.Spec.WindowConfig.MaxLagMs == nil {
+				*r.Spec.WindowConfig.MaxLagMs = 0
+			}
+			if r.Spec.WindowConfig.WatermarkEmitIntervalMs == nil {
+				*r.Spec.WindowConfig.WatermarkEmitIntervalMs = 1000
+			}
+		}
+	}
+
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -234,6 +250,11 @@ func (r *Function) ValidateCreate() error {
 	}
 
 	fieldErr = validateStatefulFunctionConfigs(r.Spec.StateConfig, r.Spec.Runtime)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
+
+	fieldErr = validateWindowConfigs(r.Spec.WindowConfig)
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)
 	}

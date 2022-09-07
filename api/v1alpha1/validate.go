@@ -348,3 +348,43 @@ func validateStatefulFunctionConfigs(statefulFunctionConfigs *Stateful, runtime 
 func isGolangRuntime(runtime Runtime) bool {
 	return runtime.Golang != nil && runtime.Python == nil && runtime.Java == nil
 }
+
+func validateWindowConfigs(windowConfig *WindowConfig) *field.Error {
+	if windowConfig != nil {
+		if windowConfig.WindowLengthDurationMs == nil && windowConfig.WindowLengthCount == nil {
+			return field.Invalid(field.NewPath("spec").Child("windowConfig"), windowConfig,
+				"Window length is not specified")
+		}
+		if windowConfig.WindowLengthDurationMs != nil && windowConfig.WindowLengthCount != nil {
+			return field.Invalid(field.NewPath("spec").Child("windowConfig"), windowConfig,
+				"Window length for time and count are set! Please set one or the other")
+		}
+		if windowConfig.WindowLengthCount != nil && *windowConfig.WindowLengthCount <= 0 {
+			return field.Invalid(field.NewPath("spec").Child("windowConfig"), windowConfig.WindowLengthCount,
+				"Window length must be positive")
+		}
+		if windowConfig.WindowLengthDurationMs != nil && *windowConfig.WindowLengthDurationMs <= 0 {
+			return field.Invalid(field.NewPath("spec").Child("windowConfig"), windowConfig.WindowLengthDurationMs,
+				"Window length must be positive")
+		}
+		if windowConfig.SlidingIntervalCount != nil && *windowConfig.SlidingIntervalCount <= 0 {
+			return field.Invalid(field.NewPath("spec").Child("windowConfig"), windowConfig.SlidingIntervalCount,
+				"Sliding interval must be positive")
+		}
+		if windowConfig.SlidingIntervalDurationMs != nil && *windowConfig.SlidingIntervalDurationMs <= 0 {
+			return field.Invalid(field.NewPath("spec").Child("windowConfig"), windowConfig.SlidingIntervalDurationMs,
+				"Sliding interval must be positive")
+		}
+		if windowConfig.TimestampExtractorClassName != nil {
+			if windowConfig.MaxLagMs != nil && *windowConfig.MaxLagMs <= 0 {
+				return field.Invalid(field.NewPath("spec").Child("windowConfig"), windowConfig.MaxLagMs,
+					"Lag duration must be positive")
+			}
+			if windowConfig.WatermarkEmitIntervalMs != nil && *windowConfig.WatermarkEmitIntervalMs <= 0 {
+				return field.Invalid(field.NewPath("spec").Child("windowConfig"), windowConfig.WatermarkEmitIntervalMs,
+					"Watermark interval must be positive")
+			}
+		}
+	}
+	return nil
+}

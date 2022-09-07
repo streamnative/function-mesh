@@ -45,6 +45,9 @@ const (
 	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 
+	WindowFunctionConfigKeyName = "__WINDOWCONFIGS__"
+	WindowFunctionExecutorClass = "org.apache.pulsar.functions.windowing.WindowFunctionExecutor"
+
 	DefaultForAllowInsecure              = "false"
 	DefaultForEnableHostNameVerification = "true"
 
