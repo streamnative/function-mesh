@@ -18,6 +18,8 @@
 package spec
 
 import (
+	"testing"
+
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	autoscaling "k8s.io/api/autoscaling/v1"
@@ -25,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
-	"testing"
 )
 
 func TestMakeVPA(t *testing.T) {

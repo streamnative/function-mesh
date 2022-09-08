@@ -41,7 +41,7 @@ var (
 )
 
 func init() {
-	vpav1.AddToScheme(scheme)
+	utilruntime.Must(vpav1.AddToScheme(scheme))
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(computev1alpha1.AddToScheme(scheme))

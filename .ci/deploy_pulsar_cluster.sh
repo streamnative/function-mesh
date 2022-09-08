@@ -41,7 +41,7 @@ fi
 #ci::install_storage_provisioner
 
 # install metrics server
-ci::install_metrics_server
+#ci::install_metrics_server
 
 # install pulsar chart
 ci::install_pulsar_charts "$VALUES_FILE"

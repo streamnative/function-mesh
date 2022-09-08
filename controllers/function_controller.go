@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 
 	"github.com/go-logr/logr"

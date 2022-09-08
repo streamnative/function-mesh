@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+
 	autoscaling "k8s.io/api/autoscaling/v1"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -230,7 +231,7 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, 
 }
 
 func (r *SinkReconciler) ObserveSinkVPA(ctx context.Context, sink *v1alpha1.Sink) error {
-	return observeVPA(r, ctx, types.NamespacedName{Namespace: sink.Namespace,
+	return observeVPA(ctx, r, types.NamespacedName{Namespace: sink.Namespace,
 		Name: spec.MakeSinkObjectMeta(sink).Name}, sink.Spec.Pod.VPA, sink.Status.Conditions)
 }
 

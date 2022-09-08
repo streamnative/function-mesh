@@ -15,10 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
+// Package controllers define k8s operator controllers
 package controllers
 
 import (
 	"context"
+	"reflect"
+
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
@@ -27,11 +30,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func observeVPA(r client.Reader, ctx context.Context, name types.NamespacedName, vpaSpec *v1alpha1.VPASpec, conditions map[v1alpha1.Component]v1alpha1.ResourceCondition) error {
+func observeVPA(ctx context.Context, r client.Reader, name types.NamespacedName, vpaSpec *v1alpha1.VPASpec, conditions map[v1alpha1.Component]v1alpha1.ResourceCondition) error {
 	_, ok := conditions[v1alpha1.VPA]
 	condition := v1alpha1.ResourceCondition{Condition: v1alpha1.VPAReady}
 	if !ok {
@@ -40,9 +42,9 @@ func observeVPA(r client.Reader, ctx context.Context, name types.NamespacedName,
 			condition.Action = v1alpha1.Create
 			conditions[v1alpha1.VPA] = condition
 			return nil
-		} else { // VPA is not enabled, skip further action
-			return nil
 		}
+		// VPA is not enabled, skip further action
+		return nil
 	}
 
 	vpa := &vpav1.VerticalPodAutoscaler{}
@@ -52,12 +54,11 @@ func observeVPA(r client.Reader, ctx context.Context, name types.NamespacedName,
 			if vpaSpec == nil { // VPA is deleted, delete the status
 				delete(conditions, v1alpha1.VPA)
 				return nil
-			} else {
-				condition.Status = metav1.ConditionFalse
-				condition.Action = v1alpha1.Create
-				conditions[v1alpha1.VPA] = condition
-				return nil
 			}
+			condition.Status = metav1.ConditionFalse
+			condition.Action = v1alpha1.Create
+			conditions[v1alpha1.VPA] = condition
+			return nil
 		}
 		return err
 	}

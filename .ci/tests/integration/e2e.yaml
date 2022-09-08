@@ -35,6 +35,17 @@ setup:
         helm dependency update charts/pulsar
         helm install ${PULSAR_RELEASE_NAME} --set initialize=true --values ../.ci/clusters/values_skywalking_e2e_cluster.yaml charts/pulsar
 
+    # required for vpa tests
+    - name: install metrics service
+      command: |
+        kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.7/components.yaml
+        kubectl patch -n kube-system deployment metrics-server --type=json -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+      wait:
+        - namespace: kube-system
+          resource: pod
+          label-selector: k8s-app=metrics-server
+          for: condition=Ready
+
     - name: wait for pulsar cluster ready
       command: |
         echo "wait until pulsar init job is completed"
@@ -77,6 +88,7 @@ setup:
         image="function-mesh-operator:latest"
         IMG=${image} make docker-build-skip-test
         kind load docker-image ${image}
+        helm dependency update charts/function-mesh-operator
         helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --create-namespace charts/function-mesh-operator
       wait:
         - namespace: function-mesh
