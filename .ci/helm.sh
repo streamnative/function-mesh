@@ -233,35 +233,31 @@ function ci::verify_download_java_function() {
 }
 
 function ci::verify_vpa_java_function() {
-  kubectl wait -l name=function-sample-vpa --for=condition=RecommendationProvided --timeout=5m vpa && true
-  cpu=`kubectl get vpa function-sample-vpa -o jsonpath='{.status.recommendation.containerRecommendations[0].target.cpu}'`
-  memory=`kubectl get vpa function-sample-vpa -o jsonpath='{.status.recommendation.containerRecommendations[0].target.memory}'`
+  kubectl wait -l name=function-sample-vpa-function --for=condition=RecommendationProvided --timeout=2m vpa && true
+  cpu=`kubectl get vpa function-sample-vpa-function -o jsonpath='{.status.recommendation.containerRecommendations[0].target.cpu}'`
+  memory=`kubectl get vpa function-sample-vpa-function -o jsonpath='{.status.recommendation.containerRecommendations[0].target.memory}'`
   resources='{"limits":{"cpu":"'$cpu'","memory":"'$memory'"},"requests":{"cpu":"'$cpu'","memory":"'$memory'"}}'
-  realResource1=`kubectl get pod function-sample-vpa-0 -o jsonpath='{.spec.containers[0].resources}'`
-  retry=10
-  while [[ "$resources" != "$realResource1" ]]; do
-    if [[ $retry -lt 1 ]]; then
-      echo "vpa tests failed"
-      kubectl describe vpa function-sample-vpa
-      exit 1
-    fi
-    sleep 5s
-    realResource1=`kubectl get pod function-sample-vpa-0 -o jsonpath='{.spec.containers[0].resources}'`
-    retry=$((retry - 1))
-  done
 
-  realResource2=`kubectl get pod function-sample-vpa-1 -o jsonpath='{.spec.containers[0].resources}'`
+  # delete pod to trigger resource updating
+  kubectl delete pod function-sample-vpa-function-0
+  kubectl wait -l statefulset.kubernetes.io/pod-name=function-sample-vpa-function-0 --for=condition=Ready --timeout=2m pod
+  realResource1=`kubectl get pod function-sample-vpa-function-0 -o jsonpath='{.spec.containers[0].resources}'`
   retry=10
-  while [[ "$resources" != "$realResource2" ]]; do
-    if [[ $retry -lt 1 ]]; then
-      echo "vpa tests failed"
-      kubectl describe vpa function-sample-vpa
-      exit 1
-    fi
-    sleep 5s
-    realResource2=`kubectl get pod java-function-sample-function-1 -o jsonpath='{.spec.containers[0].resources}'`
-    retry=$((retry - 1))
-  done
+  if [[ "$resources" != "$realResource1" ]]; then
+    echo "vpa tests failed for pod1"
+    echo "recommend resource is: ${resources}, actual resource is ${realResource1}"
+    exit 1
+  fi
+
+  # delete pod to trigger resource updating
+  kubectl delete pod function-sample-vpa-function-1
+  kubectl wait -l statefulset.kubernetes.io/pod-name=function-sample-vpa-function-0 --for=condition=Ready --timeout=2m pod
+  realResource2=`kubectl get pod function-sample-vpa-function-1 -o jsonpath='{.spec.containers[0].resources}'`
+  if [[ "$resources" != "$realResource2" ]]; then
+    echo "vpa tests failed for pod2"
+    echo "recommend resource is: ${resources}, actual resource is ${realResource2}"
+    exit 1
+  fi
   echo "vpa tests passed"
 
   ci::verify_exclamation_function "persistent://public/default/input-vpa-java-topic" "persistent://public/default/output-vpa-java-topic" "test-message" "test-message!" 10

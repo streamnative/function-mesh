@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+
 	autoscaling "k8s.io/api/autoscaling/v1"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -230,7 +231,7 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1a
 }
 
 func (r *FunctionReconciler) ObserveFunctionVPA(ctx context.Context, function *v1alpha1.Function) error {
-	return observeVPA(r, ctx, types.NamespacedName{Namespace: function.Namespace,
+	return observeVPA(ctx, r, types.NamespacedName{Namespace: function.Namespace,
 		Name: spec.MakeFunctionObjectMeta(function).Name}, function.Spec.Pod.VPA, function.Status.Conditions)
 }
 

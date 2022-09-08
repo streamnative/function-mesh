@@ -194,9 +194,21 @@ func (r *Function) ValidateCreate() error {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
-	if r.Spec.MaxReplicas != nil && r.Spec.Pod.VPA != nil {
-		allErrs = append(allErrs,
-			field.Invalid(field.NewPath("spec").Child("maxReplicas"), r.Spec.Runtime, "you can not enable HPA and VPA at the same time"))
+	if r.Spec.Pod.VPA != nil {
+		if r.Spec.MaxReplicas != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("pod").Child("vpa"), r.Spec.Pod.VPA, "you can not enable HPA and VPA at the same time"))
+		}
+
+		if r.Spec.Pod.VPA.ResourcePolicy != nil {
+			for _, c := range r.Spec.Pod.VPA.ResourcePolicy.ContainerPolicies {
+				if c.ContainerName == "" {
+					allErrs = append(allErrs,
+						field.Invalid(field.NewPath("spec").Child("pod").Child("vpa").Child("resourcePolicy").Child("containerPolicy"), r.Spec.Pod.VPA.ResourcePolicy.ContainerPolicies, "container name must be specified"))
+					break
+				}
+			}
+		}
 	}
 
 	fieldErr = validateResourceRequirement(r.Spec.Resources)
