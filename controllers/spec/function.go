@@ -135,7 +135,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generateFunctionDetailsInJSON(function),
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig)
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
@@ -144,7 +144,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generatePythonLogConfigCommand(function.Name, function.Spec.Python),
 				generateFunctionDetailsInJSON(function), string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig)
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {

@@ -33,7 +33,7 @@ import (
 func TestGetDownloadCommand(t *testing.T) {
 	doTest := func(downloadPath, componentPackage string, expectedCommand []string) {
 		var tlsConfig *v1alpha1.PulsarTLSConfig
-		actualResult := getDownloadCommand(downloadPath, componentPackage, false, false, tlsConfig)
+		actualResult := getDownloadCommand(downloadPath, componentPackage, false, false, tlsConfig, nil)
 		assert.Equal(t, expectedCommand, actualResult)
 	}
 

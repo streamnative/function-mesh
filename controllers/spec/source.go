@@ -127,7 +127,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		parseJavaLogLevel(source.Spec.Java),
 		generateSourceDetailsInJSON(source),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(source.UID),
-		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil, spec.Pulsar.TLSConfig)
+		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {

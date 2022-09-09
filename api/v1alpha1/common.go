@@ -60,6 +60,9 @@ type PulsarMessaging struct {
 
 	// To replace the TLSSecret
 	TLSConfig *PulsarTLSConfig `json:"tlsConfig,omitempty"`
+
+	// To replace the AuthSecret
+	AuthConfig *AuthConfig `json:"authConfig,omitempty"`
 }
 
 type TLSConfig struct {
@@ -100,6 +103,33 @@ func (c *PulsarTLSConfig) HasSecretVolume() bool {
 
 func (c *PulsarTLSConfig) GetMountPath() string {
 	return "/etc/tls/pulsar-functions"
+}
+
+type AuthConfig struct {
+	OAuth2Config *OAuth2Config `json:"oauth2Config,omitempty"`
+	// TODO: support other auth providers
+}
+
+type OAuth2Config struct {
+	Audience  string `json:"audience"`
+	IssuerURL string `json:"issuerUrl"`
+	Scope     string `json:"scope,omitempty"`
+	// the secret name of the OAuth2 private key file
+	KeySecretName string `json:"keySecretName"`
+	// the secret key of the OAuth2 private key file, such as `auth.json`
+	KeySecretKey string `json:"keySecretKey"`
+}
+
+func (o *OAuth2Config) GetMountPath() string {
+	return "/etc/oauth2"
+}
+
+func (o *OAuth2Config) GetMountFile() string {
+	return fmt.Sprintf("%s/%s", o.GetMountPath(), o.KeySecretKey)
+}
+
+func (o *OAuth2Config) AuthenticationParameters() string {
+	return fmt.Sprintf(`'{"privateKey":"%s","issuerUrl":"%s","audience":"%s","scope":"%s"}'`, o.GetMountFile(), o.IssuerURL, o.Audience, o.Scope)
 }
 
 type PulsarStateStore struct {

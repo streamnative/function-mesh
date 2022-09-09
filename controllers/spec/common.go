@@ -71,6 +71,8 @@ const (
 	DefaultRunnerUserID  int64 = 10000
 	DefaultRunnerGroupID int64 = 10001
 
+	OAuth2AuthenticationPlugin = "org.apache.pulsar.client.impl.auth.oauth2.AuthenticationOAuth2"
+
 	JavaLogConfigDirectory     = "/pulsar/conf/java-log/"
 	JavaLogConfigFile          = "java_instance_log4j.xml"
 	DefaultJavaLogConfigPath   = JavaLogConfigDirectory + JavaLogConfigFile
@@ -280,14 +282,14 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
-	tlsConfig TLSConfig) []string {
+	tlsConfig TLSConfig, authCOnfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
-			tlsConfig), " ")
+			tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -295,14 +297,14 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
-	tlsConfig TLSConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
-			tlsConfig), " ")
+			tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -315,14 +317,14 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath,
 			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != "",
-			function.Spec.Pulsar.TLSConfig), " ")
+			function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
 }
 
 func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool,
-	tlsConfig TLSConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	// The download path is the path that the package saved in the pulsar.
 	// By default, it's the path that the package saved in the pulsar, we can use package name
 	// to replace it for downloading packages from packages management service.
@@ -331,7 +333,16 @@ func getDownloadCommand(downloadPath, componentPackage string, authProvided, tls
 		"--admin-url",
 		"$webServiceURL",
 	}
-	if authProvided {
+	if authConfig != nil {
+		if authConfig.OAuth2Config != nil {
+			args = append(args, []string{
+				"--auth-plugin",
+				OAuth2AuthenticationPlugin,
+				"--auth-params",
+				authConfig.OAuth2Config.AuthenticationParameters(),
+			}...)
+		}
+	} else if authProvided {
 		args = append(args, []string{
 			"--auth-plugin",
 			"$clientAuthenticationPlugin",
