@@ -149,7 +149,7 @@ var GRPCPort = corev1.ContainerPort{
 }
 
 var MetricsPort = corev1.ContainerPort{
-	Name:          "tcp-metrics",
+	Name:          "http-metrics",
 	ContainerPort: 9094,
 	Protocol:      corev1.ProtocolTCP,
 }
@@ -247,26 +247,30 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 }
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
-	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig) []string {
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
+	tlsConfig TLSConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided, tlsConfig), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
+			tlsConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
 }
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
-	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig) []string {
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
+	tlsConfig TLSConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided, tlsConfig), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
+			tlsConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -278,13 +282,15 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath,
-			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != "", function.Spec.Pulsar.TLSConfig), " ")
+			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != "",
+			function.Spec.Pulsar.TLSConfig), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
 }
 
-func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool, tlsConfig TLSConfig) []string {
+func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool,
+	tlsConfig TLSConfig) []string {
 	// The download path is the path that the package saved in the pulsar.
 	// By default, it's the path that the package saved in the pulsar, we can use package name
 	// to replace it for downloading packages from packages management service.
@@ -452,7 +458,8 @@ func setShardIDEnvironmentVariableCommand() string {
 }
 
 func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, memory, extraDependenciesDir, uid string,
-	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig) []string {
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
+	tlsConfig TLSConfig) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
@@ -535,7 +542,8 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 }
 
 // This method is suitable for Java and Python runtime, not include Go runtime.
-func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool, tlsConfig TLSConfig) []string {
+func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool,
+	tlsConfig TLSConfig) []string {
 	args := []string{
 		"--instance_id",
 		"${" + EnvShardID + "}",
@@ -930,7 +938,8 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 }
 
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, logConfs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
+	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig,
+	logConfs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
@@ -943,7 +952,8 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 }
 
 func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, logConf map[int32]*v1alpha1.LogConfig) []corev1.Volume {
+	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig,
+	logConf map[int32]*v1alpha1.LogConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	volumes = append(volumes, podVolumes...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
@@ -1073,7 +1083,8 @@ const (
 	golangRuntimeLog
 )
 
-func getRuntimeLogConfigNames(java *v1alpha1.JavaRuntime, python *v1alpha1.PythonRuntime, golang *v1alpha1.GoRuntime) map[int32]*v1alpha1.LogConfig {
+func getRuntimeLogConfigNames(java *v1alpha1.JavaRuntime, python *v1alpha1.PythonRuntime,
+	golang *v1alpha1.GoRuntime) map[int32]*v1alpha1.LogConfig {
 	logConfMap := map[int32]*v1alpha1.LogConfig{}
 
 	if java != nil && java.Log != nil && java.Log.LogConfig != nil {
@@ -1142,7 +1153,8 @@ func CheckIfStatefulSetSpecIsEqual(spec *appsv1.StatefulSetSpec, desiredSpec *ap
 	return true
 }
 
-func CheckIfHPASpecIsEqual(spec *autov2beta2.HorizontalPodAutoscalerSpec, desiredSpec *autov2beta2.HorizontalPodAutoscalerSpec) bool {
+func CheckIfHPASpecIsEqual(spec *autov2beta2.HorizontalPodAutoscalerSpec,
+	desiredSpec *autov2beta2.HorizontalPodAutoscalerSpec) bool {
 	if spec.MaxReplicas != desiredSpec.MaxReplicas || *spec.MinReplicas != *desiredSpec.MinReplicas {
 		return false
 	}
@@ -1158,7 +1170,8 @@ func CheckIfHPASpecIsEqual(spec *autov2beta2.HorizontalPodAutoscalerSpec, desire
 			return false
 		}
 		if desiredSpec.Behavior.ScaleUp != nil {
-			if objectXOROperator(spec.Behavior.ScaleUp.StabilizationWindowSeconds, desiredSpec.Behavior.ScaleUp.StabilizationWindowSeconds) ||
+			if objectXOROperator(spec.Behavior.ScaleUp.StabilizationWindowSeconds,
+				desiredSpec.Behavior.ScaleUp.StabilizationWindowSeconds) ||
 				objectXOROperator(spec.Behavior.ScaleUp.SelectPolicy, desiredSpec.Behavior.ScaleUp.SelectPolicy) ||
 				objectXOROperator(spec.Behavior.ScaleUp.Policies, desiredSpec.Behavior.ScaleUp.Policies) {
 				return false
@@ -1183,7 +1196,8 @@ func CheckIfHPASpecIsEqual(spec *autov2beta2.HorizontalPodAutoscalerSpec, desire
 			}
 		}
 		if desiredSpec.Behavior.ScaleDown != nil {
-			if objectXOROperator(spec.Behavior.ScaleDown.StabilizationWindowSeconds, desiredSpec.Behavior.ScaleDown.StabilizationWindowSeconds) ||
+			if objectXOROperator(spec.Behavior.ScaleDown.StabilizationWindowSeconds,
+				desiredSpec.Behavior.ScaleDown.StabilizationWindowSeconds) ||
 				objectXOROperator(spec.Behavior.ScaleDown.SelectPolicy, desiredSpec.Behavior.ScaleDown.SelectPolicy) ||
 				objectXOROperator(spec.Behavior.ScaleDown.Policies, desiredSpec.Behavior.ScaleDown.Policies) {
 				return false
