@@ -107,6 +107,7 @@ func makeSourceVolumes(source *v1alpha1.Source) []corev1.Volume {
 		source.Spec.Output.ProducerConf,
 		nil,
 		source.Spec.Pulsar.TLSConfig,
+		source.Spec.Pulsar.AuthConfig,
 		getRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang))
 }
 
@@ -116,6 +117,7 @@ func makeSourceVolumeMounts(source *v1alpha1.Source) []corev1.VolumeMount {
 		source.Spec.Output.ProducerConf,
 		nil,
 		source.Spec.Pulsar.TLSConfig,
+		source.Spec.Pulsar.AuthConfig,
 		getRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang))
 }
 

@@ -129,7 +129,7 @@ func (o *OAuth2Config) GetMountFile() string {
 }
 
 func (o *OAuth2Config) AuthenticationParameters() string {
-	return fmt.Sprintf(`'{"privateKey":"%s","issuerUrl":"%s","audience":"%s","scope":"%s"}'`, o.GetMountFile(), o.IssuerURL, o.Audience, o.Scope)
+	return fmt.Sprintf(`'{"privateKey":"%s","private_key":"%s","issuerUrl":"%s","issuer_url":"%s","audience":"%s","scope":"%s"}'`, o.GetMountFile(), o.GetMountFile(), o.IssuerURL, o.IssuerURL, o.Audience, o.Scope)
 }
 
 type PulsarStateStore struct {

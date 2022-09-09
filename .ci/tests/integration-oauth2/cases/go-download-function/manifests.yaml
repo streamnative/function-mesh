@@ -1,22 +1,19 @@
 apiVersion: compute.functionmesh.io/v1alpha1
 kind: Function
 metadata:
-  name: function-sample
+  name: go-function-download-sample
   namespace: default
 spec:
-  image: streamnative/pulsar-functions-java-sample:2.9.2.23
-  className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1
-  logTopic: persistent://public/default/logging-function-logs
+  maxReplicas: 3
+  logTopic: persistent://public/default/go-function-logs
   input:
     topics:
-    - persistent://public/default/input-java-topic
-    typeClassName: java.lang.String
+      - persistent://public/default/input-download-go-topic
   output:
-    topic: persistent://public/default/output-java-topic
-    typeClassName: java.lang.String
+    topic: persistent://public/default/output-download-go-topic
   resources:
     requests:
       cpu: 50m
@@ -27,19 +24,13 @@ spec:
   # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
   secretsMap:
     "name":
-        path: "test-secret"
-        key: "username"
+      path: "test-go-secret"
+      key: "username"
     "pwd":
-        path: "test-secret"
-        key: "password"
+      path: "test-go-secret"
+      key: "password"
   pulsar:
-    pulsarConfig: "test-pulsar"
-    tlsConfig:
-      enabled: false
-      allowInsecure: false
-      hostnameVerification: true
-      certSecretName: sn-platform-tls-broker
-      certSecretKey: ""
+    pulsarConfig: "test-go-pulsar"
     authConfig:
       oauth2Config:
         audience: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
@@ -47,8 +38,9 @@ spec:
         scope: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
         keySecretName: sn-platform-oauth2-private-key
         keySecretKey: auth.json
-  java:
-    jar: /pulsar/examples/api-examples.jar
+  golang:
+    go: /pulsar/go_func_all
+    goLocation: function://public/default/test-go-function
   # to be delete & use admission hook
   clusterName: test
   autoAck: true
@@ -56,7 +48,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-pulsar
+  name: test-go-pulsar
 data:
   webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
   brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
@@ -67,5 +59,5 @@ data:
   password: MWYyZDFlMmU2N2Rm
 kind: Secret
 metadata:
-  name: test-secret
+  name: test-go-secret
 type: Opaque

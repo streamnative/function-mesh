@@ -1,22 +1,20 @@
 apiVersion: compute.functionmesh.io/v1alpha1
 kind: Function
 metadata:
-  name: function-sample
+  name: py-function-download-sample
   namespace: default
 spec:
-  image: streamnative/pulsar-functions-java-sample:2.9.2.23
-  className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+  className: exclamation_function.ExclamationFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1
-  logTopic: persistent://public/default/logging-function-logs
+  maxReplicas: 1
+  logTopic: persistent://public/default/py-function-logs
   input:
     topics:
-    - persistent://public/default/input-java-topic
-    typeClassName: java.lang.String
+      - persistent://public/default/input-download-python-topic
   output:
-    topic: persistent://public/default/output-java-topic
-    typeClassName: java.lang.String
+    topic: persistent://public/default/output-download-python-topic
   resources:
     requests:
       cpu: 50m
@@ -27,19 +25,17 @@ spec:
   # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
   secretsMap:
     "name":
-        path: "test-secret"
-        key: "username"
+      path: "test-py-secret"
+      key: "username"
     "pwd":
-        path: "test-secret"
-        key: "password"
+      path: "test-py-secret"
+      key: "password"
   pulsar:
-    pulsarConfig: "test-pulsar"
+    pulsarConfig: "test-py-pulsar"
     tlsConfig:
       enabled: false
-      allowInsecure: false
+      allowInsecure: true
       hostnameVerification: true
-      certSecretName: sn-platform-tls-broker
-      certSecretKey: ""
     authConfig:
       oauth2Config:
         audience: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
@@ -47,16 +43,16 @@ spec:
         scope: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
         keySecretName: sn-platform-oauth2-private-key
         keySecretKey: auth.json
-  java:
-    jar: /pulsar/examples/api-examples.jar
-  # to be delete & use admission hook
+  python:
+    py: exclamation_function.py
+    pyLocation: function://public/default/test-py-function
   clusterName: test
   autoAck: true
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-pulsar
+  name: test-py-pulsar
 data:
   webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
   brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
@@ -67,5 +63,5 @@ data:
   password: MWYyZDFlMmU2N2Rm
 kind: Secret
 metadata:
-  name: test-secret
+  name: test-py-secret
 type: Opaque

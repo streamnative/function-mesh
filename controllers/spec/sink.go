@@ -112,6 +112,7 @@ func makeSinkVolumes(sink *v1alpha1.Sink) []corev1.Volume {
 		nil,
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
+		sink.Spec.Pulsar.AuthConfig,
 		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
 }
 
@@ -121,6 +122,7 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
 		nil,
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
+		sink.Spec.Pulsar.AuthConfig,
 		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
 }
 

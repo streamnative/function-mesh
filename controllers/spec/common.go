@@ -282,7 +282,7 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authCOnfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig), " ")
@@ -1046,6 +1046,23 @@ func generateVolumeFromTLSConfig(tlsConfig TLSConfig) corev1.Volume {
 	}
 }
 
+func generateVolumeFromOAuth2Config(config *v1alpha1.OAuth2Config) corev1.Volume {
+	return corev1.Volume{
+		Name: generateVolumeNameFromOAuth2Config(config),
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: config.KeySecretName,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  config.KeySecretKey,
+						Path: config.KeySecretKey,
+					},
+				},
+			},
+		},
+	}
+}
+
 func generateVolumeMountFromLogConfigs(confs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{}
 	if len(confs) > 0 {
@@ -1081,6 +1098,13 @@ func generateVolumeMountFromTLSConfig(tlsConfig TLSConfig) corev1.VolumeMount {
 	}
 }
 
+func generateVolumeMountFromOAuth2Config(config *v1alpha1.OAuth2Config) corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      generateVolumeNameFromOAuth2Config(config),
+		MountPath: config.GetMountFile(),
+	}
+}
+
 func generateContainerVolumeMountsFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	if len(confs) > 0 {
@@ -1110,12 +1134,17 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 }
 
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig,
+	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	logConfs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
 		mounts = append(mounts, generateVolumeMountFromTLSConfig(tlsConfig))
+	}
+	if authConfig != nil {
+		if authConfig.OAuth2Config != nil {
+			mounts = append(mounts, generateVolumeMountFromOAuth2Config(authConfig.OAuth2Config))
+		}
 	}
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)
@@ -1124,12 +1153,17 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 }
 
 func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig,
+	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	logConf map[int32]*v1alpha1.LogConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	volumes = append(volumes, podVolumes...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
 		volumes = append(volumes, generateVolumeFromTLSConfig(tlsConfig))
+	}
+	if authConfig != nil {
+		if authConfig.OAuth2Config != nil {
+			volumes = append(volumes, generateVolumeFromOAuth2Config(authConfig.OAuth2Config))
+		}
 	}
 	volumes = append(volumes, generateContainerVolumesFromProducerConf(producerConf)...)
 	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(consumerConfs)...)

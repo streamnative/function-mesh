@@ -74,6 +74,7 @@ func makeFunctionVolumes(function *v1alpha1.Function) []corev1.Volume {
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
+		function.Spec.Pulsar.AuthConfig,
 		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang))
 }
 
@@ -82,6 +83,7 @@ func makeFunctionVolumeMounts(function *v1alpha1.Function) []corev1.VolumeMount 
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
+		function.Spec.Pulsar.AuthConfig,
 		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang))
 }
 
