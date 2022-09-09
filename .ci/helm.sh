@@ -211,12 +211,7 @@ function ci::verify_go_function() {
 }
 
 function ci::verify_download_go_function() {
-    authEnabled=$1
-    if [[ "$authEnabled" == "true" ]]; then
-      ci::verify_exclamation_function_with_auth "persistent://public/default/input-download-go-topic" "persistent://public/default/output-download-go-topic" "test-message" "test-message!" 10
-    else
-      ci::verify_exclamation_function "persistent://public/default/input-download-go-topic" "persistent://public/default/output-download-go-topic" "test-message" "test-message!" 10
-    fi
+    ci::verify_exclamation_function "persistent://public/default/input-download-go-topic" "persistent://public/default/output-download-go-topic" "test-message" "test-message!" 10
 }
 
 function ci::verify_java_function() {
