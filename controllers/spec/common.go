@@ -18,8 +18,10 @@
 package spec
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"reflect"
 	"sort"
 	"strconv"
@@ -78,17 +80,17 @@ const (
 
 	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
 
-	defaultJavaInstanceLog4jXML = `<Configuration>
+	javaLog4jXMLTemplate = `<Configuration>
     <name>pulsar-functions-kubernetes-instance</name>
     <monitorInterval>30</monitorInterval>
     <Properties>
         <Property>
             <name>pulsar.log.level</name>
-            <value>INFO</value>
+            <value>{{ .Level }}</value>
         </Property>
         <Property>
             <name>bk.log.level</name>
-            <value>INFO</value>
+            <value>{{ .Level }}</value>
         </Property>
     </Properties>
     <Appenders>
@@ -99,6 +101,22 @@ const (
                 <Pattern>%d{ISO8601_OFFSET_DATE_TIME_HHMM} [%t] %-5level %logger{36} - %msg%n</Pattern>
             </PatternLayout>
         </Console>
+        {{- if .RollingEnabled }}
+        <RollingRandomAccessFile>
+            <name>RollingRandomAccessFile</name>
+            <fileName>\${sys:pulsar.function.log.dir}/\${sys:pulsar.function.log.file}.log</fileName>
+            <filePattern>\${sys:pulsar.function.log.dir}/\${sys:pulsar.function.log.file}.%d{yyyy-MM-dd-hh-mm}-%i.log.gz</filePattern>
+            <PatternLayout>
+                <Pattern>%d{yyyy-MMM-dd HH:mm:ss a} [%t] %-5level %logger{36} - %msg%n</Pattern>
+            </PatternLayout>
+            <Policies>
+                {{ .Policy }}
+            </Policies>
+            <DefaultRolloverStrategy>
+                <max>5</max>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+       {{- end }}
     </Appenders>
     <Loggers>
         <Logger>
@@ -108,6 +126,11 @@ const (
             <AppenderRef>
                 <ref>Console</ref>
             </AppenderRef>
+            {{- if .RollingEnabled }}
+            <AppenderRef>
+                <ref>RollingRandomAccessFile</ref>
+            </AppenderRef>
+            {{- end }}
         </Logger>
         <Root>
             <level>\${sys:pulsar.log.level}</level>
@@ -115,30 +138,39 @@ const (
                 <ref>Console</ref>
                 <level>\${sys:pulsar.log.level}</level>
             </AppenderRef>
+            {{- if .RollingEnabled }}
+            <AppenderRef>
+                <ref>RollingRandomAccessFile</ref>
+            </AppenderRef>
+            {{- end }}
         </Root>
     </Loggers>
 </Configuration>`
-	defaultPythonInstanceLoggingINI = `[loggers]
+	pythonLoggingINITemplate = `[loggers]
 keys=root
 
 [handlers]
-keys=stream_handler
+keys={{ .Handlers }}
 
 [formatters]
 keys=formatter
 
 [logger_root]
-level=INFO
-handlers=stream_handler
+level={{ .Level }}
+handlers={{ .Handlers }}
+
+{{- if .RollingEnabled }}
+{{ .Policy }}
+{{- end }}
 
 [handler_stream_handler]
 class=StreamHandler
-level=INFO
+level={{ .Level }}
 formatter=formatter
 args=(sys.stdout,)
 
 [formatter_formatter]
-format=[%(asctime)s] [%(levelname)s] %(filename)s: %(message)s
+format=[%(asctime)s] [%(levelname)s] aa %(filename)s: %(message)s
 datefmt=%Y-%m-%d %H:%M:%S %z`
 )
 
@@ -362,30 +394,159 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return ""
 	}
-	generateConfigFileCommand := []string{
-		"mkdir", "-p", JavaLogConfigDirectory, "&&",
-		"echo", fmt.Sprintf("\"%s\"", defaultJavaInstanceLog4jXML), ">", DefaultJavaLogConfigPath,
-		"&& ",
+	if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime); err == nil {
+		generateConfigFileCommand := []string{
+			"mkdir", "-p", JavaLogConfigDirectory, "&&",
+			"echo", fmt.Sprintf("\"%s\"", log4jXML), ">", DefaultJavaLogConfigPath,
+			"&& ",
+		}
+		return strings.Join(generateConfigFileCommand, " ")
 	}
-	return strings.Join(generateConfigFileCommand, " ")
+	return ""
 }
 
-func generatePythonLogConfigCommand(runtime *v1alpha1.PythonRuntime) string {
+func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, error) {
+	tmpl := template.Must(template.New("spec").Parse(javaLog4jXMLTemplate))
+	var tpl bytes.Buffer
+	type logConfig struct {
+		RollingEnabled bool
+		Level          string
+		Policy         template.HTML
+	}
+	lc := &logConfig{}
+	lc.Level = "INFO"
+	if runtime.Log != nil && runtime.Log.Level != "" {
+		if level := parseJavaLogLevel(runtime); level != "" {
+			lc.Level = level
+		}
+	}
+	if runtime.Log != nil && runtime.Log.RotatePolicy != nil {
+		lc.RollingEnabled = true
+		switch *runtime.Log.RotatePolicy {
+		case v1alpha1.TimedPolicyWithDaily:
+			lc.Policy = template.HTML(`<CronTriggeringPolicy>
+                    <schedule>"0 0 0 \* \* \? \*"</schedule>
+                </CronTriggeringPolicy>`)
+		case v1alpha1.TimedPolicyWithWeekly:
+			lc.Policy = template.HTML(`<CronTriggeringPolicy>
+                    <schedule>"0 0 0 \? \* 1 *"</schedule>
+                </CronTriggeringPolicy>`)
+		case v1alpha1.TimedPolicyWithMonthly:
+			lc.Policy = template.HTML(`<CronTriggeringPolicy>
+                    <schedule>"0 0 0 1 \* \? \*"</schedule>
+                </CronTriggeringPolicy>`)
+		case v1alpha1.SizedPolicyWith10MB:
+			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
+                    <size>10MB</size>
+                </SizeBasedTriggeringPolicy>`)
+		case v1alpha1.SizedPolicyWith50MB:
+			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
+                    <size>50MB</size>
+                </SizeBasedTriggeringPolicy>`)
+		case v1alpha1.SizedPolicyWith100MB:
+			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
+                    <size>100MB</size>
+                </SizeBasedTriggeringPolicy>`)
+		}
+	}
+	if err := tmpl.Execute(&tpl, lc); err != nil {
+		log.Error(err, "failed to render java instance log4j template")
+		return "", err
+	}
+	return tpl.String(), nil
+}
+
+func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime) string {
 	commands := "sed -i.bak 's/^  Log.setLevel/#&/' /pulsar/instances/python-instance/log.py && "
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return commands
 	}
-	generateConfigFileCommand := []string{
-		"mkdir", "-p", PythonLogConifgDirectory, "&&",
-		"echo", fmt.Sprintf("\"%s\"", defaultPythonInstanceLoggingINI), ">", DefaultPythonLogConfigPath,
-		"&& ",
+	if loggingINI, err := renderPythonInstanceLoggingINITemplate(name, runtime); err == nil {
+		generateConfigFileCommand := []string{
+			"mkdir", "-p", PythonLogConifgDirectory, "logs/functions", "&&",
+			"echo", fmt.Sprintf("\"%s\"", loggingINI), ">", DefaultPythonLogConfigPath,
+			"&& ",
+		}
+		level := parsePythonLogLevel(runtime)
+		hackCmd := ""
+		if level != "" {
+			hackCmd = fmt.Sprintf("sed -i.bak 's/^level=.*/level=%s/g' %s && ", level, DefaultPythonLogConfigPath)
+		}
+		return commands + strings.Join(generateConfigFileCommand, " ") + hackCmd
 	}
-	level := parsePythonLogLevel(runtime)
-	hackCmd := ""
-	if level != "" {
-		hackCmd = fmt.Sprintf("sed -i.bak 's/^level=.*/level=%s/g' %s && ", level, DefaultPythonLogConfigPath)
+	return ""
+}
+
+func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.PythonRuntime) (string, error) {
+	tmpl := template.Must(template.New("spec").Parse(pythonLoggingINITemplate))
+	var tpl bytes.Buffer
+	type logConfig struct {
+		RollingEnabled bool
+		Level          string
+		Policy         template.HTML
+		Handlers       string
 	}
-	return commands + strings.Join(generateConfigFileCommand, " ") + hackCmd
+	lc := &logConfig{}
+	lc.Level = "INFO"
+	lc.Handlers = "stream_handler"
+	if runtime.Log != nil && runtime.Log.Level != "" {
+		if level := parsePythonLogLevel(runtime); level != "" {
+			lc.Level = level
+		}
+	}
+	if runtime.Log != nil && runtime.Log.RotatePolicy != nil {
+		lc.RollingEnabled = true
+		logFile := fmt.Sprintf("logs/functions/%s-${%s}", name, EnvShardID)
+		switch *runtime.Log.RotatePolicy {
+		case v1alpha1.TimedPolicyWithDaily:
+			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+args=(\"%s\", 'D', 1, 5,)
+class=handlers.TimedRotatingFileHandler
+level=%s 
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.TimedPolicyWithWeekly:
+			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+args=(\"%s\", 'W0', 1, 5,)
+class=handlers.TimedRotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.TimedPolicyWithMonthly:
+			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+args=(\"%s\", 'D', 30, 5,)
+class=handlers.TimedRotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.SizedPolicyWith10MB:
+			lc.Handlers = "stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(\"%s\", 'a', 10485760, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.SizedPolicyWith50MB:
+			lc.Handlers = "handler_stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(%s, 'a', 52428800, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.SizedPolicyWith100MB:
+			lc.Handlers = "handler_stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(%s, 'a', 104857600, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		}
+	}
+	if err := tmpl.Execute(&tpl, lc); err != nil {
+		log.Error(err, "failed to render python instance logging template")
+		return "", err
+	}
+	return tpl.String(), nil
 }
 
 func parseJavaLogLevel(runtime *v1alpha1.JavaRuntime) string {

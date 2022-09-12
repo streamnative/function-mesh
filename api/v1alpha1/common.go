@@ -534,9 +534,23 @@ const (
 // +kubebuilder:validation:Enum=off;trace;debug;info;warn;error;fatal;all;panic
 type LogLevel string
 
+const (
+	TimedPolicyWithDaily   TriggeringPolicy = "TimedPolicyWithDaily"
+	TimedPolicyWithWeekly  TriggeringPolicy = "TimedPolicyWithWeekly"
+	TimedPolicyWithMonthly TriggeringPolicy = "TimedPolicyWithMonthly"
+	SizedPolicyWith10MB    TriggeringPolicy = "SizedPolicyWith10MB"
+	SizedPolicyWith50MB    TriggeringPolicy = "SizedPolicyWith50MB"
+	SizedPolicyWith100MB   TriggeringPolicy = "SizedPolicyWith100MB"
+)
+
+// TriggeringPolicy is using to determine if a rollover should occur.
+// +kubebuilder:validation:Enum=TimedPolicyWithDaily;TimedPolicyWithWeekly;TimedPolicyWithMonthly;SizedPolicyWith10MB;SizedPolicyWith50MB;SizedPolicyWith100MB
+type TriggeringPolicy string
+
 type RuntimeLogConfig struct {
-	Level     LogLevel   `json:"level,omitempty"`
-	LogConfig *LogConfig `json:"logConfig,omitempty"`
+	Level        LogLevel          `json:"level,omitempty"`
+	RotatePolicy *TriggeringPolicy `json:"rotatePolicy,omitempty"`
+	LogConfig    *LogConfig        `json:"logConfig,omitempty"`
 }
 
 type LogConfig struct {
