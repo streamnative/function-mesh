@@ -676,7 +676,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 			want: []corev1.VolumeMount{
 				{
 					Name:      "test-private-key-secret-test-private-key",
-					MountPath: "/etc/oauth2/test-private-key",
+					MountPath: "/etc/oauth2",
 				},
 			},
 		},
