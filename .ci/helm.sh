@@ -226,9 +226,9 @@ function ci::verify_java_function() {
 function ci::verify_download_java_function() {
     authEnabled=$1
     if [[ "$authEnabled" == "true" ]]; then
-    ci::verify_exclamation_function_with_auth "persistent://public/default/input-download-java-topic" "persistent://public/default/output-download-java-topic" "test-message" "test-message!" 10
+      ci::verify_exclamation_function_with_auth "persistent://public/default/input-download-java-topic" "persistent://public/default/output-download-java-topic" "test-message" "test-message!" 10
     else
-    ci::verify_exclamation_function "persistent://public/default/input-download-java-topic" "persistent://public/default/output-download-java-topic" "test-message" "test-message!" 10
+      ci::verify_exclamation_function "persistent://public/default/input-download-java-topic" "persistent://public/default/output-download-java-topic" "test-message" "test-message!" 10
     fi
 }
 
@@ -237,7 +237,12 @@ function ci::verify_python_function() {
 }
 
 function ci::verify_download_python_function() {
-    ci::verify_exclamation_function "persistent://public/default/input-download-python-topic" "persistent://public/default/output-download-python-topic" "test-message" "test-message!" 10
+    authEnabled=$1
+    if [[ "$authEnabled" == "true" ]]; then
+      ci::verify_exclamation_function_with_auth "persistent://public/default/input-download-python-topic" "persistent://public/default/output-download-python-topic" "test-message" "test-message!" 10
+    else
+      ci::verify_exclamation_function "persistent://public/default/input-download-python-topic" "persistent://public/default/output-download-python-topic" "test-message" "test-message!" 10
+    fi
 }
 
 function ci::verify_download_python_zip_function() {

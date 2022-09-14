@@ -112,6 +112,7 @@ func makeSinkVolumes(sink *v1alpha1.Sink) []corev1.Volume {
 		nil,
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
+		sink.Spec.Pulsar.AuthConfig,
 		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
 }
 
@@ -121,6 +122,7 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
 		nil,
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
+		sink.Spec.Pulsar.AuthConfig,
 		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
 }
 
@@ -132,7 +134,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		parseJavaLogLevel(sink.Spec.Java),
 		generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),
-		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil, spec.Pulsar.TLSConfig)
+		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, nil, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {

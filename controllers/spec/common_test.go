@@ -33,7 +33,7 @@ import (
 func TestGetDownloadCommand(t *testing.T) {
 	doTest := func(downloadPath, componentPackage string, expectedCommand []string) {
 		var tlsConfig *v1alpha1.PulsarTLSConfig
-		actualResult := getDownloadCommand(downloadPath, componentPackage, false, false, tlsConfig)
+		actualResult := getDownloadCommand(downloadPath, componentPackage, false, false, tlsConfig, nil)
 		assert.Equal(t, expectedCommand, actualResult)
 	}
 
@@ -259,6 +259,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 		producerConf  *v1alpha1.ProducerConfig
 		consumerConfs map[string]v1alpha1.ConsumerConfig
 		trustCert     *v1alpha1.PulsarTLSConfig
+		authConfig    *v1alpha1.AuthConfig
 		logConf       map[int32]*v1alpha1.LogConfig
 	}
 	tests := []struct {
@@ -436,6 +437,35 @@ func TestGeneratePodVolumes(t *testing.T) {
 			},
 		},
 		{
+			name: "generate pod volumes from authConfig",
+			args: args{
+				authConfig: &v1alpha1.AuthConfig{
+					OAuth2Config: &v1alpha1.OAuth2Config{
+						Audience:      "test-aud",
+						IssuerURL:     "test-issuer",
+						KeySecretName: "test-private-key-secret",
+						KeySecretKey:  "test-private-key",
+					},
+				},
+			},
+			want: []corev1.Volume{
+				{
+					Name: "test-private-key-secret-test-private-key",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: "test-private-key-secret",
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "test-private-key",
+									Path: "test-private-key",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "generate pod volumes from runtime log configs",
 			args: args{
 				logConf: map[int32]*v1alpha1.LogConfig{
@@ -493,6 +523,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 					tt.args.producerConf,
 					tt.args.consumerConfs,
 					tt.args.trustCert,
+					tt.args.authConfig,
 					tt.args.logConf,
 				), "generatePodVolumes(%v, %v, %v, %v)", tt.args.podVolumes, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
 		})
@@ -505,6 +536,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		producerConf  *v1alpha1.ProducerConfig
 		consumerConfs map[string]v1alpha1.ConsumerConfig
 		trustCert     *v1alpha1.PulsarTLSConfig
+		authConfig    *v1alpha1.AuthConfig
 		logConf       map[int32]*v1alpha1.LogConfig
 	}
 	tests := []struct {
@@ -630,6 +662,25 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 			},
 		},
 		{
+			name: "generate volume mounts from authSecret",
+			args: args{
+				authConfig: &v1alpha1.AuthConfig{
+					OAuth2Config: &v1alpha1.OAuth2Config{
+						Audience:      "test-aud",
+						IssuerURL:     "test-issuer",
+						KeySecretName: "test-private-key-secret",
+						KeySecretKey:  "test-private-key",
+					},
+				},
+			},
+			want: []corev1.VolumeMount{
+				{
+					Name:      "test-private-key-secret-test-private-key",
+					MountPath: "/etc/oauth2",
+				},
+			},
+		},
+		{
 			name: "generate volume mounts from runtime log config",
 			args: args{
 				logConf: map[int32]*v1alpha1.LogConfig{
@@ -663,6 +714,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 					tt.args.producerConf,
 					tt.args.consumerConfs,
 					tt.args.trustCert,
+					tt.args.authConfig,
 					tt.args.logConf,
 				), "generateContainerVolumeMounts(%v, %v, %v, %v)", tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
 		})

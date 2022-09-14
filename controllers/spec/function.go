@@ -74,6 +74,7 @@ func makeFunctionVolumes(function *v1alpha1.Function) []corev1.Volume {
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
+		function.Spec.Pulsar.AuthConfig,
 		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang))
 }
 
@@ -82,6 +83,7 @@ func makeFunctionVolumeMounts(function *v1alpha1.Function) []corev1.VolumeMount 
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
+		function.Spec.Pulsar.AuthConfig,
 		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang))
 }
 
@@ -135,7 +137,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generateFunctionDetailsInJSON(function),
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig)
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
@@ -144,7 +146,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generatePythonLogConfigCommand(function.Name, function.Spec.Python),
 				generateFunctionDetailsInJSON(function), string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig)
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {

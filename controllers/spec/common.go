@@ -71,6 +71,8 @@ const (
 	DefaultRunnerUserID  int64 = 10000
 	DefaultRunnerGroupID int64 = 10001
 
+	OAuth2AuthenticationPlugin = "org.apache.pulsar.client.impl.auth.oauth2.AuthenticationOAuth2"
+
 	JavaLogConfigDirectory     = "/pulsar/conf/java-log/"
 	JavaLogConfigFile          = "java_instance_log4j.xml"
 	DefaultJavaLogConfigPath   = JavaLogConfigDirectory + JavaLogConfigFile
@@ -280,14 +282,14 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
-	tlsConfig TLSConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
-			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig), " ")
+			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
-			tlsConfig), " ")
+			tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -295,14 +297,14 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
-	tlsConfig TLSConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
-			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig), " ")
+			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
 	if downloadPath != "" {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
-			tlsConfig), " ")
+			tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -315,14 +317,14 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath,
 			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != "",
-			function.Spec.Pulsar.TLSConfig), " ")
+			function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
 }
 
 func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool,
-	tlsConfig TLSConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	// The download path is the path that the package saved in the pulsar.
 	// By default, it's the path that the package saved in the pulsar, we can use package name
 	// to replace it for downloading packages from packages management service.
@@ -331,7 +333,16 @@ func getDownloadCommand(downloadPath, componentPackage string, authProvided, tls
 		"--admin-url",
 		"$webServiceURL",
 	}
-	if authProvided {
+	if authConfig != nil {
+		if authConfig.OAuth2Config != nil {
+			args = append(args, []string{
+				"--auth-plugin",
+				OAuth2AuthenticationPlugin,
+				"--auth-params",
+				authConfig.OAuth2Config.AuthenticationParameters(),
+			}...)
+		}
+	} else if authProvided {
 		args = append(args, []string{
 			"--auth-plugin",
 			"$clientAuthenticationPlugin",
@@ -620,7 +631,7 @@ func setShardIDEnvironmentVariableCommand() string {
 
 func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
-	tlsConfig TLSConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
@@ -649,7 +660,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"--jar",
 		packageName,
 	}
-	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getJavaSecretProviderArgs(secretMaps)
@@ -669,7 +680,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 }
 
 func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid string, authProvided, tlsProvided bool,
-	secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig) []string {
+	secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	args := []string{
 		"exec",
 		"python",
@@ -686,7 +697,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 		"true",
 		// TODO: Maybe we don't need installUserCodeDependencies, dependency_repository, and pythonExtraDependencyRepository
 	}
-	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getPythonSecretProviderArgs(secretMaps)
@@ -704,7 +715,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 
 // This method is suitable for Java and Python runtime, not include Go runtime.
 func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool,
-	tlsConfig TLSConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	args := []string{
 		"--instance_id",
 		"${" + EnvShardID + "}",
@@ -728,7 +739,15 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 		clusterName,
 	}
 
-	if authProvided {
+	if authConfig != nil {
+		if authConfig.OAuth2Config != nil {
+			args = append(args, []string{
+				"--client_auth_plugin",
+				OAuth2AuthenticationPlugin,
+				"--client_auth_params",
+				authConfig.OAuth2Config.AuthenticationParameters()}...)
+		}
+	} else if authProvided {
 		args = append(args, []string{
 			"--client_auth_plugin",
 			"$clientAuthenticationPlugin",
@@ -1035,6 +1054,23 @@ func generateVolumeFromTLSConfig(tlsConfig TLSConfig) corev1.Volume {
 	}
 }
 
+func generateVolumeFromOAuth2Config(config *v1alpha1.OAuth2Config) corev1.Volume {
+	return corev1.Volume{
+		Name: generateVolumeNameFromOAuth2Config(config),
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: config.KeySecretName,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  config.KeySecretKey,
+						Path: config.KeySecretKey,
+					},
+				},
+			},
+		},
+	}
+}
+
 func generateVolumeMountFromLogConfigs(confs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{}
 	if len(confs) > 0 {
@@ -1070,6 +1106,13 @@ func generateVolumeMountFromTLSConfig(tlsConfig TLSConfig) corev1.VolumeMount {
 	}
 }
 
+func generateVolumeMountFromOAuth2Config(config *v1alpha1.OAuth2Config) corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      generateVolumeNameFromOAuth2Config(config),
+		MountPath: config.GetMountPath(),
+	}
+}
+
 func generateContainerVolumeMountsFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	if len(confs) > 0 {
@@ -1099,12 +1142,17 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 }
 
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig,
+	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	logConfs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
 		mounts = append(mounts, generateVolumeMountFromTLSConfig(tlsConfig))
+	}
+	if authConfig != nil {
+		if authConfig.OAuth2Config != nil {
+			mounts = append(mounts, generateVolumeMountFromOAuth2Config(authConfig.OAuth2Config))
+		}
 	}
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)
@@ -1113,12 +1161,17 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 }
 
 func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig,
+	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	logConf map[int32]*v1alpha1.LogConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	volumes = append(volumes, podVolumes...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
 		volumes = append(volumes, generateVolumeFromTLSConfig(tlsConfig))
+	}
+	if authConfig != nil {
+		if authConfig.OAuth2Config != nil {
+			volumes = append(volumes, generateVolumeFromOAuth2Config(authConfig.OAuth2Config))
+		}
 	}
 	volumes = append(volumes, generateContainerVolumesFromProducerConf(producerConf)...)
 	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(consumerConfs)...)

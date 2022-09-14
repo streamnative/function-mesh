@@ -65,6 +65,7 @@ setup:
     - name: upload packages
       command: |
         bash .ci/upload_function_with_oauth.sh java
+        bash .ci/upload_function_with_oauth.sh py
 
     - name: install function-mesh operator
       command: |
@@ -96,4 +97,6 @@ verify:
     - query: bash .ci/tests/integration-oauth2/cases/java-function/verify.sh
       expected: expected.data.yaml
     - query: bash .ci/tests/integration-oauth2/cases/java-download-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration-oauth2/cases/py-download-function/verify.sh
       expected: expected.data.yaml

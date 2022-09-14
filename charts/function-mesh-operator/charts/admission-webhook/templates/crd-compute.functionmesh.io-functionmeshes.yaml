@@ -2662,6 +2662,27 @@ spec:
                         type: string
                       pulsar:
                         properties:
+                          authConfig:
+                            properties:
+                              oauth2Config:
+                                properties:
+                                  audience:
+                                    type: string
+                                  issuerUrl:
+                                    type: string
+                                  keySecretKey:
+                                    type: string
+                                  keySecretName:
+                                    type: string
+                                  scope:
+                                    type: string
+                                required:
+                                  - audience
+                                  - issuerUrl
+                                  - keySecretKey
+                                  - keySecretName
+                                type: object
+                            type: object
                           authSecret:
                             type: string
                           pulsarConfig:
@@ -2843,8 +2864,6 @@ spec:
                         required:
                           - actualWindowFunctionClassName
                         type: object
-                    required:
-                      - replicas
                     type: object
                   type: array
                 sinks:
@@ -5417,6 +5436,27 @@ spec:
                         type: string
                       pulsar:
                         properties:
+                          authConfig:
+                            properties:
+                              oauth2Config:
+                                properties:
+                                  audience:
+                                    type: string
+                                  issuerUrl:
+                                    type: string
+                                  keySecretKey:
+                                    type: string
+                                  keySecretName:
+                                    type: string
+                                  scope:
+                                    type: string
+                                required:
+                                  - audience
+                                  - issuerUrl
+                                  - keySecretKey
+                                  - keySecretName
+                                type: object
+                            type: object
                           authSecret:
                             type: string
                           pulsarConfig:
@@ -8102,6 +8142,27 @@ spec:
                         type: string
                       pulsar:
                         properties:
+                          authConfig:
+                            properties:
+                              oauth2Config:
+                                properties:
+                                  audience:
+                                    type: string
+                                  issuerUrl:
+                                    type: string
+                                  keySecretKey:
+                                    type: string
+                                  keySecretName:
+                                    type: string
+                                  scope:
+                                    type: string
+                                required:
+                                  - audience
+                                  - issuerUrl
+                                  - keySecretKey
+                                  - keySecretName
+                                type: object
+                            type: object
                           authSecret:
                             type: string
                           pulsarConfig:

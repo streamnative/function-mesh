@@ -62,6 +62,31 @@ spec:
                           type: string
                         goLocation:
                           type: string
+                        log:
+                          properties:
+                            level:
+                              enum:
+                              - "off"
+                              - trace
+                              - debug
+                              - info
+                              - warn
+                              - error
+                              - fatal
+                              - all
+                              - panic
+                              type: string
+                            logConfig:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          type: object
                       required:
                       - go
                       type: object
@@ -149,6 +174,31 @@ spec:
                           type: string
                         jarLocation:
                           type: string
+                        log:
+                          properties:
+                            level:
+                              enum:
+                              - "off"
+                              - trace
+                              - debug
+                              - info
+                              - warn
+                              - error
+                              - fatal
+                              - all
+                              - panic
+                              type: string
+                            logConfig:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          type: object
                       required:
                       - jar
                       type: object
@@ -162,6 +212,10 @@ spec:
                       type: integer
                     maxReplicas:
                       format: int32
+                      type: integer
+                    minReplicas:
+                      format: int32
+                      minimum: 1
                       type: integer
                     name:
                       type: string
@@ -2602,6 +2656,27 @@ spec:
                       type: string
                     pulsar:
                       properties:
+                        authConfig:
+                          properties:
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
                         authSecret:
                           type: string
                         pulsarConfig:
@@ -2624,6 +2699,31 @@ spec:
                       type: object
                     python:
                       properties:
+                        log:
+                          properties:
+                            level:
+                              enum:
+                              - "off"
+                              - trace
+                              - debug
+                              - info
+                              - warn
+                              - error
+                              - fatal
+                              - all
+                              - panic
+                              type: string
+                            logConfig:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          type: object
                         py:
                           type: string
                         pyLocation:
@@ -2720,8 +2820,35 @@ spec:
                         - name
                         type: object
                       type: array
-                  required:
-                  - replicas
+                    windowConfig:
+                      properties:
+                        actualWindowFunctionClassName:
+                          type: string
+                        lateDataTopic:
+                          type: string
+                        maxLagMs:
+                          format: int64
+                          type: integer
+                        slidingIntervalCount:
+                          format: int32
+                          type: integer
+                        slidingIntervalDurationMs:
+                          format: int64
+                          type: integer
+                        timestampExtractorClassName:
+                          type: string
+                        watermarkEmitIntervalMs:
+                          format: int64
+                          type: integer
+                        windowLengthCount:
+                          format: int32
+                          type: integer
+                        windowLengthDurationMs:
+                          format: int64
+                          type: integer
+                      required:
+                      - actualWindowFunctionClassName
+                      type: object
                   type: object
                 type: array
               sinks:
@@ -2743,6 +2870,31 @@ spec:
                           type: string
                         goLocation:
                           type: string
+                        log:
+                          properties:
+                            level:
+                              enum:
+                              - "off"
+                              - trace
+                              - debug
+                              - info
+                              - warn
+                              - error
+                              - fatal
+                              - all
+                              - panic
+                              type: string
+                            logConfig:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          type: object
                       required:
                       - go
                       type: object
@@ -2830,6 +2982,31 @@ spec:
                           type: string
                         jarLocation:
                           type: string
+                        log:
+                          properties:
+                            level:
+                              enum:
+                              - "off"
+                              - trace
+                              - debug
+                              - info
+                              - warn
+                              - error
+                              - fatal
+                              - all
+                              - panic
+                              type: string
+                            logConfig:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          type: object
                       required:
                       - jar
                       type: object
@@ -2838,6 +3015,10 @@ spec:
                       type: integer
                     maxReplicas:
                       format: int32
+                      type: integer
+                    minReplicas:
+                      format: int32
+                      minimum: 1
                       type: integer
                     name:
                       type: string
@@ -5222,6 +5403,27 @@ spec:
                       type: string
                     pulsar:
                       properties:
+                        authConfig:
+                          properties:
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
                         authSecret:
                           type: string
                         pulsarConfig:
@@ -5244,6 +5446,31 @@ spec:
                       type: object
                     python:
                       properties:
+                        log:
+                          properties:
+                            level:
+                              enum:
+                              - "off"
+                              - trace
+                              - debug
+                              - info
+                              - warn
+                              - error
+                              - fatal
+                              - all
+                              - panic
+                              type: string
+                            logConfig:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          type: object
                         py:
                           type: string
                         pyLocation:
@@ -5324,8 +5551,6 @@ spec:
                         - name
                         type: object
                       type: array
-                  required:
-                  - replicas
                   type: object
                 type: array
               sources:
@@ -5343,6 +5568,31 @@ spec:
                           type: string
                         goLocation:
                           type: string
+                        log:
+                          properties:
+                            level:
+                              enum:
+                              - "off"
+                              - trace
+                              - debug
+                              - info
+                              - warn
+                              - error
+                              - fatal
+                              - all
+                              - panic
+                              type: string
+                            logConfig:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          type: object
                       required:
                       - go
                       type: object
@@ -5358,11 +5608,40 @@ spec:
                           type: string
                         jarLocation:
                           type: string
+                        log:
+                          properties:
+                            level:
+                              enum:
+                              - "off"
+                              - trace
+                              - debug
+                              - info
+                              - warn
+                              - error
+                              - fatal
+                              - all
+                              - panic
+                              type: string
+                            logConfig:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          type: object
                       required:
                       - jar
                       type: object
                     maxReplicas:
                       format: int32
+                      type: integer
+                    minReplicas:
+                      format: int32
+                      minimum: 1
                       type: integer
                     name:
                       type: string
@@ -7803,6 +8082,27 @@ spec:
                       type: string
                     pulsar:
                       properties:
+                        authConfig:
+                          properties:
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
                         authSecret:
                           type: string
                         pulsarConfig:
@@ -7825,6 +8125,31 @@ spec:
                       type: object
                     python:
                       properties:
+                        log:
+                          properties:
+                            level:
+                              enum:
+                              - "off"
+                              - trace
+                              - debug
+                              - info
+                              - warn
+                              - error
+                              - fatal
+                              - all
+                              - panic
+                              type: string
+                            logConfig:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                          type: object
                         py:
                           type: string
                         pyLocation:
@@ -7834,6 +8159,7 @@ spec:
                       type: object
                     replicas:
                       format: int32
+                      minimum: 1
                       type: integer
                     resources:
                       properties:
@@ -7892,8 +8218,6 @@ spec:
                         - name
                         type: object
                       type: array
-                  required:
-                  - replicas
                   type: object
                 type: array
             type: object
@@ -7910,6 +8234,9 @@ spec:
                       type: string
                   type: object
                 type: object
+              observedGeneration:
+                format: int64
+                type: integer
               sinkConditions:
                 additionalProperties:
                   properties:
@@ -8006,6 +8333,31 @@ spec:
                     type: string
                   goLocation:
                     type: string
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                 required:
                 - go
                 type: object
@@ -8093,6 +8445,31 @@ spec:
                     type: string
                   jarLocation:
                     type: string
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                 required:
                 - jar
                 type: object
@@ -8106,6 +8483,10 @@ spec:
                 type: integer
               maxReplicas:
                 format: int32
+                type: integer
+              minReplicas:
+                format: int32
+                minimum: 1
                 type: integer
               name:
                 type: string
@@ -10546,6 +10927,27 @@ spec:
                 type: string
               pulsar:
                 properties:
+                  authConfig:
+                    properties:
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
                   authSecret:
                     type: string
                   pulsarConfig:
@@ -10568,6 +10970,31 @@ spec:
                 type: object
               python:
                 properties:
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                   py:
                     type: string
                   pyLocation:
@@ -10664,8 +11091,35 @@ spec:
                   - name
                   type: object
                 type: array
-            required:
-            - replicas
+              windowConfig:
+                properties:
+                  actualWindowFunctionClassName:
+                    type: string
+                  lateDataTopic:
+                    type: string
+                  maxLagMs:
+                    format: int64
+                    type: integer
+                  slidingIntervalCount:
+                    format: int32
+                    type: integer
+                  slidingIntervalDurationMs:
+                    format: int64
+                    type: integer
+                  timestampExtractorClassName:
+                    type: string
+                  watermarkEmitIntervalMs:
+                    format: int64
+                    type: integer
+                  windowLengthCount:
+                    format: int32
+                    type: integer
+                  windowLengthDurationMs:
+                    format: int64
+                    type: integer
+                required:
+                - actualWindowFunctionClassName
+                type: object
             type: object
           status:
             properties:
@@ -10680,6 +11134,9 @@ spec:
                       type: string
                   type: object
                 type: object
+              observedGeneration:
+                format: int64
+                type: integer
               replicas:
                 format: int32
                 type: integer
@@ -10763,6 +11220,31 @@ spec:
                     type: string
                   goLocation:
                     type: string
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                 required:
                 - go
                 type: object
@@ -10850,6 +11332,31 @@ spec:
                     type: string
                   jarLocation:
                     type: string
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                 required:
                 - jar
                 type: object
@@ -10858,6 +11365,10 @@ spec:
                 type: integer
               maxReplicas:
                 format: int32
+                type: integer
+              minReplicas:
+                format: int32
+                minimum: 1
                 type: integer
               name:
                 type: string
@@ -13242,6 +13753,27 @@ spec:
                 type: string
               pulsar:
                 properties:
+                  authConfig:
+                    properties:
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
                   authSecret:
                     type: string
                   pulsarConfig:
@@ -13264,6 +13796,31 @@ spec:
                 type: object
               python:
                 properties:
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                   py:
                     type: string
                   pyLocation:
@@ -13344,8 +13901,6 @@ spec:
                   - name
                   type: object
                 type: array
-            required:
-            - replicas
             type: object
           status:
             properties:
@@ -13360,6 +13915,9 @@ spec:
                       type: string
                   type: object
                 type: object
+              observedGeneration:
+                format: int64
+                type: integer
               replicas:
                 format: int32
                 type: integer
@@ -13439,6 +13997,31 @@ spec:
                     type: string
                   goLocation:
                     type: string
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                 required:
                 - go
                 type: object
@@ -13454,11 +14037,40 @@ spec:
                     type: string
                   jarLocation:
                     type: string
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                 required:
                 - jar
                 type: object
               maxReplicas:
                 format: int32
+                type: integer
+              minReplicas:
+                format: int32
+                minimum: 1
                 type: integer
               name:
                 type: string
@@ -15899,6 +16511,27 @@ spec:
                 type: string
               pulsar:
                 properties:
+                  authConfig:
+                    properties:
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
                   authSecret:
                     type: string
                   pulsarConfig:
@@ -15921,6 +16554,31 @@ spec:
                 type: object
               python:
                 properties:
+                  log:
+                    properties:
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
                   py:
                     type: string
                   pyLocation:
@@ -15930,6 +16588,7 @@ spec:
                 type: object
               replicas:
                 format: int32
+                minimum: 1
                 type: integer
               resources:
                 properties:
@@ -15988,8 +16647,6 @@ spec:
                   - name
                   type: object
                 type: array
-            required:
-            - replicas
             type: object
           status:
             properties:
@@ -16004,6 +16661,9 @@ spec:
                       type: string
                   type: object
                 type: object
+              observedGeneration:
+                format: int64
+                type: integer
               replicas:
                 format: int32
                 type: integer
