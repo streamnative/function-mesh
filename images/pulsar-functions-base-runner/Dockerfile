@@ -20,13 +20,38 @@ RUN mkdir -p /pulsar/bin/ \
     && chown -R $UID:$GID /pulsar \
     && chmod -R g=u /pulsar
 
-RUN apt-get update \
-     && apt-get -y dist-upgrade \
-     && apt-get -y install openjdk-11-jre-headless \
-     && apt-get -y --purge autoremove \
-     && apt-get autoclean \
-     && apt-get clean \
-     && rm -rf /var/lib/apt/lists/*
+ARG PULSAR_IMAGE_TAG
+ENV VERSION_TAG=${PULSAR_IMAGE_TAG}
+RUN echo "VERSION_TAG=$(VERSION_TAG)" && \
+    VERSION_MAJOR=$(echo $VERSION_TAG | cut -d. -f1) && \
+    VERSION_MINOR=$(echo $VERSION_TAG | cut -d. -f2) && \
+    VERSION_PATCH=$(echo $VERSION_TAG | cut -d. -f3) && \
+    if [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 7 ]; then \
+        echo "Pulsar version is 2.7, use java 1.8" && \
+        export JRE_PACKAGE_NAME=openjdk-8-jre-headless; \
+    elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 8 ]; then \
+        echo "Pulsar version is 2.8, use java 1.8" && \
+        export JRE_PACKAGE_NAME=openjdk-8-jre-headless; \
+    elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 9 ]; then \
+        echo "Pulsar version is 2.9, use java 1.8" && \
+        export JRE_PACKAGE_NAME=openjdk-8-jre-headless; \
+    elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 10 ]; then \
+        echo "Pulsar version is 2.10, use java 11" && \
+        export JRE_PACKAGE_NAME=openjdk-11-jre-headless; \
+    elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 11 ]; then \
+        echo "Pulsar version is 2.11, use java 17" && \
+        export JRE_PACKAGE_NAME=openjdk-17-jre-headless; \
+    else \
+        echo "Pulsar version is not in the list, use java 17 instead" && \
+        export JRE_PACKAGE_NAME=openjdk-17-jre-headless; \
+    fi && \
+    apt-get update \
+         && apt-get -y dist-upgrade \
+         && apt-get -y install $JRE_PACKAGE_NAME \
+         && apt-get -y --purge autoremove \
+         && apt-get autoclean \
+         && apt-get clean \
+         && rm -rf /var/lib/apt/lists/*
 
 COPY --from=pulsar --chown=$UID:$GID /pulsar/conf /pulsar/conf
 COPY --from=pulsar --chown=$UID:$GID /pulsar/bin /pulsar/bin

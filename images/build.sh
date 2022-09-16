@@ -31,19 +31,19 @@ KIND_PUSH=${KIND_PUSH:-false}
 CI_TEST=${CI_TEST:-false}
 
 echo "build runner base"
-docker build -t ${RUNNER_BASE} images/pulsar-functions-base-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG"
+docker build -t ${RUNNER_BASE} images/pulsar-functions-base-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
 docker tag ${RUNNER_BASE} "${DOCKER_REPO}"/${RUNNER_BASE}:"${RUNNER_TAG}"
 
 echo "build java runner"
-docker build -t ${JAVA_RUNNER} images/pulsar-functions-java-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG"
+docker build -t ${JAVA_RUNNER} images/pulsar-functions-java-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
 docker tag ${JAVA_RUNNER} "${DOCKER_REPO}"/${JAVA_RUNNER}:"${RUNNER_TAG}"
 
 echo "build python runner"
-docker build -t ${PYTHON_RUNNER} images/pulsar-functions-python-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG"
+docker build -t ${PYTHON_RUNNER} images/pulsar-functions-python-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
 docker tag ${PYTHON_RUNNER} "${DOCKER_REPO}"/${PYTHON_RUNNER}:"${RUNNER_TAG}"
 
 echo "build go runner"
-docker build -t ${GO_RUNNER} images/pulsar-functions-go-runner # go runner is almost the same as runner base, so we no need to given build args for go runner
+docker build -t ${GO_RUNNER} images/pulsar-functions-go-runner --progress=plain # go runner is almost the same as runner base, so we no need to given build args for go runner
 docker tag ${GO_RUNNER} "${DOCKER_REPO}"/${GO_RUNNER}:"${RUNNER_TAG}"
 
 if [ "$KIND_PUSH" = true ] ; then
