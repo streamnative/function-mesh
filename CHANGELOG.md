@@ -1,3 +1,18 @@
+# Function Mesh v0.6.0 Release Notes
+
+## v0.6.0 What's New
+
+- [Test] Add integration tests for Pulsar using oauth2 ([#459](https://github.com/streamnative/function-mesh/pull/459))
+- [Controller] Add support for oauth2 with Pulsar ([#463](https://github.com/streamnative/function-mesh/pull/463))
+- [Controller] Add support for log rotation ([#417](https://github.com/streamnative/function-mesh/pull/417))
+- [Controller] Rename the metrics port name to make Istio compatible ([#466](https://github.com/streamnative/function-mesh/pull/466)
+- [Controller] Improve the stability of autoscaling when HPA is enabled ([#450](https://github.com/streamnative/function-mesh/pull/450))
+- [Controller] Add support for Pulsar window function ([#460](https://github.com/streamnative/function-mesh/pull/460))
+- [Controller] improve FunctionMesh labels ([#451](https://github.com/streamnative/function-mesh/pull/451))
+- [Runner Images] Make runner images use different Java version based on pulsar version ([#469](https://github.com/streamnative/function-mesh/pull/469))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-09+is%3Aclosed).
+
 # Function Mesh v0.5.0 Release Notes
 
 ## v0.5.0 What's New

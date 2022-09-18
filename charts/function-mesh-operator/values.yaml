@@ -11,7 +11,7 @@ installation:
   namespace: function-mesh-system
 
 # operatorImage is Function Mesh Operator image
-operatorImage: streamnative/function-mesh:v0.6.0-rc-1
+operatorImage: streamnative/function-mesh:v0.6.0
 imagePullPolicy: IfNotPresent
 imagePullSecrets: []
 
