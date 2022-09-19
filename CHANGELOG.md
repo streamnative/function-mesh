@@ -7,7 +7,7 @@
 - [Controller] Support log rotation ([#417](https://github.com/streamnative/function-mesh/pull/417))
 - [Controller] Rename the metrics port name to make Istio compatible ([#466](https://github.com/streamnative/function-mesh/pull/466)
 - [Controller] Improve the stability of autoscaling when HPA is enabled ([#450](https://github.com/streamnative/function-mesh/pull/450))
-- [Controller] Add support for Pulsar window function ([#460](https://github.com/streamnative/function-mesh/pull/460))
+- [Controller] Support Pulsar window function ([#460](https://github.com/streamnative/function-mesh/pull/460))
 - [Controller] improve FunctionMesh labels ([#451](https://github.com/streamnative/function-mesh/pull/451))
 - [Runner Images] Make runner images use different Java version based on pulsar version ([#469](https://github.com/streamnative/function-mesh/pull/469))
 
