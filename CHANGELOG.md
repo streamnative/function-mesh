@@ -4,7 +4,7 @@
 
 - [Test] Add integration tests for Pulsar using OAuth2 authentication ([#459](https://github.com/streamnative/function-mesh/pull/459))
 - [Controller] Support OAuth2 authentication for Pulsar ([#463](https://github.com/streamnative/function-mesh/pull/463))
-- [Controller] Add support for log rotation ([#417](https://github.com/streamnative/function-mesh/pull/417))
+- [Controller] Support log rotation ([#417](https://github.com/streamnative/function-mesh/pull/417))
 - [Controller] Rename the metrics port name to make Istio compatible ([#466](https://github.com/streamnative/function-mesh/pull/466)
 - [Controller] Improve the stability of autoscaling when HPA is enabled ([#450](https://github.com/streamnative/function-mesh/pull/450))
 - [Controller] Add support for Pulsar window function ([#460](https://github.com/streamnative/function-mesh/pull/460))
