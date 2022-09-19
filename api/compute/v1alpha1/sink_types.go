@@ -25,17 +25,17 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// SourceSpec defines the desired state of Source
+// SinkSpec defines the desired state of Topic
 // +kubebuilder:validation:Optional
-type SourceSpec struct {
+type SinkSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Name        string `json:"name,omitempty"`
 	ClassName   string `json:"className,omitempty"`
+	ClusterName string `json:"clusterName,omitempty"`
 	Tenant      string `json:"tenant,omitempty"`
 	Namespace   string `json:"namespace,omitempty"`
-	ClusterName string `json:"clusterName,omitempty"`
-	SourceType  string `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
+	SinkType    string `json:"sinkType,omitempty"` // refer to `--sink-type` as builtin connector
 	// +kubebuilder:validation:Minimum=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// +kubebuilder:validation:Minimum=1
@@ -46,27 +46,37 @@ type SourceSpec struct {
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
 	// If provided, a default HPA with CPU at average of 80% will be used.
 	// For complex HPA strategies, please refer to Pod.HPAutoscaler.
-	MaxReplicas *int32     `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Output      OutputConf `json:"output,omitempty"`
+	MaxReplicas *int32    `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
+	Input       InputConf `json:"input,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
-	SourceConfig                 *Config                     `json:"sourceConfig,omitempty"`
-	Resources                    corev1.ResourceRequirements `json:"resources,omitempty"`
-	SecretsMap                   map[string]SecretRef        `json:"secretsMap,omitempty"`
-	ProcessingGuarantee          ProcessGuarantee            `json:"processingGuarantee,omitempty"`
-	RuntimeFlags                 string                      `json:"runtimeFlags,omitempty"`
-	VolumeMounts                 []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
-	ForwardSourceMessageProperty *bool                       `json:"forwardSourceMessageProperty,omitempty"`
-	Pod                          PodPolicy                   `json:"pod,omitempty"`
+	SinkConfig   *Config                     `json:"sinkConfig,omitempty"`
+	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
+	SecretsMap   map[string]SecretRef        `json:"secretsMap,omitempty"`
+	VolumeMounts []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
+
+	Timeout                      int32            `json:"timeout,omitempty"`
+	NegativeAckRedeliveryDelayMs int32            `json:"negativeAckRedeliveryDelayMs,omitempty"`
+	AutoAck                      *bool            `json:"autoAck,omitempty"`
+	MaxMessageRetry              int32            `json:"maxMessageRetry,omitempty"`
+	ProcessingGuarantee          ProcessGuarantee `json:"processingGuarantee,omitempty"`
+	RetainOrdering               bool             `json:"retainOrdering,omitempty"`
+	DeadLetterTopic              string           `json:"deadLetterTopic,omitempty"`
+
+	RuntimeFlags         string            `json:"runtimeFlags,omitempty"`
+	SubscriptionName     string            `json:"subscriptionName,omitempty"`
+	CleanupSubscription  bool              `json:"cleanupSubscription,omitempty"`
+	SubscriptionPosition SubscribePosition `json:"subscriptionPosition,omitempty"`
+
+	Pod PodPolicy `json:"pod,omitempty"`
 
 	// +kubebuilder:validation:Required
 	Messaging `json:",inline"`
-
 	// +kubebuilder:validation:Required
 	Runtime `json:",inline"`
 
-	// Image is the container image used to run source pods.
+	// Image is the container image used to run sink pods.
 	// default is streamnative/pulsar-functions-java-runner
 	Image string `json:"image,omitempty"`
 
@@ -74,8 +84,8 @@ type SourceSpec struct {
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
-// SourceStatus defines the observed state of Source
-type SourceStatus struct {
+// SinkStatus defines the observed state of Topic
+type SinkStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Conditions         map[Component]ResourceCondition `json:"conditions"`
@@ -84,29 +94,30 @@ type SourceStatus struct {
 	ObservedGeneration int64                           `json:"observedGeneration,omitempty"`
 }
 
+// +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 //+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 
-// Source is the Schema for the sources API
+// Sink is the Schema for the sinks API
 // +kubebuilder:pruning:PreserveUnknownFields
-type Source struct {
+type Sink struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SourceSpec   `json:"spec,omitempty"`
-	Status SourceStatus `json:"status,omitempty"`
+	Spec   SinkSpec   `json:"spec,omitempty"`
+	Status SinkStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// SourceList contains a list of Source
-type SourceList struct {
+// SinkList contains a list of Topic
+type SinkList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Source `json:"items"`
+	Items           []Sink `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Source{}, &SourceList{})
+	SchemeBuilder.Register(&Sink{}, &SinkList{})
 }

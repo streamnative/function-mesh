@@ -22,17 +22,15 @@ import (
 	"net/http"
 	"os"
 
+	computev1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers"
 	"github.com/streamnative/function-mesh/controllers/spec"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers"
 	// +kubebuilder:scaffold:imports
 )
 

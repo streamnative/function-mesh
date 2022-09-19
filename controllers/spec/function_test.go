@@ -21,7 +21,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+
 	"gotest.tools/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
