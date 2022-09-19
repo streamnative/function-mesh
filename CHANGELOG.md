@@ -2,7 +2,7 @@
 
 ## v0.6.0 What's New
 
-- [Test] Add integration tests for Pulsar using oauth2 ([#459](https://github.com/streamnative/function-mesh/pull/459))
+- [Test] Add integration tests for Pulsar using OAuth2 authentication ([#459](https://github.com/streamnative/function-mesh/pull/459))
 - [Controller] Add support for oauth2 with Pulsar ([#463](https://github.com/streamnative/function-mesh/pull/463))
 - [Controller] Add support for log rotation ([#417](https://github.com/streamnative/function-mesh/pull/417))
 - [Controller] Rename the metrics port name to make Istio compatible ([#466](https://github.com/streamnative/function-mesh/pull/466)
