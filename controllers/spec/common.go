@@ -45,7 +45,14 @@ const (
 	DefaultJavaRunnerImage     = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
 	DefaultPythonRunnerImage   = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
 	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
-	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
+	WorkDir                    = "/pulsar/"
+
+	// for init container
+	PulsarctlExecutableFile = "/usr/local/bin/pulsarctl"
+	DownloaderName          = "downloader"
+	DownloaderVolume        = "downloader-volume"
+	DownloaderImage         = DefaultRunnerPrefix + "/pulsarctl:2.9.2.24"
+	DownloadDir             = "/pulsar/download"
 
 	WindowFunctionConfigKeyName = "__WINDOWCONFIGS__"
 	WindowFunctionExecutorClass = "org.apache.pulsar.functions.windowing.WindowFunctionExecutor"
@@ -224,28 +231,78 @@ func MakeHeadlessServiceName(serviceName string) string {
 	return fmt.Sprintf("%s-headless", serviceName)
 }
 
-func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, container *corev1.Container,
-	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy) *appsv1.StatefulSet {
+func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderImage string, container *corev1.Container,
+	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, pulsar v1alpha1.PulsarMessaging,
+	javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime, goRuntime *v1alpha1.GoRuntime) *appsv1.StatefulSet {
+
+	volumeMounts := generateDownloaderVolumeMountsForDownloader(javaRuntime, pythonRuntime, goRuntime)
+	var downloaderContainer *corev1.Container
+	var podVolumes = volumes
+	// there must be a download path specified, we need to create an init container and emptyDir volume
+	if len(volumeMounts) > 0 {
+		if pulsar.AuthConfig.OAuth2Config != nil {
+			volumeMounts = append(volumeMounts, generateVolumeMountFromOAuth2Config(pulsar.AuthConfig.OAuth2Config))
+		}
+
+		if !reflect.ValueOf(pulsar.TLSConfig).IsNil() && pulsar.TLSConfig.HasSecretVolume() {
+			volumeMounts = append(volumeMounts, generateVolumeMountFromTLSConfig(pulsar.TLSConfig))
+		}
+
+		var downloadPath, componentPackage string
+		if javaRuntime != nil {
+			downloadPath = javaRuntime.JarLocation
+			componentPackage = javaRuntime.Jar
+		} else if pythonRuntime != nil {
+			downloadPath = pythonRuntime.PyLocation
+			componentPackage = pythonRuntime.Py
+		} else {
+			downloadPath = goRuntime.GoLocation
+			componentPackage = goRuntime.Go
+		}
+
+		image := downloaderImage
+		if image == "" {
+			image = DownloaderImage
+		}
+
+		componentPackage = fmt.Sprintf("%s/%s", DownloadDir, getFilenameOfComponentPackage(componentPackage))
+
+		downloaderContainer = &corev1.Container{
+			Name:            DownloaderName,
+			Image:           image,
+			Command:         []string{"sh", "-c", strings.Join(getDownloadCommand(downloadPath, componentPackage, pulsar.TLSSecret != "", pulsar.AuthSecret != "", pulsar.TLSConfig, pulsar.AuthConfig), " ")},
+			VolumeMounts:    volumeMounts,
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Env: []corev1.EnvVar{{
+				Name:  "HOME",
+				Value: "/tmp",
+			}},
+			EnvFrom: generateContainerEnvFrom(pulsar.PulsarConfig, pulsar.AuthSecret, pulsar.TLSSecret),
+		}
+		podVolumes = append(podVolumes, corev1.Volume{
+			Name: DownloaderVolume,
+		})
+	}
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: *objectMeta,
-		Spec: *MakeStatefulSetSpec(replicas, container, volumes, labels, policy,
-			MakeHeadlessServiceName(objectMeta.Name)),
+		Spec: *MakeStatefulSetSpec(replicas, container, podVolumes, labels, policy,
+			MakeHeadlessServiceName(objectMeta.Name), downloaderContainer),
 	}
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy,
-	serviceName string) *appsv1.StatefulSetSpec {
+	serviceName string, downloaderContainer *corev1.Container) *appsv1.StatefulSetSpec {
 	return &appsv1.StatefulSetSpec{
 		Replicas: replicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: labels,
 		},
-		Template:            *MakePodTemplate(container, volumes, labels, policy),
+		Template:            *MakePodTemplate(container, volumes, labels, policy, downloaderContainer),
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
@@ -255,10 +312,14 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 }
 
 func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
-	labels map[string]string, policy v1alpha1.PodPolicy) *corev1.PodTemplateSpec {
+	labels map[string]string, policy v1alpha1.PodPolicy, downloaderContainer *corev1.Container) *corev1.PodTemplateSpec {
 	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, false)
 	if policy.SecurityContext != nil {
 		podSecurityContext = policy.SecurityContext
+	}
+	initContainers := policy.InitContainers
+	if downloaderContainer != nil {
+		initContainers = append(initContainers, *downloaderContainer)
 	}
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
@@ -266,7 +327,7 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 			Annotations: generateAnnotations(Configs.ResourceAnnotations, policy.Annotations),
 		},
 		Spec: corev1.PodSpec{
-			InitContainers:                policy.InitContainers,
+			InitContainers:                initContainers,
 			Containers:                    append(policy.Sidecars, *container),
 			TerminationGracePeriodSeconds: &policy.TerminationGracePeriodSeconds,
 			Volumes:                       volumes,
@@ -280,84 +341,76 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	}
 }
 
-func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
+func MakeJavaFunctionCommand(packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
-	if downloadPath != "" {
-		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
-			tlsConfig, authConfig), " ")
-		processCommand = downloadCommand + " && " + processCommand
-	}
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
+func MakePythonFunctionCommand(packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
-	if downloadPath != "" {
-		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
-			tlsConfig, authConfig), " ")
-		processCommand = downloadCommand + " && " + processCommand
-	}
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alpha1.Function) []string {
+func MakeGoFunctionCommand(goExecFilePath string, function *v1alpha1.Function) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
-	if downloadPath != "" {
-		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath,
-			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != "",
-			function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
-		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
-	}
 	return []string{"sh", "-c", processCommand}
 }
 
-func getDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
-	// The download path is the path that the package saved in the pulsar.
-	// By default, it's the path that the package saved in the pulsar, we can use package name
-	// to replace it for downloading packages from packages management service.
-	args := []string{
-		PulsarAdminExecutableFile,
-		"--admin-url",
-		"$webServiceURL",
-	}
-	if authConfig != nil {
-		if authConfig.OAuth2Config != nil {
-			args = append(args, []string{
-				"--auth-plugin",
-				OAuth2AuthenticationPlugin,
-				"--auth-params",
-				authConfig.OAuth2Config.AuthenticationParameters(),
-			}...)
+func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, authProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	var args []string
+	// activate oauth2 for pulsarctl
+	if authConfig != nil && authConfig.OAuth2Config != nil {
+		args = []string{
+			PulsarctlExecutableFile,
+			"context",
+			"set",
+			"downloader",
+			"--admin-service-url",
+			"$webServiceURL",
+			"--issuer-endpoint",
+			authConfig.OAuth2Config.IssuerURL,
+			"--audience",
+			authConfig.OAuth2Config.Audience,
+			"--key-file",
+			authConfig.OAuth2Config.GetMountFile(),
+			"&& " + PulsarctlExecutableFile,
+			"oauth2",
+			"activate",
+			"&& " + PulsarctlExecutableFile,
 		}
 	} else if authProvided {
-		args = append(args, []string{
+		args = []string{
+			PulsarctlExecutableFile,
 			"--auth-plugin",
 			"$clientAuthenticationPlugin",
 			"--auth-params",
-			"$clientAuthenticationParameters"}...)
+			"$clientAuthenticationParameters",
+			"--admin-service-url",
+			"$webServiceURL",
+		}
+	} else {
+		args = []string{
+			PulsarctlExecutableFile,
+			"--admin-service-url",
+			"$webServiceURL",
+		}
 	}
 
 	// Use traditional way
 	if reflect.ValueOf(tlsConfig).IsNil() {
 		if tlsProvided {
 			args = append(args, []string{
-				"--tls-allow-insecure",
-				"${tlsAllowInsecureConnection:-" + DefaultForAllowInsecure + "}",
-				"--tls-enable-hostname-verification",
-				"${tlsHostnameVerificationEnable:-" + DefaultForEnableHostNameVerification + "}",
+				"--tls-allow-insecure=${tlsAllowInsecureConnection:-" + DefaultForAllowInsecure + "}",
+				"--tls-enable-hostname-verification=${tlsHostnameVerificationEnable:-" + DefaultForEnableHostNameVerification + "}",
 				"--tls-trust-cert-path",
 				"$tlsTrustCertsFilePath",
 			}...)
@@ -1129,6 +1182,45 @@ func generateContainerVolumeMountsFromConsumerConfigs(confs map[string]v1alpha1.
 	return mounts
 }
 
+func generateDownloaderVolumeMountsForDownloader(javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime, goRuntime *v1alpha1.GoRuntime) []corev1.VolumeMount {
+	if (javaRuntime != nil && javaRuntime.JarLocation != "") ||
+		(pythonRuntime != nil && pythonRuntime.PyLocation != "") ||
+		(goRuntime != nil && goRuntime.GoLocation != "") {
+		return []corev1.VolumeMount{{
+			Name:      DownloaderVolume,
+			MountPath: DownloadDir,
+		}}
+	}
+	return nil
+}
+
+func generateDownloaderVolumeMountsForRuntime(javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
+	goRuntime *v1alpha1.GoRuntime) []corev1.VolumeMount {
+	downloadPath := ""
+	if javaRuntime != nil && javaRuntime.JarLocation != "" {
+		downloadPath = javaRuntime.Jar
+	} else if pythonRuntime != nil && pythonRuntime.PyLocation != "" {
+		downloadPath = pythonRuntime.Py
+	} else if goRuntime != nil && goRuntime.GoLocation != "" {
+		downloadPath = goRuntime.Go
+	}
+
+	if downloadPath != "" {
+		subPath := getFilenameOfComponentPackage(downloadPath)
+		mountPath := downloadPath
+		// for relative path, volume should be mounted to the WorkDir
+		if !strings.HasPrefix(downloadPath, "/") {
+			mountPath = WorkDir + downloadPath
+		}
+		return []corev1.VolumeMount{{
+			Name:      DownloaderVolume,
+			MountPath: mountPath,
+			SubPath:   subPath,
+		}}
+	}
+	return nil
+}
+
 func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	if conf != nil && conf.CryptoConfig != nil && len(conf.CryptoConfig.CryptoSecrets) > 0 {
@@ -1143,7 +1235,9 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
 	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	logConfs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
+	logConfs map[int32]*v1alpha1.LogConfig, javaRuntime *v1alpha1.JavaRuntime,
+	pythonRuntime *v1alpha1.PythonRuntime,
+	goRuntime *v1alpha1.GoRuntime) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
@@ -1154,6 +1248,7 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 			mounts = append(mounts, generateVolumeMountFromOAuth2Config(authConfig.OAuth2Config))
 		}
 	}
+	mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(javaRuntime, pythonRuntime, goRuntime)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)
 	mounts = append(mounts, generateVolumeMountFromLogConfigs(logConfs)...)
@@ -1448,4 +1543,12 @@ func GetNamespacedName(object metav1.Object, component string) string {
 		return component + "/" + object.GetNamespace() + "/" + object.GetName()
 	}
 	return component + "/" + object.GetName()
+}
+
+func getFilenameOfComponentPackage(componentPackage string) string {
+	data := strings.Split(componentPackage, "/")
+	if len(data) > 0 {
+		return data[len(data)-1]
+	}
+	return componentPackage
 }

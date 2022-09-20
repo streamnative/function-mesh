@@ -39,6 +39,8 @@ spec:
                         type: string
                       deadLetterTopic:
                         type: string
+                      downloaderImage:
+                        type: string
                       forwardSourceMessageProperty:
                         type: boolean
                       funcConfig:
@@ -2685,6 +2687,22 @@ spec:
                             type: object
                           authSecret:
                             type: string
+                          oauth2Config:
+                            properties:
+                              audience:
+                                type: string
+                              issuerUrl:
+                                type: string
+                              keySecretKey:
+                                type: string
+                              keySecretName:
+                                type: string
+                            required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                            type: object
                           pulsarConfig:
                             type: string
                           tlsConfig:
@@ -2878,6 +2896,8 @@ spec:
                       clusterName:
                         type: string
                       deadLetterTopic:
+                        type: string
+                      downloaderImage:
                         type: string
                       golang:
                         properties:
@@ -5459,6 +5479,22 @@ spec:
                             type: object
                           authSecret:
                             type: string
+                          oauth2Config:
+                            properties:
+                              audience:
+                                type: string
+                              issuerUrl:
+                                type: string
+                              keySecretKey:
+                                type: string
+                              keySecretName:
+                                type: string
+                            required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                            type: object
                           pulsarConfig:
                             type: string
                           tlsConfig:
@@ -5601,6 +5637,8 @@ spec:
                       className:
                         type: string
                       clusterName:
+                        type: string
+                      downloaderImage:
                         type: string
                       forwardSourceMessageProperty:
                         type: boolean
@@ -8165,6 +8203,22 @@ spec:
                             type: object
                           authSecret:
                             type: string
+                          oauth2Config:
+                            properties:
+                              audience:
+                                type: string
+                              issuerUrl:
+                                type: string
+                              keySecretKey:
+                                type: string
+                              keySecretName:
+                                type: string
+                            required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                            type: object
                           pulsarConfig:
                             type: string
                           tlsConfig:

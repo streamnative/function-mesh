@@ -31,66 +31,148 @@ import (
 )
 
 func TestGetDownloadCommand(t *testing.T) {
-	doTest := func(downloadPath, componentPackage string, expectedCommand []string) {
-		var tlsConfig *v1alpha1.PulsarTLSConfig
-		actualResult := getDownloadCommand(downloadPath, componentPackage, false, false, tlsConfig, nil)
-		assert.Equal(t, expectedCommand, actualResult)
-	}
-
 	testData := []struct {
 		downloadPath     string
 		componentPackage string
+		tlsConfig        *v1alpha1.PulsarTLSConfig
+		oauth2Config     *v1alpha1.OAuth2Config
 		expectedCommand  []string
 	}{
 		// test get the download command with package name
-		{"function://public/default/test@v1", "function-package.jar",
+		{"function://public/default/test@v1", "function-package.jar", nil, nil,
 			[]string{
-				PulsarAdminExecutableFile,
-				"--admin-url", "$webServiceURL",
+				PulsarctlExecutableFile,
+				"--admin-service-url", "$webServiceURL",
 				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
 			},
 		},
-		{"sink://public/default/test@v1", "sink-package.jar",
+		{"sink://public/default/test@v1", "sink-package.jar", nil, nil,
 			[]string{
-				PulsarAdminExecutableFile,
-				"--admin-url", "$webServiceURL",
+				PulsarctlExecutableFile,
+				"--admin-service-url", "$webServiceURL",
 				"packages", "download", "sink://public/default/test@v1", "--path", "sink-package.jar",
 			},
 		},
-		{"source://public/default/test@v1", "source-package.jar",
+		{"source://public/default/test@v1", "source-package.jar", nil, nil,
 			[]string{
-				PulsarAdminExecutableFile,
-				"--admin-url", "$webServiceURL",
+				PulsarctlExecutableFile,
+				"--admin-service-url", "$webServiceURL",
 				"packages", "download", "source://public/default/test@v1", "--path", "source-package.jar",
 			},
 		},
 		// test get the download command with normal name
-		{"/test", "test.jar",
+		{"/test", "test.jar", nil, nil,
 			[]string{
-				PulsarAdminExecutableFile,
-				"--admin-url", "$webServiceURL",
+				PulsarctlExecutableFile,
+				"--admin-service-url", "$webServiceURL",
 				"functions", "download", "--path", "/test", "--destination-file", "test.jar",
 			},
 		},
 		// test get the download command with a wrong package name
-		{"source/public/default/test@v1", "source-package.jar",
+		{"source/public/default/test@v1", "source-package.jar", nil, nil,
 			[]string{
-				PulsarAdminExecutableFile,
-				"--admin-url", "$webServiceURL",
+				PulsarctlExecutableFile,
+				"--admin-service-url", "$webServiceURL",
 				"functions", "download", "--path", "source/public/default/test@v1", "--destination-file", "source-package.jar",
 			},
 		},
-		{"source:/public/default/test@v1", "source-package.jar",
+		{"source:/public/default/test@v1", "source-package.jar", nil, nil,
 			[]string{
-				PulsarAdminExecutableFile,
-				"--admin-url", "$webServiceURL",
+				PulsarctlExecutableFile,
+				"--admin-service-url", "$webServiceURL",
 				"functions", "download", "--path", "source:/public/default/test@v1", "--destination-file", "source-package.jar",
+			},
+		},
+		// test get the download command with an oauth2 config
+		{"function://public/default/test@v1", "function-package.jar", nil,
+			&v1alpha1.OAuth2Config{
+				Audience:      "test-audience",
+				IssuerURL:     "test-issuer-url",
+				KeySecretName: "test-private-key",
+				KeySecretKey:  "auth.json",
+			},
+			[]string{
+				PulsarctlExecutableFile,
+				"context",
+				"set",
+				"downloader",
+				"--admin-service-url",
+				"$webServiceURL",
+				"--issuer-endpoint",
+				"test-issuer-url",
+				"--audience",
+				"test-audience",
+				"--key-file",
+				"/etc/oauth2/auth.json",
+				"&& " + PulsarctlExecutableFile,
+				"oauth2",
+				"activate",
+				"&& " + PulsarctlExecutableFile,
+				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
+			},
+		},
+		// test get the download command with a tls config
+		{"function://public/default/test@v1", "function-package.jar",
+			&v1alpha1.PulsarTLSConfig{
+				TLSConfig: v1alpha1.TLSConfig{
+					Enabled:              true,
+					AllowInsecure:        false,
+					HostnameVerification: true,
+					CertSecretName:       "test-secret",
+					CertSecretKey:        "test-key",
+				},
+			}, nil,
+			[]string{
+				PulsarctlExecutableFile,
+				"--admin-service-url", "$webServiceURL",
+				"--tls-enable-hostname-verification",
+				"--tls-trust-cert-path", "/etc/tls/pulsar-functions/test-key",
+				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
+			},
+		},
+		{"function://public/default/test@v1", "function-package.jar",
+			&v1alpha1.PulsarTLSConfig{
+				TLSConfig: v1alpha1.TLSConfig{
+					Enabled:              false,
+					AllowInsecure:        false,
+					HostnameVerification: true,
+					CertSecretName:       "test-secret",
+					CertSecretKey:        "test-key",
+				},
+			}, nil,
+			[]string{
+				PulsarctlExecutableFile,
+				"--admin-service-url", "$webServiceURL",
+				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
+			},
+		},
+		{"function://public/default/test@v1", "function-package.jar",
+			&v1alpha1.PulsarTLSConfig{
+				TLSConfig: v1alpha1.TLSConfig{
+					Enabled:              true,
+					AllowInsecure:        true,
+					HostnameVerification: false,
+					CertSecretName:       "test-secret",
+					CertSecretKey:        "test-key",
+				},
+			}, nil,
+			[]string{
+				PulsarctlExecutableFile,
+				"--admin-service-url", "$webServiceURL",
+				"--tls-allow-insecure",
+				"--tls-trust-cert-path", "/etc/tls/pulsar-functions/test-key",
+				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
 			},
 		},
 	}
 
 	for _, v := range testData {
-		doTest(v.downloadPath, v.componentPackage, v.expectedCommand)
+		var authConfig v1alpha1.AuthConfig
+		if v.oauth2Config != nil {
+			authConfig.OAuth2Config = v.oauth2Config
+		}
+		actualResult := getDownloadCommand(v.downloadPath, v.componentPackage, false, false, v.tlsConfig, &authConfig)
+		assert.Equal(t, v.expectedCommand, actualResult)
 	}
 }
 
@@ -179,7 +261,7 @@ func TestGetSourceRunnerImage(t *testing.T) {
 
 func TestMakeGoFunctionCommand(t *testing.T) {
 	function := makeGoFunctionSample(TestFunctionName)
-	commands := MakeGoFunctionCommand("", "/pulsar/go-func", function)
+	commands := MakeGoFunctionCommand("/pulsar/go-func", function)
 	assert.Equal(t, commands[0], "sh")
 	assert.Equal(t, commands[1], "-c")
 	assert.True(t, strings.HasPrefix(commands[2], "SHARD_ID=${POD_NAME##*-} && echo shardId=${SHARD_ID}"))
@@ -538,6 +620,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		trustCert     *v1alpha1.PulsarTLSConfig
 		authConfig    *v1alpha1.AuthConfig
 		logConf       map[int32]*v1alpha1.LogConfig
+		javaRuntime   *v1alpha1.JavaRuntime
 	}
 	tests := []struct {
 		name string
@@ -662,6 +745,64 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 			},
 		},
 		{
+			name: "generate volume mounts from runtime config",
+			args: args{
+				producerConf: &v1alpha1.ProducerConfig{
+					CryptoConfig: &v1alpha1.CryptoConfig{
+						CryptoSecrets: []v1alpha1.CryptoSecret{{
+							SecretName: "test-producer-secret",
+							SecretKey:  "test-producer-key",
+							AsVolume:   "/test-producer",
+						}},
+					},
+				},
+				consumerConfs: map[string]v1alpha1.ConsumerConfig{
+					"test-consumer": {
+						CryptoConfig: &v1alpha1.CryptoConfig{
+							CryptoSecrets: []v1alpha1.CryptoSecret{{
+								SecretName: "test-consumer-secret",
+								SecretKey:  "test-consumer-key",
+								AsVolume:   "/test-consumer",
+							}},
+						},
+					},
+				},
+				trustCert: &v1alpha1.PulsarTLSConfig{
+					TLSConfig: v1alpha1.TLSConfig{
+						Enabled:              true,
+						AllowInsecure:        true,
+						HostnameVerification: true,
+						CertSecretName:       "test-trust-secret",
+						CertSecretKey:        "test-trust-key",
+					},
+				},
+				javaRuntime: &v1alpha1.JavaRuntime{
+					Jar:         "test.jar",
+					JarLocation: "/test-jar-location",
+				},
+			},
+			want: []corev1.VolumeMount{
+				{
+					Name:      "test-trust-secret-test-trust-key",
+					MountPath: "/etc/tls/pulsar-functions",
+				},
+				{
+					Name:      DownloaderVolume,
+					MountPath: "/pulsar/test.jar",
+					SubPath:   "test.jar",
+					ReadOnly:  false,
+				},
+				{
+					Name:      "test-producer-secret-test-producer-key",
+					MountPath: "/test-producer",
+				},
+				{
+					Name:      "test-consumer-secret-test-consumer-key",
+					MountPath: "/test-consumer",
+				},
+			},
+		},
+		{
 			name: "generate volume mounts from authSecret",
 			args: args{
 				authConfig: &v1alpha1.AuthConfig{
@@ -716,6 +857,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 					tt.args.trustCert,
 					tt.args.authConfig,
 					tt.args.logConf,
+					tt.args.javaRuntime, nil, nil,
 				), "generateContainerVolumeMounts(%v, %v, %v, %v)", tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
 		})
 	}

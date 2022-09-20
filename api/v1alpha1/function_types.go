@@ -39,6 +39,9 @@ type FunctionSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 	// +kubebuilder:validation:Minimum=1
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
+
+	DownloaderImage string `json:"downloaderImage,omitempty"`
+
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
 	// If provided, a default HPA with CPU at average of 80% will be used.
 	// For complex HPA strategies, please refer to Pod.HPAutoscaler.
