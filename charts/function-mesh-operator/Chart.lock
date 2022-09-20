@@ -1,9 +1,0 @@
-dependencies:
-- name: admission-webhook
-  repository: ""
-  version: 0.2.4
-- name: vertical-pod-autoscaler
-  repository: https://cowboysysop.github.io/charts/
-  version: 5.2.0
-digest: sha256:42514216947cd89a08257b04c779cbcf92c998a466cc3c01ef80af298f39c434
-generated: "2022-09-15T08:14:16.47559339Z"

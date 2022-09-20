@@ -240,7 +240,7 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 	var podVolumes = volumes
 	// there must be a download path specified, we need to create an init container and emptyDir volume
 	if len(volumeMounts) > 0 {
-		if pulsar.AuthConfig.OAuth2Config != nil {
+		if pulsar.AuthConfig != nil && pulsar.AuthConfig.OAuth2Config != nil {
 			volumeMounts = append(volumeMounts, generateVolumeMountFromOAuth2Config(pulsar.AuthConfig.OAuth2Config))
 		}
 
