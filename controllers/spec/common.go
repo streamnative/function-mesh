@@ -382,11 +382,19 @@ func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, auth
 			authConfig.OAuth2Config.Audience,
 			"--key-file",
 			authConfig.OAuth2Config.GetMountFile(),
+		}
+		if authConfig.OAuth2Config.Scope != "" {
+			args = append(args, []string{
+				"--scope",
+				authConfig.OAuth2Config.Scope,
+			}...)
+		}
+		args = append(args, []string{
 			"&& " + PulsarctlExecutableFile,
 			"oauth2",
 			"activate",
 			"&& " + PulsarctlExecutableFile,
-		}
+		}...)
 	} else if authProvided {
 		args = []string{
 			PulsarctlExecutableFile,
