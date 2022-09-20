@@ -125,7 +125,8 @@ func TestGetDownloadCommand(t *testing.T) {
 			[]string{
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
-				"--tls-enable-hostname-verification",
+				"--tls-allow-insecure=false",
+				"--tls-enable-hostname-verification=true",
 				"--tls-trust-cert-path", "/etc/tls/pulsar-functions/test-key",
 				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
 			},
@@ -159,7 +160,8 @@ func TestGetDownloadCommand(t *testing.T) {
 			[]string{
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
-				"--tls-allow-insecure",
+				"--tls-allow-insecure=true",
+				"--tls-enable-hostname-verification=false",
 				"--tls-trust-cert-path", "/etc/tls/pulsar-functions/test-key",
 				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
 			},
