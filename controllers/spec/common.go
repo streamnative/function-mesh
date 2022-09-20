@@ -51,7 +51,7 @@ const (
 	PulsarctlExecutableFile = "/usr/local/bin/pulsarctl"
 	DownloaderName          = "downloader"
 	DownloaderVolume        = "downloader-volume"
-	DownloaderImage         = DefaultRunnerPrefix + "/pulsarctl:2.9.2.24"
+	DownloaderImage         = DefaultRunnerPrefix + "pulsarctl:2.9.2.24"
 	DownloadDir             = "/pulsar/download"
 
 	WindowFunctionConfigKeyName = "__WINDOWCONFIGS__"
