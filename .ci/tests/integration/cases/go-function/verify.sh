@@ -32,21 +32,21 @@ if [ ! "$KUBECONFIG" ]; then
   export KUBECONFIG=${E2E_KUBECONFIG}
 fi
 
-manifests_file="${BASE_DIR}"/.ci/tests/integration/cases/java-function/manifests.yaml
+manifests_file="${BASE_DIR}"/.ci/tests/integration/cases/go-function/manifests.yaml
 
 kubectl apply -f "${manifests_file}" > /dev/null 2>&1
 
-verify_fm_result=$(ci::verify_function_mesh function-sample 2>&1)
+verify_fm_result=$(ci::verify_function_mesh go-function-sample 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_fm_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
-verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_java_function 2>&1)
+verify_golang_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_exclamation_function "persistent://public/default/input-go-topic" "persistent://public/default/output-go-topic" "test-message" "test-message!" 10 2>&1)
 if [ $? -eq 0 ]; then
   echo "e2e-test: ok" | yq eval -
 else
-  echo "$verify_java_result"
+  echo "$verify_golang_result"
 fi
 kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true

@@ -1,4 +1,4 @@
-name: Precommit - Integration Tests based on Skywalking-e2e
+name: Precommit - Integration Tests
 on:
   pull_request:
     branches:
@@ -14,7 +14,7 @@ on:
 jobs:
   integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 80
     strategy:
       matrix:
         case:

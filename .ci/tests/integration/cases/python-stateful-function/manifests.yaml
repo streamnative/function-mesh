@@ -1,0 +1,43 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: python-function-stateful-sample
+  namespace: default
+spec:
+  image: streamnative/pulsar-functions-python-sample:2.9.2.23
+  className: wordcount_function.WordCountFunction
+  forwardSourceMessageProperty: true
+  maxPendingAsyncRequests: 1000
+  replicas: 1
+  logTopic: persistent://public/default/logging-stateful-function-logs
+  input:
+    topics:
+      - persistent://public/default/python-function-stateful-input-topic
+    typeClassName: java.lang.String
+  output:
+    topic: persistent://public/default/python-function-stateful-output-topic
+    typeClassName: java.lang.String
+  resources:
+    requests:
+      cpu: 50m
+      memory: 1G
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+  pulsar:
+    pulsarConfig: "test-pulsar"
+  python:
+    py: /pulsar/examples/python-examples/wordcount_function.py
+  clusterName: test-pulsar
+  autoAck: true
+  statefulConfig:
+    pulsar:
+      serviceUrl: "bk://sn-platform-pulsar-bookie.default.svc.cluster.local:4181"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
