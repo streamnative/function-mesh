@@ -83,7 +83,7 @@ setup:
           resource: pod
           label-selector: app.kubernetes.io/name=function-mesh-operator
           for: condition=Ready
-  timeout: 60m
+  timeout: 80m
 
 cleanup:
   # always never success failure
@@ -97,7 +97,19 @@ verify:
     # the interval between two attempts, e.g. 10s, 1m.
     interval: 10s
   cases:
-    - query: bash .ci/tests/integration/cases/java-function/verify.sh
+    - query: timeout 5m bash .ci/tests/integration/cases/python-function/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/go-function/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/functionmesh/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/hpa/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/builtin-hpa/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/python-stateful-function/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/java-function/verify.sh
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/reconciliation/verify.sh
       expected: expected.data.yaml
