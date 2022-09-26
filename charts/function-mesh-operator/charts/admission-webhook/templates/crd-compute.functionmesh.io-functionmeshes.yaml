@@ -39,6 +39,8 @@ spec:
                         type: string
                       deadLetterTopic:
                         type: string
+                      downloaderImage:
+                        type: string
                       forwardSourceMessageProperty:
                         type: boolean
                       funcConfig:
@@ -2879,6 +2881,8 @@ spec:
                         type: string
                       deadLetterTopic:
                         type: string
+                      downloaderImage:
+                        type: string
                       golang:
                         properties:
                           go:
@@ -5601,6 +5605,8 @@ spec:
                       className:
                         type: string
                       clusterName:
+                        type: string
+                      downloaderImage:
                         type: string
                       forwardSourceMessageProperty:
                         type: boolean

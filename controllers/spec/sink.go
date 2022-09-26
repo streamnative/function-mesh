@@ -50,8 +50,9 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 
 func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, MakeSinkContainer(sink),
-		makeSinkVolumes(sink), MakeSinkLabels(sink), sink.Spec.Pod)
+	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, MakeSinkContainer(sink),
+		makeSinkVolumes(sink), MakeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
+		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang)
 }
 
 func MakeSinkServiceName(sink *v1alpha1.Sink) string {
@@ -123,12 +124,13 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
 		sink.Spec.Pulsar.AuthConfig,
-		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
+		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
+		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang)
 }
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
-	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+	return MakeJavaFunctionCommand(spec.Java.Jar,
 		spec.Name, spec.ClusterName,
 		generateJavaLogConfigCommand(sink.Spec.Java),
 		parseJavaLogLevel(sink.Spec.Java),

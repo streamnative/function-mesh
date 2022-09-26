@@ -58,6 +58,8 @@ spec:
                   type: string
                 deadLetterTopic:
                   type: string
+                downloaderImage:
+                  type: string
                 forwardSourceMessageProperty:
                   type: boolean
                 funcConfig:

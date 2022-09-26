@@ -32,6 +32,8 @@ spec:
                 type: string
               clusterName:
                 type: string
+              downloaderImage:
+                type: string
               forwardSourceMessageProperty:
                 type: boolean
               golang:

@@ -54,8 +54,9 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 
 func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
-	return MakeStatefulSet(objectMeta, function.Spec.Replicas,
-		MakeFunctionContainer(function), makeFunctionVolumes(function), makeFunctionLabels(function), function.Spec.Pod)
+	return MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
+		MakeFunctionContainer(function), makeFunctionVolumes(function), makeFunctionLabels(function), function.Spec.Pod,
+		*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang)
 }
 
 func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
@@ -84,7 +85,10 @@ func makeFunctionVolumeMounts(function *v1alpha1.Function) []corev1.VolumeMount 
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
 		function.Spec.Pulsar.AuthConfig,
-		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang))
+		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
+		function.Spec.Java,
+		function.Spec.Python,
+		function.Spec.Golang)
 }
 
 func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
@@ -130,7 +134,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 
 	if spec.Java != nil {
 		if spec.Java.Jar != "" {
-			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+			return MakeJavaFunctionCommand(spec.Java.Jar,
 				spec.Name, spec.ClusterName,
 				generateJavaLogConfigCommand(function.Spec.Java),
 				parseJavaLogLevel(function.Spec.Java),
@@ -141,7 +145,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
-			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
+			return MakePythonFunctionCommand(spec.Python.Py,
 				spec.Name, spec.ClusterName,
 				generatePythonLogConfigCommand(function.Name, function.Spec.Python),
 				generateFunctionDetailsInJSON(function), string(function.UID),
@@ -150,8 +154,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {
-			return MakeGoFunctionCommand(spec.Golang.GoLocation, spec.Golang.Go,
-				function)
+			return MakeGoFunctionCommand(spec.Golang.Go, function)
 		}
 	}
 
