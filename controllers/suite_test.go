@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

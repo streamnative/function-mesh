@@ -20,7 +20,7 @@ package controllers
 import (
 	"context"
 
-	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"

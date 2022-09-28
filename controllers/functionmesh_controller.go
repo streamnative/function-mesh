@@ -23,7 +23,7 @@ import (
 	"github.com/streamnative/function-mesh/controllers/spec"
 
 	"github.com/go-logr/logr"
-	"github.com/streamnative/function-mesh/api/v1alpha1"
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
