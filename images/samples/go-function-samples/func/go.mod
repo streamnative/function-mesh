@@ -53,3 +53,5 @@ require (
 )
 
 replace golang.org/x/sys => golang.org/x/sys v0.0.0-20220422013727-9388b58f7150
+
+replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
