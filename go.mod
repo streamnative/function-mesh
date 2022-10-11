@@ -9,10 +9,10 @@ require (
 	github.com/golang/protobuf v1.4.3
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.4
-	github.com/streamnative/pulsarctl v0.4.3-0.20220104092115-5af28d815290
+	github.com/streamnative/pulsarctl v0.4.3-0.20220702165443-e4c26e2c39cf
 	github.com/stretchr/testify v1.6.1
 	google.golang.org/protobuf v1.25.0
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6
@@ -28,6 +28,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/danieljoos/wincred v1.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/dvsekhvalnov/jose2go v0.0.0-20200901110807-248326c1351b // indirect
 	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
 	github.com/fatih/color v1.7.0 // indirect
@@ -90,3 +91,5 @@ require (
 )
 
 replace golang.org/x/sys => golang.org/x/sys v0.0.0-20220422013727-9388b58f7150
+
+replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
