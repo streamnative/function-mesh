@@ -96,7 +96,7 @@ function ci::install_pulsar_charts() {
     echo "wait until pulsar init job is completed"
     succeeded_num=0
     while [[ ${succeeded_num} -lt 1 ]]; do
-        sleep 10s
+        sleep 10
         kubectl get pods -n ${NAMESPACE}
         succeeded_num=$(kubectl get jobs -n ${NAMESPACE} sn-platform-pulsar-pulsar-init -o jsonpath='{.status.succeeded}')
     done
@@ -125,7 +125,7 @@ function ci::verify_function_mesh() {
 
     num=0
     while [[ ${num} -lt 1 ]]; do
-        sleep 5s
+        sleep 5
         kubectl get pods
         num=$(kubectl get pods -l compute.functionmesh.io/name="${FUNCTION_NAME}" | wc -l)
     done
@@ -134,7 +134,7 @@ function ci::verify_function_mesh() {
 
     num=0
     while [[ ${num} -lt 1 ]]; do
-        sleep 5s
+        sleep 5
         kubectl get pods -l compute.functionmesh.io/name="${FUNCTION_NAME}"
         kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --all-containers=true --tail=50 || true
         num=$(kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer\|Subscribed to topic" | wc -l)
@@ -164,7 +164,7 @@ function ci::test_function_runners() {
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-java --className org.apache.pulsar.functions.api.examples.ExclamationFunction --inputs persistent://public/default/test-java-input --jar /pulsar/examples/api-examples.jar --cpu 0.1
     function_num=0
     while [[ ${function_num} -lt 1 ]]; do
-        sleep 5s
+        sleep 5
         kubectl get pods -n ${NAMESPACE}
         function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-java --no-headers | wc -l)
     done
@@ -178,7 +178,7 @@ function ci::test_function_runners() {
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-python --classname exclamation_function.ExclamationFunction --inputs persistent://public/default/test-python-input --py /pulsar/examples/python-examples/exclamation_function.py --cpu 0.1
     function_num=0
     while [[ ${function_num} -lt 1 ]]; do
-        sleep 5s
+        sleep 5
         kubectl get pods -n ${NAMESPACE}
         function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-python --no-headers | wc -l)
     done
@@ -194,7 +194,7 @@ function ci::test_function_runners() {
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin functions create --tenant public --namespace default --name test-go --inputs persistent://public/default/test-go-input --go /pulsar/go-examples/exclamationFunc --cpu 0.1
     function_num=0
     while [[ ${function_num} -lt 1 ]]; do
-        sleep 5s
+        sleep 5
         kubectl get pods -n ${NAMESPACE}
         function_num=$(kubectl get pods -n ${NAMESPACE} -l name=test-go --no-headers | wc -l)
     done
@@ -273,6 +273,13 @@ function ci::verify_crypto_function() {
     ci::verify_function_with_encryption "persistent://public/default/java-function-crypto-input-topic" "persistent://public/default/java-function-crypto-output-topic" "test-message" "test-message!" 10
 }
 
+function ci::send_test_data() {
+    inputtopic=$1
+    inputmessage=$2
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 100 "${inputtopic}"
+    return 0
+}
+
 function ci::verify_exclamation_function() {
     inputtopic=$1
     outputtopic=$2
@@ -330,7 +337,7 @@ function ci::verify_functionmesh_reconciliation() {
     function_name="${MESH_NAME}"-function-"${POSTFIX}"
     find=false
     while ! ${find}; do
-        sleep 5s
+        sleep 5
         num=$(kubectl get functions.compute.functionmesh.io --no-headers | wc -l)
         if [[ ${num} -ne 1 ]]; then
             continue
@@ -344,7 +351,7 @@ function ci::verify_functionmesh_reconciliation() {
     sink_name="${MESH_NAME}"-sink-"${POSTFIX}"
     find=false
     while ! ${find}; do
-        sleep 5s
+        sleep 5
         num=$(kubectl get sinks.compute.functionmesh.io --no-headers | wc -l)
         if [[ ${num} -ne 1 ]]; then
             continue
@@ -358,7 +365,7 @@ function ci::verify_functionmesh_reconciliation() {
     source_name="${MESH_NAME}"-source-"${POSTFIX}"
     find=false
     while ! ${find}; do
-        sleep 5s
+        sleep 5
         num=$(kubectl get sources.compute.functionmesh.io --no-headers | wc -l)
         if [[ ${num} -ne 1 ]]; then
             continue

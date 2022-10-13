@@ -1,0 +1,47 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: window-function-sample
+  namespace: default
+spec:
+  image: streamnative/pulsar-functions-java-sample:2.9.2.23
+  className: org.apache.pulsar.functions.api.examples.window.LoggingWindowFunction
+  forwardSourceMessageProperty: true
+  maxPendingAsyncRequests: 1000
+  replicas: 1
+  logTopic: persistent://public/default/window-function-logs
+  input:
+    topics:
+      - persistent://public/default/window-function-input-topic
+    typeClassName: java.lang.String
+  output:
+    topic: persistent://public/default/window-function-output-topic
+    typeClassName: java.lang.String
+  resources:
+    requests:
+      cpu: 50m
+      memory: 1G
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+  pulsar:
+    pulsarConfig: "test-pulsar"
+  java:
+    jar: /pulsar/examples/api-examples.jar
+  clusterName: test-pulsar
+  autoAck: true
+  statefulConfig:
+    pulsar:
+      serviceUrl: "bk://sn-platform-pulsar-bookie.default.svc.cluster.local:4181"
+  windowConfig:
+    windowLengthCount: 10
+    slidingIntervalCount: 5
+  subscriptionPosition: earliest
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650

@@ -33,8 +33,8 @@ RUN echo "VERSION_TAG=$(VERSION_TAG)" && \
         echo "Pulsar version is 2.8, use java 1.8" && \
         export JRE_PACKAGE_NAME=openjdk-8-jre-headless; \
     elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 9 ]; then \
-        echo "Pulsar version is 2.9, use java 1.8" && \
-        export JRE_PACKAGE_NAME=openjdk-8-jre-headless; \
+        echo "Pulsar version is 2.9, use java 11" && \
+        export JRE_PACKAGE_NAME=openjdk-11-jre-headless; \
     elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 10 ]; then \
         echo "Pulsar version is 2.10, use java 11" && \
         export JRE_PACKAGE_NAME=openjdk-11-jre-headless; \
