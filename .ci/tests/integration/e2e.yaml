@@ -9,9 +9,9 @@ setup:
         PULSAR_IMAGE_TAG=2.9.2.23 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=true images/build.sh
         PULSAR_IMAGE_TAG=2.9.2.23 KIND_PUSH=true images/samples/build.sh
 
-#    - name: install helm
-#      command: |
-#        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    - name: install helm
+      command: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
     - name: setup cert-manager
       command: |
