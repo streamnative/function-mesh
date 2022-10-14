@@ -32,7 +32,7 @@ if [ ! "$KUBECONFIG" ]; then
   export KUBECONFIG=${E2E_KUBECONFIG}
 fi
 
-manifests_file="${BASE_DIR}"/.ci/tests/integration/cases/window-function/manifests.yaml
+manifests_file="${BASE_DIR}"/.ci/tests/integration/cases/logging-window-function/manifests.yaml
 
 kubectl apply -f "${manifests_file}" > /dev/null 2>&1
 
