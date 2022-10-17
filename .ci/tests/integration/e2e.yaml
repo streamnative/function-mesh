@@ -40,7 +40,7 @@ setup:
         echo "wait until pulsar init job is completed"
         succeeded_num=0
         while [[ ${succeeded_num} -lt 1 ]]; do
-          sleep 10s
+          sleep 10
           kubectl get pods -n ${PULSAR_NAMESPACE}
           succeeded_num=$(kubectl get jobs -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-pulsar-init -o jsonpath='{.status.succeeded}')
         done
@@ -136,4 +136,6 @@ verify:
     - query: timeout 5m bash .ci/tests/integration/cases/python-log-config/verify.sh
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/python-log-level/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/logging-window-function/verify.sh
       expected: expected.data.yaml
