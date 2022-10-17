@@ -41,7 +41,7 @@ function install_elasticsearch_cluster() {
     kubectl apply -f https://download.elastic.co/downloads/eck/2.3.0/operator.yaml
     num=0
     while [[ ${num} -lt 1 ]]; do
-        sleep 5s
+        sleep 5
         kubectl get pods -n elastic-system
         num=$(kubectl get pods -n elastic-system -l control-plane=elastic-operator | wc -l)
     done
@@ -51,7 +51,7 @@ function install_elasticsearch_cluster() {
     kubectl apply -f "${es_file}"
     num=0
     while [[ ${num} -lt 1 ]]; do
-        sleep 5s
+        sleep 5
         kubectl get pods
         num=$(kubectl get pods -l elasticsearch.k8s.elastic.co/cluster-name=quickstart | wc -l)
     done
@@ -65,7 +65,7 @@ function uninstall_elasticsearch_cluster() {
         if [ $? -eq 1 ]; then
             break
         fi
-        sleep 5s
+        sleep 5
     done
 
     kubectl delete -f https://download.elastic.co/downloads/eck/2.3.0/operator.yaml
