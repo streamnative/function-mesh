@@ -185,7 +185,7 @@ spec:
                           type: string
                         jarLocation:
                           type: string
-                        javaOPTS:
+                        javaOpts:
                           type: string
                         log:
                           properties:
@@ -3080,7 +3080,7 @@ spec:
                           type: string
                         jarLocation:
                           type: string
-                        javaOPTS:
+                        javaOpts:
                           type: string
                         log:
                           properties:
@@ -5802,7 +5802,7 @@ spec:
                           type: string
                         jarLocation:
                           type: string
-                        javaOPTS:
+                        javaOpts:
                           type: string
                         log:
                           properties:
@@ -8726,7 +8726,7 @@ spec:
                     type: string
                   jarLocation:
                     type: string
-                  javaOPTS:
+                  javaOpts:
                     type: string
                   log:
                     properties:
@@ -11700,7 +11700,7 @@ spec:
                     type: string
                   jarLocation:
                     type: string
-                  javaOPTS:
+                  javaOpts:
                     type: string
                   log:
                     properties:
@@ -14501,7 +14501,7 @@ spec:
                     type: string
                   jarLocation:
                     type: string
-                  javaOPTS:
+                  javaOpts:
                     type: string
                   log:
                     properties:
