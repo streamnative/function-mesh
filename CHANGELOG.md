@@ -1,3 +1,16 @@
+# Function Mesh v0.7.0 Release Notes
+
+## v0.7.0 What's New
+
+* [CVE] Resolve vulnerabilities ([#478](https://github.com/streamnative/function-mesh/pull/478))
+* [Test] Remove secret data in CI workflows ([#477](https://github.com/streamnative/function-mesh/pull/477))
+* [Test] Migrate e2e tests to skywalking-e2e-infra action ([#476](https://github.com/streamnative/function-mesh/pull/476))
+* [Controller] Add client for FunctionMesh ([#473](https://github.com/streamnative/function-mesh/pull/473))
+* [Controller] Use init container to download packages and functions ([#411](https://github.com/streamnative/function-mesh/pull/411))
+* [Controller] Fix logging window function ([#481](https://github.com/streamnative/function-mesh/pull/481))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-10+is%3Aclosed+d).
+
 # Function Mesh v0.6.0 Release Notes
 
 ## v0.6.0 What's New
