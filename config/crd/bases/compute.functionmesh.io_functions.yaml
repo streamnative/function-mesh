@@ -171,6 +171,8 @@ spec:
                     type: string
                   jarLocation:
                     type: string
+                  javaOPTS:
+                    type: string
                   log:
                     properties:
                       level:

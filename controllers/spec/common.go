@@ -343,11 +343,11 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	}
 }
 
-func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
+func MakeJavaFunctionCommand(downloadPath, packageFile, javaOpts, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
-		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
+		strings.Join(getProcessJavaRuntimeArgs(name, javaOpts, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
@@ -780,7 +780,7 @@ func setShardIDEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
-func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, memory, extraDependenciesDir, uid string,
+func getProcessJavaRuntimeArgs(name, opts, packageName, clusterName, logLevel, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
@@ -807,6 +807,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		setLogLevel,
 		"-Xmx" + memory,
+		opts,
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
 		packageName,

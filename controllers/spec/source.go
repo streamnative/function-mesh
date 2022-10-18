@@ -125,8 +125,8 @@ func makeSourceVolumeMounts(source *v1alpha1.Source) []corev1.VolumeMount {
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
 	spec := source.Spec
-	return MakeJavaFunctionCommand(
-		spec.Java.JarLocation, spec.Java.Jar,
+	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+		spec.Java.JavaOpts,
 		spec.Name, spec.ClusterName,
 		generateJavaLogConfigCommand(source.Spec.Java),
 		parseJavaLogLevel(source.Spec.Java),

@@ -135,6 +135,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 	if spec.Java != nil {
 		if spec.Java.Jar != "" {
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+				spec.Java.JavaOpts,
 				spec.Name, spec.ClusterName,
 				generateJavaLogConfigCommand(function.Spec.Java),
 				parseJavaLogLevel(function.Spec.Java),

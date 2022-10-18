@@ -131,6 +131,7 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+		spec.Java.JavaOpts,
 		spec.Name, spec.ClusterName,
 		generateJavaLogConfigCommand(sink.Spec.Java),
 		parseJavaLogLevel(sink.Spec.Java),
