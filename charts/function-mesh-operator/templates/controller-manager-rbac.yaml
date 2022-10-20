@@ -26,6 +26,7 @@ rules:
       - apps
     resources:
       - statefulsets
+      - statefulsets/finalizers
     verbs:
       - create
       - delete
@@ -38,6 +39,7 @@ rules:
       - autoscaling
     resources:
       - horizontalpodautoscalers
+      - horizontalpodautoscalers/finalizers
     verbs:
       - create
       - delete
@@ -130,6 +132,7 @@ rules:
       - ""
     resources:
       - secrets
+      - secrets/finalizers
     verbs:
       - create
       - delete
@@ -142,6 +145,7 @@ rules:
       - ""
     resources:
       - services
+      - services/finalizers
     verbs:
       - create
       - delete
@@ -166,6 +170,7 @@ rules:
     - ""
     resources:
       - configmaps
+      - configmaps/finalizers
     verbs:
       - get
       - list
