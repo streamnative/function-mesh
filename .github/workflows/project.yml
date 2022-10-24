@@ -38,9 +38,8 @@ jobs:
 
       - name: InstallKubebuilder
         run: |
-          curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz | tar -xz -C /tmp/
-          sudo mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
-          export PATH=$PATH:/usr/local/kubebuilder/bin
+          curl -L -o kubebuilder "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v3.6.0/kubebuilder_linux_amd64"
+          chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
 
       - name: InstallTool
         run: |
