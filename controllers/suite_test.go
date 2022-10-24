@@ -18,7 +18,6 @@
 package controllers
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -59,20 +58,11 @@ var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
-	t := true
-	if os.Getenv("TEST_USE_EXISTING_CLUSTER") == "true" {
-		testEnv = &envtest.Environment{
-			UseExistingCluster: &t,
-		}
-	} else {
-		testEnv = &envtest.Environment{
-			CRDInstallOptions: envtest.CRDInstallOptions{
-				Paths: []string{filepath.Join("..", "config", "crd", "bases")},
-			},
-			AttachControlPlaneOutput: true,
-			ErrorIfCRDPathMissing:    true,
-		}
+	testEnv = &envtest.Environment{
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: true,
 	}
+
 	var err error
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
