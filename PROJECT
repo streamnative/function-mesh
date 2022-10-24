@@ -1,5 +1,5 @@
 domain: functionmesh.io
-layout: go.kubebuilder.io/v2
+layout: go.kubebuilder.io/v3
 projectName: function-mesh
 repo: github.com/streamnative/function-mesh
 resources:
