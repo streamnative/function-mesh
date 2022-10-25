@@ -18,8 +18,8 @@
 package spec
 
 import (
-	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -136,11 +136,14 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {
 	sourceDetails := convertSourceDetails(source)
-	marshaler := &jsonpb.Marshaler{}
-	json, error := marshaler.MarshalToString(sourceDetails)
-	if error != nil {
-		// TODO
-		panic(error)
+	json, err := protojson.Marshal(sourceDetails)
+	if err != nil {
+		panic(err)
 	}
-	return json
+	if err != nil {
+		// TODO
+		panic(err)
+	}
+	log.Info(string(json))
+	return string(json)
 }

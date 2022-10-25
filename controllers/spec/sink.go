@@ -18,8 +18,8 @@
 package spec
 
 import (
-	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -140,12 +140,15 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {
-	sourceDetails := convertSinkDetails(sink)
-	marshaler := &jsonpb.Marshaler{}
-	json, error := marshaler.MarshalToString(sourceDetails)
-	if error != nil {
-		// TODO
-		panic(error)
+	sinkDetails := convertSinkDetails(sink)
+	json, err := protojson.Marshal(sinkDetails)
+	if err != nil {
+		panic(err)
 	}
-	return json
+	if err != nil {
+		// TODO
+		panic(err)
+	}
+	log.Info(string(json))
+	return string(json)
 }
