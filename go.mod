@@ -93,7 +93,6 @@ require (
 replace (
 	github.com/go-logr/logr => github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr => github.com/go-logr/zapr v0.4.0
-	github.com/googleapis/gnostic => github.com/google/gnostic v0.6.9
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	golang.org/x/sys => golang.org/x/sys v0.0.0-20220422013727-9388b58f7150
 	k8s.io/api => k8s.io/api v0.22.2
