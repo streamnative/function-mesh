@@ -4,6 +4,7 @@ VERSION ?= 0.7.0
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:v$(VERSION)
 OPERATOR_IMG_LATEST ?= ${DOCKER_REPO}/function-mesh:latest
+ENVTEST_K8S_VERSION = 1.22.1
 
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
@@ -47,15 +48,28 @@ endif
 
 BUILD_DATETIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
+## Tool Binaries
+KUSTOMIZE ?= $(LOCALBIN)/kustomize
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+YQ ?= $(LOCALBIN)/yq
+E2E ?= $(LOCALBIN)/e2e
+
 all: manager
 
 # Run tests
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: generate fmt vet manifests
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.12.3/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./pkg/... ./controllers/... -coverprofile cover.out
-	go test ./... -coverprofile cover.out
+test: generate fmt vet manifests envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -v -ginkgo.v -coverprofile cover.out
+
+.PHONY: envtest
+envtest:
+	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 # Build manager binary
 manager: generate fmt vet
@@ -112,19 +126,15 @@ image-push:
 
 # find or download controller-gen
 # download controller-gen if necessary
-CONTROLLER_GEN=$(shell pwd)/bin/controller-gen
 controller-gen:
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.0)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2)
 
-KUSTOMIZE=$(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v4.5.5)
 
-YQ=$(shell pwd)/bin/yq
 yq: ## Download yq locally if necessary.
 	$(call go-get-tool,$(YQ),github.com/mikefarah/yq/v4@latest)
 
-E2E=$(shell pwd)/bin/e2e
 skywalking-e2e: ## Download e2e locally if necessary.
 	$(call go-get-tool,$(E2E),github.com/apache/skywalking-infra-e2e/cmd/e2e@v1.2.0)
 

@@ -20,7 +20,7 @@ package spec
 import (
 	"io/ioutil"
 
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 )
 
 type RunnerImages struct {

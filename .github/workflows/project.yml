@@ -67,4 +67,4 @@ jobs:
         run: go test -v ./controllers/spec/...
 
       - name: Run envtest for controller
-        run: go test ./controllers/ -v -ginkgo.v
+        run: make test
