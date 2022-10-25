@@ -32,7 +32,6 @@ on:
       - 'tools/README.md'
 jobs:
   lint-test:
-    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - name: clean disk
@@ -74,7 +73,7 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
 
       - name: Create kind cluster
-        run: hack/kind-cluster-build.sh --name chart-testing -c 3 -v 10 --k8sVersion v1.18.20
+        run: hack/kind-cluster-build.sh --name chart-testing -c 3 -v 10 --k8sVersion v1.22.2
         if: steps.list-changed.outputs.changed == 'true'
 
       - name: Set up GO 1.18
@@ -84,11 +83,11 @@ jobs:
           go-version: 1.18
         id: go
 
-      - name: setup kubebuilder 2.3.1
+      - name: setup kubebuilder 3.6.0
         if: steps.list-changed.outputs.changed == 'true'
         uses: RyanSiu1995/kubebuilder-action@v1.2.1
         with:
-          version: 2.3.1
+          version: 3.6.0
 
       - name: Install operator-sdk
         if: steps.list-changed.outputs.changed == 'true'
