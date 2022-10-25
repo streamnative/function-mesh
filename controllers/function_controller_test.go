@@ -259,7 +259,8 @@ func createFunction(function *v1alpha1.Function) {
 
 	It("Function should be deleted", func() {
 		key := client.ObjectKeyFromObject(function)
-		Expect(key).To(nil)
+		//fmt.Println(key)
+		//Expect(key).To(nil)
 
 		log.Info("deleting resource", "namespace", key.Namespace, "name", key.Name, "test",
 			CurrentGinkgoTestDescription().FullTestText)

@@ -64,7 +64,7 @@ jobs:
           go test license_test.go
 
       - name: Run unit test check
-        run: go test -v ./controllers/spec/...
+        run: make test
 
       - name: Run envtest for controller
-        run: make test
+        run: make test-ginkgo

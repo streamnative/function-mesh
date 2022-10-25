@@ -65,7 +65,10 @@ all: manager
 # Run tests
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 test: generate fmt vet manifests envtest
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -v -ginkgo.v -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn go test ./... -coverprofile cover.out
+
+test-ginkgo: generate fmt vet manifests envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn go test ./controllers/ -v -ginkgo.v
 
 .PHONY: envtest
 envtest:

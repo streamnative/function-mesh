@@ -165,11 +165,6 @@ func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
 	functionDetails := convertFunctionDetails(function)
 	json, err := protojson.Marshal(functionDetails)
 	if err != nil {
-		panic(err)
-	}
-	//marshaler := &jsonpb.Marshaler{}
-	//json, err := marshaler.MarshalToString(functionDetails)
-	if err != nil {
 		// TODO
 		panic(err)
 	}
