@@ -13,7 +13,6 @@ on:
       - 'tools/README.md'
 jobs:
   integration:
-    if: ${{ false }}
     runs-on: ubuntu-latest
     env:
       AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
