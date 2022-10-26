@@ -174,7 +174,9 @@ spec:
                           jarLocation:
                             type: string
                           javaOpts:
-                            type: string
+                            items:
+                              type: string
+                            type: array
                           log:
                             properties:
                               level:
@@ -3392,7 +3394,9 @@ spec:
                           jarLocation:
                             type: string
                           javaOpts:
-                            type: string
+                            items:
+                              type: string
+                            type: array
                           log:
                             properties:
                               level:
@@ -6457,7 +6461,9 @@ spec:
                           jarLocation:
                             type: string
                           javaOpts:
-                            type: string
+                            items:
+                              type: string
+                            type: array
                           log:
                             properties:
                               level:
