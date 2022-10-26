@@ -241,7 +241,7 @@ type JavaRuntime struct {
 	JarLocation          string            `json:"jarLocation,omitempty"`
 	ExtraDependenciesDir string            `json:"extraDependenciesDir,omitempty"`
 	Log                  *RuntimeLogConfig `json:"log,omitempty"`
-	JavaOpts             string            `json:"javaOpts,omitempty"`
+	JavaOpts             []string          `json:"javaOpts,omitempty"`
 }
 
 // PythonRuntime contains the python runtime configs

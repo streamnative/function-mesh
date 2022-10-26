@@ -131,14 +131,13 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
-		spec.Java.JavaOpts,
 		spec.Name, spec.ClusterName,
 		generateJavaLogConfigCommand(sink.Spec.Java),
 		parseJavaLogLevel(sink.Spec.Java),
 		generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),
-		spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap, spec.StateConfig,
-		spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
+		spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
+		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {
