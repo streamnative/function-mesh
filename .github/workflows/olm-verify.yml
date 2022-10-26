@@ -13,7 +13,6 @@ on:
       - 'tools/README.md'
 jobs:
   olm-verify:
-    if: ${{ false }}
     name: Verify OLM bundle
     runs-on: ubuntu-latest
     steps:
@@ -36,9 +35,8 @@ jobs:
 
       - name: InstallKubebuilder
         run: |
-          curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz | tar -xz -C /tmp/
-          sudo mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
-          export PATH=$PATH:/usr/local/kubebuilder/bin
+          curl -L -o kubebuilder "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v3.6.0/kubebuilder_linux_amd64"
+          chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
 
       - name: Install operator-sdk
         run: |
@@ -55,7 +53,7 @@ jobs:
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v1
         with:
-          node_image: kindest/node:v1.21.1
+          node_image: kindest/node:v1.22.15
 
       - name: Build RedHat certificated bundle And Publish to Quay
         env:

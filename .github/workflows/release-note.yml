@@ -13,7 +13,6 @@ on:
 
 jobs:
   update_release_draft:
-    if: ${{ false }}
     runs-on: ubuntu-latest
 
     steps:
