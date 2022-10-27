@@ -76,7 +76,7 @@ envtest:
 
 # Build manager binary
 manager: generate fmt vet
-	$(GO_BUILD) -o bin/function-mesh-controller-manager main.go
+	$(GO_BUILD) -ldflags "-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=warn" -o bin/function-mesh-controller-manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
