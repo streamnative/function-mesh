@@ -18,6 +18,7 @@
 package spec
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -48,4 +49,58 @@ func TestMarshalSecretsMap(t *testing.T) {
 
 	marshaledSecretsNil := marshalSecretsMap(nil)
 	assert.Equal(t, marshaledSecretsNil, `{}`)
+}
+
+func TestBatchSource(t *testing.T) {
+	source := &v1alpha1.Source{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Sink",
+			APIVersion: "compute.functionmesh.io/v1alpha1",
+		},
+		ObjectMeta: *makeSampleObjectMeta("test-source"),
+		Spec: v1alpha1.SourceSpec{
+			Name:        "test-suorce",
+			ClassName:   "org.apache.pulsar.ecosystem.io.bigquery.BigQuerySource",
+			Tenant:      "public",
+			ClusterName: TestClusterName,
+			Output: v1alpha1.OutputConf{
+				Topic:         "persistent://public/default/destination",
+				TypeClassName: "org.apache.pulsar.common.schema.KeyValue",
+				ProducerConf: &v1alpha1.ProducerConfig{
+					MaxPendingMessages:                 1000,
+					MaxPendingMessagesAcrossPartitions: 50000,
+					UseThreadLocalProducers:            true,
+				},
+			},
+			BatchSourceConfig: &v1alpha1.BatchSourceConfig{
+				DiscoveryTriggererClassName: "test-trigger-class",
+				DiscoveryTriggererConfig: &v1alpha1.Config{
+					Data: map[string]interface{}{
+						"test-key": "test-value",
+					},
+				},
+			},
+			SourceConfig: &v1alpha1.Config{
+				Data: map[string]interface{}{
+					"tableName": "test-table",
+				},
+			},
+			Messaging: v1alpha1.Messaging{
+				Pulsar: &v1alpha1.PulsarMessaging{
+					PulsarConfig: TestClusterName,
+					//AuthConfig: "test-auth",
+				},
+			},
+			Image: "test-image",
+			Runtime: v1alpha1.Runtime{
+				Java: &v1alpha1.JavaRuntime{
+					Jar:         "connectors/test.jar",
+					JarLocation: "",
+				},
+			},
+		},
+	}
+	sourceSpec := generateSourceInputSpec(source)
+	assert.Equal(t, v1alpha1.BatchSourceClass, sourceSpec.ClassName)
+	assert.Equal(t, `{"__BATCHSOURCECLASSNAME__":"org.apache.pulsar.ecosystem.io.bigquery.BigQuerySource","__BATCHSOURCECONFIGS__":"{\"discoveryTriggererClassName\":\"test-trigger-class\",\"discoveryTriggererConfig\":{\"test-key\":\"test-value\"}}","tableName":"test-table"}`, sourceSpec.Configs)
 }
