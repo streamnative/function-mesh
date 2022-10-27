@@ -25,6 +25,13 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+const (
+	BatchSourceConfigKey    string = "__BATCHSOURCECONFIGS__"
+	BatchSourceClassNameKey string = "__BATCHSOURCECLASSNAME__"
+	// BatchSourceClass the source class for batch source
+	BatchSourceClass string = "org.apache.pulsar.functions.source.batch.BatchSourceExecutor"
+)
+
 // SourceSpec defines the desired state of Source
 // +kubebuilder:validation:Optional
 type SourceSpec struct {
@@ -49,6 +56,7 @@ type SourceSpec struct {
 	MaxReplicas *int32     `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
 	Output      OutputConf `json:"output,omitempty"`
 
+	BatchSourceConfig *BatchSourceConfig `json:"batchSourceConfig,omitempty"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	SourceConfig                 *Config                     `json:"sourceConfig,omitempty"`
@@ -72,6 +80,13 @@ type SourceSpec struct {
 
 	// Image pull policy, one of Always, Never, IfNotPresent, default to IfNotPresent.
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+}
+
+type BatchSourceConfig struct {
+	// +kubebuilder:validation:Required
+	DiscoveryTriggererClassName string `json:"DiscoveryTriggererClassName"`
+	// +kubebuilder:validation:Optional
+	DiscoveryTriggererConfig *Config `json:"DiscoveryTriggererConfig,omitempty"`
 }
 
 // SourceStatus defines the observed state of Source
