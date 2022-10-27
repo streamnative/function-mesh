@@ -84,9 +84,9 @@ type SourceSpec struct {
 
 type BatchSourceConfig struct {
 	// +kubebuilder:validation:Required
-	DiscoveryTriggererClassName string `json:"DiscoveryTriggererClassName"`
+	DiscoveryTriggererClassName string `json:"discoveryTriggererClassName"`
 	// +kubebuilder:validation:Optional
-	DiscoveryTriggererConfig *Config `json:"DiscoveryTriggererConfig,omitempty"`
+	DiscoveryTriggererConfig *Config `json:"discoveryTriggererConfig,omitempty"`
 }
 
 // SourceStatus defines the observed state of Source

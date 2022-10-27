@@ -5614,6 +5614,15 @@ spec:
               sources:
                 items:
                   properties:
+                    batchSourceConfig:
+                      properties:
+                        discoveryTriggererClassName:
+                          type: string
+                        discoveryTriggererConfig:
+                          type: object
+                      required:
+                      - discoveryTriggererClassName
+                      type: object
                     className:
                       type: string
                     clusterName:
@@ -14130,6 +14139,15 @@ spec:
             type: object
           spec:
             properties:
+              batchSourceConfig:
+                properties:
+                  discoveryTriggererClassName:
+                    type: string
+                  discoveryTriggererConfig:
+                    type: object
+                required:
+                - discoveryTriggererClassName
+                type: object
               className:
                 type: string
               clusterName:
