@@ -8,9 +8,9 @@ function mesh operator Helm chart for Kubernetes
 
 ## Maintainers
 
-| Name | Email | Url |
-| ---- | ------ | --- |
-| Function Mesh | <function-mesh@streamnative.io> | https://github.com/streamnative/function-mesh |
+| Name | Email                                | Url |
+| ---- |--------------------------------------| --- |
+| Function Mesh | mailto:function-mesh@streamnative.io | https://github.com/streamnative/function-mesh |
 
 ## Source Code
 

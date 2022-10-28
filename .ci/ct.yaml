@@ -1,6 +1,6 @@
 check-version-increment: false
 chart-dirs:
-  - charts
+  - charts/function-mesh-operator
 all: false
 validate-maintainers: false
 helm-extra-args: --timeout 2000s
