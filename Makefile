@@ -254,6 +254,7 @@ redhat-certificated-bundle: yq kustomize manifests
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(YQ) eval -i ".metadata.annotations.\"olm.skipRange\" = \"<$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.\"olm.properties\" = ([{\"type\": \"olm.maxOpenShiftVersion\", \"value\": \"4.8\"}] | @json)" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i ".metadata.annotations.createdAt = \"$(BUILD_DATETIME)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i ".spec.relatedImages[0].image = \"$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
