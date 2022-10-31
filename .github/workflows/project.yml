@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [1.13, 1.14, 1.15, 1.16, 1.17, 1.18]
+        go-version: [1.17, 1.18]
     steps:
       - name: clean disk
         run: |
@@ -38,13 +38,12 @@ jobs:
 
       - name: InstallKubebuilder
         run: |
-          curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz | tar -xz -C /tmp/
-          sudo mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
-          export PATH=$PATH:/usr/local/kubebuilder/bin
+          curl -L -o kubebuilder "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v3.6.0/kubebuilder_linux_amd64"
+          chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
 
       - name: InstallTool
         run: |
-          wget -O - -q https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.45.2
+          wget -O - -q https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.50.1
           ./bin/golangci-lint --version
 
       - name: validate controller-gen
@@ -65,7 +64,7 @@ jobs:
           go test license_test.go
 
       - name: Run unit test check
-        run: go test -v ./controllers/spec/...
+        run: make test
 
       - name: Run envtest for controller
-        run: go test ./controllers/ -v -ginkgo.v
+        run: make test-ginkgo

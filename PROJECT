@@ -1,32 +1,46 @@
 domain: functionmesh.io
-layout: go.kubebuilder.io/v2
+layout:
+- go.kubebuilder.io/v3
 projectName: function-mesh
 repo: github.com/streamnative/function-mesh
 resources:
-- group: compute
+- api:
+    crdVersion: v1
+    namespaced: true
   controller: true
-  domain: streamnative.io
+  domain: functionmesh.io
+  group: compute
   kind: FunctionMesh
   path: github.com/streamnative/function-mesh/api/compute/v1alpha1
   version: v1alpha1
-- group: compute
+- api:
+    crdVersion: v1
+    namespaced: true
   controller: true
-  domain: streamnative.io
-  kind: Source
-  path: github.com/streamnative/function-mesh/api/compute/v1alpha1
-  version: v1alpha1
-- group: compute
-  controller: true
-  domain: streamnative.io
-  kind: Sink
-  path: github.com/streamnative/function-mesh/api/compute/v1alpha1
-  version: v1alpha1
-- group: compute
-  controller: true
-  domain: streamnative.io
+  domain: functionmesh.io
+  group: compute
   kind: Function
   path: github.com/streamnative/function-mesh/api/compute/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: functionmesh.io
+  group: compute
+  kind: Source
+  path: github.com/streamnative/function-mesh/api/compute/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: functionmesh.io
+  group: compute
+  kind: Sink
+  path: github.com/streamnative/function-mesh/api/compute/v1alpha1
+  version: v1alpha1
 version: "3"
+
 plugins:
   go.sdk.operatorframework.io/v2-alpha: {}

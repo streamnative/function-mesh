@@ -86,6 +86,7 @@ var _ = Describe("Function Controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(func() bool {
 				funcReconciler.Reconcile(
+					context.Background(),
 					ctrl.Request{
 						NamespacedName: types.NamespacedName{
 							Name:      fmt.Sprintf("%s-streamnative", TestFunctionName),
@@ -257,8 +258,9 @@ func createFunction(function *v1alpha1.Function) {
 	})
 
 	It("Function should be deleted", func() {
-		key, err := client.ObjectKeyFromObject(function)
-		Expect(err).To(Succeed())
+		key := client.ObjectKeyFromObject(function)
+		//fmt.Println(key)
+		//Expect(key).To(nil)
 
 		log.Info("deleting resource", "namespace", key.Namespace, "name", key.Name, "test",
 			CurrentGinkgoTestDescription().FullTestText)
@@ -275,7 +277,7 @@ func createFunction(function *v1alpha1.Function) {
 		statefulset := new(appsv1.StatefulSet)
 		statefulsetKey := key
 		statefulsetKey.Name = spec.MakeFunctionObjectMeta(function).Name
-		err = k8sClient.Get(context.Background(), statefulsetKey, statefulset)
+		err := k8sClient.Get(context.Background(), statefulsetKey, statefulset)
 		Expect(err).Should(BeNil())
 		Expect(k8sClient.Delete(context.Background(), statefulset)).To(Succeed())
 		Eventually(func() bool {

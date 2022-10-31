@@ -40,9 +40,9 @@ type FunctionMeshReconciler struct {
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functionmeshes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functionmeshes/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update;delete
 
-func (r *FunctionMeshReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("functionMesh", req.NamespacedName)
 
 	// your logic here

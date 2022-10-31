@@ -90,12 +90,14 @@ var _ = Describe("Source Controller", func() {
 			err = k8sClient.Update(context.Background(), source)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(func() bool {
-				sourceReconciler.Reconcile(ctrl.Request{
-					NamespacedName: types.NamespacedName{
-						Name:      TestSourceName,
-						Namespace: TestNameSpace,
-					},
-				})
+				sourceReconciler.Reconcile(
+					context.Background(),
+					ctrl.Request{
+						NamespacedName: types.NamespacedName{
+							Name:      TestSourceName,
+							Namespace: TestNameSpace,
+						},
+					})
 				err := k8sClient.Get(context.Background(), types.NamespacedName{
 					Name:      spec.MakeSourceObjectMeta(source).Name,
 					Namespace: spec.MakeSourceObjectMeta(source).Namespace,

@@ -1543,13 +1543,6 @@ func objectXOROperator(first interface{}, second interface{}) bool {
 	return (first != nil && second == nil) || (first == nil && second != nil)
 }
 
-func GetNamespacedName(object metav1.Object, component string) string {
-	if len(object.GetNamespace()) > 0 {
-		return component + "/" + object.GetNamespace() + "/" + object.GetName()
-	}
-	return component + "/" + object.GetName()
-}
-
 func getFilenameOfComponentPackage(componentPackage string) string {
 	data := strings.Split(componentPackage, "/")
 	if len(data) > 0 {

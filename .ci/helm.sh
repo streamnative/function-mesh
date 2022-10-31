@@ -35,7 +35,7 @@ FUNCTION_NAME=$1
 
 function ci::create_cluster() {
     echo "Creating a kind cluster ..."
-    ${FUNCTION_MESH_HOME}/hack/kind-cluster-build.sh --name sn-platform-"${CLUSTER_ID}" -c 3 -v 10
+    ${FUNCTION_MESH_HOME}/hack/kind-cluster-build.sh --name sn-platform-"${CLUSTER_ID}" -c 3 -v 10 -k v1.22.15
     echo "Successfully created a kind cluster."
 }
 
@@ -88,10 +88,10 @@ function ci::install_pulsar_charts() {
     git clone https://github.com/streamnative/charts.git pulsar-charts
     cp ${values} pulsar-charts/charts/pulsar/mini_values.yaml
     cd pulsar-charts
-    cd charts
+    ./scripts/pulsar/prepare_helm_release.sh -n default -k sn-platform -c
     helm repo add loki https://grafana.github.io/loki/charts
-    helm dependency update pulsar
-    ${HELM} install sn-platform --set initialize=true --values ./pulsar/mini_values.yaml ./pulsar --debug
+    helm dependency update charts/pulsar
+    ${HELM} install sn-platform --set initialize=true --values charts/pulsar/mini_values.yaml charts/pulsar --debug
 
     echo "wait until pulsar init job is completed"
     succeeded_num=0

@@ -4,6 +4,7 @@ VERSION ?= 0.7.0
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:v$(VERSION)
 OPERATOR_IMG_LATEST ?= ${DOCKER_REPO}/function-mesh:latest
+ENVTEST_K8S_VERSION = 1.22.1
 
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
@@ -36,7 +37,7 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # Image URL to use all building/pushing image targets
 IMG ?= ${DOCKER_REPO}/function-mesh-operator:v$(VERSION)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:maxDescLen=0,trivialVersions=true,preserveUnknownFields=false"
+CRD_OPTIONS ?= "crd:maxDescLen=0"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -47,15 +48,35 @@ endif
 
 BUILD_DATETIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
+## Tool Binaries
+KUSTOMIZE ?= $(LOCALBIN)/kustomize
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+YQ ?= $(LOCALBIN)/yq
+E2E ?= $(LOCALBIN)/e2e
+
 all: manager
 
 # Run tests
-test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
+ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
+test: generate fmt vet manifests envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn go test ./... -coverprofile cover.out
+
+test-ginkgo: generate fmt vet manifests envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn go test ./controllers/ -v -ginkgo.v
+
+.PHONY: envtest
+envtest:
+	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 # Build manager binary
 manager: generate fmt vet
-	$(GO_BUILD) -o bin/function-mesh-controller-manager main.go
+	$(GO_BUILD) -ldflags "-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=warn" -o bin/function-mesh-controller-manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
@@ -108,19 +129,15 @@ image-push:
 
 # find or download controller-gen
 # download controller-gen if necessary
-CONTROLLER_GEN=$(shell pwd)/bin/controller-gen
 controller-gen:
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.2)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2)
 
-KUSTOMIZE=$(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v4.5.5)
 
-YQ=$(shell pwd)/bin/yq
 yq: ## Download yq locally if necessary.
 	$(call go-get-tool,$(YQ),github.com/mikefarah/yq/v4@latest)
 
-E2E=$(shell pwd)/bin/e2e
 skywalking-e2e: ## Download e2e locally if necessary.
 	$(call go-get-tool,$(E2E),github.com/apache/skywalking-infra-e2e/cmd/e2e@v1.2.0)
 
