@@ -158,8 +158,10 @@ rules:
       - coordination.k8s.io
     resources:
       - leases
+      - leases/finalizers
     verbs:
       - create
+      - delete
       - get
       - list
       - update
