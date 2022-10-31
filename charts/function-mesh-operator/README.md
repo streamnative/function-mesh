@@ -2,13 +2,13 @@
 
 ![Version: 0.2.7](https://img.shields.io/badge/Version-0.2.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.7.0](https://img.shields.io/badge/AppVersion-0.7.0-informational?style=flat-square)
 
-function mesh operator Helm chart for Kubernetes
+The Function Mesh operator Helm chart for Kubernetes
 
 **Homepage:** <https://github.com/streamnative/function-mesh>
 
 ## Maintainers
 
-| Name | Email                                | Url |
+| Name | Email                                | URL |
 | ---- |--------------------------------------| --- |
 | Function Mesh | mailto:function-mesh@streamnative.io | https://github.com/streamnative/function-mesh |
 
@@ -24,30 +24,30 @@ function mesh operator Helm chart for Kubernetes
 
 ## Values
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| admissionWebhook.enabled | bool | `true` |  |
-| controllerManager.affinity | object | `{}` |  |
-| controllerManager.autoFailover | bool | `true` |  |
-| controllerManager.configFile | string | `"/etc/config/config.yaml"` |  |
-| controllerManager.create | bool | `true` |  |
-| controllerManager.enableLeaderElection | bool | `true` |  |
-| controllerManager.healthProbe.port | int | `8000` |  |
-| controllerManager.metrics.port | int | `8080` |  |
-| controllerManager.nodeSelector | object | `{}` |  |
-| controllerManager.pprof.enable | bool | `false` |  |
-| controllerManager.pprof.port | int | `8090` |  |
-| controllerManager.replicas | int | `1` |  |
-| controllerManager.resources.requests.cpu | string | `"80m"` |  |
-| controllerManager.resources.requests.memory | string | `"50Mi"` |  |
-| controllerManager.selector | list | `[]` |  |
-| controllerManager.serviceAccount | string | `"function-mesh-controller-manager"` |  |
-| controllerManager.tolerations | list | `[]` |  |
-| imagePullPolicy | string | `"IfNotPresent"` |  |
-| imagePullSecrets | list | `[]` |  |
-| installation.namespace | string | `"function-mesh-system"` |  |
-| operatorImage | string | `"streamnative/function-mesh:v0.7.0"` |  |
-| rbac.create | bool | `true` |  |
+| Key | Type | Default |
+|-----|------|---------|
+| admissionWebhook.enabled | bool | `true` |
+| controllerManager.affinity | object | `{}` |
+| controllerManager.autoFailover | bool | `true` |
+| controllerManager.configFile | string | `"/etc/config/config.yaml"` |
+| controllerManager.create | bool | `true` |
+| controllerManager.enableLeaderElection | bool | `true` |
+| controllerManager.healthProbe.port | int | `8000` |
+| controllerManager.metrics.port | int | `8080` |
+| controllerManager.nodeSelector | object | `{}` |
+| controllerManager.pprof.enable | bool | `false` |
+| controllerManager.pprof.port | int | `8090` |
+| controllerManager.replicas | int | `1` |
+| controllerManager.resources.requests.cpu | string | `"80m"` |
+| controllerManager.resources.requests.memory | string | `"50Mi"` |
+| controllerManager.selector | list | `[]` |
+| controllerManager.serviceAccount | string | `"function-mesh-controller-manager"` |
+| controllerManager.tolerations | list | `[]` |
+| imagePullPolicy | string | `"IfNotPresent"` |
+| imagePullSecrets | list | `[]` |
+| installation.namespace | string | `"function-mesh-system"` |
+| operatorImage | string | `"streamnative/function-mesh:v0.7.0"` |
+| rbac.create | bool | `true` |
 
 ----------------------------------------------
 ## Function Mesh Helm Charts Usage
@@ -126,63 +126,26 @@ helm install \
     function-mesh-controller-manager-5f867557c-d6vf4   1/1     Running   0          8s
     ```
 
-### Verify installation
-
-- This example shows how to verify whether Function Mesh is installed successfully.
-
-    > **Note**
-    >
-    > `${NAMESPACE}` indicates the namespace where Function Mesh Operator is installed.
-
-    ```shell
-    kubectl get pods --namespace ${NAMEPSACE} -l app.kubernetes.io/instance=function-mesh
-    ```
-
-    **Output**
-
-    ```
-    NAME                                               READY   STATUS    RESTARTS   AGE
-    function-mesh-controller-manager-5f867557c-d6vf4   1/1     Running   0          8s
-    ```
-
-- This example shows how to verify whether Function Mesh can run properly.
-
-    After installing the Function Mesh Operator and deploying a Pulsar cluster, you can submit a sample CRD to create Pulsar Functions, source, sink, or Function Mesh. In this example, a CRD is submitted to the Pulsar cluster for creating a Pulsar Function. You can also submit other CRDs under the `./config/samples` directory.
-
-    1. Submit a sample CRD to the Pulsar cluster.
-
-        ```bash
-        kubectl apply -f config/samples/compute_v1alpha1_function.yaml
-        ```
-
-    2. Verify your submission with the `kubectl` command, and you can see that the Function pod is running.
-
-        ```bash
-        kubectl get all
-        NAME                                READY   STATUS      RESTARTS   AGE
-        pod/function-sample-0               1/1     Running     0          77s
-        ```
-
 ### Uninstall Function Mesh
 
 1. Use the following command to uninstall Function Mesh through Helm.
 
-> **Note**
->
-> `${NAMESPACE}` indicates the namespace where Function Mesh Operator is installed.
+   > **Note**
+   >
+   > `${NAMESPACE}` indicates the namespace where Function Mesh Operator is installed.
 
-```bash
-helm delete function-mesh -n ${NAMESPACE}
-```
+   ```bash
+   helm delete function-mesh -n ${NAMESPACE}
+   ```
 
 2. Remove the Secrets that contain the signed certificate.
 
-> **Note**
->
-> If the Secrets are not cleaned up, future installations in this environment might behave abnormally. For details about how to automatically clean up the corresponding Secrets when you delete a Certificate, see [Cleaning up Secrets when Certificates are deleted](https://cert-manager.io/docs/usage/certificate/#cleaning-up-secrets-when-certificates-are-deleted).
+   > **Note**
+   >
+   > If the Secrets are not cleaned up, future installations in this environment might behave abnormally. For details about how to automatically clean up the corresponding Secrets when you delete a Certificate, see [Cleaning up Secrets when Certificates are deleted](https://cert-manager.io/docs/usage/certificate/#cleaning-up-secrets-when-certificates-are-deleted).
 
-```shell
-kubectl delete secret function-mesh-admission-webhook-server-cert -n ${NAMESPACE}
-```
+   ```shell
+   kubectl delete secret function-mesh-admission-webhook-server-cert -n ${NAMESPACE}
+   ```
 
 *Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)*
