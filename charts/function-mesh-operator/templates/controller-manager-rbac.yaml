@@ -154,6 +154,17 @@ rules:
       - patch
       - update
       - watch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+      - leases/finalizers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1

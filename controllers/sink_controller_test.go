@@ -91,12 +91,14 @@ var _ = Describe("Sink Controller", func() {
 			err = k8sClient.Update(context.Background(), sink)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(func() bool {
-				sinkReconciler.Reconcile(ctrl.Request{
-					NamespacedName: types.NamespacedName{
-						Name:      TestSinkName,
-						Namespace: TestNameSpace,
-					},
-				})
+				sinkReconciler.Reconcile(
+					context.Background(),
+					ctrl.Request{
+						NamespacedName: types.NamespacedName{
+							Name:      TestSinkName,
+							Namespace: TestNameSpace,
+						},
+					})
 				err := k8sClient.Get(context.Background(), types.NamespacedName{
 					Name:      spec.MakeSinkObjectMeta(sink).Name,
 					Namespace: spec.MakeSinkObjectMeta(sink).Namespace,

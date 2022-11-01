@@ -18,8 +18,8 @@
 package spec
 
 import (
-	"github.com/gogo/protobuf/jsonpb"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -163,12 +163,11 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 
 func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
 	functionDetails := convertFunctionDetails(function)
-	marshaler := &jsonpb.Marshaler{}
-	json, err := marshaler.MarshalToString(functionDetails)
+	json, err := protojson.Marshal(functionDetails)
 	if err != nil {
 		// TODO
 		panic(err)
 	}
-	log.Info(json)
-	return json
+	log.Info(string(json))
+	return string(json)
 }

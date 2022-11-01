@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: apache/skywalking-infra-e2e@main
+      - uses: apache/skywalking-infra-e2e@v1.2.0
         with:
           e2e-file: ${{matrix.case.e2e}}
 
