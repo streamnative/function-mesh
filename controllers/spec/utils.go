@@ -254,10 +254,18 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 }
 
 func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
-	configs := getUserConfig(source.Spec.SourceConfig)
+	sourceConfig := source.Spec.SourceConfig
+	className := source.Spec.ClassName
+	if source.Spec.BatchSourceConfig != nil {
+		bytes, _ := json.Marshal(source.Spec.BatchSourceConfig)
+		sourceConfig.Data[v1alpha1.BatchSourceConfigKey] = string(bytes)
+		sourceConfig.Data[v1alpha1.BatchSourceClassNameKey] = source.Spec.ClassName
+		className = v1alpha1.BatchSourceClass
+	}
+	configs := getUserConfig(sourceConfig)
 	return &proto.SourceSpec{
-		ClassName:     source.Spec.ClassName,
-		Configs:       configs, // TODO handle batch source
+		ClassName:     className,
+		Configs:       configs,
 		TypeClassName: source.Spec.Output.TypeClassName,
 	}
 }
