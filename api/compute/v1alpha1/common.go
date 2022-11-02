@@ -19,7 +19,6 @@ package v1alpha1
 
 import (
 	"encoding/json"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"strconv"
 
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
@@ -33,6 +32,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 type Messaging struct {
