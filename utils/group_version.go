@@ -16,7 +16,6 @@
 // under the License.
 
 // Package utils define some common used functions&structs
-
 package utils
 
 import (
