@@ -64,12 +64,12 @@ jobs:
         run: |
           go test license_test.go
 
-      - name: Run unit test check
-        run: make test
-
       - name: Get vertical-pod-autoscaler crd
         run: |
           wget https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml -O config/crd/bases/vpa-v1-crd.yaml
+
+      - name: Run unit test check
+        run: make test
 
       - name: Run envtest for controller
         run: make test-ginkgo
