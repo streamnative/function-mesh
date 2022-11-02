@@ -250,7 +250,7 @@ func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink) 
 		APIVersion: sink.APIVersion,
 	}
 
-	err := applyVPA(ctx, r, r.Log, condition, objectMeta, targetRef, sink.Spec.Pod.VPA, "sink", sink.Namespace, sink.Name)
+	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, sink.Spec.Pod.VPA, "sink", sink.Namespace, sink.Name)
 	if err != nil {
 		return err
 	}

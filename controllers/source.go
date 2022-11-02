@@ -250,7 +250,7 @@ func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.
 		APIVersion: source.APIVersion,
 	}
 
-	err := applyVPA(ctx, r, r.Log, condition, objectMeta, targetRef, source.Spec.Pod.VPA, "source", source.Namespace, source.Name)
+	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, source.Spec.Pod.VPA, "source", source.Namespace, source.Name)
 	if err != nil {
 		return err
 	}

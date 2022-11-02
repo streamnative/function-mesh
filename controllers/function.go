@@ -250,7 +250,7 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 		APIVersion: function.APIVersion,
 	}
 
-	err := applyVPA(ctx, r, r.Log, condition, objectMeta, targetRef, function.Spec.Pod.VPA, "function", function.Namespace, function.Name)
+	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, function.Spec.Pod.VPA, "function", function.Namespace, function.Name)
 	if err != nil {
 		return err
 	}
