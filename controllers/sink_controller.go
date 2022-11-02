@@ -88,7 +88,7 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	if r.WatchFlags.WatchVPACRDs {
+	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
 		err = r.ObserveSinkVPA(ctx, sink)
 		if err != nil {
 			return reconcile.Result{}, err
