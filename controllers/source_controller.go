@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/streamnative/function-mesh/utils"
 
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 
@@ -40,8 +41,9 @@ import (
 // SourceReconciler reconciles a Source object
 type SourceReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log        logr.Logger
+	Scheme     *runtime.Scheme
+	WatchFlags *utils.WatchFlags
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sources,verbs=get;list;watch;create;update;patch;delete
@@ -87,11 +89,12 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveSourceVPA(ctx, source)
-	if err != nil {
-		return reconcile.Result{}, err
+	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+		err = r.ObserveSourceVPA(ctx, source)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
-
 	err = r.Status().Update(ctx, source)
 	if err != nil {
 		r.Log.Error(err, "failed to update source status")
@@ -131,11 +134,13 @@ func (r *SourceReconciler) checkIfSourceGenerationsIsIncreased(source *v1alpha1.
 }
 
 func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	manager := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Source{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
-		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
-		Owns(&vpav1.VerticalPodAutoscaler{}).
-		Complete(r)
+		Owns(&autov2beta2.HorizontalPodAutoscaler{})
+	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+		manager.Owns(&vpav1.VerticalPodAutoscaler{})
+	}
+	return manager.Complete(r)
 }

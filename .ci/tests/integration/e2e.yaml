@@ -24,6 +24,17 @@ setup:
           label-selector: app=cert-manager
           for: condition=Ready
 
+    - name: setup vpa
+      command: |
+        helm repo add cowboysysop https://cowboysysop.github.io/charts/
+        helm repo update
+        helm install vpa cowboysysop/vertical-pod-autoscaler
+      wait:
+        - namespace: default
+          resource: pod
+          label-selector: app.kubernetes.io/name=vertical-pod-autoscaler
+          for: condition=Ready
+
     - name: install pulsar cluster
       command: |
         helm repo add streamnative https://charts.streamnative.io
@@ -92,7 +103,6 @@ setup:
         image="function-mesh-operator:latest"
         IMG=${image} make docker-build-skip-test
         kind load docker-image ${image}
-        helm dependency update charts/function-mesh-operator
         helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --create-namespace charts/function-mesh-operator
       wait:
         - namespace: function-mesh

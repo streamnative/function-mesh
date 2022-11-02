@@ -200,14 +200,9 @@ func (r *Function) ValidateCreate() error {
 				field.Invalid(field.NewPath("spec").Child("pod").Child("vpa"), r.Spec.Pod.VPA, "you can not enable HPA and VPA at the same time"))
 		}
 
-		if r.Spec.Pod.VPA.ResourcePolicy != nil {
-			for _, c := range r.Spec.Pod.VPA.ResourcePolicy.ContainerPolicies {
-				if c.ContainerName == "" {
-					allErrs = append(allErrs,
-						field.Invalid(field.NewPath("spec").Child("pod").Child("vpa").Child("resourcePolicy").Child("containerPolicy"), r.Spec.Pod.VPA.ResourcePolicy.ContainerPolicies, "container name must be specified"))
-					break
-				}
-			}
+		resourceErrors := validateResourcePolicy(r.Spec.Pod.VPA.ResourcePolicy)
+		if resourceErrors != nil {
+			allErrs = append(allErrs, resourceErrors...)
 		}
 	}
 

@@ -19,8 +19,12 @@ package main
 
 import (
 	"flag"
+	"github.com/go-logr/logr"
+	"github.com/streamnative/function-mesh/utils"
+	"k8s.io/client-go/discovery"
 	"net/http"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	computev1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers"
@@ -123,26 +127,34 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	watchFlags, err := checkGroupVersions(setupLog)
+	if err != nil {
+		setupLog.Error(err, "failed to check group versions")
+		os.Exit(1)
+	}
 	if err = (&controllers.FunctionReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Function"),
-		Scheme: mgr.GetScheme(),
+		Client:     mgr.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("Function"),
+		Scheme:     mgr.GetScheme(),
+		WatchFlags: &watchFlags,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Function")
 		os.Exit(1)
 	}
 	if err = (&controllers.SourceReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Source"),
-		Scheme: mgr.GetScheme(),
+		Client:     mgr.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("Source"),
+		Scheme:     mgr.GetScheme(),
+		WatchFlags: &watchFlags,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Source")
 		os.Exit(1)
 	}
 	if err = (&controllers.SinkReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Sink"),
-		Scheme: mgr.GetScheme(),
+		Client:     mgr.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("Sink"),
+		Scheme:     mgr.GetScheme(),
+		WatchFlags: &watchFlags,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Sink")
 		os.Exit(1)
@@ -171,4 +183,26 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+// checkGroupVersions will only enable the watch crd params if the related group version
+// exists in the cluster
+func checkGroupVersions(log logr.Logger) (utils.WatchFlags, error) {
+	watchFlags := utils.WatchFlags{}
+	client, err := discovery.NewDiscoveryClientForConfig(config.GetConfigOrDie())
+	if err != nil {
+		return watchFlags, err
+	}
+
+	groupVersions, err := utils.GetGroupVersions(client)
+	if err != nil {
+		return watchFlags, err
+	}
+
+	if groupVersions.HasGroupVersions(utils.GroupVersionsVPA) {
+		log.Info("API group versions exists, watch vpa crd", "group versions",
+			utils.GroupVersionsVPA)
+		watchFlags.WatchVPACRDs = true
+	}
+	return watchFlags, nil
 }

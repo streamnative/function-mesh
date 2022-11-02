@@ -84,7 +84,6 @@ setup:
         image="function-mesh-operator:latest"
         IMG=${image} make docker-build-skip-test
         kind load docker-image ${image}
-        helm dependency update charts/function-mesh-operator
         helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --create-namespace charts/function-mesh-operator
       wait:
         - namespace: function-mesh

@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/streamnative/function-mesh/utils"
 
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 
@@ -40,8 +41,9 @@ import (
 // FunctionReconciler reconciles a Function object
 type FunctionReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log        logr.Logger
+	Scheme     *runtime.Scheme
+	WatchFlags *utils.WatchFlags
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functions,verbs=get;list;watch;create;update;patch;delete
@@ -89,11 +91,12 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveFunctionVPA(ctx, function)
-	if err != nil {
-		return reconcile.Result{}, err
+	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+		err = r.ObserveFunctionVPA(ctx, function)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
-
 	err = r.Status().Update(ctx, function)
 	if err != nil {
 		r.Log.Error(err, "failed to update function status")
@@ -133,12 +136,15 @@ func (r *FunctionReconciler) checkIfFunctionGenerationsIsIncreased(function *v1a
 }
 
 func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	manager := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Function{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
-		Owns(&corev1.Secret{}).
-		Owns(&vpav1.VerticalPodAutoscaler{}).
-		Complete(r)
+		Owns(&corev1.Secret{})
+
+	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+		manager.Owns(&vpav1.VerticalPodAutoscaler{})
+	}
+	return manager.Complete(r)
 }

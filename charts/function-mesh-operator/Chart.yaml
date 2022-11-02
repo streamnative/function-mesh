@@ -34,6 +34,3 @@ dependencies:
     condition: admissionWebhook.enabled
     version: 0.2.7
 #    repository: https://charts.functionmesh.io/
-  - name: vertical-pod-autoscaler
-    repository: https://cowboysysop.github.io/charts/
-    version: 5.2.0

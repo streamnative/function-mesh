@@ -19,6 +19,7 @@ package v1alpha1
 
 import (
 	"encoding/json"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"strconv"
 
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
@@ -531,6 +532,20 @@ func collectAllInputTopics(inputs InputConf) []string {
 func isValidTopicName(topicName string) error {
 	_, err := pctlutil.GetTopicName(topicName)
 	return err
+}
+
+func validateResourcePolicy(resourcePolicy *vpav1.PodResourcePolicy) field.ErrorList {
+	var errs field.ErrorList
+	if resourcePolicy != nil {
+		for _, c := range resourcePolicy.ContainerPolicies {
+			if c.ContainerName == "" {
+				errs = append(errs,
+					field.Invalid(field.NewPath("spec").Child("pod").Child("vpa").Child("resourcePolicy").Child("containerPolicy"), resourcePolicy.ContainerPolicies, "container name must be specified"))
+				break
+			}
+		}
+	}
+	return errs
 }
 
 func CreateCondition(condType ResourceConditionType, status metav1.ConditionStatus, action ReconcileAction) ResourceCondition {

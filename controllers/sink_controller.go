@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/streamnative/function-mesh/utils"
 
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 
@@ -40,8 +41,9 @@ import (
 // SinkReconciler reconciles a Topic object
 type SinkReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log        logr.Logger
+	Scheme     *runtime.Scheme
+	WatchFlags *utils.WatchFlags
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sinks,verbs=get;list;watch;create;update;patch;delete
@@ -87,11 +89,12 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveSinkVPA(ctx, sink)
-	if err != nil {
-		return reconcile.Result{}, err
+	if r.WatchFlags.WatchVPACRDs {
+		err = r.ObserveSinkVPA(ctx, sink)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
-
 	err = r.Status().Update(ctx, sink)
 	if err != nil {
 		r.Log.Error(err, "failed to update sink status")
@@ -131,11 +134,14 @@ func (r *SinkReconciler) checkIfSinkGenerationsIsIncreased(sink *v1alpha1.Sink) 
 }
 
 func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	manager := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Sink{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
-		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
-		Owns(&vpav1.VerticalPodAutoscaler{}).
-		Complete(r)
+		Owns(&autov2beta2.HorizontalPodAutoscaler{})
+	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+		manager.Owns(&vpav1.VerticalPodAutoscaler{})
+	}
+
+	return manager.Complete(r)
 }
