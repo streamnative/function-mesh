@@ -1,0 +1,70 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: py-function-download-legacy-sample
+  namespace: default
+spec:
+  className: exclamation_function.ExclamationFunction
+  forwardSourceMessageProperty: true
+  maxPendingAsyncRequests: 1000
+  replicas: 1
+  maxReplicas: 1
+  logTopic: persistent://public/default/py-function-legacy-logs
+  input:
+    topics:
+      - persistent://public/default/input-download-python-legacy-topic
+  output:
+    topic: persistent://public/default/output-download-python-legacy-topic
+  resources:
+    requests:
+      cpu: 50m
+      memory: 1G
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+  pulsar:
+    pulsarConfig: "test-py-pulsar"
+    authSecret: "oauth2-secret"
+    tlsSecret: "tls-secret"
+  python:
+    py: exclamation_function.py
+    pyLocation: function://public/default/test-py-function
+  pod:
+    volumes:
+      - name: secret-broker-0
+        secret:
+          defaultMode: 420
+          secretName: sn-platform-oauth2-private-key
+  clusterName: test
+  autoAck: true
+  volumeMounts:
+    - mountPath: /mnt/secrets
+      name: sn-platform-oauth2-private-key
+      readOnly: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-py-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
+---
+apiVersion: v1
+data:
+  clientAuthenticationParameters: eyJhdWRpZW5jZSI6ImFwaTovLzU2YzFiZDE0LTNiYTctNDgwNC1iNDdiLWQ0NmRlNmRjZTMzZS8uZGVmYXVsdCIsImlzc3Vlcl91cmwiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8wNmE4YTA4Ni1hZTZlLTQ1YjUtYTIyZS1hZDkwZGUyMzAxM2UvdjIuMCIsInByaXZhdGVfa2V5IjoiL21udC9zZWNyZXRzL2Jyb2tlcl9jbGllbnRfY3JlZGVudGlhbC5qc29uIiwidHlwZSI6ImNsaWVudF9jcmVkZW50aWFscyIsInNjb3BlIjoiYXBpOi8vNTZjMWJkMTQtM2JhNy00ODA0LWI0N2ItZDQ2ZGU2ZGNlMzNlLy5kZWZhdWx0In0K
+  clientAuthenticationPlugin: b3JnLmFwYWNoZS5wdWxzYXIuY2xpZW50LmltcGwuYXV0aC5vYXV0aDIuQXV0aGVudGljYXRpb25PQXV0aDI=
+kind: Secret
+metadata:
+  name: oauth2-secret
+type: Opaque
+---
+apiVersion: v1
+data:
+  use_tls: false
+  tls_allow_insecure: true
+  hostname_verification_enabled: true
+kind: Secret
+metadata:
+  name: tls-secret
+type: Opaque
