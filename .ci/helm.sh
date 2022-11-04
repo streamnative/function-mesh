@@ -245,6 +245,13 @@ function ci::verify_download_python_function() {
     fi
 }
 
+function ci::verify_download_python_legacy_function_oauth2() {
+    authEnabled=$1
+    if [[ "$authEnabled" == "true" ]]; then
+      ci::verify_exclamation_function_with_auth "persistent://public/default/input-download-python-legacy-topic" "persistent://public/default/output-download-python-legacy-topic" "test-message" "test-message!" 10
+    fi
+}
+
 function ci::verify_download_python_zip_function() {
     ci::verify_exclamation_function "persistent://public/default/input-download-python-zip-topic" "persistent://public/default/output-download-python-zip-topic" "test-message" "test-message!" 10
 }
