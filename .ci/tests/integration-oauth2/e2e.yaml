@@ -105,5 +105,5 @@ verify:
       expected: expected.data.yaml
     - query: bash .ci/tests/integration-oauth2/cases/py-download-function/verify.sh
       expected: expected.data.yaml
-    - query: bash .ci/tests/integration-oauth2/cases/py-download-function-legacy/verify.sh
-      expected: expected.data.yaml
+#    - query: bash .ci/tests/integration-oauth2/cases/py-download-function-legacy/verify.sh
+#      expected: expected.data.yaml

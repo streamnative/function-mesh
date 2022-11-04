@@ -31,7 +31,7 @@ spec:
     pyLocation: function://public/default/test-py-function
   pod:
     volumes:
-      - name: secret-broker-0
+      - name: sn-platform-oauth2-private-key
         secret:
           defaultMode: 420
           secretName: sn-platform-oauth2-private-key
@@ -52,7 +52,7 @@ data:
 ---
 apiVersion: v1
 data:
-  clientAuthenticationParameters: eyJhdWRpZW5jZSI6ImFwaTovLzU2YzFiZDE0LTNiYTctNDgwNC1iNDdiLWQ0NmRlNmRjZTMzZS8uZGVmYXVsdCIsImlzc3Vlcl91cmwiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8wNmE4YTA4Ni1hZTZlLTQ1YjUtYTIyZS1hZDkwZGUyMzAxM2UvdjIuMCIsInByaXZhdGVfa2V5IjoiL21udC9zZWNyZXRzL2Jyb2tlcl9jbGllbnRfY3JlZGVudGlhbC5qc29uIiwidHlwZSI6ImNsaWVudF9jcmVkZW50aWFscyIsInNjb3BlIjoiYXBpOi8vNTZjMWJkMTQtM2JhNy00ODA0LWI0N2ItZDQ2ZGU2ZGNlMzNlLy5kZWZhdWx0In0K
+  clientAuthenticationParameters: eyJhdWRpZW5jZSI6ImFwaTovLzU2YzFiZDE0LTNiYTctNDgwNC1iNDdiLWQ0NmRlNmRjZTMzZS8uZGVmYXVsdCIsImlzc3Vlcl91cmwiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8wNmE4YTA4Ni1hZTZlLTQ1YjUtYTIyZS1hZDkwZGUyMzAxM2UvdjIuMCIsInByaXZhdGVfa2V5IjoiL21udC9zZWNyZXRzL2F1dGguanNvbiIsInR5cGUiOiJjbGllbnRfY3JlZGVudGlhbHMiLCJzY29wZSI6ImFwaTovLzU2YzFiZDE0LTNiYTctNDgwNC1iNDdiLWQ0NmRlNmRjZTMzZS8uZGVmYXVsdCJ9Cg==
   clientAuthenticationPlugin: b3JnLmFwYWNoZS5wdWxzYXIuY2xpZW50LmltcGwuYXV0aC5vYXV0aDIuQXV0aGVudGljYXRpb25PQXV0aDI=
 kind: Secret
 metadata:
@@ -61,9 +61,9 @@ type: Opaque
 ---
 apiVersion: v1
 data:
-  use_tls: false
-  tls_allow_insecure: true
-  hostname_verification_enabled: true
+  tlsAllowInsecureConnection: dHJ1ZQo=
+  tlsHostnameVerificationEnable: dHJ1ZQo=
+  tlsTrustCertsFilePath: IiIK
 kind: Secret
 metadata:
   name: tls-secret
