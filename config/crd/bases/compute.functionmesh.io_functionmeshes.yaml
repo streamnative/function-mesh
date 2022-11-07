@@ -1,9 +1,10 @@
+
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.0
+    controller-gen.kubebuilder.io/version: v0.6.2
   creationTimestamp: null
   name: functionmeshes.compute.functionmesh.io
 spec:
@@ -6204,6 +6205,25 @@ spec:
                       x-kubernetes-preserve-unknown-fields: true
                     sinkType:
                       type: string
+                    statefulConfig:
+                      properties:
+                        pulsar:
+                          properties:
+                            javaProvider:
+                              properties:
+                                className:
+                                  type: string
+                                config:
+                                  type: object
+                              required:
+                              - className
+                              type: object
+                            serviceUrl:
+                              type: string
+                          required:
+                          - serviceUrl
+                          type: object
+                      type: object
                     subscriptionName:
                       type: string
                     subscriptionPosition:
@@ -9238,6 +9258,25 @@ spec:
                       x-kubernetes-preserve-unknown-fields: true
                     sourceType:
                       type: string
+                    statefulConfig:
+                      properties:
+                        pulsar:
+                          properties:
+                            javaProvider:
+                              properties:
+                                className:
+                                  type: string
+                                config:
+                                  type: object
+                              required:
+                              - className
+                              type: object
+                            serviceUrl:
+                              type: string
+                          required:
+                          - serviceUrl
+                          type: object
+                      type: object
                     tenant:
                       type: string
                     volumeMounts:
@@ -9307,3 +9346,9 @@ spec:
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

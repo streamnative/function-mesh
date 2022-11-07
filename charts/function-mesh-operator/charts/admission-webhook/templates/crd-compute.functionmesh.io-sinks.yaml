@@ -6,7 +6,7 @@ metadata:
     {{- if eq .Values.admissionWebhook.certificate.provider "cert-manager" }}
       {{- include "function-mesh-operator.certManager.annotation" . | nindent 4 -}}
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.9.0
+    controller-gen.kubebuilder.io/version: v0.6.2
   name: sinks.compute.functionmesh.io
 spec:
   conversion:
@@ -3061,6 +3061,25 @@ spec:
                   x-kubernetes-preserve-unknown-fields: true
                 sinkType:
                   type: string
+                statefulConfig:
+                  properties:
+                    pulsar:
+                      properties:
+                        javaProvider:
+                          properties:
+                            className:
+                              type: string
+                            config:
+                              type: object
+                          required:
+                            - className
+                          type: object
+                        serviceUrl:
+                          type: string
+                      required:
+                        - serviceUrl
+                      type: object
+                  type: object
                 subscriptionName:
                   type: string
                 subscriptionPosition:
@@ -3130,4 +3149,10 @@ spec:
           specReplicasPath: .spec.replicas
           statusReplicasPath: .status.replicas
         status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
 {{- end }}
