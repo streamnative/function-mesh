@@ -80,7 +80,7 @@ manager: generate fmt vet
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
-	ENABLE_WEBHOOKS=false go run ./main.go
+	ENABLE_WEBHOOKS=false GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn go run ./main.go
 
 # Install CRDs into a cluster
 install: manifests kustomize crd
