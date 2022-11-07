@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"strconv"
 
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
+
 	"fmt"
 	"strings"
 
@@ -30,6 +32,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 type Messaging struct {
@@ -217,6 +220,9 @@ type PodPolicy struct {
 	// +optional
 	AutoScalingBehavior *autov2beta2.HorizontalPodAutoscalerBehavior `json:"autoScalingBehavior,omitempty"`
 
+	// VPA indicates whether to enable the VerticalPodAutoscaler, it should not be used with HPA
+	VPA *VPASpec `json:"vpa,omitempty"`
+
 	// Env Environment variables to expose on the pulsar-function containers
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }
@@ -327,6 +333,7 @@ const (
 	StatefulSet Component = "StatefulSet"
 	Service     Component = "Service"
 	HPA         Component = "HorizontalPodAutoscaler"
+	VPA         Component = "VerticalPodAutoscaler"
 )
 
 // The `Status` of a given `Condition` and the `Action` needed to reach the `Status`
@@ -348,6 +355,7 @@ const (
 	StatefulSetReady ResourceConditionType = "StatefulSetReady"
 	ServiceReady     ResourceConditionType = "ServiceReady"
 	HPAReady         ResourceConditionType = "HPAReady"
+	VPAReady         ResourceConditionType = "VPAReady"
 )
 
 type ReconcileAction string
@@ -526,6 +534,20 @@ func isValidTopicName(topicName string) error {
 	return err
 }
 
+func validateResourcePolicy(resourcePolicy *vpav1.PodResourcePolicy) field.ErrorList {
+	var errs field.ErrorList
+	if resourcePolicy != nil {
+		for _, c := range resourcePolicy.ContainerPolicies {
+			if c.ContainerName == "" {
+				errs = append(errs,
+					field.Invalid(field.NewPath("spec").Child("pod").Child("vpa").Child("resourcePolicy").Child("containerPolicy"), resourcePolicy.ContainerPolicies, "container name must be specified"))
+				break
+			}
+		}
+	}
+	return errs
+}
+
 func CreateCondition(condType ResourceConditionType, status metav1.ConditionStatus, action ReconcileAction) ResourceCondition {
 	condition := ResourceCondition{
 		Condition: condType,
@@ -598,4 +620,16 @@ type WindowConfig struct {
 	MaxLagMs                      *int64  `json:"maxLagMs,omitempty"`
 	WatermarkEmitIntervalMs       *int64  `json:"watermarkEmitIntervalMs,omitempty"`
 	TimestampExtractorClassName   *string `json:"timestampExtractorClassName,omitempty"`
+}
+
+type VPASpec struct {
+	// Describes the rules on how changes are applied to the pods.
+	// If not specified, all fields in the `PodUpdatePolicy` are set to their
+	// default values.
+	// +optional
+	UpdatePolicy *vpav1.PodUpdatePolicy `json:"updatePolicy,omitempty"`
+
+	// Controls how the autoscaler computes recommended resources.
+	// +optional
+	ResourcePolicy *vpav1.PodResourcePolicy `json:"resourcePolicy,omitempty"`
 }

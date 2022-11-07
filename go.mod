@@ -13,6 +13,7 @@ require (
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2
+	k8s.io/autoscaler/vertical-pod-autoscaler v0.11.0
 	k8s.io/client-go v0.24.2
 	sigs.k8s.io/controller-runtime v0.10.3
 	sigs.k8s.io/yaml v1.3.0

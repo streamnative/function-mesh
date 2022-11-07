@@ -20,6 +20,8 @@ package controllers
 import (
 	"context"
 
+	autoscaling "k8s.io/api/autoscaling/v1"
+
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
@@ -225,6 +227,34 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, 
 			"hpa name", desiredHPA.Name)
 		return err
 	}
+	return nil
+}
+
+func (r *SinkReconciler) ObserveSinkVPA(ctx context.Context, sink *v1alpha1.Sink) error {
+	return observeVPA(ctx, r, types.NamespacedName{Namespace: sink.Namespace,
+		Name: spec.MakeSinkObjectMeta(sink).Name}, sink.Spec.Pod.VPA, sink.Status.Conditions)
+}
+
+func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink) error {
+
+	condition, ok := sink.Status.Conditions[v1alpha1.VPA]
+
+	if !ok || condition.Status == metav1.ConditionTrue {
+		return nil
+	}
+
+	objectMeta := spec.MakeSinkObjectMeta(sink)
+	targetRef := &autoscaling.CrossVersionObjectReference{
+		Kind:       sink.Kind,
+		Name:       sink.Name,
+		APIVersion: sink.APIVersion,
+	}
+
+	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, sink.Spec.Pod.VPA, "sink", sink.Namespace, sink.Name)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

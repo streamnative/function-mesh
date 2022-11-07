@@ -24,6 +24,9 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -168,6 +171,40 @@ var _ = Describe("Function Controller (builtin HPA)", func() {
 	})
 })
 
+var _ = Describe("Function Controller (VPA)", func() {
+	Context("Simple Function Item with VPA", func() {
+		mode := vpav1.UpdateModeAuto
+		controlledValues := vpav1.ContainerControlledValuesRequestsAndLimits
+		function := makeFunctionSample(TestFunctionVPAName)
+		function.Spec.Pod.VPA = &v1alpha1.VPASpec{
+			UpdatePolicy: &vpav1.PodUpdatePolicy{
+				UpdateMode: &mode,
+			},
+			ResourcePolicy: &vpav1.PodResourcePolicy{
+				ContainerPolicies: []vpav1.ContainerResourcePolicy{
+					{
+						ContainerName: "*",
+						MinAllowed: v1.ResourceList{
+							v1.ResourceCPU:    resource.MustParse("100m"),
+							v1.ResourceMemory: resource.MustParse("100Mi"),
+						},
+						MaxAllowed: v1.ResourceList{
+							v1.ResourceCPU:    resource.MustParse("1000m"),
+							v1.ResourceMemory: resource.MustParse("1000Mi"),
+						},
+						ControlledResources: &[]v1.ResourceName{
+							v1.ResourceCPU, v1.ResourceMemory,
+						},
+						ControlledValues: &controlledValues,
+					},
+				},
+			},
+		}
+
+		createFunction(function)
+	})
+})
+
 var _ = Describe("Function Controller (Stateful Function)", func() {
 	Context("Simple Function Item with Stateful store config", func() {
 		function := makeFunctionSample(TestFunctionStatefulJavaName)
@@ -257,6 +294,22 @@ func createFunction(function *v1alpha1.Function) {
 		}
 	})
 
+	It("VPA should be created", func() {
+		if function.Spec.Pod.VPA != nil {
+			vpa := &vpav1.VerticalPodAutoscaler{}
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Namespace: function.Namespace,
+					Name: spec.MakeFunctionObjectMeta(function).Name}, vpa)
+				return err == nil
+			}, timeout, interval).Should(BeTrue())
+
+			log.Info("VPA should be created", "vpa", vpa, "name", spec.MakeFunctionObjectMeta(function).Name)
+
+			Expect(vpa.Spec.UpdatePolicy).Should(Equal(function.Spec.Pod.VPA.UpdatePolicy))
+			Expect(vpa.Spec.ResourcePolicy).Should(Equal(function.Spec.Pod.VPA.ResourcePolicy))
+		}
+	})
+
 	It("Function should be deleted", func() {
 		key := client.ObjectKeyFromObject(function)
 		//fmt.Println(key)
@@ -301,5 +354,24 @@ func createFunction(function *v1alpha1.Function) {
 		}, timeout, interval).Should(BeTrue())
 		log.Info("HPA resource deleted", "namespace", key.Namespace, "name", key.Name, "test",
 			CurrentGinkgoTestDescription().FullTestText)
+
+		vpas := new(vpav1.VerticalPodAutoscalerList)
+		err = k8sClient.List(context.Background(), vpas, client.InNamespace(function.Namespace))
+		Expect(err).Should(BeNil())
+		for _, item := range vpas.Items {
+			log.Info("deleting VPA resource", "namespace", key.Namespace, "name", key.Name, "test",
+				CurrentGinkgoTestDescription().FullTestText)
+			log.Info("deleting VPA", "item", item)
+			Expect(k8sClient.Delete(context.Background(), &item)).To(Succeed())
+		}
+		log.Info("waiting for VPA resource to disappear", "namespace", key.Namespace, "name", key.Name, "test",
+			CurrentGinkgoTestDescription().FullTestText)
+		Eventually(func() bool {
+			err := k8sClient.List(context.Background(), vpas, client.InNamespace(function.Namespace))
+			return err == nil && len(vpas.Items) == 0
+		}, timeout, interval).Should(BeTrue())
+		log.Info("VPA resource deleted", "namespace", key.Namespace, "name", key.Name, "test",
+			CurrentGinkgoTestDescription().FullTestText)
+
 	})
 }

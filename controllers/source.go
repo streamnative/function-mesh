@@ -20,6 +20,8 @@ package controllers
 import (
 	"context"
 
+	autoscaling "k8s.io/api/autoscaling/v1"
+
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
@@ -225,6 +227,34 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.
 			"hpa name", desiredHPA.Name)
 		return err
 	}
+	return nil
+}
+
+func (r *SourceReconciler) ObserveSourceVPA(ctx context.Context, source *v1alpha1.Source) error {
+	return observeVPA(ctx, r, types.NamespacedName{Namespace: source.Namespace,
+		Name: spec.MakeSourceObjectMeta(source).Name}, source.Spec.Pod.VPA, source.Status.Conditions)
+}
+
+func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.Source) error {
+
+	condition, ok := source.Status.Conditions[v1alpha1.VPA]
+
+	if !ok || condition.Status == metav1.ConditionTrue {
+		return nil
+	}
+
+	objectMeta := spec.MakeSourceObjectMeta(source)
+	targetRef := &autoscaling.CrossVersionObjectReference{
+		Kind:       source.Kind,
+		Name:       source.Name,
+		APIVersion: source.APIVersion,
+	}
+
+	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, source.Spec.Pod.VPA, "source", source.Namespace, source.Name)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -26,6 +26,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/utils"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -75,6 +77,9 @@ var _ = BeforeSuite(func(done Done) {
 	err = v1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = vpav1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
 	// +kubebuilder:scaffold:scheme
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -90,26 +95,32 @@ var _ = BeforeSuite(func(done Done) {
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
+	watchFlags := &utils.WatchFlags{
+		WatchVPACRDs: true,
+	}
 	funcReconciler = &FunctionReconciler{
-		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Function"),
-		Scheme: k8sManager.GetScheme(),
+		Client:     k8sManager.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("Function"),
+		Scheme:     k8sManager.GetScheme(),
+		WatchFlags: watchFlags,
 	}
 	err = funcReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	sourceReconciler = &SourceReconciler{
-		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Source"),
-		Scheme: k8sManager.GetScheme(),
+		Client:     k8sManager.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("Source"),
+		Scheme:     k8sManager.GetScheme(),
+		WatchFlags: watchFlags,
 	}
 	err = sourceReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	sinkReconciler = &SinkReconciler{
-		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Sink"),
-		Scheme: k8sManager.GetScheme(),
+		Client:     k8sManager.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("Sink"),
+		Scheme:     k8sManager.GetScheme(),
+		WatchFlags: watchFlags,
 	}
 	err = sinkReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
