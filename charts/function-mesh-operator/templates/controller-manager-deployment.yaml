@@ -53,6 +53,7 @@ spec:
           - --health-probe-addr=:{{ .Values.controllerManager.healthProbe.port }}
           - --pprof-addr=:{{ .Values.controllerManager.pprof.port }}
           - --config-file={{ .Values.controllerManager.configFile }}
+          - --enable-downloader={{ .Values.controllerManager.enableDownloader }}
         env:
           - name: NAMESPACE
             valueFrom:

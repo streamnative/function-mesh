@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/streamnative/function-mesh/utils"
 	"html/template"
 	"reflect"
 	"sort"
@@ -45,6 +46,7 @@ const (
 	DefaultJavaRunnerImage     = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
 	DefaultPythonRunnerImage   = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
 	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
+	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 	WorkDir                    = "/pulsar/"
 
 	// for init container
@@ -341,28 +343,119 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	}
 }
 
-func MakeJavaFunctionCommand(packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
+func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
+	if downloadPath != "" && !utils.EnableDownloader {
+		// prepend download command if the downPath is provided
+		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
+			tlsConfig, authConfig), " ")
+		processCommand = downloadCommand + " && " + processCommand
+	}
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakePythonFunctionCommand(packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
+func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
+	if downloadPath != "" && !utils.EnableDownloader {
+		// prepend download command if the downPath is provided
+		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
+			tlsConfig, authConfig), " ")
+		processCommand = downloadCommand + " && " + processCommand
+	}
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakeGoFunctionCommand(goExecFilePath string, function *v1alpha1.Function) []string {
+func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alpha1.Function) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
+	if downloadPath != "" && !utils.EnableDownloader {
+		// prepend download command if the downPath is provided
+		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, goExecFilePath,
+			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != "",
+			function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
+		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
+	}
 	return []string{"sh", "-c", processCommand}
+}
+
+func getLegacyDownloadCommand(downloadPath, componentPackage string, tlsProvided, authProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	args := []string{
+		PulsarAdminExecutableFile,
+		"--admin-url",
+		"$webServiceURL",
+	}
+	if authConfig != nil && authConfig.OAuth2Config != nil {
+		args = append(args, []string{
+			"--auth-plugin",
+			OAuth2AuthenticationPlugin,
+			"--auth-params",
+			authConfig.OAuth2Config.AuthenticationParameters(),
+		}...)
+	} else if authProvided {
+		args = append(args, []string{
+			"--auth-plugin",
+			"$clientAuthenticationPlugin",
+			"--auth-params",
+			"$clientAuthenticationParameters"}...)
+	}
+
+	// Use traditional way
+	if reflect.ValueOf(tlsConfig).IsNil() {
+		if tlsProvided {
+			args = append(args, []string{
+				"--tls-allow-insecure",
+				"${tlsAllowInsecureConnection:-" + DefaultForAllowInsecure + "}",
+				"--tls-enable-hostname-verification",
+				"${tlsHostnameVerificationEnable:-" + DefaultForEnableHostNameVerification + "}",
+				"--tls-trust-cert-path",
+				"$tlsTrustCertsFilePath",
+			}...)
+		}
+	} else {
+		if tlsConfig.IsEnabled() {
+			if tlsConfig.AllowInsecureConnection() == "true" {
+				args = append(args, "--tls-allow-insecure")
+			}
+
+			if tlsConfig.EnableHostnameVerification() == "true" {
+				args = append(args, "--tls-enable-hostname-verification")
+			}
+
+			if tlsConfig.HasSecretVolume() {
+				args = append(args, []string{
+					"--tls-trust-cert-path",
+					getTLSTrustCertPath(tlsConfig, tlsConfig.SecretKey()),
+				}...)
+			}
+		}
+	}
+	if hasPackageNamePrefix(downloadPath) {
+		args = append(args, []string{
+			"packages",
+			"download",
+			downloadPath,
+			"--path",
+			componentPackage,
+		}...)
+		return args
+	}
+	args = append(args, []string{
+		"functions",
+		"download",
+		"--path",
+		downloadPath,
+		"--destination-file",
+		componentPackage,
+	}...)
+	return args
 }
 
 func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, authProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
@@ -1188,6 +1281,9 @@ func generateContainerVolumeMountsFromConsumerConfigs(confs map[string]v1alpha1.
 }
 
 func generateDownloaderVolumeMountsForDownloader(javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime, goRuntime *v1alpha1.GoRuntime) []corev1.VolumeMount {
+	if !utils.EnableDownloader {
+		return nil
+	}
 	if (javaRuntime != nil && javaRuntime.JarLocation != "") ||
 		(pythonRuntime != nil && pythonRuntime.PyLocation != "") ||
 		(goRuntime != nil && goRuntime.GoLocation != "") {
