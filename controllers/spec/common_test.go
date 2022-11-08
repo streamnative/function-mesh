@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/utils"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -676,6 +677,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 }
 
 func TestGenerateContainerVolumeMounts(t *testing.T) {
+	utils.EnableDownloader = true
 	type args struct {
 		volumeMounts  []corev1.VolumeMount
 		producerConf  *v1alpha1.ProducerConfig
