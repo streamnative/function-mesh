@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+// Package utils define some common used functions&structs
 package utils
 
 var EnableDownloader = false

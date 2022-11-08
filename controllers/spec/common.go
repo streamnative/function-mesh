@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/streamnative/function-mesh/utils"
 	"html/template"
 	"reflect"
 	"sort"
@@ -30,6 +29,7 @@ import (
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
+	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -1349,7 +1349,9 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 			mounts = append(mounts, generateVolumeMountFromOAuth2Config(authConfig.OAuth2Config))
 		}
 	}
-	mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(javaRuntime, pythonRuntime, goRuntime)...)
+	if utils.EnableDownloader {
+		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(javaRuntime, pythonRuntime, goRuntime)...)
+	}
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)
 	mounts = append(mounts, generateVolumeMountFromLogConfigs(logConfs)...)
