@@ -18,4 +18,4 @@
 // Package utils define some common used functions&structs
 package utils
 
-var EnableDownloader = false
+var EnableInitContainers = false

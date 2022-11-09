@@ -69,7 +69,7 @@ controllerManager:
   pprof:
     enable: false
     port: 8090
-  enableDownloader: false
+  enableInitContainers: false
 
 admissionWebhook:
   enabled: true

@@ -677,7 +677,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 }
 
 func TestGenerateContainerVolumeMounts(t *testing.T) {
-	utils.EnableDownloader = true
+	utils.EnableInitContainers = true
 	type args struct {
 		volumeMounts  []corev1.VolumeMount
 		producerConf  *v1alpha1.ProducerConfig

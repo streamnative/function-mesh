@@ -349,7 +349,7 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
-	if downloadPath != "" && !utils.EnableDownloader {
+	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
 			tlsConfig, authConfig), " ")
@@ -364,7 +364,7 @@ func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, gen
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
-	if downloadPath != "" && !utils.EnableDownloader {
+	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
 			tlsConfig, authConfig), " ")
@@ -376,7 +376,7 @@ func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, gen
 func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alpha1.Function) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
-	if downloadPath != "" && !utils.EnableDownloader {
+	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, goExecFilePath,
 			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != "",
@@ -1281,7 +1281,7 @@ func generateContainerVolumeMountsFromConsumerConfigs(confs map[string]v1alpha1.
 }
 
 func generateDownloaderVolumeMountsForDownloader(javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime, goRuntime *v1alpha1.GoRuntime) []corev1.VolumeMount {
-	if !utils.EnableDownloader {
+	if !utils.EnableInitContainers {
 		return nil
 	}
 	if (javaRuntime != nil && javaRuntime.JarLocation != "") ||
@@ -1349,7 +1349,7 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 			mounts = append(mounts, generateVolumeMountFromOAuth2Config(authConfig.OAuth2Config))
 		}
 	}
-	if utils.EnableDownloader {
+	if utils.EnableInitContainers {
 		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(javaRuntime, pythonRuntime, goRuntime)...)
 	}
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
