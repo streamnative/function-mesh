@@ -232,6 +232,37 @@ function ci::verify_download_java_function() {
     fi
 }
 
+function ci::verify_vpa_java_function() {
+  kubectl wait -l name=function-sample-vpa-function --for=condition=RecommendationProvided --timeout=2m vpa && true
+  cpu=`kubectl get vpa function-sample-vpa-function -o jsonpath='{.status.recommendation.containerRecommendations[0].target.cpu}'`
+  memory=`kubectl get vpa function-sample-vpa-function -o jsonpath='{.status.recommendation.containerRecommendations[0].target.memory}'`
+  resources='{"limits":{"cpu":"'$cpu'","memory":"'$memory'"},"requests":{"cpu":"'$cpu'","memory":"'$memory'"}}'
+
+  # delete pod to trigger resource updating
+  kubectl delete pod function-sample-vpa-function-0
+  kubectl wait -l statefulset.kubernetes.io/pod-name=function-sample-vpa-function-0 --for=condition=Ready --timeout=2m pod
+  realResource1=`kubectl get pod function-sample-vpa-function-0 -o jsonpath='{.spec.containers[0].resources}'`
+  retry=10
+  if [[ "$resources" != "$realResource1" ]]; then
+    echo "vpa tests failed for pod1"
+    echo "recommend resource is: ${resources}, actual resource is ${realResource1}"
+    exit 1
+  fi
+
+  # delete pod to trigger resource updating
+  kubectl delete pod function-sample-vpa-function-1
+  kubectl wait -l statefulset.kubernetes.io/pod-name=function-sample-vpa-function-0 --for=condition=Ready --timeout=2m pod
+  realResource2=`kubectl get pod function-sample-vpa-function-1 -o jsonpath='{.spec.containers[0].resources}'`
+  if [[ "$resources" != "$realResource2" ]]; then
+    echo "vpa tests failed for pod2"
+    echo "recommend resource is: ${resources}, actual resource is ${realResource2}"
+    exit 1
+  fi
+  echo "vpa tests passed"
+
+  ci::verify_exclamation_function "persistent://public/default/input-vpa-java-topic" "persistent://public/default/output-vpa-java-topic" "test-message" "test-message!" 10
+}
+
 function ci::verify_python_function() {
     ci::verify_exclamation_function "persistent://public/default/input-python-topic" "persistent://public/default/output-python-topic" "test-message" "test-message!" 10
 }
@@ -242,6 +273,13 @@ function ci::verify_download_python_function() {
       ci::verify_exclamation_function_with_auth "persistent://public/default/input-download-python-topic" "persistent://public/default/output-download-python-topic" "test-message" "test-message!" 10
     else
       ci::verify_exclamation_function "persistent://public/default/input-download-python-topic" "persistent://public/default/output-download-python-topic" "test-message" "test-message!" 10
+    fi
+}
+
+function ci::verify_download_python_legacy_function_oauth2() {
+    authEnabled=$1
+    if [[ "$authEnabled" == "true" ]]; then
+      ci::verify_exclamation_function_with_auth "persistent://public/default/input-download-python-legacy-topic" "persistent://public/default/output-download-python-legacy-topic" "test-message" "test-message!" 10
     fi
 }
 

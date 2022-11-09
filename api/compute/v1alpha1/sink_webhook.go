@@ -144,6 +144,18 @@ func (r *Sink) ValidateCreate() error {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
+	if r.Spec.Pod.VPA != nil {
+		if r.Spec.MaxReplicas != nil {
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("pod").Child("vpa"), r.Spec.Pod.VPA, "you can not enable HPA and VPA at the same time"))
+		}
+
+		resourceErrors := validateResourcePolicy(r.Spec.Pod.VPA.ResourcePolicy)
+		if resourceErrors != nil {
+			allErrs = append(allErrs, resourceErrors...)
+		}
+	}
+
 	fieldErr = validateResourceRequirement(r.Spec.Resources)
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)

@@ -17,8 +17,10 @@ RUN if [ -d "/tmp/pulsar/cpp-client" ]; then mv /tmp/pulsar/cpp-client /pulsar/c
 RUN apt-get update \
      && DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-dev python3-setuptools python3-yaml python3-kazoo \
                  libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev \
-                 curl \
+                 curl ca-certificates\
      && apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /etc/pki/tls/certs && cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
 
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python3 get-pip.py
