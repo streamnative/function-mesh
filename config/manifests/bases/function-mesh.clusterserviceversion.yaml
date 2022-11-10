@@ -3,7 +3,7 @@ kind: ClusterServiceVersion
 metadata:
   annotations:
     alm-examples: '[]'
-    capabilities: Seamless Upgrades
+    capabilities: Full Lifecycle
     categories: Streaming & Messaging
     containerImage: streamnative/function-mesh-operator:v0.0.0
     description: The Function Mesh Operator manages the Pulsar Functions and Connectors
