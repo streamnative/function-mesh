@@ -6,7 +6,7 @@ metadata:
     {{- if eq .Values.admissionWebhook.certificate.provider "cert-manager" }}
       {{- include "function-mesh-operator.certManager.annotation" . | nindent 4 -}}
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.6.2
+    controller-gen.kubebuilder.io/version: v0.9.0
   name: sinks.compute.functionmesh.io
 spec:
   conversion:
@@ -1195,6 +1195,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -1289,6 +1299,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -1437,6 +1457,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -1826,6 +1856,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -1920,6 +1960,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -2068,6 +2118,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -3149,10 +3209,4 @@ spec:
           specReplicasPath: .spec.replicas
           statusReplicasPath: .status.replicas
         status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
 {{- end }}

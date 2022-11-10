@@ -76,11 +76,11 @@ envtest:
 
 # Build manager binary
 manager: generate fmt vet
-	$(GO_BUILD) -ldflags "-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=warn" -o bin/function-mesh-controller-manager main.go
+	$(GO_BUILD) -o bin/function-mesh-controller-manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
-	ENABLE_WEBHOOKS=false GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn go run ./main.go
+	ENABLE_WEBHOOKS=false go run ./main.go
 
 # Install CRDs into a cluster
 install: manifests kustomize crd
