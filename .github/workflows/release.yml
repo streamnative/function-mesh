@@ -50,6 +50,10 @@ jobs:
           sudo chmod +x /usr/bin/yq
           yq --help
 
+      - name: Get vertical-pod-autoscaler crd
+        run: |
+          wget https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml -O config/crd/bases/vpa-v1-crd.yaml
+
       - name: build release
         id: build_release
         env:
@@ -134,6 +138,10 @@ jobs:
           sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.0/yq_linux_amd64 -O /usr/bin/yq
           sudo chmod +x /usr/bin/yq
           yq --help
+
+      - name: Get vertical-pod-autoscaler crd
+        run: |
+          wget https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml -O config/crd/bases/vpa-v1-crd.yaml
 
       - name: build release
         id: build_release
