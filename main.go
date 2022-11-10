@@ -61,6 +61,7 @@ func main() {
 	var enableLeaderElection, enablePprof bool
 	var configFile string
 	var namespace string
+	var enableInitContainers bool
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id", "a3f45fce.functionmesh.io",
 		"the name of the configmap that leader election will use for holding the leader lock.")
@@ -78,9 +79,11 @@ func main() {
 		"Namespace if specified restricts the manager's cache to watch objects in the desired namespace. Defaults to all namespaces.")
 	flag.BoolVar(&enablePprof, "enable-pprof", false, "Enable pprof for controller manager.")
 	flag.StringVar(&pprofAddr, "pprof-addr", ":8090", "The address the pprof binds to.")
+	flag.BoolVar(&enableInitContainers, "enable-init-containers", false, "Whether to use an init container to download package")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+	utils.EnableInitContainers = enableInitContainers
 
 	// enable pprof
 	if enablePprof {

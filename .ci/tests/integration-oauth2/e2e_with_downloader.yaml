@@ -1,0 +1,109 @@
+setup:
+  env: kind
+  file: ../kind.yaml
+  init-system-environment: ../env
+  steps:
+    - name: build images
+      command: |
+        chmod +x images/build.sh images/samples/build.sh
+        PULSAR_IMAGE_TAG=2.9.2.23 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=true images/build.sh
+        PULSAR_IMAGE_TAG=2.9.2.23 KIND_PUSH=true images/samples/build.sh
+
+    - name: install helm
+      command: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+    - name: setup cert-manager
+      command: |
+        helm repo add jetstack https://charts.jetstack.io
+        helm repo update
+        helm install cert-manager jetstack/cert-manager --set installCRDs=true --version v1.8.2
+      wait:
+        - namespace: default
+          resource: pod
+          label-selector: app=cert-manager
+          for: condition=Ready
+
+    - name: Update values file
+      command: |
+        sed -i "s/CLIENT_SECRET/${AZURE_CLIENT_SECRET}/g" .ci/clusters/values_skywalking_e2e_cluster_with_oauth.yaml
+        sed -i "s/CLIENT_ID/${AZURE_CLIENT_ID}/g" .ci/clusters/values_skywalking_e2e_cluster_with_oauth.yaml
+
+    - name: install pulsar cluster
+      command: |
+        helm repo add streamnative https://charts.streamnative.io
+        rm -rf pulsar-charts/
+        git clone https://github.com/streamnative/charts.git pulsar-charts
+        cd pulsar-charts/
+        ./scripts/pulsar/prepare_helm_release.sh -n default -k ${PULSAR_RELEASE_NAME} -c
+        helm repo add loki https://grafana.github.io/loki/charts
+        helm dependency update charts/pulsar
+        helm install ${PULSAR_RELEASE_NAME} --set initialize=true --values ../.ci/clusters/values_skywalking_e2e_cluster_with_oauth.yaml charts/pulsar
+
+    - name: wait for pulsar cluster ready
+      command: |
+        echo "wait until pulsar init job is completed"
+        succeeded_num=0
+        while [[ ${succeeded_num} -lt 1 ]]; do
+          sleep 10
+          kubectl get pods -n ${PULSAR_NAMESPACE}
+          succeeded_num=$(kubectl get jobs -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-pulsar-init -o jsonpath='{.status.succeeded}')
+        done
+        kubectl scale statefulset --replicas=1 ${PULSAR_RELEASE_NAME}-pulsar-bookie
+      wait:
+        - namespace: default
+          resource: pod
+          label-selector: app=pulsar
+          for: condition=Ready
+
+    - name: wait for producer active
+      command: |
+        kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-toolset-0 -- bash -c 'until nslookup sn-platform-pulsar-broker; do sleep 3; done'
+        kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters tenants create sn-platform'
+        kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters namespaces create sn-platform/test'
+        kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-broker-0 -- sh -c 'bin/pulsar-client --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters produce -m "test-message" sn-platform/test/test-topic'
+        kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-bookie-0 -- df -h
+        kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-bookie-0 -- cat conf/bookkeeper.conf
+        kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-bookie-0 -- nc -zv 127.0.0.1 4181
+
+    # upload packages here to avoid retry error
+    - name: upload packages
+      command: |
+        bash .ci/upload_function_with_oauth.sh java
+        bash .ci/upload_function_with_oauth.sh py
+
+    - name: install function-mesh operator
+      command: |
+        make generate
+        make helm-crds
+        image="function-mesh-operator:latest"
+        IMG=${image} make docker-build-skip-test
+        kind load docker-image ${image}
+        helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --set controllerManager.enableInitContainers=true --create-namespace charts/function-mesh-operator
+      wait:
+        - namespace: function-mesh
+          resource: pod
+          label-selector: app.kubernetes.io/name=function-mesh-operator
+          for: condition=Ready
+  timeout: 60m
+
+cleanup:
+  # always never success failure
+  on: success
+
+verify:
+  # verify with retry strategy
+  retry:
+    # max retry count
+    count: 10
+    # the interval between two attempts, e.g. 10s, 1m.
+    interval: 10s
+  cases:
+    - query: bash .ci/tests/integration-oauth2/cases/java-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration-oauth2/cases/java-download-function/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration-oauth2/cases/py-download-function/verify.sh
+      expected: expected.data.yaml
+#    - query: bash .ci/tests/integration-oauth2/cases/py-download-function-legacy/verify.sh
+#      expected: expected.data.yaml

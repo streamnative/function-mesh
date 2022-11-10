@@ -53,6 +53,7 @@ spec:
           - --health-probe-addr=:{{ .Values.controllerManager.healthProbe.port }}
           - --pprof-addr=:{{ .Values.controllerManager.pprof.port }}
           - --config-file={{ .Values.controllerManager.configFile }}
+          - --enable-init-containers={{ .Values.controllerManager.enableInitContainers }}
         env:
           - name: NAMESPACE
             valueFrom:

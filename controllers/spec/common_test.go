@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/utils"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -175,6 +176,70 @@ func TestGetDownloadCommand(t *testing.T) {
 	}
 }
 
+func TestGetLegacyDownloadCommand(t *testing.T) {
+	doTest := func(downloadPath, componentPackage string, expectedCommand []string) {
+		var tlsConfig *v1alpha1.PulsarTLSConfig
+		actualResult := getLegacyDownloadCommand(downloadPath, componentPackage, false, false, tlsConfig, nil)
+		assert.Equal(t, expectedCommand, actualResult)
+	}
+
+	testData := []struct {
+		downloadPath     string
+		componentPackage string
+		expectedCommand  []string
+	}{
+		// test get the download command with package name
+		{"function://public/default/test@v1", "function-package.jar",
+			[]string{
+				PulsarAdminExecutableFile,
+				"--admin-url", "$webServiceURL",
+				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
+			},
+		},
+		{"sink://public/default/test@v1", "sink-package.jar",
+			[]string{
+				PulsarAdminExecutableFile,
+				"--admin-url", "$webServiceURL",
+				"packages", "download", "sink://public/default/test@v1", "--path", "sink-package.jar",
+			},
+		},
+		{"source://public/default/test@v1", "source-package.jar",
+			[]string{
+				PulsarAdminExecutableFile,
+				"--admin-url", "$webServiceURL",
+				"packages", "download", "source://public/default/test@v1", "--path", "source-package.jar",
+			},
+		},
+		// test get the download command with normal name
+		{"/test", "test.jar",
+			[]string{
+				PulsarAdminExecutableFile,
+				"--admin-url", "$webServiceURL",
+				"functions", "download", "--path", "/test", "--destination-file", "test.jar",
+			},
+		},
+		// test get the download command with a wrong package name
+		{"source/public/default/test@v1", "source-package.jar",
+			[]string{
+				PulsarAdminExecutableFile,
+				"--admin-url", "$webServiceURL",
+				"functions", "download", "--path", "source/public/default/test@v1", "--destination-file", "source-package.jar",
+			},
+		},
+		{"source:/public/default/test@v1", "source-package.jar",
+			[]string{
+				PulsarAdminExecutableFile,
+				"--admin-url", "$webServiceURL",
+				"functions", "download", "--path", "source:/public/default/test@v1", "--destination-file", "source-package.jar",
+			},
+		},
+	}
+
+	for _, v := range testData {
+		doTest(v.downloadPath, v.componentPackage, v.expectedCommand)
+	}
+}
+
 func TestGetFunctionRunnerImage(t *testing.T) {
 	javaRuntime := v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
 		Jar:         "test.jar",
@@ -260,7 +325,7 @@ func TestGetSourceRunnerImage(t *testing.T) {
 
 func TestMakeGoFunctionCommand(t *testing.T) {
 	function := makeGoFunctionSample(TestFunctionName)
-	commands := MakeGoFunctionCommand("/pulsar/go-func", function)
+	commands := MakeGoFunctionCommand("", "/pulsar/go-func", function)
 	assert.Equal(t, commands[0], "sh")
 	assert.Equal(t, commands[1], "-c")
 	assert.True(t, strings.HasPrefix(commands[2], "SHARD_ID=${POD_NAME##*-} && echo shardId=${SHARD_ID}"))
@@ -612,6 +677,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 }
 
 func TestGenerateContainerVolumeMounts(t *testing.T) {
+	utils.EnableInitContainers = true
 	type args struct {
 		volumeMounts  []corev1.VolumeMount
 		producerConf  *v1alpha1.ProducerConfig
