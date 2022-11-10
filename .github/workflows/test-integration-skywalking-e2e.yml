@@ -1,6 +1,6 @@
 name: Precommit - Integration Tests
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - '*'
     paths-ignore:
@@ -11,6 +11,7 @@ on:
       - 'LICENSE'
       - 'mesh-worker-service/README.md'
       - 'tools/README.md'
+permissions: read-all
 jobs:
   integration:
     runs-on: ubuntu-latest
