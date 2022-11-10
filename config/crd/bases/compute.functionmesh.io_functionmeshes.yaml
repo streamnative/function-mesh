@@ -6386,6 +6386,7 @@ spec:
                           type: string
                         discoveryTriggererConfig:
                           type: object
+                          x-kubernetes-preserve-unknown-fields: true
                       required:
                       - discoveryTriggererClassName
                       type: object

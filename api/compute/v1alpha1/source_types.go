@@ -89,6 +89,7 @@ type BatchSourceConfig struct {
 	// +kubebuilder:validation:Required
 	DiscoveryTriggererClassName string `json:"discoveryTriggererClassName"`
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	DiscoveryTriggererConfig *Config `json:"discoveryTriggererConfig,omitempty"`
 }
 
