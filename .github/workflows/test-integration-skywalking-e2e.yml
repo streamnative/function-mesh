@@ -1,6 +1,6 @@
 name: Precommit - Integration Tests
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - '*'
     paths-ignore:
@@ -11,6 +11,7 @@ on:
       - 'LICENSE'
       - 'mesh-worker-service/README.md'
       - 'tools/README.md'
+permissions: read-all
 jobs:
   integration:
     runs-on: ubuntu-latest
@@ -42,6 +43,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          repository: ${{github.event.pull_request.head.repo.full_name}}
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: apache/skywalking-infra-e2e@v1.2.0
