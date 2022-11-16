@@ -25,7 +25,6 @@ spec:
   pulsar:
     pulsarConfig: "test-py-pulsar"
     authSecret: "oauth2-secret"
-    tlsSecret: "tls-secret"
   python:
     py: exclamation_function.py
     pyLocation: function://public/default/test-py-function
@@ -52,19 +51,10 @@ data:
 ---
 apiVersion: v1
 data:
-  clientAuthenticationParameters: eyJhdWRpZW5jZSI6ImFwaTovLzU2YzFiZDE0LTNiYTctNDgwNC1iNDdiLWQ0NmRlNmRjZTMzZS8uZGVmYXVsdCIsImlzc3Vlcl91cmwiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8wNmE4YTA4Ni1hZTZlLTQ1YjUtYTIyZS1hZDkwZGUyMzAxM2UvdjIuMCIsInByaXZhdGVfa2V5IjoiL21udC9zZWNyZXRzL2F1dGguanNvbiIsInR5cGUiOiJjbGllbnRfY3JlZGVudGlhbHMiLCJzY29wZSI6ImFwaTovLzU2YzFiZDE0LTNiYTctNDgwNC1iNDdiLWQ0NmRlNmRjZTMzZS8uZGVmYXVsdCJ9Cg==
+  clientAuthenticationParameters: eyJhdWRpZW5jZSI6ImFwaTovLzU2YzFiZDE0LTNiYTctNDgwNC1iNDdiLWQ0NmRlNmRjZTMzZS8uZGVmYXVsdCIsImlzc3VlclVybCI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0LzA2YThhMDg2LWFlNmUtNDViNS1hMjJlLWFkOTBkZTIzMDEzZS92Mi4wIiwicHJpdmF0ZUtleSI6Ii9tbnQvc2VjcmV0cy9hdXRoLmpzb24iLCJ0eXBlIjoiY2xpZW50X2NyZWRlbnRpYWxzIiwic2NvcGUiOiJhcGk6Ly81NmMxYmQxNC0zYmE3LTQ4MDQtYjQ3Yi1kNDZkZTZkY2UzM2UvLmRlZmF1bHQiLCJpc3N1ZXJfdXJsIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvMDZhOGEwODYtYWU2ZS00NWI1LWEyMmUtYWQ5MGRlMjMwMTNlL3YyLjAiLCJwcml2YXRlX2tleSI6Ii9tbnQvc2VjcmV0cy9hdXRoLmpzb24ifQo=
   clientAuthenticationPlugin: b3JnLmFwYWNoZS5wdWxzYXIuY2xpZW50LmltcGwuYXV0aC5vYXV0aDIuQXV0aGVudGljYXRpb25PQXV0aDI=
 kind: Secret
 metadata:
   name: oauth2-secret
 type: Opaque
----
-apiVersion: v1
-data:
-  tlsAllowInsecureConnection: dHJ1ZQo=
-  tlsHostnameVerificationEnable: dHJ1ZQo=
-  tlsTrustCertsFilePath: IiIK
-kind: Secret
-metadata:
-  name: tls-secret
-type: Opaque
+
