@@ -344,11 +344,11 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 }
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
-	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
+	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
-			memory, extraDependenciesDir, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
+			memory, extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
@@ -781,7 +781,7 @@ func setShardIDEnvironmentVariableCommand() string {
 }
 
 func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, memory, extraDependenciesDir, uid string,
-	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
+	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
@@ -807,6 +807,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		setLogLevel,
 		"-Xmx" + memory,
+		strings.Join(javaOpts, " "),
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
 		packageName,

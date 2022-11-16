@@ -166,6 +166,10 @@ spec:
                     type: string
                   jarLocation:
                     type: string
+                  javaOpts:
+                    items:
+                      type: string
+                    type: array
                   log:
                     properties:
                       level:

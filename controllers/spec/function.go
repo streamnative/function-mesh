@@ -140,7 +140,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				parseJavaLogLevel(function.Spec.Java),
 				generateFunctionDetailsInJSON(function),
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(function.UID),
-				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
+				spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
 				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
 		}
 	} else if spec.Python != nil {
