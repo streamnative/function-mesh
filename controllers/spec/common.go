@@ -386,7 +386,7 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 	return []string{"sh", "-c", processCommand}
 }
 
-func getLegacyDownloadCommand(downloadPath, componentPackage string, tlsProvided, authProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	args := []string{
 		PulsarAdminExecutableFile,
 		"--admin-url",
@@ -412,9 +412,7 @@ func getLegacyDownloadCommand(downloadPath, componentPackage string, tlsProvided
 		if tlsProvided {
 			args = append(args, []string{
 				"--tls-allow-insecure",
-				"${tlsAllowInsecureConnection:-" + DefaultForAllowInsecure + "}",
 				"--tls-enable-hostname-verification",
-				"${tlsHostnameVerificationEnable:-" + DefaultForEnableHostNameVerification + "}",
 				"--tls-trust-cert-path",
 				"$tlsTrustCertsFilePath",
 			}...)
