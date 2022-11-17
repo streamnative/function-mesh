@@ -2,7 +2,7 @@
 
 ## v0.8.0 What's New
 
-* [Controller] upgrade the k8s dependency libraries to v1.22.\*. ([#494](https://github.com/streamnative/function-mesh/pull/494))
+* [Controller] Upgrade the k8s dependency libraries to v1.22.\*. ([#494](https://github.com/streamnative/function-mesh/pull/494))
 * [Controller] Add batch source config ([#496](https://github.com/streamnative/function-mesh/pull/496))
 * [Controller] Fix python runner oauth2 ([#506](https://github.com/streamnative/function-mesh/pull/506))
 * [Controller] Support vpa ([#479](https://github.com/streamnative/function-mesh/pull/479))
@@ -17,7 +17,7 @@
 * [CRD] Upgrade OLM operator capability level to "Full Lifecycle" ([#518](https://github.com/streamnative/function-mesh/pull/518))
 * [CRD] Reserve unknown fields for batchSourceConfig ([#513](https://github.com/streamnative/function-mesh/pull/513))
 * [Doc] Add readme docs to helm chart ([#497](https://github.com/streamnative/function-mesh/pull/497))
-* [Makefile] adopt openshift olm annotation ([#488](https://github.com/streamnative/function-mesh/pull/488))
+* [Makefile] Adopt openshift olm annotation ([#488](https://github.com/streamnative/function-mesh/pull/488))
 * [Test] Fix release bug ([#520](https://github.com/streamnative/function-mesh/pull/520))
 * [Test] Change e2e to pull_request_target trigger type ([#519](https://github.com/streamnative/function-mesh/pull/519))
 
