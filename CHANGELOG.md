@@ -1,3 +1,28 @@
+# Function Mesh v0.8.0 Release Notes
+
+## v0.8.0 What's New
+
+* [Controller] Upgrade the k8s dependency libraries to v1.22.\*. ([#494](https://github.com/streamnative/function-mesh/pull/494))
+* [Controller] Add batch source config ([#496](https://github.com/streamnative/function-mesh/pull/496))
+* [Controller] Fix python runner oauth2 ([#506](https://github.com/streamnative/function-mesh/pull/506))
+* [Controller] Support vpa ([#479](https://github.com/streamnative/function-mesh/pull/479))
+* [Controller] Enable stateful configs to connectors ([#510](https://github.com/streamnative/function-mesh/pull/510))
+* [Controller] 503: temporarily fix the protobuf conflict in run command ([#512](https://github.com/streamnative/function-mesh/pull/512))
+* [Controller] Resolve the namespace conflict of protocol buffers package ([#517](https://github.com/streamnative/function-mesh/pull/517))
+* [Controller] Add a flag to enable/disable downloader ([#515](https://github.com/streamnative/function-mesh/pull/515))
+* [Controller] Add java opts ([#484](https://github.com/streamnative/function-mesh/pull/484))
+* [Controller] Fix legacy authSecret and tlsSecret error ([#523](https://github.com/streamnative/function-mesh/pull/523))
+* [CRD] Add finalizers to RBAC ([#485](https://github.com/streamnative/function-mesh/pull/485))
+* [CRD] Migrate ClusterRole from v1beta1 to v1 ([#492](https://github.com/streamnative/function-mesh/pull/492))
+* [CRD] Upgrade OLM operator capability level to "Full Lifecycle" ([#518](https://github.com/streamnative/function-mesh/pull/518))
+* [CRD] Reserve unknown fields for batchSourceConfig ([#513](https://github.com/streamnative/function-mesh/pull/513))
+* [Doc] Add readme docs to helm chart ([#497](https://github.com/streamnative/function-mesh/pull/497))
+* [Makefile] Adopt openshift olm annotation ([#488](https://github.com/streamnative/function-mesh/pull/488))
+* [Test] Fix release bug ([#520](https://github.com/streamnative/function-mesh/pull/520))
+* [Test] Change e2e to pull_request_target trigger type ([#519](https://github.com/streamnative/function-mesh/pull/519))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-11+is%3Aclosed).
+
 # Function Mesh v0.7.0 Release Notes
 
 ## v0.7.0 What's New
@@ -9,7 +34,7 @@
 * [Controller] Use init container to download packages and functions ([#411](https://github.com/streamnative/function-mesh/pull/411))
 * [Controller] Fix logging window function ([#481](https://github.com/streamnative/function-mesh/pull/481))
 
-For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-10+is%3Aclosed+d).
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-10+is%3Aclosed).
 
 # Function Mesh v0.6.0 Release Notes
 
