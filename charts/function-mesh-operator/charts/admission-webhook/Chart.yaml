@@ -4,6 +4,7 @@ description: function mesh admission webhook Helm chart for Kubernetes
 maintainers:
   - name: Function Mesh Support
     email: function-mesh@streamnative.io
+    url: https://github.com/streamnative/function-mesh
 
 # A chart can be either an 'application' or a 'library' chart.
 #

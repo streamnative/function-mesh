@@ -1,4 +1,4 @@
-# Function Mesh v0.7.0 Release Notes
+# Function Mesh v0.8.0 Release Notes
 
 ## v0.8.0 What's New
 
@@ -21,8 +21,9 @@
 * [Test] Fix release bug ([#520](https://github.com/streamnative/function-mesh/pull/520))
 * [Test] Change e2e to pull_request_target trigger type ([#519](https://github.com/streamnative/function-mesh/pull/519))
 
-For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-11+is%3Aclosed
-+d).
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-11+is%3Aclosed).
+
+# Function Mesh v0.7.0 Release Notes
 
 ## v0.7.0 What's New
 
@@ -33,7 +34,7 @@ For the full changes in this release, see the [Pull Requests](https://github.com
 * [Controller] Use init container to download packages and functions ([#411](https://github.com/streamnative/function-mesh/pull/411))
 * [Controller] Fix logging window function ([#481](https://github.com/streamnative/function-mesh/pull/481))
 
-For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-10+is%3Aclosed+d).
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-10+is%3Aclosed).
 
 # Function Mesh v0.6.0 Release Notes
 
