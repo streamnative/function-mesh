@@ -43,6 +43,7 @@ The Function Mesh operator Helm chart for Kubernetes
 | controllerManager.selector | list | `[]` |
 | controllerManager.serviceAccount | string | `"function-mesh-controller-manager"` |
 | controllerManager.tolerations | list | `[]` |
+| controllerManager.enableInitContainers | bool | `false` |
 | imagePullPolicy | string | `"IfNotPresent"` |
 | imagePullSecrets | list | `[]` |
 | installation.namespace | string | `"function-mesh-system"` |
