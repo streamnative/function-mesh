@@ -1,4 +1,4 @@
-name: scan operator security vulnerabilities
+name: Precommit - Scan security vulnerabilities
 on:
   pull_request:
     branches:
