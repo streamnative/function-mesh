@@ -497,16 +497,17 @@ func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, auth
 		}...)
 	} else if authProvided {
 		args = []string{
+			"(",
 			PulsarctlExecutableFile,
 			"context",
 			"set",
 			"downloader",
 			"--auth-params",
 			"$clientAuthenticationParameters || true",
-			"&& " + PulsarctlExecutableFile,
+			") && ( " + PulsarctlExecutableFile,
 			"oauth2",
 			"activate || true",
-			"&& ",
+			") && ( ",
 			PulsarctlExecutableFile,
 			"--auth-plugin",
 			"$clientAuthenticationPlugin",
@@ -514,6 +515,7 @@ func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, auth
 			"$clientAuthenticationParameters",
 			"--admin-service-url",
 			"$webServiceURL",
+			")",
 		}
 	} else {
 		args = []string{

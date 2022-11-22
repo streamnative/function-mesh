@@ -95,7 +95,7 @@ verify:
   # verify with retry strategy
   retry:
     # max retry count
-    count: 10
+    count: 2
     # the interval between two attempts, e.g. 10s, 1m.
     interval: 10s
   cases:
