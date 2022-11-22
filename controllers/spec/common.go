@@ -237,7 +237,7 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 	container *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, pulsar v1alpha1.PulsarMessaging,
 	javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
-	goRuntime *v1alpha1.GoRuntime) *appsv1.StatefulSet {
+	goRuntime *v1alpha1.GoRuntime, definedVolumeMounts []corev1.VolumeMount) *appsv1.StatefulSet {
 
 	volumeMounts := generateDownloaderVolumeMountsForDownloader(javaRuntime, pythonRuntime, goRuntime)
 	var downloaderContainer *corev1.Container
@@ -251,6 +251,8 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 		if !reflect.ValueOf(pulsar.TLSConfig).IsNil() && pulsar.TLSConfig.HasSecretVolume() {
 			volumeMounts = append(volumeMounts, generateVolumeMountFromTLSConfig(pulsar.TLSConfig))
 		}
+
+		volumeMounts = append(volumeMounts, definedVolumeMounts...)
 
 		var downloadPath, componentPackage string
 		if javaRuntime != nil {

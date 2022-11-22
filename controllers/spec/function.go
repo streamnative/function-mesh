@@ -56,7 +56,8 @@ func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
 	return MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		MakeFunctionContainer(function), makeFunctionVolumes(function), makeFunctionLabels(function), function.Spec.Pod,
-		*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang)
+		*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang,
+		function.Spec.VolumeMounts)
 }
 
 func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
@@ -139,7 +140,8 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generateJavaLogConfigCommand(function.Spec.Java),
 				parseJavaLogLevel(function.Spec.Java),
 				generateFunctionDetailsInJSON(function),
-				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(function.UID),
+				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir,
+				string(function.UID),
 				spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
 				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
 		}
