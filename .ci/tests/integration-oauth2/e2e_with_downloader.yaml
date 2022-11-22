@@ -99,11 +99,11 @@ verify:
     # the interval between two attempts, e.g. 10s, 1m.
     interval: 10s
   cases:
-    - query: bash .ci/tests/integration-oauth2/cases/java-function/verify.sh
+    - query: timeout 5m bash .ci/tests/integration-oauth2/cases/java-function/verify.sh
       expected: expected.data.yaml
-    - query: bash .ci/tests/integration-oauth2/cases/java-download-function/verify.sh
+    - query: timeout 5m bash .ci/tests/integration-oauth2/cases/java-download-function/verify.sh
       expected: expected.data.yaml
-    - query: bash .ci/tests/integration-oauth2/cases/py-download-function/verify.sh
+    - query: timeout 5m bash .ci/tests/integration-oauth2/cases/py-download-function/verify.sh
       expected: expected.data.yaml
-    - query: bash .ci/tests/integration-oauth2/cases/py-download-function-legacy/verify.sh
+    - query: timeout 5m bash .ci/tests/integration-oauth2/cases/py-download-function-legacy/verify.sh
       expected: expected.data.yaml
