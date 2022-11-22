@@ -95,7 +95,7 @@ function crd::generate_template() {
         tee "$target"
     fi
 
-    truncate -s 0 "$target"
+    > "$target"
 
     # head
     echo "{{- if .Values.admissionWebhook.enabled }}" >> "$target"
