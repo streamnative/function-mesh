@@ -388,3 +388,11 @@ func validateWindowConfigs(windowConfig *WindowConfig) *field.Error {
 	}
 	return nil
 }
+
+func validateMessaging(messaging *Messaging) *field.Error {
+	if messaging == nil || messaging.Pulsar == nil || messaging.Pulsar.PulsarConfig == "" {
+		return field.Invalid(field.NewPath("spec").Child("pulsar"), messaging,
+			"Pulsar configuration needs to be set")
+	}
+	return nil
+}

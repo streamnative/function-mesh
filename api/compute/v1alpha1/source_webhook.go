@@ -186,6 +186,11 @@ func (r *Source) ValidateCreate() error {
 		allErrs = append(allErrs, fieldErrs...)
 	}
 
+	fieldErr = validateMessaging(&r.Spec.Messaging)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
+
 	if len(allErrs) == 0 {
 		return nil
 	}
