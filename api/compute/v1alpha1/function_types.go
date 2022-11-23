@@ -73,7 +73,6 @@ type FunctionSpec struct {
 
 	Pod PodPolicy `json:"pod,omitempty"`
 
-	// TODO: windowconfig, customRuntimeOptions?
 	WindowConfig *WindowConfig `json:"windowConfig,omitempty"`
 
 	// +kubebuilder:validation:Required
