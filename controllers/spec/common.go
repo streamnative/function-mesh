@@ -926,7 +926,7 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 		"--metrics_port",
 		strconv.Itoa(int(MetricsPort.ContainerPort)),
 		"--expected_healthcheck_interval",
-		string(hInterval),
+		strconv.Itoa(int(hInterval)),
 		"--cluster_name",
 		clusterName,
 	}
