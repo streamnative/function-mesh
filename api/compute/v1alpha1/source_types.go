@@ -86,7 +86,7 @@ type SourceSpec struct {
 
 	// +kubebuilder:validation:Optional
 	// to enable health check, make sure the source image has `grpcurl` installed into `/pulsar/bin` dir
-	// and has the `InstanceCommunication.proto` in the `/pulsar` dir
+	// and has the `InstanceCommunication.proto` in the `/pulsar/conf` dir
 	HealthCheckInterval *int32 `json:"healthCheckInterval,omitempty"`
 }
 
