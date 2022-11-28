@@ -82,6 +82,9 @@ spec:
                 required:
                 - go
                 type: object
+              healthCheckInterval:
+                format: int32
+                type: integer
               image:
                 type: string
               imagePullPolicy:
