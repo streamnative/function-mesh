@@ -71,7 +71,7 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
-	var probe *corev1.Probe = nil
+	var probe *corev1.Probe
 	if source.Spec.HealthCheckInterval != nil && *source.Spec.HealthCheckInterval > 0 {
 		probe = MakeLivenessProbe(*source.Spec.HealthCheckInterval)
 	}

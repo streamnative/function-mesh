@@ -97,7 +97,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
-	var probe *corev1.Probe = nil
+	var probe *corev1.Probe
 	if function.Spec.HealthCheckInterval != nil && *function.Spec.HealthCheckInterval > 0 {
 		probe = MakeLivenessProbe(*function.Spec.HealthCheckInterval)
 	}

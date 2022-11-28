@@ -76,7 +76,7 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
-	var probe *corev1.Probe = nil
+	var probe *corev1.Probe
 	if sink.Spec.HealthCheckInterval != nil && *sink.Spec.HealthCheckInterval > 0 {
 		probe = MakeLivenessProbe(*sink.Spec.HealthCheckInterval)
 	}
