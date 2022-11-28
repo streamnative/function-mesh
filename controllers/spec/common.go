@@ -353,11 +353,11 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval *int32) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
-			authConfig), " ")
+			authConfig, healthCheckInterval), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
@@ -369,10 +369,10 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval *int32) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
-			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
+			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig, healthCheckInterval), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
@@ -393,6 +393,24 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
+}
+
+func MakeLivenessProbe(interval int32) *corev1.Probe {
+	return &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			Exec: &corev1.ExecAction{
+				Command: []string{"/pulsar/bin/grpcurl",
+					"-plaintext",
+					"-proto",
+					"conf/InstanceCommunication.proto",
+					"localhost:" + string(GRPCPort.ContainerPort),
+					"proto.InstanceControl/HealthCheck",
+				},
+			},
+		},
+		TimeoutSeconds: interval,
+		PeriodSeconds:  interval,
+	}
 }
 
 func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool,
@@ -798,7 +816,8 @@ func setShardIDEnvironmentVariableCommand() string {
 func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, memory, extraDependenciesDir, uid string,
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
+	healthCheckInterval *int32) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
@@ -828,7 +847,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"--jar",
 		packageName,
 	}
-	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig, healthCheckInterval)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getJavaSecretProviderArgs(secretMaps)
@@ -849,7 +868,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 
 func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid string, authProvided, tlsProvided bool,
 	secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig,
-	authConfig *v1alpha1.AuthConfig) []string {
+	authConfig *v1alpha1.AuthConfig, healthCheckInterval *int32) []string {
 	args := []string{
 		"exec",
 		"python",
@@ -866,7 +885,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 		"true",
 		// TODO: Maybe we don't need installUserCodeDependencies, dependency_repository, and pythonExtraDependencyRepository
 	}
-	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig, healthCheckInterval)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getPythonSecretProviderArgs(secretMaps)
@@ -884,7 +903,11 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 
 // This method is suitable for Java and Python runtime, not include Go runtime.
 func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval *int32) []string {
+	var hInterval int32 = -1
+	if healthCheckInterval != nil && *healthCheckInterval > 0 {
+		hInterval = *healthCheckInterval
+	}
 	args := []string{
 		"--instance_id",
 		"${" + EnvShardID + "}",
@@ -903,7 +926,7 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 		"--metrics_port",
 		strconv.Itoa(int(MetricsPort.ContainerPort)),
 		"--expected_healthcheck_interval",
-		"-1", // TurnOff BuiltIn HealthCheck to avoid instance exit
+		string(hInterval),
 		"--cluster_name",
 		clusterName,
 	}

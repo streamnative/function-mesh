@@ -71,6 +71,10 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
+	var probe *corev1.Probe = nil
+	if source.Spec.HealthCheckInterval != nil && *source.Spec.HealthCheckInterval > 0 {
+		probe = MakeLivenessProbe(*source.Spec.HealthCheckInterval)
+	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-source",
@@ -82,7 +86,8 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret,
 			source.Spec.Pulsar.TLSSecret),
-		VolumeMounts: makeSourceVolumeMounts(source),
+		VolumeMounts:  makeSourceVolumeMounts(source),
+		LivenessProbe: probe,
 	}
 }
 
@@ -132,7 +137,8 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		generateSourceDetailsInJSON(source),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(source.UID),
 		spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
-		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
+		// healthCheck has some requirements on runner images, and it's not ready for sources yet
+		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, spec.HealthCheckInterval)
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {

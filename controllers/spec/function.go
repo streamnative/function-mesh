@@ -97,6 +97,10 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
+	var probe *corev1.Probe = nil
+	if function.Spec.HealthCheckInterval != nil && *function.Spec.HealthCheckInterval > 0 {
+		probe = MakeLivenessProbe(*function.Spec.HealthCheckInterval)
+	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-function",
@@ -108,7 +112,8 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
 			function.Spec.Pulsar.TLSSecret),
-		VolumeMounts: makeFunctionVolumeMounts(function),
+		VolumeMounts:  makeFunctionVolumeMounts(function),
+		LivenessProbe: probe,
 	}
 }
 
@@ -143,7 +148,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir,
 				string(function.UID),
 				spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig, function.Spec.HealthCheckInterval)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
@@ -152,7 +157,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generatePythonLogConfigCommand(function.Name, function.Spec.Python),
 				generateFunctionDetailsInJSON(function), string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig, function.Spec.HealthCheckInterval)
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {

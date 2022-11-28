@@ -86,6 +86,10 @@ func fetchClassName(function *v1alpha1.Function) string {
 }
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
+	var hInterval int32 = -1
+	if function.Spec.HealthCheckInterval != nil && *function.Spec.HealthCheckInterval > 0 {
+		hInterval = *function.Spec.HealthCheckInterval
+	}
 	return &GoFunctionConf{
 		FuncID:               fmt.Sprintf("${%s}-%s", EnvShardID, string(function.UID)),
 		PulsarServiceURL:     "${brokerServiceURL}",
@@ -117,7 +121,7 @@ func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 		DeadLetterTopic:             function.Spec.DeadLetterTopic,
 		UserConfig:                  getUserConfig(function.Spec.FuncConfig),
 		MetricsPort:                 int(MetricsPort.ContainerPort),
-		ExpectedHealthCheckInterval: -1, // TurnOff BuiltIn HealthCheck to avoid instance exit
+		ExpectedHealthCheckInterval: hInterval, // TurnOff BuiltIn HealthCheck to avoid instance exit
 	}
 }
 

@@ -158,3 +158,5 @@ verify:
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/logging-window-function/verify.sh
       expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/health-check/verify.sh
+      expected: expected.data.yaml

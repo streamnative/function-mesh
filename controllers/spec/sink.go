@@ -76,6 +76,10 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
+	var probe *corev1.Probe = nil
+	if sink.Spec.HealthCheckInterval != nil && *sink.Spec.HealthCheckInterval > 0 {
+		probe = MakeLivenessProbe(*sink.Spec.HealthCheckInterval)
+	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-sink",
@@ -87,7 +91,8 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret,
 			sink.Spec.Pulsar.TLSSecret),
-		VolumeMounts: makeSinkVolumeMounts(sink),
+		VolumeMounts:  makeSinkVolumeMounts(sink),
+		LivenessProbe: probe,
 	}
 }
 
@@ -137,7 +142,8 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),
 		spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
-		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
+		// healthCheck has some requirements on runner images, and it's not ready for sinks yet
+		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, spec.HealthCheckInterval)
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {

@@ -85,6 +85,11 @@ type SinkSpec struct {
 
 	// +kubebuilder:validation:Optional
 	StateConfig *Stateful `json:"statefulConfig,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// to enable health check, make sure the sink image has `grpcurl` installed into `/pulsar/bin` dir
+	// and has the `InstanceCommunication.proto` in the `/pulsar` dir
+	HealthCheckInterval *int32 `json:"healthCheckInterval,omitempty"`
 }
 
 // SinkStatus defines the observed state of Topic
