@@ -38,4 +38,4 @@ yq eval -i '.annotations."com.redhat.openshift.versions" headComment = "Certifie
 yq -i '.spec.relatedImages = []' bundle/manifests/function-mesh.clusterserviceversion.yaml
 yq -i '.spec.relatedImages += {"name": "function-mesh", "image": ""}' bundle/manifests/function-mesh.clusterserviceversion.yaml
 yq -i '.spec.relatedImages += {"name": "kube-rbac-proxy", "image": "docker.cloudsmith.io/streamnative/mirrors/gcr.io/kubebuilder/kube-rbac-proxy@sha256:67ecb332573384515406ebd71816781366b70adb0eb66345e5980e92603373e1"}' bundle/manifests/function-mesh.clusterserviceversion.yaml
-yq -i '.spec.relatedImages[0].image += env(OPERATOR_IMG)' bundle/manifests/function-mesh.clusterserviceversion.yaml
+yq -i '.spec.relatedImages[0].image += env(IMG_DIGIEST)' bundle/manifests/function-mesh.clusterserviceversion.yaml

@@ -263,19 +263,18 @@ define go-get-tool
 }
 endef
 
-
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: redhat-certificated-bundle
 redhat-certificated-bundle: yq kustomize manifests
 	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(shell docker inspect --format='{{json .RepoDigests}}' $(OPERATOR_IMG) | jq --arg IMAGE_TAG_BASE "$(IMAGE_TAG_BASE)" -c '.[] | select(index($$IMAGE_TAG_BASE))' -r)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(YQ) eval -i ".metadata.annotations.\"olm.skipRange\" = \"<$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i ".metadata.annotations.\"olm.properties\" = ([{\"type\": \"olm.maxOpenShiftVersion\", \"value\": \"4.11\"}] | @json)" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i ".metadata.annotations.createdAt = \"$(BUILD_DATETIME)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
-	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(shell docker inspect --format='{{json .RepoDigests}}' $(OPERATOR_IMG) | jq --arg IMAGE_TAG_BASE "$(IMAGE_TAG_BASE)" -c '.[] | select(index($$IMAGE_TAG_BASE))' -r)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i '.annotations += {"operators.operatorframework.io.bundle.channel.default.v1":"alpha"}' bundle/metadata/annotations.yaml
-	OPERATOR_IMG=$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG)) hack/postprocess-bundle.sh
+	IMG_DIGIEST=$(shell docker inspect --format='{{json .RepoDigests}}' $(OPERATOR_IMG) | jq --arg IMAGE_TAG_BASE "$(IMAGE_TAG_BASE)" -c '.[] | select(index($$IMAGE_TAG_BASE))' -r) hack/postprocess-bundle.sh
 	operator-sdk bundle validate ./bundle --select-optional name=operatorhub
 	operator-sdk bundle validate ./bundle --select-optional suite=operatorframework
 

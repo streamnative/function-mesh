@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - digest: sha256:279535d1118604037058e1d31dc79c94bfa6a5bce57c24862edad0fa0fd1c579
   name: controller
-  newName: quay.io/redhat-isv-containers/62c3e9ce93823ac31106f8f3
+  newName: registry.connect.redhat.com/streamnative/function-mesh
