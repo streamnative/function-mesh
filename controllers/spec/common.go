@@ -399,7 +399,7 @@ func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
 	if liveness == nil || liveness.PeriodSeconds <= 0 {
 		return nil
 	}
-	var initialDelay int32 = 0
+	var initialDelay int32
 	if liveness.InitialDelaySeconds > initialDelay {
 		initialDelay = liveness.InitialDelaySeconds
 	}
