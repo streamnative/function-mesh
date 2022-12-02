@@ -225,6 +225,8 @@ type PodPolicy struct {
 
 	// Env Environment variables to expose on the pulsar-function containers
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	Liveness *Liveness `json:"liveness,omitempty"`
 }
 
 type Runtime struct {
@@ -633,4 +635,15 @@ type VPASpec struct {
 	// Controls how the autoscaler computes recommended resources.
 	// +optional
 	ResourcePolicy *vpav1.PodResourcePolicy `json:"resourcePolicy,omitempty"`
+}
+
+type Liveness struct {
+	// only enable health check after ensure the runner image has `grpcurl` installed into `/pulsar/bin` dir
+	// and has the `InstanceCommunication.proto` in the `/pulsar/conf` dir
+	// +kubebuilder:validation:Optional
+	PeriodSeconds int32 `json:"periodSeconds,omitempty"`
+
+	// some functions may take a long time to start up(like download packages), so we need to set the initial delay
+	// +kubebuilder:validation:Optional
+	InitialDelaySeconds int32 `json:"initialDelaySeconds,omitempty"`
 }

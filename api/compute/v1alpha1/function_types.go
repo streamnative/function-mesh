@@ -90,11 +90,6 @@ type FunctionSpec struct {
 
 	// +kubebuilder:validation:Optional
 	StateConfig *Stateful `json:"statefulConfig,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// to enable health check, make sure the function image has `grpcurl` installed into `/pulsar/bin` dir
-	// and has the `InstanceCommunication.proto` in the `/pulsar/conf` dir
-	HealthCheckInterval *int32 `json:"healthCheckInterval,omitempty"`
 }
 
 // FunctionStatus defines the observed state of Function

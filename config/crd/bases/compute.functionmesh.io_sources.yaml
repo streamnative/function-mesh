@@ -88,9 +88,6 @@ spec:
                 required:
                 - go
                 type: object
-              healthCheckInterval:
-                format: int32
-                type: integer
               image:
                 type: string
               imagePullPolicy:
@@ -1572,6 +1569,15 @@ spec:
                   labels:
                     additionalProperties:
                       type: string
+                    type: object
+                  liveness:
+                    properties:
+                      initialDelaySeconds:
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        format: int32
+                        type: integer
                     type: object
                   nodeSelector:
                     additionalProperties:

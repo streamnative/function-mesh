@@ -353,7 +353,7 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval *int32) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
@@ -369,7 +369,7 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval *int32) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig, healthCheckInterval), " ")
@@ -395,7 +395,14 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakeLivenessProbe(interval int32) *corev1.Probe {
+func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
+	if liveness == nil || liveness.PeriodSeconds <= 0 {
+		return nil
+	}
+	var initialDelay int32 = 0
+	if liveness.InitialDelaySeconds > initialDelay {
+		initialDelay = liveness.InitialDelaySeconds
+	}
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			Exec: &corev1.ExecAction{
@@ -408,8 +415,9 @@ func MakeLivenessProbe(interval int32) *corev1.Probe {
 				},
 			},
 		},
-		TimeoutSeconds: interval,
-		PeriodSeconds:  interval,
+		InitialDelaySeconds: initialDelay,
+		TimeoutSeconds:      liveness.PeriodSeconds,
+		PeriodSeconds:       liveness.PeriodSeconds,
 	}
 }
 
@@ -817,7 +825,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	healthCheckInterval *int32) []string {
+	healthCheckInterval int32) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
@@ -868,7 +876,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 
 func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid string, authProvided, tlsProvided bool,
 	secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig,
-	authConfig *v1alpha1.AuthConfig, healthCheckInterval *int32) []string {
+	authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
 	args := []string{
 		"exec",
 		"python",
@@ -903,10 +911,10 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 
 // This method is suitable for Java and Python runtime, not include Go runtime.
 func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval *int32) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
 	var hInterval int32 = -1
-	if healthCheckInterval != nil && *healthCheckInterval > 0 {
-		hInterval = *healthCheckInterval
+	if healthCheckInterval > 0 {
+		hInterval = healthCheckInterval
 	}
 	args := []string{
 		"--instance_id",

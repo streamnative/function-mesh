@@ -97,10 +97,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
-	var probe *corev1.Probe
-	if function.Spec.HealthCheckInterval != nil && *function.Spec.HealthCheckInterval > 0 {
-		probe = MakeLivenessProbe(*function.Spec.HealthCheckInterval)
-	}
+	probe := MakeLivenessProbe(function.Spec.Pod.Liveness)
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-function",
@@ -137,6 +134,10 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	spec := function.Spec
+	var healthCheckInterval int32 = -1
+	if spec.Pod.Liveness != nil && spec.Pod.Liveness.PeriodSeconds > 0 {
+		healthCheckInterval = spec.Pod.Liveness.PeriodSeconds
+	}
 
 	if spec.Java != nil {
 		if spec.Java.Jar != "" {
@@ -148,7 +149,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir,
 				string(function.UID),
 				spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig, function.Spec.HealthCheckInterval)
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig, healthCheckInterval)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
@@ -157,7 +158,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generatePythonLogConfigCommand(function.Name, function.Spec.Python),
 				generateFunctionDetailsInJSON(function), string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig, function.Spec.HealthCheckInterval)
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig, healthCheckInterval)
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {
