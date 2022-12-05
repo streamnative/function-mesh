@@ -45,7 +45,7 @@ docker tag ${GO_SAMPLE} "${DOCKER_REPO}"/${GO_SAMPLE}:"${PULSAR_IMAGE_TAG}"
 
 echo "build connector sample"
 docker build --platform linux/amd64 -t ${CONNECTOR_ES_SAMPLE} images/samples/pulsar-io-connector/pulsar-io-elasticsearch --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg RUNNER_IMAGE="$JAVA_RUNNER_IMAGE"
-docker tag ${GO_SAMPLE} "${DOCKER_REPO}"/${CONNECTOR_ES_SAMPLE}:"${PULSAR_IMAGE_TAG}"
+docker tag ${CONNECTOR_ES_SAMPLE} "${DOCKER_REPO}"/${CONNECTOR_ES_SAMPLE}:"${PULSAR_IMAGE_TAG}"
 
 if [ "$KIND_PUSH" = true ] ; then
   echo "push images to kind"
