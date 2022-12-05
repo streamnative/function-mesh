@@ -20,6 +20,7 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/streamnative/function-mesh/utils"
 	"regexp"
 	"strings"
 
@@ -87,7 +88,7 @@ func fetchClassName(function *v1alpha1.Function) string {
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 	var hInterval int32 = -1
-	if function.Spec.Pod.Liveness != nil && function.Spec.Pod.Liveness.PeriodSeconds > 0 {
+	if function.Spec.Pod.Liveness != nil && function.Spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
 		hInterval = function.Spec.Pod.Liveness.PeriodSeconds
 	}
 	return &GoFunctionConf{
@@ -121,7 +122,7 @@ func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 		DeadLetterTopic:             function.Spec.DeadLetterTopic,
 		UserConfig:                  getUserConfig(function.Spec.FuncConfig),
 		MetricsPort:                 int(MetricsPort.ContainerPort),
-		ExpectedHealthCheckInterval: hInterval, // TurnOff BuiltIn HealthCheck to avoid instance exit
+		ExpectedHealthCheckInterval: hInterval,
 	}
 }
 

@@ -53,12 +53,6 @@ RUN echo "VERSION_TAG=$(VERSION_TAG)" && \
          && apt-get clean \
          && rm -rf /var/lib/apt/lists/*
 
-ADD https://github.com/apache/pulsar/blob/master/pulsar-functions/proto/src/main/proto/InstanceCommunication.proto /pulsar/conf/InstanceCommunication.proto
-ADD https://github.com/fullstorydev/grpcurl/releases/download/v1.8.7/grpcurl_1.8.7_linux_x86_64.tar.gz /pulsar/grpcurl.tar.gz
-RUN tar -xvf /pulsar/grpcurl.tar.gz -C /pulsar/bin/ && \
-    rm -rf /pulsar/grpcurl.tar.gz
-
-
 COPY --from=pulsar --chown=$UID:$GID /pulsar/conf /pulsar/conf
 COPY --from=pulsar --chown=$UID:$GID /pulsar/bin /pulsar/bin
 COPY --from=pulsar --chown=$UID:$GID /pulsar/lib /pulsar/lib
