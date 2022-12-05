@@ -3,6 +3,6 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- digest: sha256:095bfca7fa34308d70d56818cfef781db5350163b4d53dde31cbb91f09263b93
+- digest: sha256:279535d1118604037058e1d31dc79c94bfa6a5bce57c24862edad0fa0fd1c579
   name: controller
-  newName: quay.io/streamnativeio/function-mesh
+  newName: registry.connect.redhat.com/streamnative/function-mesh
