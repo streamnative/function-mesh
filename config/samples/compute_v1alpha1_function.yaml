@@ -2,13 +2,13 @@ apiVersion: compute.functionmesh.io/v1alpha1
 kind: Function
 metadata:
   name: java-function-sample
-  namespace: default
 spec:
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1
   maxReplicas: 5
+  image: streamnative/pulsar-functions-java-sample:2.9.2.23
   logTopic: persistent://public/default/logging-function-logs
   input:
     topics:
@@ -34,8 +34,6 @@ spec:
         key: "password"
   pulsar:
     pulsarConfig: "test-pulsar"
-    authSecret: "test-auth"
-    tlsSecret: "test-tls"
   volumeMounts:
     - mountPath: /cache
       name: cache-volume
@@ -61,8 +59,9 @@ spec:
       image: busybox:1.28
       command: ['sh', '-c', 'echo The app is running! && sleep 30000']
   java:
-    jar: pulsar-functions-api-examples.jar
-    jarLocation: public/default/nlu-test-java-function
+    jar: /pulsar/examples/api-examples.jar
+    # use "" to read jar from local file system
+    jarLocation: ""
     extraDependenciesDir: random-dir/
     # use package name:
     # jarLocation: function://public/default/nul-test-java-function@v1
@@ -77,14 +76,14 @@ metadata:
 data:
     webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
     brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: test-auth
-stringData:
-  clientAuthenticationPlugin: admin
-  clientAuthenticationParameters: t0p-Secret
+#---
+#apiVersion: v1
+#kind: Secret
+#metadata:
+#  name: test-auth
+#stringData:
+#  clientAuthenticationPlugin: admin
+#  clientAuthenticationParameters: t0p-Secret
 ---
 apiVersion: v1
 kind: Secret
