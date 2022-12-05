@@ -22,7 +22,7 @@ RUN mkdir -p /pulsar/bin/ \
 
 ARG PULSAR_IMAGE_TAG
 ENV VERSION_TAG=${PULSAR_IMAGE_TAG}
-RUN echo "VERSION_TAG=$(VERSION_TAG)" && \
+RUN echo "VERSION_TAG=${VERSION_TAG}" && \
     VERSION_MAJOR=$(echo $VERSION_TAG | cut -d. -f1) && \
     VERSION_MINOR=$(echo $VERSION_TAG | cut -d. -f2) && \
     VERSION_PATCH=$(echo $VERSION_TAG | cut -d. -f3) && \
