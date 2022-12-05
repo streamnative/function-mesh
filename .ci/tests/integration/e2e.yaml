@@ -89,8 +89,8 @@ setup:
 
     - name: create grpcurl pv and pvc
       command: |
-        kubectl apply -f ../.ci/clusters/grpcurl-pv.yaml
-        kubectl apply -f ../.ci/clusters/grpcurl-pvc.yaml
+        kubectl apply -f .ci/clusters/grpcurl-pv.yaml
+        kubectl apply -f .ci/clusters/grpcurl-pvc.yaml
 
     - name: install function-mesh operator
       command: |

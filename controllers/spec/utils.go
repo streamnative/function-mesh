@@ -20,7 +20,6 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/streamnative/function-mesh/utils"
 	"regexp"
 	"strings"
 
@@ -32,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/streamnative/function-mesh/controllers/proto"
+	"github.com/streamnative/function-mesh/utils"
 )
 
 func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails {
