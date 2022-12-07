@@ -21,7 +21,7 @@ spec:
         pulsarConfig: "mesh-test-pulsar"
       java:
         jar: /pulsar/examples/api-examples.jar
-    # use "" to read jar from local file system
+    # use "" to read jar from the container's file system
         jarLocation: ""
         extraDependenciesDir: random-dir/
       # following value must be provided if no auto-filling is enabled
