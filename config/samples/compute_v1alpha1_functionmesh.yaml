@@ -6,6 +6,7 @@ spec:
   functions:
     - name: ex1
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+      image: streamnative/pulsar-functions-java-sample:2.9.2.23
       replicas: 1
       maxReplicas: 1
       logTopic: persistent://public/default/logging-function-log
@@ -19,8 +20,10 @@ spec:
       pulsar:
         pulsarConfig: "mesh-test-pulsar"
       java:
-        jar: pulsar-functions-api-examples.jar
-        jarLocation: public/default/nlu-test-functionmesh-ex1
+        jar: /pulsar/examples/api-examples.jar
+    # use "" to read jar from the container's file system
+        jarLocation: ""
+        extraDependenciesDir: random-dir/
       # following value must be provided if no auto-filling is enabled
       forwardSourceMessageProperty: true
       autoAck: true
@@ -34,6 +37,7 @@ spec:
       clusterName: test-pulsar
     - name: ex2
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+      image: streamnative/pulsar-functions-java-sample:2.9.2.23
       replicas: 1
       maxReplicas: 1
       logTopic: persistent://public/default/logging-function-logs
@@ -47,8 +51,10 @@ spec:
       pulsar:
         pulsarConfig: "mesh-test-pulsar"
       java:
-        jar: pulsar-functions-api-examples.jar
-        jarLocation: public/default/nlu-test-functionmesh-ex2
+        jar: /pulsar/examples/api-examples.jar
+    # use "" to read jar from the container's file system
+        jarLocation: ""
+        extraDependenciesDir: random-dir/
       # following value must be provided if no auto-filling is enabled
       forwardSourceMessageProperty: true
       autoAck: true
