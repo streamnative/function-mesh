@@ -257,7 +257,6 @@ func (r *FunctionMeshReconciler) observeMeshes(mesh *v1alpha1.FunctionMesh) {
 	}
 
 	mesh.Status.Condition.SetCondition(v1alpha1.MeshReady, v1alpha1.NoAction, metav1.ConditionTrue)
-	return
 }
 
 func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctrl.Request,
