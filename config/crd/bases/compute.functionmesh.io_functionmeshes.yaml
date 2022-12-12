@@ -9643,6 +9643,15 @@ spec:
             type: object
           status:
             properties:
+              condition:
+                properties:
+                  action:
+                    type: string
+                  condition:
+                    type: string
+                  status:
+                    type: string
+                type: object
               functionConditions:
                 additionalProperties:
                   properties:

@@ -43,6 +43,9 @@ func (r *FunctionMeshReconciler) ObserveFunctionMesh(ctx context.Context, req ct
 		return err
 	}
 
+	// Observation only
+	r.observeMeshes(mesh)
+
 	return nil
 }
 
@@ -77,6 +80,8 @@ func (r *FunctionMeshReconciler) observeFunctions(ctx context.Context, mesh *v1a
 		if err != nil {
 			if errors.IsNotFound(err) {
 				r.Log.Info("function is not ready", "name", functionSpec.Name)
+				condition.SetCondition(v1alpha1.FunctionReady, v1alpha1.Create, metav1.ConditionFalse)
+				mesh.Status.FunctionConditions[functionSpec.Name] = condition
 				continue
 			}
 			return err
@@ -84,12 +89,11 @@ func (r *FunctionMeshReconciler) observeFunctions(ctx context.Context, mesh *v1a
 
 		if function.Status.Conditions[v1alpha1.StatefulSet].Status == metav1.ConditionTrue &&
 			function.Status.Conditions[v1alpha1.Service].Status == metav1.ConditionTrue {
-			condition.Action = v1alpha1.NoAction
-			condition.Status = metav1.ConditionTrue
+			condition.SetCondition(v1alpha1.FunctionReady, v1alpha1.NoAction, metav1.ConditionTrue)
 			mesh.Status.FunctionConditions[functionSpec.Name] = condition
 		} else {
 			// function created but subcomponents not ready, we need to wait
-			condition.Action = v1alpha1.Wait
+			condition.SetCondition(v1alpha1.FunctionReady, v1alpha1.Wait, metav1.ConditionFalse)
 			mesh.Status.FunctionConditions[functionSpec.Name] = condition
 		}
 	}
@@ -137,6 +141,8 @@ func (r *FunctionMeshReconciler) observeSources(ctx context.Context, mesh *v1alp
 		if err != nil {
 			if errors.IsNotFound(err) {
 				r.Log.Info("source is not ready", "name", sourceSpec.Name)
+				condition.SetCondition(v1alpha1.SourceReady, v1alpha1.Create, metav1.ConditionFalse)
+				mesh.Status.SourceConditions[sourceSpec.Name] = condition
 				continue
 			}
 			return err
@@ -144,12 +150,11 @@ func (r *FunctionMeshReconciler) observeSources(ctx context.Context, mesh *v1alp
 
 		if source.Status.Conditions[v1alpha1.StatefulSet].Status == metav1.ConditionTrue &&
 			source.Status.Conditions[v1alpha1.Service].Status == metav1.ConditionTrue {
-			condition.Action = v1alpha1.NoAction
-			condition.Status = metav1.ConditionTrue
+			condition.SetCondition(v1alpha1.SourceReady, v1alpha1.NoAction, metav1.ConditionTrue)
 			mesh.Status.SourceConditions[sourceSpec.Name] = condition
 		} else {
 			// function created but subcomponents not ready, we need to wait
-			condition.Action = v1alpha1.Wait
+			condition.SetCondition(v1alpha1.SourceReady, v1alpha1.Wait, metav1.ConditionFalse)
 			mesh.Status.SourceConditions[sourceSpec.Name] = condition
 		}
 	}
@@ -196,6 +201,8 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 		if err != nil {
 			if errors.IsNotFound(err) {
 				r.Log.Info("sink is not ready", "name", sinkSpec.Name)
+				condition.SetCondition(v1alpha1.SinkReady, v1alpha1.Create, metav1.ConditionFalse)
+				mesh.Status.SinkConditions[sinkSpec.Name] = condition
 				continue
 			}
 			return err
@@ -203,12 +210,11 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 
 		if sink.Status.Conditions[v1alpha1.StatefulSet].Status == metav1.ConditionTrue &&
 			sink.Status.Conditions[v1alpha1.Service].Status == metav1.ConditionTrue {
-			condition.Action = v1alpha1.NoAction
-			condition.Status = metav1.ConditionTrue
+			condition.SetCondition(v1alpha1.SinkReady, v1alpha1.NoAction, metav1.ConditionTrue)
 			mesh.Status.SinkConditions[sinkSpec.Name] = condition
 		} else {
 			// function created but subcomponents not ready, we need to wait
-			condition.Action = v1alpha1.Wait
+			condition.SetCondition(v1alpha1.SinkReady, v1alpha1.Wait, metav1.ConditionFalse)
 			mesh.Status.SinkConditions[sinkSpec.Name] = condition
 		}
 	}
@@ -223,6 +229,35 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 	}
 
 	return nil
+}
+
+func (r *FunctionMeshReconciler) observeMeshes(mesh *v1alpha1.FunctionMesh) {
+	for _, cond := range mesh.Status.FunctionConditions {
+		if cond.Condition == v1alpha1.FunctionReady && cond.Status == metav1.ConditionTrue {
+			continue
+		}
+		mesh.Status.Condition.SetCondition(v1alpha1.MeshReady, v1alpha1.Wait, metav1.ConditionFalse)
+		return
+	}
+
+	for _, cond := range mesh.Status.SinkConditions {
+		if cond.Condition == v1alpha1.SinkReady && cond.Status == metav1.ConditionTrue {
+			continue
+		}
+		mesh.Status.Condition.SetCondition(v1alpha1.MeshReady, v1alpha1.Wait, metav1.ConditionFalse)
+		return
+	}
+
+	for _, cond := range mesh.Status.SourceConditions {
+		if cond.Condition == v1alpha1.SourceReady && cond.Status == metav1.ConditionTrue {
+			continue
+		}
+		mesh.Status.Condition.SetCondition(v1alpha1.MeshReady, v1alpha1.Wait, metav1.ConditionFalse)
+		return
+	}
+
+	mesh.Status.Condition.SetCondition(v1alpha1.MeshReady, v1alpha1.NoAction, metav1.ConditionTrue)
+	return
 }
 
 func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctrl.Request,
