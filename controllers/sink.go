@@ -211,6 +211,10 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, 
 		// HPA not enabled, skip further action
 		return nil
 	}
+
+	panicIfNil(sink.Spec.MinReplicas, "MinReplicas should not be nil but is nil; This is likely because the webhook is not installed properly so it does not have a default value")
+	panicIfNil(sink.Spec.Replicas, "Replicas should not be nil but is nil; This is likely because the webhook is not installed properly so it does not have a default value")
+
 	condition := sink.Status.Conditions[v1alpha1.HPA]
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil

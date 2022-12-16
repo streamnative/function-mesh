@@ -211,6 +211,10 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1a
 		// HPA not enabled, skip further action
 		return nil
 	}
+
+	panicIfNil(function.Spec.MinReplicas, "MinReplicas should not be nil but is nil; This is likely because the webhook is not installed properly so it does not have a default value")
+	panicIfNil(function.Spec.Replicas, "Replicas should not be nil but is nil; This is likely because the webhook is not installed properly so it does not have a default value")
+
 	condition := function.Status.Conditions[v1alpha1.HPA]
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil

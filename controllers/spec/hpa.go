@@ -154,11 +154,13 @@ func makeBuiltinHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int3
 	}
 }
 
-func makeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, podPolicy v1alpha1.PodPolicy, targetRef autov2beta2.CrossVersionObjectReference) *autov2beta2.HorizontalPodAutoscaler {
+func makeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas *int32, podPolicy v1alpha1.PodPolicy, targetRef autov2beta2.CrossVersionObjectReference) *autov2beta2.HorizontalPodAutoscaler {
+	min := *minReplicas
+	max := *maxReplicas
 	spec := autov2beta2.HorizontalPodAutoscalerSpec{
 		ScaleTargetRef: targetRef,
-		MinReplicas:    &minReplicas,
-		MaxReplicas:    maxReplicas,
+		MinReplicas:    &min,
+		MaxReplicas:    max,
 		Metrics:        podPolicy.AutoScalingMetrics,
 		Behavior:       podPolicy.AutoScalingBehavior,
 	}

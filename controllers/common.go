@@ -133,3 +133,9 @@ func applyVPA(ctx context.Context, r client.Client, logger logr.Logger, conditio
 	}
 	return nil
 }
+
+func panicIfNil(value interface{}, message string) {
+	if value == nil {
+		panic(message)
+	}
+}
