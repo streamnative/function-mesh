@@ -276,6 +276,11 @@ func (r *Function) ValidateCreate() error {
 		allErrs = append(allErrs, fieldErr)
 	}
 
+	fieldErr = validateBuiltinHPARules(r.Spec.Pod.BuiltinAutoscaler)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
+
 	if len(allErrs) == 0 {
 		return nil
 	}

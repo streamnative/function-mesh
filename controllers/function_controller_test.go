@@ -286,7 +286,7 @@ func createFunction(function *v1alpha1.Function) {
 			if len(function.Spec.Pod.BuiltinAutoscaler) > 0 {
 				Expect(len(hpa.Spec.Metrics)).Should(Equal(len(function.Spec.Pod.BuiltinAutoscaler)))
 				for _, rule := range function.Spec.Pod.BuiltinAutoscaler {
-					autoscaler := spec.GetBuiltinAutoScaler(rule)
+					autoscaler, _ := spec.GetBuiltinAutoScaler(rule)
 					Expect(autoscaler).Should(Not(BeNil()))
 					Expect(hpa.Spec.Metrics).Should(ContainElement(autoscaler.Metrics()[0]))
 				}
