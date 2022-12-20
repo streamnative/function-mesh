@@ -1,3 +1,22 @@
+# Function Mesh v0.9.0 Release Notes
+
+## v0.9.0 What's New
+
+* [Controller] Support for Pulsar Function health check ([#538](https://github.com/streamnative/function-mesh/pull/538))
+* [Controller] Fix operator vulnerability ([#550](https://github.com/streamnative/function-mesh/pull/550))
+* [Controller] Add an overall condition field to Mesh resource ([#546](https://github.com/streamnative/function-mesh/pull/538))
+* [Controller] Bump pulsarctl image to 2.10.2.3 ([#548](https://github.com/streamnative/function-mesh/pull/548))
+* [Controller] Add a validation webhook for the `spec.pulsar` connection configs ([#534](https://github.com/streamnative/function-mesh/pull/534))
+* [Bundle] Address openshift security vulnerabilities ([#536](https://github.com/streamnative/function-mesh/pull/536))
+* [Sample] Update the FunctionMesh examples to use the package with the Docker image ([#544](https://github.com/streamnative/function-mesh/pull/544))
+* [Sample] Change the example function to make the function works with the documentation ([#542](https://github.com/streamnative/function-mesh/pull/542))
+* [Sample] Add a Pulsar IO Connector sample ([#541](https://github.com/streamnative/function-mesh/pull/541))
+* [Makefile] change `truncate` to `>` ([#530](https://github.com/streamnative/function-mesh/pull/530))
+* [Test] Validate the init container feature with legacy auth and tls config ([#532](https://github.com/streamnative/function-mesh/pull/532))
+* [Test] Enable trivy scanner ([#527](https://github.com/streamnative/function-mesh/pull/527))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2022-12+is%3Aclosed).
+
 # Function Mesh v0.8.0 Release Notes
 
 ## v0.8.0 What's New
