@@ -72,6 +72,9 @@ func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	if mesh.Status.SinkConditions == nil {
 		mesh.Status.SinkConditions = make(map[string]v1alpha1.ResourceCondition)
 	}
+	if mesh.Status.Condition == nil {
+		mesh.Status.Condition = &v1alpha1.ResourceCondition{}
+	}
 
 	// TODO validate function spec correctness such as no duplicated func name etc
 

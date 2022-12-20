@@ -42,6 +42,7 @@ type FunctionMeshStatus struct {
 	SinkConditions     map[string]ResourceCondition `json:"sinkConditions,omitempty"`
 	FunctionConditions map[string]ResourceCondition `json:"functionConditions,omitempty"`
 	ObservedGeneration int64                        `json:"observedGeneration,omitempty"`
+	Condition          *ResourceCondition           `json:"condition,omitempty"`
 }
 
 // +genclient
