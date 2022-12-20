@@ -117,11 +117,11 @@ generate: controller-gen
 
 # Build the docker image
 docker-build: test
-	docker build . -t ${IMG}
+	docker build --platform linux/amd64 . -t ${IMG}
 
 # Build image for red hat certification
 docker-build-redhat:
-	docker build -f redhat.Dockerfile . -t ${IMG} --build-arg VERSION=${VERSION} --no-cache
+	docker build --platform linux/amd64 -f redhat.Dockerfile . -t ${IMG} --build-arg VERSION=${VERSION} --no-cache
 
 # Push the docker image
 image-push:
@@ -155,7 +155,7 @@ bundle: yq kustomize manifests
 # Build the bundle image.
 .PHONY: bundle-build
 bundle-build:
-	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+	docker build --platform linux/amd64 -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-push
 bundle-push: ## Push the bundle image.
@@ -171,7 +171,7 @@ rbac: manifests
 release: manifests kustomize crd rbac manager operator-docker-image helm-crds
 
 operator-docker-image: manager test
-	docker build -f operator.Dockerfile -t $(OPERATOR_IMG) .
+	docker build --platform linux/amd64 -f operator.Dockerfile -t $(OPERATOR_IMG) .
 	docker tag $(OPERATOR_IMG) $(OPERATOR_IMG_LATEST)
 
 docker-push:
@@ -240,7 +240,7 @@ function-mesh-docker-image-name:
 
 # Build the docker image without tests
 docker-build-skip-test:
-	docker build . -t ${IMG}
+	docker build --platform linux/amd64 . -t ${IMG}
 
 e2e: skywalking-e2e yq
 	$(E2E) run -c .ci/tests/integration/e2e.yaml
@@ -263,27 +263,25 @@ define go-get-tool
 }
 endef
 
-
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: redhat-certificated-bundle
 redhat-certificated-bundle: yq kustomize manifests
 	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(shell docker inspect --format='{{json .RepoDigests}}' $(OPERATOR_IMG) | jq --arg IMAGE_TAG_BASE "$(IMAGE_TAG_BASE)" -c '.[] | select(index($$IMAGE_TAG_BASE))' -r)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(YQ) eval -i ".metadata.annotations.\"olm.skipRange\" = \"<$(VERSION)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
-	$(YQ) eval -i ".metadata.annotations.\"olm.properties\" = ([{\"type\": \"olm.maxOpenShiftVersion\", \"value\": \"4.8\"}] | @json)" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.\"olm.properties\" = ([{\"type\": \"olm.maxOpenShiftVersion\", \"value\": \"4.11\"}] | @json)" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i ".metadata.annotations.createdAt = \"$(BUILD_DATETIME)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
-	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
-	$(YQ) eval -i ".spec.relatedImages[0].image = \"$(shell docker inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMG))\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
+	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(shell docker inspect --format='{{json .RepoDigests}}' $(OPERATOR_IMG) | jq --arg IMAGE_TAG_BASE "$(IMAGE_TAG_BASE)" -c '.[] | select(index($$IMAGE_TAG_BASE))' -r)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i '.annotations += {"operators.operatorframework.io.bundle.channel.default.v1":"alpha"}' bundle/metadata/annotations.yaml
-	hack/postprocess-bundle.sh
+	IMG_DIGIEST=$(shell docker inspect --format='{{json .RepoDigests}}' $(OPERATOR_IMG) | jq --arg IMAGE_TAG_BASE "$(IMAGE_TAG_BASE)" -c '.[] | select(index($$IMAGE_TAG_BASE))' -r) hack/postprocess-bundle.sh
 	operator-sdk bundle validate ./bundle --select-optional name=operatorhub
 	operator-sdk bundle validate ./bundle --select-optional suite=operatorframework
 
 # Build the bundle image.
 .PHONY: redhat-certificated-bundle-build
 redhat-certificated-bundle-build:
-	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+	docker build --platform linux/amd64 -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 .PHONY: redhat-certificated-bundle-push
 redhat-certificated-bundle-push: ## Push the bundle image.
@@ -293,7 +291,7 @@ redhat-certificated-bundle-push: ## Push the bundle image.
 # Build the bundle image.
 .PHONY: redhat-certificated-image-build
 redhat-certificated-image-build:
-	docker build -f redhat.Dockerfile . -t ${OPERATOR_IMG} --build-arg VERSION=${VERSION} --no-cache
+	docker build --platform linux/amd64 -f redhat.Dockerfile . -t ${OPERATOR_IMG} --build-arg VERSION=${VERSION} --no-cache
 
 .PHONY: redhat-certificated-image-push
 redhat-certificated-image-push: ## Push the bundle image.

@@ -8,7 +8,7 @@ metadata:
     containerImage: streamnative/function-mesh-operator:v0.0.0
     description: The Function Mesh Operator manages the Pulsar Functions and Connectors
       deployed on a Kubernetes cluster.
-    operatorhub.io/ui-metadata-max-k8s-version: "1.21"
+    operatorhub.io/ui-metadata-max-k8s-version: "1.24"
     repository: https://github.com/streamnative/function-mesh
     support: StreamNative
   name: function-mesh.v0.0.0
@@ -18,7 +18,7 @@ spec:
   customresourcedefinitions:
     owned:
     - description: FunctionMesh is the Schema for the functionmeshes API
-      displayName: Mesh
+      displayName: Function Mesh
       kind: FunctionMesh
       name: functionmeshes.compute.functionmesh.io
       version: v1alpha1

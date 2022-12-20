@@ -351,6 +351,7 @@ type ResourceConditionType string
 const (
 	Orphaned ResourceConditionType = "Orphaned"
 
+	MeshReady     ResourceConditionType = "MeshReady"
 	FunctionReady ResourceConditionType = "FunctionReady"
 	SourceReady   ResourceConditionType = "SourceReady"
 	SinkReady     ResourceConditionType = "SinkReady"
@@ -646,4 +647,10 @@ type Liveness struct {
 	// some functions may take a long time to start up(like download packages), so we need to set the initial delay
 	// +kubebuilder:validation:Optional
 	InitialDelaySeconds int32 `json:"initialDelaySeconds,omitempty"`
+}
+
+func (rc *ResourceCondition) SetCondition(condition ResourceConditionType, action ReconcileAction, status metav1.ConditionStatus) {
+	rc.Condition = condition
+	rc.Action = action
+	rc.Status = status
 }
