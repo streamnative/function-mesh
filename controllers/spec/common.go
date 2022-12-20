@@ -56,6 +56,10 @@ const (
 	DownloaderImage         = DefaultRunnerPrefix + "pulsarctl:2.10.2.3"
 	DownloadDir             = "/pulsar/download"
 
+	// for grpc health check
+	GrpcVolume = "grpc-volume"
+	GrpcDir    = "/pulsar/grpc"
+
 	WindowFunctionConfigKeyName = "__WINDOWCONFIGS__"
 	WindowFunctionExecutorClass = "org.apache.pulsar.functions.windowing.WindowFunctionExecutor"
 
@@ -291,6 +295,16 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 			Name: DownloaderVolume,
 		})
 	}
+	if utils.GrpcurlPersistentVolumeClaim != "" {
+		podVolumes = append(podVolumes, corev1.Volume{
+			Name: GrpcVolume,
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: utils.GrpcurlPersistentVolumeClaim,
+				},
+			},
+		})
+	}
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
@@ -353,11 +367,11 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
-			authConfig), " ")
+			authConfig, healthCheckInterval), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
@@ -369,10 +383,10 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
-			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
+			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig, healthCheckInterval), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
@@ -393,6 +407,34 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
+}
+
+func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
+	if liveness == nil || liveness.PeriodSeconds <= 0 || utils.GrpcurlPersistentVolumeClaim == "" {
+		return nil
+	}
+	var initialDelay int32
+	if liveness.InitialDelaySeconds > initialDelay {
+		initialDelay = liveness.InitialDelaySeconds
+	}
+	return &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			Exec: &corev1.ExecAction{
+				Command: []string{GrpcDir + "/grpcurl",
+					"-plaintext",
+					"-proto",
+					GrpcDir + "/InstanceCommunication.proto",
+					"-import-path",
+					GrpcDir,
+					"localhost:" + string(GRPCPort.ContainerPort),
+					"proto.InstanceControl/HealthCheck",
+				},
+			},
+		},
+		InitialDelaySeconds: initialDelay,
+		TimeoutSeconds:      liveness.PeriodSeconds,
+		PeriodSeconds:       liveness.PeriodSeconds,
+	}
 }
 
 func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool,
@@ -798,7 +840,8 @@ func setShardIDEnvironmentVariableCommand() string {
 func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, memory, extraDependenciesDir, uid string,
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
+	healthCheckInterval int32) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
@@ -828,7 +871,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"--jar",
 		packageName,
 	}
-	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig, healthCheckInterval)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getJavaSecretProviderArgs(secretMaps)
@@ -849,7 +892,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 
 func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid string, authProvided, tlsProvided bool,
 	secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig,
-	authConfig *v1alpha1.AuthConfig) []string {
+	authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
 	args := []string{
 		"exec",
 		"python",
@@ -866,7 +909,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 		"true",
 		// TODO: Maybe we don't need installUserCodeDependencies, dependency_repository, and pythonExtraDependencyRepository
 	}
-	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig)
+	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig, healthCheckInterval)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getPythonSecretProviderArgs(secretMaps)
@@ -884,7 +927,11 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 
 // This method is suitable for Java and Python runtime, not include Go runtime.
 func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
+	var hInterval int32 = -1
+	if healthCheckInterval > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
+		hInterval = healthCheckInterval
+	}
 	args := []string{
 		"--instance_id",
 		"${" + EnvShardID + "}",
@@ -903,7 +950,7 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 		"--metrics_port",
 		strconv.Itoa(int(MetricsPort.ContainerPort)),
 		"--expected_healthcheck_interval",
-		"-1", // TurnOff BuiltIn HealthCheck to avoid instance exit
+		strconv.Itoa(int(hInterval)),
 		"--cluster_name",
 		clusterName,
 	}
@@ -1370,6 +1417,13 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 	}
 	if utils.EnableInitContainers {
 		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(javaRuntime, pythonRuntime, goRuntime)...)
+	}
+	if utils.GrpcurlPersistentVolumeClaim != "" {
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      GrpcVolume,
+			MountPath: GrpcDir,
+			ReadOnly:  true,
+		})
 	}
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)

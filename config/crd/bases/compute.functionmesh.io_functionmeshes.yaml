@@ -1652,6 +1652,15 @@ spec:
                           additionalProperties:
                             type: string
                           type: object
+                        liveness:
+                          properties:
+                            initialDelaySeconds:
+                              format: int32
+                              type: integer
+                            periodSeconds:
+                              format: int32
+                              type: integer
+                          type: object
                         nodeSelector:
                           additionalProperties:
                             type: string
@@ -4860,6 +4869,15 @@ spec:
                           additionalProperties:
                             type: string
                           type: object
+                        liveness:
+                          properties:
+                            initialDelaySeconds:
+                              format: int32
+                              type: integer
+                            periodSeconds:
+                              format: int32
+                              type: integer
+                          type: object
                         nodeSelector:
                           additionalProperties:
                             type: string
@@ -8028,6 +8046,15 @@ spec:
                         labels:
                           additionalProperties:
                             type: string
+                          type: object
+                        liveness:
+                          properties:
+                            initialDelaySeconds:
+                              format: int32
+                              type: integer
+                            periodSeconds:
+                              format: int32
+                              type: integer
                           type: object
                         nodeSelector:
                           additionalProperties:

@@ -19,6 +19,7 @@ package spec
 
 import (
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -71,6 +72,7 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
+	probe := MakeLivenessProbe(source.Spec.Pod.Liveness)
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-source",
@@ -82,7 +84,8 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret,
 			source.Spec.Pulsar.TLSSecret),
-		VolumeMounts: makeSourceVolumeMounts(source),
+		VolumeMounts:  makeSourceVolumeMounts(source),
+		LivenessProbe: probe,
 	}
 }
 
@@ -125,6 +128,10 @@ func makeSourceVolumeMounts(source *v1alpha1.Source) []corev1.VolumeMount {
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
 	spec := source.Spec
+	var healthCheckInterval int32 = -1
+	if spec.Pod.Liveness != nil && spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
+		healthCheckInterval = spec.Pod.Liveness.PeriodSeconds
+	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
 		generateJavaLogConfigCommand(source.Spec.Java),
@@ -132,7 +139,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		generateSourceDetailsInJSON(source),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(source.UID),
 		spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
-		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
+		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, healthCheckInterval)
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {

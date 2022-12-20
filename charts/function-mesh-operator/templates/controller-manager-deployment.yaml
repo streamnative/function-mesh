@@ -54,6 +54,7 @@ spec:
           - --pprof-addr=:{{ .Values.controllerManager.pprof.port }}
           - --config-file={{ .Values.controllerManager.configFile }}
           - --enable-init-containers={{ .Values.controllerManager.enableInitContainers }}
+          - --grpcurl-persistent-volume-claim={{ .Values.controllerManager.grpcurlPersistentVolumeClaim }}
         env:
           - name: NAMESPACE
             valueFrom:
