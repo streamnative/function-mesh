@@ -51,9 +51,16 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 
 func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, MakeSinkContainer(sink),
-		makeSinkVolumes(sink), MakeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
-		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.VolumeMounts)
+
+	if !utils.EnableDistrolessContainer {
+		return MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, MakeSinkContainer(sink),
+			nil, makeSinkVolumes(sink), MakeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
+			sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.VolumeMounts)
+	} else {
+		return MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, MakeSinkContainerDistroless(sink),
+			makeSinkConfigInitContainerDistroless(sink), makeSinkVolumes(sink), MakeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
+			sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.VolumeMounts)
+	}
 }
 
 func MakeSinkServiceName(sink *v1alpha1.Sink) string {
@@ -154,9 +161,56 @@ func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {
 		panic(err)
 	}
 	if err != nil {
-		// TODO
 		panic(err)
 	}
 	log.Info(string(json))
 	return string(json)
 }
+
+func makeSinkConfigInitContainerDistroless(sink *v1alpha1.Sink) *corev1.Container {
+	var healthCheckInterval int32 = -1
+	if sink.Spec.Pod.Liveness != nil && sink.Spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
+		healthCheckInterval = sink.Spec.Pod.Liveness.PeriodSeconds
+	}
+	configInitCommand := getGenerateJavaConfigInitCommandDistroless(
+		sink.Spec.ClusterName,
+		generateSinkDetailsInJSON(sink),
+		string(sink.UID),
+		sink.Spec.Java,
+		sink.Spec.Pulsar.AuthSecret != "",
+		sink.Spec.Pulsar.TLSSecret != "",
+		sink.Spec.SecretsMap,
+		sink.Spec.StateConfig,
+		sink.Spec.Pulsar.TLSConfig,
+		sink.Spec.Pulsar.AuthConfig,
+		healthCheckInterval)
+	return makeConfigInitContainerDistroless(configInitCommand)
+}
+
+func MakeSinkContainerDistroless(sink *v1alpha1.Sink) *corev1.Container {
+	imagePullPolicy := sink.Spec.ImagePullPolicy
+	if imagePullPolicy == "" {
+		imagePullPolicy = corev1.PullIfNotPresent
+	}
+	return &corev1.Container{
+		Name:            "pulsar-sink",
+		Image:           getSinkRunnerImageDistroless(&sink.Spec),
+		Command:         makeSinkCommandDistroless(sink),
+		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
+		Env:             generateBasicContainerEnv(sink.Spec.SecretsMap, sink.Spec.Pod.Env),
+		Resources:       sink.Spec.Resources,
+		ImagePullPolicy: imagePullPolicy,
+		EnvFrom: generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret,
+			sink.Spec.Pulsar.TLSSecret),
+		VolumeMounts: makeSinkVolumeMounts(sink),
+	}
+}
+
+func makeSinkCommandDistroless(sink *v1alpha1.Sink) []string {
+	spec := sink.Spec
+	return MakeJavaFunctionCommandDistroless(spec.Java.Jar,
+		parseJavaLogLevel(spec.Java),
+		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir)
+}
+
+

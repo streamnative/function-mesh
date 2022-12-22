@@ -465,3 +465,13 @@ func toServicePort(port *corev1.ContainerPort) corev1.ServicePort {
 		TargetPort: intstr.FromInt(int(port.ContainerPort)),
 	}
 }
+
+func removeEmptyStrings(s []string) []string {
+	var r []string
+	for _, str := range s {
+		if str != "" {
+			r = append(r, str)
+		}
+	}
+	return r
+}

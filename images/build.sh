@@ -23,7 +23,9 @@ PULSAR_IMAGE=${PULSAR_IMAGE:-"streamnative/pulsar-all"}
 PULSAR_IMAGE_TAG=${PULSAR_IMAGE_TAG:-"2.7.1"}
 DOCKER_REPO=${DOCKER_REPO:-"streamnative"}
 RUNNER_BASE="pulsar-functions-runner-base"
+RUNNER_BASE_DISTROLESS="pulsar-functions-runner-base-distroless"
 JAVA_RUNNER="pulsar-functions-java-runner"
+JAVA_RUNNER_DISTROLESS="pulsar-functions-java-runner-distroless"
 GO_RUNNER="pulsar-functions-go-runner"
 PYTHON_RUNNER="pulsar-functions-python-runner"
 RUNNER_TAG=${RUNNER_TAG:-$PULSAR_IMAGE_TAG}
@@ -45,6 +47,14 @@ docker tag ${PYTHON_RUNNER} "${DOCKER_REPO}"/${PYTHON_RUNNER}:"${RUNNER_TAG}"
 echo "build go runner"
 docker build --platform linux/amd64 -t ${GO_RUNNER} images/pulsar-functions-go-runner --progress=plain # go runner is almost the same as runner base, so we no need to given build args for go runner
 docker tag ${GO_RUNNER} "${DOCKER_REPO}"/${GO_RUNNER}:"${RUNNER_TAG}"
+
+echo "build distroless java runner base"
+docker build -t ${RUNNER_BASE_DISTROLESS} -f images/pulsar-functions-base-runner/distroless.Dockerfile images/pulsar-functions-base-runner --progress=plain
+docker tag ${RUNNER_BASE_DISTROLESS} "${DOCKER_REPO}"/${RUNNER_BASE_DISTROLESS}:"${RUNNER_TAG}"
+
+echo "build distroless java runner base"
+docker build -t ${RUNNER_BASE_DISTROLESS} -f images/pulsar-functions-base-runner/distroless.Dockerfile images/pulsar-functions-base-runner --progress=plain
+docker tag ${RUNNER_BASE_DISTROLESS} "${DOCKER_REPO}"/${RUNNER_BASE_DISTROLESS}:"${RUNNER_TAG}"
 
 if [ "$KIND_PUSH" = true ] ; then
   echo "push images to kind"

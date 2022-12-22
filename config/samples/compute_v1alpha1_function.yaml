@@ -62,7 +62,10 @@ spec:
     jar: /pulsar/examples/api-examples.jar
     # use "" to read jar from local file system
     jarLocation: ""
-    extraDependenciesDir: random-dir/
+    # rollingEnabled to test the env SHARD_ID
+    log:
+      rotatePolicy: TimedPolicyWithDaily
+#    extraDependenciesDir: random-dir
     # use package name:
     # jarLocation: function://public/default/nul-test-java-function@v1
   # to be delete & use admission hook
@@ -74,8 +77,8 @@ kind: ConfigMap
 metadata:
   name: test-pulsar
 data:
-    webServiceURL: http://test-pulsar-broker.default.svc.cluster.local:8080
-    brokerServiceURL: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
+    webServiceURL: http://10.0.101.197:8080
+    brokerServiceURL: pulsar://10.0.101.197:6650
 #---
 #apiVersion: v1
 #kind: Secret

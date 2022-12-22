@@ -38,16 +38,17 @@ import (
 )
 
 const (
-	EnvShardID                 = "SHARD_ID"
-	FunctionsInstanceClasspath = "pulsar.functions.instance.classpath"
-	DefaultRunnerTag           = "2.10.0.0-rc10"
-	DefaultRunnerPrefix        = "streamnative/"
-	DefaultRunnerImage         = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
-	DefaultJavaRunnerImage     = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
-	DefaultPythonRunnerImage   = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
-	DefaultGoRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
-	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
-	WorkDir                    = "/pulsar/"
+	EnvShardID                       = "SHARD_ID"
+	FunctionsInstanceClasspath       = "pulsar.functions.instance.classpath"
+	DefaultRunnerTag                 = "2.10.0.0-rc10"
+	DefaultRunnerPrefix              = "streamnative/"
+	DefaultRunnerImage               = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
+	DefaultJavaRunnerImage           = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
+	DefaultPythonRunnerImage         = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
+	DefaultGoRunnerImage             = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
+	DefaultDistrolessJavaRunnerImage = DefaultRunnerPrefix + "pulsar-functions-java-distroless-runner:" + DefaultRunnerTag
+	PulsarAdminExecutableFile        = "/pulsar/bin/pulsar-admin"
+	WorkDir                          = "/pulsar/"
 
 	// for init container
 	PulsarctlExecutableFile = "/usr/local/bin/pulsarctl"
@@ -86,14 +87,43 @@ const (
 
 	OAuth2AuthenticationPlugin = "org.apache.pulsar.client.impl.auth.oauth2.AuthenticationOAuth2"
 
-	JavaLogConfigDirectory     = "/pulsar/conf/java-log/"
-	JavaLogConfigFile          = "java_instance_log4j.xml"
-	DefaultJavaLogConfigPath   = JavaLogConfigDirectory + JavaLogConfigFile
-	PythonLogConifgDirectory   = "/pulsar/conf/python-log/"
-	PythonLogConfigFile        = "python_instance_logging.ini"
-	DefaultPythonLogConfigPath = PythonLogConifgDirectory + PythonLogConfigFile
+	JavaLogConfigDirectory         = "/pulsar/conf/java-log/"
+	JavaLogConfigFile              = "java_instance_log4j.xml"
+	DefaultJavaLogConfigPath       = JavaLogConfigDirectory + JavaLogConfigFile
+	PythonLogConifgDirectory       = "/pulsar/conf/python-log/"
+	PythonLogConfigFile            = "python_instance_logging.ini"
+	DefaultPythonLogConfigPath     = PythonLogConifgDirectory + PythonLogConfigFile
+	RunnerConfigDirectory          = "/pulsar/conf/runner-conf/"
+	RunnerConfigFile               = "runner.conf"
+	DefaultGenericRunnerConfigFile = RunnerConfigDirectory + RunnerConfigFile
 
 	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
+
+	KeyFunctionDetailsJsonString= "functionDetailsJsonString"
+	KeyInstanceId = "instanceId"
+	KeyFunctionVersion = "functionVersion"
+	KeyFunctionId = "functionId"
+	KeyPulsarServiceUrl = "pulsarServiceUrl"
+	KeyClientAuthenticationPlugin = "clientAuthenticationPlugin"
+	KeyClientAuthenticationParameters = "clientAuthenticationParameters"
+	KeyUseTls = "useTls"
+	KeyTlsAllowInsecureConnection = "tlsAllowInsecureConnection"
+	KeyTlsHostNameVerificationEnabled = "tlsHostNameVerificationEnabled"
+	KeyTlsTrustCertFilePath = "tlsTrustCertFilePath"
+	KeyStateStorageImplClass = "stateStorageImplClass"
+	KeyStateStorageServiceUrl = "stateStorageServiceUrl"
+	KeyPort = "port"
+	KeyMetricsPort = "metricsPort"
+	KeyMaxBufferedTuples = "maxBufferedTuples"
+	KeyExpectedHealthCheckInterval = "expectedHealthCheckInterval"
+	KeySecretsProviderClassName = "secretsProviderClassName"
+	KeySecretsProviderConfig = "secretsProviderConfig"
+	KeyClusterName = "clusterName"
+	KeyNarExtractionDirectory = "narExtractionDirectory"
+	KeyMaxPendingAsyncRequests = "maxPendingAsyncRequests"
+	KeyWebServiceUrl = "webServiceUrl"
+	KeyExposePulsarAdminClientEnabled = "exposePulsarAdminClientEnabled"
+
 
 	javaLog4jXMLTemplate = `<Configuration>
     <name>pulsar-functions-kubernetes-instance</name>
@@ -238,7 +268,7 @@ func MakeHeadlessServiceName(serviceName string) string {
 }
 
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderImage string,
-	container *corev1.Container,
+	container, configInitContainer *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, pulsar v1alpha1.PulsarMessaging,
 	javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
 	goRuntime *v1alpha1.GoRuntime, definedVolumeMounts []corev1.VolumeMount) *appsv1.StatefulSet {
@@ -312,19 +342,19 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 		},
 		ObjectMeta: *objectMeta,
 		Spec: *MakeStatefulSetSpec(replicas, container, podVolumes, labels, policy,
-			MakeHeadlessServiceName(objectMeta.Name), downloaderContainer),
+			MakeHeadlessServiceName(objectMeta.Name), downloaderContainer, configInitContainer),
 	}
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy,
-	serviceName string, downloaderContainer *corev1.Container) *appsv1.StatefulSetSpec {
+	serviceName string, downloaderContainer *corev1.Container, configInitContainer *corev1.Container) *appsv1.StatefulSetSpec {
 	return &appsv1.StatefulSetSpec{
 		Replicas: replicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: labels,
 		},
-		Template:            *MakePodTemplate(container, volumes, labels, policy, downloaderContainer),
+		Template:            *MakePodTemplate(container, volumes, labels, policy, downloaderContainer, configInitContainer),
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
@@ -335,7 +365,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 
 func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy,
-	downloaderContainer *corev1.Container) *corev1.PodTemplateSpec {
+	downloaderContainer, configInitContainer *corev1.Container) *corev1.PodTemplateSpec {
 	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, false)
 	if policy.SecurityContext != nil {
 		podSecurityContext = policy.SecurityContext
@@ -344,6 +374,11 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	if downloaderContainer != nil {
 		initContainers = append(initContainers, *downloaderContainer)
 	}
+
+	if configInitContainer != nil {
+		initContainers = append(initContainers, *configInitContainer)
+	}
+
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      mergeLabels(labels, Configs.ResourceLabels, policy.Labels),
@@ -1428,6 +1463,7 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)
 	mounts = append(mounts, generateVolumeMountFromLogConfigs(logConfs)...)
+	mounts = append(mounts, generateContainerVolumeMountsForConfigInitContainer(logConfs)...)
 	return mounts
 }
 
@@ -1447,6 +1483,8 @@ func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.Produ
 	volumes = append(volumes, generateContainerVolumesFromProducerConf(producerConf)...)
 	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(consumerConfs)...)
 	volumes = append(volumes, generateContainerVolumesFromLogConfigs(logConf)...)
+	volumes = append(volumes, generateContainerVolumesForConfigInitContainer()...)
+
 	return volumes
 }
 
@@ -1506,6 +1544,18 @@ func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
 	return DefaultRunnerImage
 }
 
+func getSinkRunnerImageDistroless(spec *v1alpha1.SinkSpec) string {
+	img := spec.Image
+	if img != "" {
+		return img
+	}
+	if spec.Runtime.Java.Jar != "" && spec.Runtime.Java.JarLocation != "" &&
+		hasPackageNamePrefix(spec.Runtime.Java.JarLocation) {
+		return Configs.RunnerImages.JavaDistroless
+	}
+	return DefaultRunnerImage
+}
+
 func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 	img := spec.Image
 	if img != "" {
@@ -1514,6 +1564,18 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 	if spec.Runtime.Java.Jar != "" && spec.Runtime.Java.JarLocation != "" &&
 		hasPackageNamePrefix(spec.Runtime.Java.JarLocation) {
 		return Configs.RunnerImages.Java
+	}
+	return DefaultRunnerImage
+}
+
+func getSourceRunnerImageDistroless(spec *v1alpha1.SourceSpec) string {
+	img := spec.Image
+	if img != "" {
+		return img
+	}
+	if spec.Runtime.Java.Jar != "" && spec.Runtime.Java.JarLocation != "" &&
+		hasPackageNamePrefix(spec.Runtime.Java.JarLocation) {
+		return Configs.RunnerImages.JavaDistroless
 	}
 	return DefaultRunnerImage
 }
@@ -1724,4 +1786,252 @@ func getFilenameOfComponentPackage(componentPackage string) string {
 		return data[len(data)-1]
 	}
 	return componentPackage
+}
+
+func MakeJavaFunctionCommandDistroless(packageFile, logLevel, memory, extraDependenciesDir string) []string {
+	processCommandArgs := getProcessJavaRuntimeArgsDistroless(packageFile, logLevel, memory, extraDependenciesDir)
+	return processCommandArgs
+}
+
+func getFunctionRunnerImageDistroless(spec *v1alpha1.FunctionSpec) string {
+	runtime := &spec.Runtime
+	img := spec.Image
+	if img != "" {
+		return img
+	} else if runtime.Java != nil && runtime.Java.Jar != "" {
+		return Configs.RunnerImages.JavaDistroless
+	} else if runtime.Python != nil && runtime.Python.Py != "" {
+		log.Info("Do not support running Python distroless image yet, fall back to use old Python" +
+			" runner image")
+		return Configs.RunnerImages.Python
+	} else if runtime.Golang != nil && runtime.Golang.Go != "" {
+		log.Info("Do not support running Golang distroless image yet, fall back to use old Golang runner image")
+		return Configs.RunnerImages.Go
+	}
+	return DefaultRunnerImage
+}
+
+func getProcessJavaRuntimeArgsDistroless(packageName, logLevel, memory, extraDependenciesDir string) []string {
+	classPath := "/pulsar/instances/java-instance.jar"
+	if extraDependenciesDir != "" {
+		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
+	}
+	setLogLevel := ""
+	if logLevel != "" {
+		setLogLevel = strings.Join(
+			[]string{
+				fmt.Sprintf("-Dpulsar.log.level=%s", logLevel),
+				fmt.Sprintf("-Dbk.log.level=%s", logLevel),
+			},
+			" ")
+	}
+	args := []string{
+		"java",
+		"-cp",
+		classPath,
+		fmt.Sprintf("-D%s=%s", FunctionsInstanceClasspath, "/pulsar/lib/*"),
+		fmt.Sprintf("-Dlog4j.configurationFile=%s", DefaultJavaLogConfigPath),
+		"-Dpulsar.function.log.dir=logs/functions",
+		setLogLevel,
+		"-Xmx" + memory,
+		"org.apache.pulsar.functions.instance.JavaInstanceMain",
+		"--jar",
+		packageName,
+		"--config_file",
+		DefaultGenericRunnerConfigFile,
+	}
+
+	return removeEmptyStrings(args)
+}
+
+func makeConfigInitContainerDistroless(configInitCommand string) *corev1.Container {
+
+	volumeMounts := generateConfigInitContainerVolumeMounts()
+	return &corev1.Container{
+		Name:            "config-init-container",
+		Image:           "busybox",
+		Command:         []string{"sh", "-c", configInitCommand},
+		VolumeMounts:    volumeMounts,
+		Env:             generateConfigInitContainerEnv(),
+		ImagePullPolicy: corev1.PullIfNotPresent,
+	}
+}
+
+func getGenerateJavaConfigInitCommandDistroless(clusterName, details, uid string, runtime *v1alpha1.JavaRuntime,
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) string {
+	// this command should do the following things.
+	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
+		generateJavaLogConfigCommandDistroless(runtime) + " " +
+		generateProcessJavaRuntimeConfigFileCommand(
+			clusterName,
+			details,
+			uid,
+			authProvided,
+			tlsProvided,
+			secretMaps,
+			state,
+			tlsConfig,
+			authConfig,
+			healthCheckInterval)
+	return processCommand
+}
+
+func generateConfigInitContainerVolumeMounts() []corev1.VolumeMount {
+	volumeMounts := []corev1.VolumeMount{}
+
+	runnerConfVolumeMount := &corev1.VolumeMount{
+		Name:      sanitizeVolumeName("generic-runner-conf"),
+		MountPath: RunnerConfigDirectory,
+	}
+
+	logConfVolumeMount := &corev1.VolumeMount{
+		Name:      sanitizeVolumeName("generic-runner-log-conf"),
+		MountPath: JavaLogConfigDirectory,
+	}
+	volumeMounts = append(volumeMounts, *runnerConfVolumeMount, *logConfVolumeMount)
+	return volumeMounts
+}
+
+func generateContainerVolumesForConfigInitContainer() []corev1.Volume {
+	volumes := []corev1.Volume{}
+
+	genericRunnerConfigVolume := &corev1.Volume{
+		Name: sanitizeVolumeName("generic-runner-conf"),
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+
+	genericRunnerLogConfigVolume := &corev1.Volume{
+		Name: sanitizeVolumeName("generic-runner-log-conf"),
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+
+	volumes = append(volumes, *genericRunnerConfigVolume, *genericRunnerLogConfigVolume)
+	return volumes
+}
+
+func generateContainerVolumeMountsForConfigInitContainer(logConfs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
+	volumeMounts := []corev1.VolumeMount{}
+
+	runnerConfVolumeMount := &corev1.VolumeMount{
+		Name:      sanitizeVolumeName("generic-runner-conf"),
+		MountPath: RunnerConfigDirectory,
+	}
+	volumeMounts = append(volumeMounts, *runnerConfVolumeMount)
+	// only mount the empty dir in config init container when the logConfs are not set
+	if len(logConfs) == 0 {
+		runnerLogConfVolumeMount := &corev1.VolumeMount{
+			Name:      sanitizeVolumeName("generic-runner-log-conf"),
+			MountPath: JavaLogConfigDirectory,
+		}
+		volumeMounts = append(volumeMounts, *runnerLogConfVolumeMount)
+	}
+
+	return volumeMounts
+}
+
+func generateConfigInitContainerEnv() []corev1.EnvVar {
+	vars := []corev1.EnvVar{{
+		Name:      "POD_NAME",
+		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
+	}}
+	return vars
+}
+
+func generateProcessJavaRuntimeConfigFileCommand(clusterName, details, uid string,
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) string {
+
+	configs := getSharedRunnerConfigsDistroless(
+		details,
+		clusterName,
+		uid,
+		authProvided,
+		tlsProvided,
+		tlsConfig,
+		authConfig,
+		healthCheckInterval)
+	if len(secretMaps) > 0 {
+		configs[KeySecretsProviderClassName] = "org.apache.pulsar.functions.secretsprovider.EnvironmentBasedSecretsProvider"
+	}
+	if state != nil && state.Pulsar != nil && state.Pulsar.ServiceURL != "" {
+		configs[KeyStateStorageServiceUrl] = state.Pulsar.ServiceURL
+		if state.Pulsar.JavaProvider != nil {
+			configs[KeyStateStorageImplClass] = state.Pulsar.JavaProvider.ClassName
+		}
+	}
+
+	commands := []string{}
+	for key, value := range configs {
+		commands = append(commands, fmt.Sprintf("echo %s=%s >> %s", key, value, DefaultGenericRunnerConfigFile))
+	}
+	return strings.Join(commands, " && ")
+}
+
+func generateJavaLogConfigCommandDistroless(runtime *v1alpha1.JavaRuntime) string {
+	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
+		return ""
+	}
+	if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime); err == nil {
+		generateConfigFileCommand := []string{
+			"mkdir", "-p", JavaLogConfigDirectory, "&&",
+			"echo", fmt.Sprintf("\"%s\"", log4jXML), ">", DefaultJavaLogConfigPath,
+			"&&", "sed", "-i", "\"s/\\${sys:pulsar.function.log.file}/$SHARD_ID/g\"", DefaultJavaLogConfigPath, "&&",
+		}
+		return strings.Join(generateConfigFileCommand, " ")
+	}
+	return ""
+}
+
+func getSharedRunnerConfigsDistroless(details, clusterName, uid string, authProvided bool, tlsProvided bool,
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) map[string]string {
+	configs := map[string]string{
+		KeyInstanceId:                  fmt.Sprintf("${%s}", EnvShardID),
+		KeyFunctionId:                  fmt.Sprintf("${%s-%s}", EnvShardID, uid),
+		KeyFunctionVersion:             "0",
+		KeyFunctionDetailsJsonString:             "'" + details + "'",
+		KeyPulsarServiceUrl:            "$brokerServiceURL",
+		KeyMaxBufferedTuples:           "100",
+		KeyPort:                        strconv.Itoa(int(GRPCPort.ContainerPort)),
+		KeyMetricsPort:                 strconv.Itoa(int(MetricsPort.ContainerPort)),
+		KeyExpectedHealthCheckInterval: strconv.Itoa(int(healthCheckInterval)),
+		KeyClusterName:                 clusterName,
+	}
+
+	if authConfig != nil {
+		// TODO the key name should match, do not use magic words
+		if authConfig.OAuth2Config != nil {
+			configs[KeyClientAuthenticationPlugin] = OAuth2AuthenticationPlugin
+			configs[KeyClientAuthenticationParameters] = authConfig.OAuth2Config.AuthenticationParameters()
+		}
+	} else if authProvided {
+		configs[KeyClientAuthenticationPlugin] = "$clientAuthenticationPlugin"
+		configs[KeyClientAuthenticationParameters] = "$clientAuthenticationParameters"
+	}
+
+	// Use traditional way
+	if reflect.ValueOf(tlsConfig).IsNil() {
+		if tlsProvided {
+			configs[KeyUseTls] = "true"
+			configs[KeyTlsAllowInsecureConnection] = "${tlsAllowInsecureConnection:-" + DefaultForAllowInsecure + "}"
+			configs[KeyTlsHostNameVerificationEnabled] = "${tlsHostnameVerificationEnable:-" + DefaultForEnableHostNameVerification + "}"
+			configs[KeyTlsTrustCertFilePath] = "$tlsTrustCertsFilePath"
+		} else {
+			configs[KeyUseTls] = "false"
+		}
+	} else {
+		configs[KeyUseTls] = strconv.FormatBool(tlsConfig.IsEnabled())
+		if tlsConfig.IsEnabled() {
+			configs[KeyTlsAllowInsecureConnection] = tlsConfig.AllowInsecureConnection()
+			configs[KeyTlsHostNameVerificationEnabled] = tlsConfig.EnableHostnameVerification()
+			if tlsConfig.HasSecretVolume() {
+				configs[KeyTlsTrustCertFilePath] = getTLSTrustCertPath(tlsConfig, tlsConfig.SecretKey())
+			}
+		}
+	}
+	return configs
 }

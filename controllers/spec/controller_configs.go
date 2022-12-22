@@ -24,9 +24,10 @@ import (
 )
 
 type RunnerImages struct {
-	Java   string `yaml:"java,omitempty"`
-	Python string `yaml:"python,omitempty"`
-	Go     string `yaml:"go,omitempty"`
+	Java           string `yaml:"java,omitempty"`
+	Python         string `yaml:"python,omitempty"`
+	Go             string `yaml:"go,omitempty"`
+	JavaDistroless string `yaml:"javaDistroless,omitempty"`
 }
 
 type ControllerConfigs struct {
@@ -40,9 +41,10 @@ var Configs = DefaultConfigs()
 func DefaultConfigs() *ControllerConfigs {
 	return &ControllerConfigs{
 		RunnerImages: RunnerImages{
-			Java:   DefaultJavaRunnerImage,
-			Python: DefaultPythonRunnerImage,
-			Go:     DefaultGoRunnerImage,
+			Java:           DefaultJavaRunnerImage,
+			Python:         DefaultPythonRunnerImage,
+			Go:             DefaultGoRunnerImage,
+			JavaDistroless: DefaultDistrolessJavaRunnerImage,
 		},
 	}
 }

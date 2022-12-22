@@ -55,10 +55,15 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 
 func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
-	return MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
-		MakeFunctionContainer(function), makeFunctionVolumes(function), makeFunctionLabels(function), function.Spec.Pod,
-		*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang,
-		function.Spec.VolumeMounts)
+	if !utils.EnableDistrolessContainer {
+		return MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
+			MakeFunctionContainer(function), nil, makeFunctionVolumes(function), makeFunctionLabels(function), function.Spec.Pod,
+			*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.VolumeMounts)
+	} else {
+		return MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
+			MakeFunctionContainerDistroless(function), makeFunctionConfigInitContainerDistroless(function), makeFunctionVolumes(function), makeFunctionLabels(function), function.Spec.Pod,
+			*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.VolumeMounts)
+	}
 }
 
 func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
@@ -179,4 +184,66 @@ func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
 	}
 	log.Info(string(json))
 	return string(json)
+}
+
+func makeFunctionConfigInitContainerDistroless(function *v1alpha1.Function) *corev1.Container {
+	var healthCheckInterval int32 = -1
+	if function.Spec.Pod.Liveness != nil && function.Spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
+		healthCheckInterval = function.Spec.Pod.Liveness.PeriodSeconds
+	}
+	configInitCommand := ""
+	if function.Spec.Java != nil {
+		configInitCommand = getGenerateJavaConfigInitCommandDistroless(
+			function.Spec.ClusterName,
+			generateFunctionDetailsInJSON(function),
+			string(function.UID),
+			function.Spec.Java,
+			function.Spec.Pulsar.AuthSecret != "",
+			function.Spec.Pulsar.TLSSecret != "",
+			function.Spec.SecretsMap,
+			function.Spec.StateConfig,
+			function.Spec.Pulsar.TLSConfig,
+			function.Spec.Pulsar.AuthConfig,
+			healthCheckInterval)
+	} else {
+		log.Info("Currently only Java supports distroless mode, python and golang are not supported")
+	}
+	return makeConfigInitContainerDistroless(configInitCommand)
+}
+
+func MakeFunctionContainerDistroless(function *v1alpha1.Function) *corev1.Container {
+	imagePullPolicy := function.Spec.ImagePullPolicy
+	if imagePullPolicy == "" {
+		imagePullPolicy = corev1.PullIfNotPresent
+	}
+	return &corev1.Container{
+		// TODO new container to pull user code image and upload jars into bookkeeper
+		Name:            "pulsar-function",
+		Image:           getFunctionRunnerImageDistroless(&function.Spec),
+		Command:         makeFunctionCommandDistroless(function),
+		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
+		Env:             generateContainerEnv(function),
+		Resources:       function.Spec.Resources,
+		ImagePullPolicy: imagePullPolicy,
+		EnvFrom: generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
+			function.Spec.Pulsar.TLSSecret),
+		VolumeMounts: makeFunctionVolumeMounts(function),
+	}
+}
+
+func makeFunctionCommandDistroless(function *v1alpha1.Function) []string {
+	spec := function.Spec
+
+	if spec.Java != nil {
+		if spec.Java.Jar != "" {
+			return MakeJavaFunctionCommandDistroless(spec.Java.Jar,
+				parseJavaLogLevel(spec.Java),
+				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir)
+		}
+	} else {
+		log.Info("Currently only Java supports distroless mode, python and golang are not supported yet")
+		return nil
+	}
+
+	return nil
 }

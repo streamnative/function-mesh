@@ -51,9 +51,16 @@ func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
 
 func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
 	objectMeta := MakeSourceObjectMeta(source)
-	return MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, MakeSourceContainer(source),
-		makeSourceVolumes(source), makeSourceLabels(source), source.Spec.Pod, *source.Spec.Pulsar,
-		source.Spec.Java, source.Spec.Python, source.Spec.Golang, source.Spec.VolumeMounts)
+	if !utils.EnableDistrolessContainer {
+		return MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, MakeSourceContainer(source),
+			nil, makeSourceVolumes(source), makeSourceLabels(source), source.Spec.Pod, *source.Spec.Pulsar,
+			source.Spec.Java, source.Spec.Python, source.Spec.Golang, source.Spec.VolumeMounts)
+	} else {
+		return MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, MakeSourceContainerDistroless(source),
+			makeSourceConfigInitContainerDistroless(source), makeSourceVolumes(source), makeSourceLabels(source), source.Spec.Pod, *source.Spec.Pulsar,
+			source.Spec.Java, source.Spec.Python, source.Spec.Golang, source.Spec.VolumeMounts)
+	}
+
 }
 
 func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {
@@ -154,4 +161,50 @@ func generateSourceDetailsInJSON(source *v1alpha1.Source) string {
 	}
 	log.Info(string(json))
 	return string(json)
+}
+
+func makeSourceConfigInitContainerDistroless(source *v1alpha1.Source) *corev1.Container {
+	var healthCheckInterval int32 = -1
+	if source.Spec.Pod.Liveness != nil && source.Spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
+		healthCheckInterval = source.Spec.Pod.Liveness.PeriodSeconds
+	}
+	configInitCommand := getGenerateJavaConfigInitCommandDistroless(
+		source.Spec.ClusterName,
+		generateSourceDetailsInJSON(source),
+		string(source.UID),
+		source.Spec.Java,
+		source.Spec.Pulsar.AuthSecret != "",
+		source.Spec.Pulsar.TLSSecret != "",
+		source.Spec.SecretsMap,
+		source.Spec.StateConfig,
+		source.Spec.Pulsar.TLSConfig,
+		source.Spec.Pulsar.AuthConfig,
+		healthCheckInterval)
+	return makeConfigInitContainerDistroless(configInitCommand)
+}
+
+func MakeSourceContainerDistroless(source *v1alpha1.Source) *corev1.Container {
+	imagePullPolicy := source.Spec.ImagePullPolicy
+	if imagePullPolicy == "" {
+		imagePullPolicy = corev1.PullIfNotPresent
+	}
+	return &corev1.Container{
+		Name:            "pulsar-source-init-container",
+		Image:           getSourceRunnerImageDistroless(&source.Spec),
+		Command:         makeSourceCommandDistroless(source),
+		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
+		Env:             generateBasicContainerEnv(source.Spec.SecretsMap, source.Spec.Pod.Env),
+		Resources:       source.Spec.Resources,
+		ImagePullPolicy: imagePullPolicy,
+		EnvFrom: generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret,
+			source.Spec.Pulsar.TLSSecret),
+		VolumeMounts: makeSourceVolumeMounts(source),
+	}
+}
+
+func makeSourceCommandDistroless(source *v1alpha1.Source) []string {
+	spec := source.Spec
+	return MakeJavaFunctionCommandDistroless(spec.Java.Jar,
+		parseJavaLogLevel(spec.Java),
+		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir)
 }

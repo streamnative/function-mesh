@@ -87,7 +87,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	utils.EnableInitContainers = enableInitContainers
 	utils.GrpcurlPersistentVolumeClaim = grpcurlPersistentVolumeClaim
-
+	// TODO add distroless
 	// enable pprof
 	if enablePprof {
 		go func() {

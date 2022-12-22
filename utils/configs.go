@@ -20,3 +20,4 @@ package utils
 
 var EnableInitContainers = false
 var GrpcurlPersistentVolumeClaim = ""
+var EnableDistrolessContainer = true
