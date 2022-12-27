@@ -86,22 +86,22 @@ func NewHPARuleAverageUtilizationMemoryPercent(memoryPercentage int32) BuiltinAu
 	}
 }
 
-func GetBuiltinAutoScaler(builtinRule v1alpha1.BuiltinHPARule) BuiltinAutoScaler {
+func GetBuiltinAutoScaler(builtinRule v1alpha1.BuiltinHPARule) (BuiltinAutoScaler, int) {
 	switch builtinRule {
 	case v1alpha1.AverageUtilizationCPUPercent80:
-		return NewHPARuleAverageUtilizationCPUPercent(80)
+		return NewHPARuleAverageUtilizationCPUPercent(80), cpuRuleIdx
 	case v1alpha1.AverageUtilizationCPUPercent50:
-		return NewHPARuleAverageUtilizationCPUPercent(50)
+		return NewHPARuleAverageUtilizationCPUPercent(50), cpuRuleIdx
 	case v1alpha1.AverageUtilizationCPUPercent20:
-		return NewHPARuleAverageUtilizationCPUPercent(20)
+		return NewHPARuleAverageUtilizationCPUPercent(20), cpuRuleIdx
 	case v1alpha1.AverageUtilizationMemoryPercent80:
-		return NewHPARuleAverageUtilizationMemoryPercent(80)
+		return NewHPARuleAverageUtilizationMemoryPercent(80), memoryRuleIdx
 	case v1alpha1.AverageUtilizationMemoryPercent50:
-		return NewHPARuleAverageUtilizationMemoryPercent(50)
+		return NewHPARuleAverageUtilizationMemoryPercent(50), memoryRuleIdx
 	case v1alpha1.AverageUtilizationMemoryPercent20:
-		return NewHPARuleAverageUtilizationMemoryPercent(20)
+		return NewHPARuleAverageUtilizationMemoryPercent(20), memoryRuleIdx
 	default:
-		return nil
+		return nil, 2
 	}
 }
 
@@ -126,11 +126,21 @@ func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int3
 	}
 }
 
+const (
+	cpuRuleIdx = iota
+	memoryRuleIdx
+)
+
 func MakeMetricsFromBuiltinHPARules(builtinRules []v1alpha1.BuiltinHPARule) []autov2beta2.MetricSpec {
+	isRuleExists := map[int]bool{}
 	metrics := []autov2beta2.MetricSpec{}
 	for _, r := range builtinRules {
-		s := GetBuiltinAutoScaler(r)
+		s, idx := GetBuiltinAutoScaler(r)
 		if s != nil {
+			if isRuleExists[idx] {
+				continue
+			}
+			isRuleExists[idx] = true
 			metrics = append(metrics, s.Metrics()...)
 		}
 	}

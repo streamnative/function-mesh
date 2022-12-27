@@ -396,3 +396,25 @@ func validateMessaging(messaging *Messaging) *field.Error {
 	}
 	return nil
 }
+
+func validateBuiltinHPARules(rules []BuiltinHPARule) *field.Error {
+	isCPURuleExists := false
+	isMemoryRuleExists := false
+	for _, rule := range rules {
+		switch rule {
+		case AverageUtilizationCPUPercent20, AverageUtilizationCPUPercent50, AverageUtilizationCPUPercent80:
+			if isCPURuleExists {
+				return field.Invalid(field.NewPath("spec").Child("pod", "builtinAutoscaler"), rules,
+					"Duplicate CPU autoscaler metrics are set")
+			}
+			isCPURuleExists = true
+		case AverageUtilizationMemoryPercent20, AverageUtilizationMemoryPercent50, AverageUtilizationMemoryPercent80:
+			if isMemoryRuleExists {
+				return field.Invalid(field.NewPath("spec").Child("pod", "builtinAutoscaler"), rules,
+					"Duplicate Memory autoscaler metrics are set")
+			}
+			isMemoryRuleExists = true
+		}
+	}
+	return nil
+}
