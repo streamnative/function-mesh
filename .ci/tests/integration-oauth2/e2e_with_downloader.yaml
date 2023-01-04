@@ -75,7 +75,7 @@ setup:
     # testing download packages from http
     - name: start nginx http server
       command: |
-        kubectl apply -f .ci/clusters.nginx.yaml
+        kubectl apply -f .ci/clusters/nginx.yaml
       wait:
         - namespace: default
           resource: pod
