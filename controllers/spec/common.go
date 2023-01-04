@@ -75,6 +75,9 @@ const (
 	PackageNameSinkPrefix     = "sink://"
 	PackageNameSourcePrefix   = "source://"
 
+	HTTPPrefix  = "http://"
+	HTTPSPrefix = "https://"
+
 	AnnotationPrometheusScrape = "prometheus.io/scrape"
 	AnnotationPrometheusPort   = "prometheus.io/port"
 	AnnotationManaged          = "compute.functionmesh.io/managed"
@@ -248,16 +251,6 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 	var podVolumes = volumes
 	// there must be a download path specified, we need to create an init container and emptyDir volume
 	if len(volumeMounts) > 0 {
-		if pulsar.AuthConfig != nil && pulsar.AuthConfig.OAuth2Config != nil {
-			volumeMounts = append(volumeMounts, generateVolumeMountFromOAuth2Config(pulsar.AuthConfig.OAuth2Config))
-		}
-
-		if !reflect.ValueOf(pulsar.TLSConfig).IsNil() && pulsar.TLSConfig.HasSecretVolume() {
-			volumeMounts = append(volumeMounts, generateVolumeMountFromTLSConfig(pulsar.TLSConfig))
-		}
-
-		volumeMounts = append(volumeMounts, definedVolumeMounts...)
-
 		var downloadPath, componentPackage string
 		if javaRuntime != nil {
 			downloadPath = javaRuntime.JarLocation
@@ -269,6 +262,18 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 			downloadPath = goRuntime.GoLocation
 			componentPackage = goRuntime.Go
 		}
+
+		// mount auth and tls related VolumeMounts when download package from pulsar
+		if !hasHTTPPrefix(downloadPath) {
+			if pulsar.AuthConfig != nil && pulsar.AuthConfig.OAuth2Config != nil {
+				volumeMounts = append(volumeMounts, generateVolumeMountFromOAuth2Config(pulsar.AuthConfig.OAuth2Config))
+			}
+
+			if !reflect.ValueOf(pulsar.TLSConfig).IsNil() && pulsar.TLSConfig.HasSecretVolume() {
+				volumeMounts = append(volumeMounts, generateVolumeMountFromTLSConfig(pulsar.TLSConfig))
+			}
+		}
+		volumeMounts = append(volumeMounts, definedVolumeMounts...)
 
 		image := downloaderImage
 		if image == "" {
@@ -511,6 +516,10 @@ func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvide
 func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, authProvided bool, tlsConfig TLSConfig,
 	authConfig *v1alpha1.AuthConfig) []string {
 	var args []string
+	if hasHTTPPrefix(downloadPath) {
+		args = append(args, "wget", downloadPath, "-O", componentPackage)
+		return args
+	}
 	// activate oauth2 for pulsarctl
 	if authConfig != nil && authConfig.OAuth2Config != nil {
 		args = []string{
@@ -831,6 +840,11 @@ func hasPackageNamePrefix(packagesName string) bool {
 	return strings.HasPrefix(packagesName, PackageNameFunctionPrefix) ||
 		strings.HasPrefix(packagesName, PackageNameSinkPrefix) ||
 		strings.HasPrefix(packagesName, PackageNameSourcePrefix)
+}
+
+func hasHTTPPrefix(packageName string) bool {
+	return strings.HasPrefix(packageName, HTTPPrefix) ||
+		strings.HasPrefix(packageName, HTTPSPrefix)
 }
 
 func setShardIDEnvironmentVariableCommand() string {

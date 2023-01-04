@@ -164,6 +164,23 @@ func TestGetDownloadCommand(t *testing.T) {
 				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
 			},
 		},
+		{"http://aaa.bbb.ccc/test.jar", "function-package.jar",
+			&v1alpha1.PulsarTLSConfig{
+				TLSConfig: v1alpha1.TLSConfig{
+					Enabled:              true,
+					AllowInsecure:        true,
+					HostnameVerification: false,
+					CertSecretName:       "test-secret",
+					CertSecretKey:        "test-key",
+				},
+			}, nil,
+			[]string{
+				"wget",
+				"http://aaa.bbb.ccc/test.jar",
+				"-O",
+				"function-package.jar",
+			},
+		},
 	}
 
 	for _, v := range testData {
