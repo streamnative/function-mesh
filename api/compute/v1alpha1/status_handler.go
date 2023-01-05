@@ -1,3 +1,20 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package v1alpha1
 
 import (
@@ -60,10 +77,10 @@ const (
 
 // SaveStatus will trigger Function object update to save the current status
 // conditions
-func (r *Function) SaveStatus(ctx context.Context, logger logr.Logger, cl client.Client) {
+func (r *Function) SaveStatus(ctx context.Context, logger logr.Logger, c client.Client) {
 	logger.Info("Updating status on FunctionStatus", "resource version", r.ResourceVersion)
 
-	err := cl.Status().Update(ctx, r)
+	err := c.Status().Update(ctx, r)
 	if err != nil {
 		logger.Error(err, "failed to update status on FunctionStatus", "function", r)
 	} else {
@@ -82,10 +99,10 @@ func (r *Function) SetCondition(component Component, condition *metav1.Condition
 
 // SaveStatus will trigger Sink object update to save the current status
 // conditions
-func (r *Sink) SaveStatus(ctx context.Context, logger logr.Logger, cl client.Client) {
+func (r *Sink) SaveStatus(ctx context.Context, logger logr.Logger, c client.Client) {
 	logger.Info("Updating status on SinkStatus", "resource version", r.ResourceVersion)
 
-	err := cl.Status().Update(ctx, r)
+	err := c.Status().Update(ctx, r)
 	if err != nil {
 		logger.Error(err, "failed to update status on SinkStatus", "sink", r)
 	} else {
@@ -104,10 +121,10 @@ func (r *Sink) SetCondition(component Component, condition *metav1.Condition) *S
 
 // SaveStatus will trigger Source object update to save the current status
 // conditions
-func (r *Source) SaveStatus(ctx context.Context, logger logr.Logger, cl client.Client) {
+func (r *Source) SaveStatus(ctx context.Context, logger logr.Logger, c client.Client) {
 	logger.Info("Updating status on SourceStatus", "resource version", r.ResourceVersion)
 
-	err := cl.Status().Update(ctx, r)
+	err := c.Status().Update(ctx, r)
 	if err != nil {
 		logger.Error(err, "failed to update status on SourceStatus", "source", r)
 	} else {
@@ -126,10 +143,10 @@ func (r *Source) SetCondition(component Component, condition *metav1.Condition) 
 
 // SaveStatus will trigger FunctionMesh object update to save the current status
 // conditions
-func (r *FunctionMesh) SaveStatus(ctx context.Context, logger logr.Logger, cl client.Client) {
+func (r *FunctionMesh) SaveStatus(ctx context.Context, logger logr.Logger, c client.Client) {
 	logger.Info("Updating status on FunctionMeshStatus", "resource version", r.ResourceVersion)
 
-	err := cl.Status().Update(ctx, r)
+	err := c.Status().Update(ctx, r)
 	if err != nil {
 		logger.Error(err, "failed to update status on FunctionMeshStatus", "functionmesh", r)
 	} else {
