@@ -73,7 +73,7 @@ const (
 
 // SaveStatus will trigger Function object update to save the current status
 // conditions
-func (r *Function) SaveStatus(ctx context.Context, logger logr.Logger, c client.Client) {
+func (r *Function) SaveStatus(ctx context.Context, logger logr.Logger, c client.StatusClient) {
 	logger.Info("Updating status on FunctionStatus", "resource version", r.ResourceVersion)
 
 	err := c.Status().Update(ctx, r)
@@ -95,7 +95,7 @@ func (r *Function) SetCondition(component Component, condition *metav1.Condition
 
 // SaveStatus will trigger Sink object update to save the current status
 // conditions
-func (r *Sink) SaveStatus(ctx context.Context, logger logr.Logger, c client.Client) {
+func (r *Sink) SaveStatus(ctx context.Context, logger logr.Logger, c client.StatusClient) {
 	logger.Info("Updating status on SinkStatus", "resource version", r.ResourceVersion)
 
 	err := c.Status().Update(ctx, r)
@@ -117,7 +117,7 @@ func (r *Sink) SetCondition(component Component, condition *metav1.Condition) *S
 
 // SaveStatus will trigger Source object update to save the current status
 // conditions
-func (r *Source) SaveStatus(ctx context.Context, logger logr.Logger, c client.Client) {
+func (r *Source) SaveStatus(ctx context.Context, logger logr.Logger, c client.StatusClient) {
 	logger.Info("Updating status on SourceStatus", "resource version", r.ResourceVersion)
 
 	err := c.Status().Update(ctx, r)
@@ -139,7 +139,7 @@ func (r *Source) SetCondition(component Component, condition *metav1.Condition) 
 
 // SaveStatus will trigger FunctionMesh object update to save the current status
 // conditions
-func (r *FunctionMesh) SaveStatus(ctx context.Context, logger logr.Logger, c client.Client) {
+func (r *FunctionMesh) SaveStatus(ctx context.Context, logger logr.Logger, c client.StatusClient) {
 	logger.Info("Updating status on FunctionMeshStatus", "resource version", r.ResourceVersion)
 
 	err := c.Status().Update(ctx, r)
