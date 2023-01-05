@@ -26,7 +26,6 @@ import (
 	pctlutil "github.com/streamnative/pulsarctl/pkg/pulsar/utils"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
@@ -336,37 +335,6 @@ const (
 	VPA         Component = "VerticalPodAutoscaler"
 )
 
-// The `Status` of a given `Condition` and the `Action` needed to reach the `Status`
-type ResourceCondition struct {
-	Condition ResourceConditionType  `json:"condition,omitempty"`
-	Status    metav1.ConditionStatus `json:"status,omitempty"`
-	Action    ReconcileAction        `json:"action,omitempty"`
-}
-
-type ResourceConditionType string
-
-const (
-	MeshReady     ResourceConditionType = "MeshReady"
-	FunctionReady ResourceConditionType = "FunctionReady"
-	SourceReady   ResourceConditionType = "SourceReady"
-	SinkReady     ResourceConditionType = "SinkReady"
-
-	StatefulSetReady ResourceConditionType = "StatefulSetReady"
-	ServiceReady     ResourceConditionType = "ServiceReady"
-	HPAReady         ResourceConditionType = "HPAReady"
-	VPAReady         ResourceConditionType = "VPAReady"
-)
-
-type ReconcileAction string
-
-const (
-	Create   ReconcileAction = "Create"
-	Delete   ReconcileAction = "Delete"
-	Update   ReconcileAction = "Update"
-	Wait     ReconcileAction = "Wait"
-	NoAction ReconcileAction = "NoAction"
-)
-
 // ProcessGuarantee enum type
 // +kubebuilder:validation:Enum=atleast_once;atmost_once;effectively_once
 type ProcessGuarantee string
@@ -633,10 +601,4 @@ type Liveness struct {
 	// some functions may take a long time to start up(like download packages), so we need to set the initial delay
 	// +kubebuilder:validation:Optional
 	InitialDelaySeconds int32 `json:"initialDelaySeconds,omitempty"`
-}
-
-func (rc *ResourceCondition) SetCondition(condition ResourceConditionType, action ReconcileAction, status metav1.ConditionStatus) {
-	rc.Condition = condition
-	rc.Action = action
-	rc.Status = status
 }

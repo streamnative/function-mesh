@@ -26,53 +26,49 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type FunctionMeshConditionType string
+type ResourceConditionType string
 
 const (
 	// Created indicates the resource has been created
-	Created FunctionMeshConditionType = "Created"
-	// Terminated indicates the resource has been terminated
-	Terminated FunctionMeshConditionType = "Terminated"
+	Created ResourceConditionType = "Created"
 	// Error indicates the resource had an error
-	Error FunctionMeshConditionType = "Error"
+	Error ResourceConditionType = "Error"
 	// Pending indicates the resource hasn't been created
-	Pending FunctionMeshConditionType = "Pending"
+	Pending ResourceConditionType = "Pending"
 	// Orphaned indicates that the resource is marked for deletion but hasn't
 	// been deleted yet
-	Orphaned FunctionMeshConditionType = "Orphaned"
-	// Unknown indicates the status is unavailable
-	Unknown FunctionMeshConditionType = "Unknown"
+	Orphaned ResourceConditionType = "Orphaned"
 	// Ready indicates the object is fully created
-	Ready FunctionMeshConditionType = "Ready"
+	Ready ResourceConditionType = "Ready"
 )
 
-type FunctionMeshConditionReason string
+type ResourceConditionReason string
 
 const (
-	ErrorCreatingStatefulSet FunctionMeshConditionReason = "ErrorCreatingStatefulSet"
-	ErrorCreatingFunction    FunctionMeshConditionReason = "ErrorCreatingFunction"
-	ErrorCreatingSource      FunctionMeshConditionReason = "ErrorCreatingSource"
-	ErrorCreatingSink        FunctionMeshConditionReason = "ErrorCreatingSink"
-	ErrorCreatingHPA         FunctionMeshConditionReason = "ErrorCreatingHPA"
-	ErrorCreatingVPA         FunctionMeshConditionReason = "ErrorCreatingVPA"
-	ErrorCreatingService     FunctionMeshConditionReason = "ErrorCreatingService"
-	StatefulSetError         FunctionMeshConditionReason = "StatefulSetError"
-	FunctionError            FunctionMeshConditionReason = "FunctionError"
-	SourceError              FunctionMeshConditionReason = "SourceError"
-	SinkError                FunctionMeshConditionReason = "SinkError"
-	ServiceError             FunctionMeshConditionReason = "ServiceError"
-	HPAError                 FunctionMeshConditionReason = "HPAError"
-	VPAError                 FunctionMeshConditionReason = "VPAError"
-	PendingCreation          FunctionMeshConditionReason = "PendingCreation"
-	PendingTermination       FunctionMeshConditionReason = "PendingTermination"
-	ServiceIsReady           FunctionMeshConditionReason = "ServiceIsReady"
-	MeshIsReady              FunctionMeshConditionReason = "MeshIsReady"
-	StatefulSetIsReady       FunctionMeshConditionReason = "StatefulSetIsReady"
-	HPAIsReady               FunctionMeshConditionReason = "HPAIsReady"
-	VPAIsReady               FunctionMeshConditionReason = "VPAIsReady"
-	FunctionIsReady          FunctionMeshConditionReason = "FunctionIsReady"
-	SourceIsReady            FunctionMeshConditionReason = "SourceIsReady"
-	SinkIsReady              FunctionMeshConditionReason = "SinkIsReady"
+	ErrorCreatingStatefulSet ResourceConditionReason = "ErrorCreatingStatefulSet"
+	ErrorCreatingFunction    ResourceConditionReason = "ErrorCreatingFunction"
+	ErrorCreatingSource      ResourceConditionReason = "ErrorCreatingSource"
+	ErrorCreatingSink        ResourceConditionReason = "ErrorCreatingSink"
+	ErrorCreatingHPA         ResourceConditionReason = "ErrorCreatingHPA"
+	ErrorCreatingVPA         ResourceConditionReason = "ErrorCreatingVPA"
+	ErrorCreatingService     ResourceConditionReason = "ErrorCreatingService"
+	StatefulSetError         ResourceConditionReason = "StatefulSetError"
+	FunctionError            ResourceConditionReason = "FunctionError"
+	SourceError              ResourceConditionReason = "SourceError"
+	SinkError                ResourceConditionReason = "SinkError"
+	ServiceError             ResourceConditionReason = "ServiceError"
+	HPAError                 ResourceConditionReason = "HPAError"
+	VPAError                 ResourceConditionReason = "VPAError"
+	PendingCreation          ResourceConditionReason = "PendingCreation"
+	PendingTermination       ResourceConditionReason = "PendingTermination"
+	ServiceIsReady           ResourceConditionReason = "ServiceIsReady"
+	MeshIsReady              ResourceConditionReason = "MeshIsReady"
+	StatefulSetIsReady       ResourceConditionReason = "StatefulSetIsReady"
+	HPAIsReady               ResourceConditionReason = "HPAIsReady"
+	VPAIsReady               ResourceConditionReason = "VPAIsReady"
+	FunctionIsReady          ResourceConditionReason = "FunctionIsReady"
+	SourceIsReady            ResourceConditionReason = "SourceIsReady"
+	SinkIsReady              ResourceConditionReason = "SinkIsReady"
 )
 
 // SaveStatus will trigger Function object update to save the current status
@@ -188,8 +184,8 @@ func (r *FunctionMesh) SetSourceCondition(name string, condition *metav1.Conditi
 }
 
 // CreateCondition initializes a new status condition
-func CreateCondition(condType FunctionMeshConditionType, status metav1.ConditionStatus,
-	reason FunctionMeshConditionReason, message string) *metav1.Condition {
+func CreateCondition(condType ResourceConditionType, status metav1.ConditionStatus,
+	reason ResourceConditionReason, message string) *metav1.Condition {
 	cond := &metav1.Condition{
 		Type:               string(condType),
 		Status:             status,
