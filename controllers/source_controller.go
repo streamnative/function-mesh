@@ -21,9 +21,6 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/spec"
-	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -35,6 +32,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
+	"github.com/streamnative/function-mesh/utils"
 )
 
 // SourceReconciler reconciles a Source object
@@ -72,10 +73,6 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return reconcile.Result{}, nil
 	}
 
-	if source.Status.Conditions == nil {
-		source.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
-	}
-
 	err = r.ObserveSourceStatefulSet(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -94,11 +91,6 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return reconcile.Result{}, err
 		}
 	}
-	err = r.Status().Update(ctx, source)
-	if err != nil {
-		r.Log.Error(err, "failed to update source status")
-		return ctrl.Result{}, err
-	}
 
 	isNewGeneration := r.checkIfSourceGenerationsIsIncreased(source)
 
@@ -114,17 +106,14 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySourceVPA(ctx, source)
-	if err != nil {
-		return reconcile.Result{}, err
+	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+		err = r.ApplySourceVPA(ctx, source, isNewGeneration)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
-	source.Status.ObservedGeneration = source.Generation
-	err = r.Status().Update(ctx, source)
-	if err != nil {
-		r.Log.Error(err, "failed to update source status")
-		return ctrl.Result{}, err
-	}
+	r.UpdateObservedGeneration(ctx, source)
 	return ctrl.Result{}, nil
 }
 

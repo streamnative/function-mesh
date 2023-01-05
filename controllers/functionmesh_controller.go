@@ -20,15 +20,15 @@ package controllers
 import (
 	"context"
 
-	"github.com/streamnative/function-mesh/controllers/spec"
-
 	"github.com/go-logr/logr"
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
 )
 
 // FunctionMeshReconciler reconciles a FunctionMesh object
@@ -62,32 +62,10 @@ func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, nil
 	}
 
-	// initialize component status map
-	if mesh.Status.FunctionConditions == nil {
-		mesh.Status.FunctionConditions = make(map[string]v1alpha1.ResourceCondition)
-	}
-	if mesh.Status.SourceConditions == nil {
-		mesh.Status.SourceConditions = make(map[string]v1alpha1.ResourceCondition)
-	}
-	if mesh.Status.SinkConditions == nil {
-		mesh.Status.SinkConditions = make(map[string]v1alpha1.ResourceCondition)
-	}
-	if mesh.Status.Condition == nil {
-		mesh.Status.Condition = &v1alpha1.ResourceCondition{}
-	}
-
-	// TODO validate function spec correctness such as no duplicated func name etc
-
 	// make observations
 	err = r.ObserveFunctionMesh(ctx, req, mesh)
 	if err != nil {
 		return reconcile.Result{}, err
-	}
-
-	err = r.Status().Update(ctx, mesh)
-	if err != nil {
-		r.Log.Error(err, "failed to update mesh status")
-		return ctrl.Result{}, err
 	}
 
 	isNewGeneration := r.checkIfFunctionMeshGenerationsIsIncreased(mesh)
@@ -98,12 +76,7 @@ func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, err
 	}
 
-	mesh.Status.ObservedGeneration = mesh.Generation
-	err = r.Status().Update(ctx, mesh)
-	if err != nil {
-		r.Log.Error(err, "failed to update functionmesh status")
-		return ctrl.Result{}, err
-	}
+	r.UpdateObservedGeneration(ctx, mesh)
 	return ctrl.Result{}, nil
 }
 

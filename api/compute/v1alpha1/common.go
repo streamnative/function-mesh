@@ -19,20 +19,17 @@ package v1alpha1
 
 import (
 	"encoding/json"
-	"strconv"
-
-	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
-
 	"fmt"
+	"strconv"
 	"strings"
 
-	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
-
 	pctlutil "github.com/streamnative/pulsarctl/pkg/pulsar/utils"
+	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 )
 
 type Messaging struct {
@@ -349,8 +346,6 @@ type ResourceCondition struct {
 type ResourceConditionType string
 
 const (
-	Orphaned ResourceConditionType = "Orphaned"
-
 	MeshReady     ResourceConditionType = "MeshReady"
 	FunctionReady ResourceConditionType = "FunctionReady"
 	SourceReady   ResourceConditionType = "SourceReady"
@@ -550,15 +545,6 @@ func validateResourcePolicy(resourcePolicy *vpav1.PodResourcePolicy) field.Error
 		}
 	}
 	return errs
-}
-
-func CreateCondition(condType ResourceConditionType, status metav1.ConditionStatus, action ReconcileAction) ResourceCondition {
-	condition := ResourceCondition{
-		Condition: condType,
-		Status:    status,
-		Action:    action,
-	}
-	return condition
 }
 
 const (

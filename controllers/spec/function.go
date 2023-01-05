@@ -18,14 +18,17 @@
 package spec
 
 import (
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscaling "k8s.io/api/autoscaling/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/utils"
 )
 
 // log is for logging in this package.
@@ -179,4 +182,14 @@ func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
 	}
 	log.Info(string(json))
 	return string(json)
+}
+
+func MakeFunctionVPA(function *v1alpha1.Function) *vpav1.VerticalPodAutoscaler {
+	objectMeta := MakeFunctionObjectMeta(function)
+	targetRef := &autoscaling.CrossVersionObjectReference{
+		Kind:       function.Kind,
+		Name:       function.Name,
+		APIVersion: function.APIVersion,
+	}
+	return makeVPA(objectMeta, targetRef, function.Spec.Pod.VPA)
 }

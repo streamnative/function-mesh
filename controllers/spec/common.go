@@ -27,14 +27,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/proto"
-	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/proto"
+	"github.com/streamnative/function-mesh/utils"
 )
 
 const (
@@ -1710,6 +1712,15 @@ func CheckIfHPASpecIsEqual(spec *autov2beta2.HorizontalPodAutoscalerSpec,
 				return false
 			}
 		}
+	}
+	return true
+}
+
+func CheckIfVPASpecIsEqual(spec *vpav1.VerticalPodAutoscalerSpec,
+	desiredSpec *vpav1.VerticalPodAutoscalerSpec) bool {
+	if !reflect.DeepEqual(spec.UpdatePolicy, desiredSpec.UpdatePolicy) ||
+		!reflect.DeepEqual(spec.ResourcePolicy, desiredSpec.ResourcePolicy) {
+		return false
 	}
 	return true
 }

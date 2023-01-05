@@ -21,9 +21,6 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/spec"
-	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -35,6 +32,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
+	"github.com/streamnative/function-mesh/utils"
 )
 
 // SinkReconciler reconciles a Topic object
@@ -72,10 +73,6 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return reconcile.Result{}, nil
 	}
 
-	if sink.Status.Conditions == nil {
-		sink.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
-	}
-
 	err = r.ObserveSinkStatefulSet(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -94,11 +91,6 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			return reconcile.Result{}, err
 		}
 	}
-	err = r.Status().Update(ctx, sink)
-	if err != nil {
-		r.Log.Error(err, "failed to update sink status")
-		return ctrl.Result{}, err
-	}
 
 	isNewGeneration := r.checkIfSinkGenerationsIsIncreased(sink)
 
@@ -114,17 +106,14 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySinkVPA(ctx, sink)
-	if err != nil {
-		return reconcile.Result{}, err
+	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+		err = r.ApplySinkVPA(ctx, sink, isNewGeneration)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
-	sink.Status.ObservedGeneration = sink.Generation
-	err = r.Status().Update(ctx, sink)
-	if err != nil {
-		r.Log.Error(err, "failed to update sink status")
-		return ctrl.Result{}, err
-	}
+	r.UpdateObservedGeneration(ctx, sink)
 	return ctrl.Result{}, nil
 }
 

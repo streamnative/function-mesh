@@ -22,7 +22,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/streamnative/function-mesh/controllers/spec"
 )
 
@@ -31,13 +32,13 @@ var _ = Describe("FunctionMesh Controller", func() {
 		pulsarConfig := makeSamplePulsarConfig()
 		mesh := makeFunctionMeshSample()
 		if mesh.Status.FunctionConditions == nil {
-			mesh.Status.FunctionConditions = make(map[string]v1alpha1.ResourceCondition)
+			mesh.Status.FunctionConditions = make(map[string]metav1.Condition)
 		}
 		if mesh.Status.SourceConditions == nil {
-			mesh.Status.SourceConditions = make(map[string]v1alpha1.ResourceCondition)
+			mesh.Status.SourceConditions = make(map[string]metav1.Condition)
 		}
 		if mesh.Status.SinkConditions == nil {
-			mesh.Status.SinkConditions = make(map[string]v1alpha1.ResourceCondition)
+			mesh.Status.SinkConditions = make(map[string]metav1.Condition)
 		}
 
 		It("Should create pulsar configmap successfully", func() {
