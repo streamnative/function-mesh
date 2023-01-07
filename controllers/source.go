@@ -35,8 +35,6 @@ import (
 )
 
 func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, source *v1alpha1.Source) error {
-	defer source.SaveStatus(ctx, r.Log, r.Client)
-
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
 		Namespace: source.Namespace,
@@ -89,8 +87,6 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, source 
 }
 
 func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
-	defer source.SaveStatus(ctx, r.Log, r.Client)
-
 	condition := source.Status.Conditions[v1alpha1.StatefulSet]
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
@@ -118,8 +114,6 @@ func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v
 }
 
 func (r *SourceReconciler) ObserveSourceService(ctx context.Context, source *v1alpha1.Source) error {
-	defer source.SaveStatus(ctx, r.Log, r.Client)
-
 	svc := &corev1.Service{}
 	svcName := spec.MakeHeadlessServiceName(spec.MakeSourceObjectMeta(source).Name)
 	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
@@ -147,8 +141,6 @@ func (r *SourceReconciler) ObserveSourceService(ctx context.Context, source *v1a
 }
 
 func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
-	defer source.SaveStatus(ctx, r.Log, r.Client)
-
 	condition := source.Status.Conditions[v1alpha1.Service]
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
@@ -176,8 +168,6 @@ func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alp
 }
 
 func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, source *v1alpha1.Source) error {
-	defer source.SaveStatus(ctx, r.Log, r.Client)
-
 	if source.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		delete(source.Status.Conditions, v1alpha1.HPA)
@@ -217,8 +207,6 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, source *v1alpha
 }
 
 func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
-	defer source.SaveStatus(ctx, r.Log, r.Client)
-
 	if source.Spec.MaxReplicas == nil {
 		// HPA not enabled, clear the exists HPA
 		hpa := &autov2beta2.HorizontalPodAutoscaler{}
@@ -263,8 +251,6 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.
 }
 
 func (r *SourceReconciler) ObserveSourceVPA(ctx context.Context, source *v1alpha1.Source) error {
-	defer source.SaveStatus(ctx, r.Log, r.Client)
-
 	if source.Spec.Pod.VPA == nil {
 		delete(source.Status.Conditions, v1alpha1.VPA)
 		return nil
@@ -305,8 +291,6 @@ func (r *SourceReconciler) ObserveSourceVPA(ctx context.Context, source *v1alpha
 }
 
 func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
-	defer source.SaveStatus(ctx, r.Log, r.Client)
-
 	if source.Spec.Pod.VPA == nil {
 		// VPA not enabled, clear the exists VPA
 		vpa := &vpav1.VerticalPodAutoscaler{}
@@ -351,7 +335,6 @@ func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.
 }
 
 func (r *SourceReconciler) UpdateObservedGeneration(ctx context.Context, source *v1alpha1.Source) {
-	defer source.SaveStatus(ctx, r.Log, r.Client)
 	source.Status.ObservedGeneration = source.Generation
 }
 

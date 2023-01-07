@@ -35,8 +35,6 @@ import (
 )
 
 func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, sink *v1alpha1.Sink) error {
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
-
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
 		Namespace: sink.Namespace,
@@ -89,8 +87,6 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, sink *v1alp
 }
 
 func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
-
 	condition := sink.Status.Conditions[v1alpha1.StatefulSet]
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
@@ -118,8 +114,6 @@ func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha
 }
 
 func (r *SinkReconciler) ObserveSinkService(ctx context.Context, sink *v1alpha1.Sink) error {
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
-
 	svc := &corev1.Service{}
 	svcName := spec.MakeHeadlessServiceName(spec.MakeSinkObjectMeta(sink).Name)
 	err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace,
@@ -147,8 +141,6 @@ func (r *SinkReconciler) ObserveSinkService(ctx context.Context, sink *v1alpha1.
 }
 
 func (r *SinkReconciler) ApplySinkService(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
-
 	condition := sink.Status.Conditions[v1alpha1.Service]
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
@@ -176,8 +168,6 @@ func (r *SinkReconciler) ApplySinkService(ctx context.Context, sink *v1alpha1.Si
 }
 
 func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, sink *v1alpha1.Sink) error {
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
-
 	if sink.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		delete(sink.Status.Conditions, v1alpha1.HPA)
@@ -217,8 +207,6 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, sink *v1alpha1.Sink
 }
 
 func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
-
 	if sink.Spec.MaxReplicas == nil {
 		// HPA not enabled, clear the exists HPA
 		hpa := &autov2beta2.HorizontalPodAutoscaler{}
@@ -263,8 +251,6 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, 
 }
 
 func (r *SinkReconciler) ObserveSinkVPA(ctx context.Context, sink *v1alpha1.Sink) error {
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
-
 	if sink.Spec.Pod.VPA == nil {
 		delete(sink.Status.Conditions, v1alpha1.VPA)
 		return nil
@@ -305,8 +291,6 @@ func (r *SinkReconciler) ObserveSinkVPA(ctx context.Context, sink *v1alpha1.Sink
 }
 
 func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
-
 	if sink.Spec.Pod.VPA == nil {
 		// VPA not enabled, clear the exists VPA
 		vpa := &vpav1.VerticalPodAutoscaler{}
@@ -351,7 +335,6 @@ func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink, 
 }
 
 func (r *SinkReconciler) UpdateObservedGeneration(ctx context.Context, sink *v1alpha1.Sink) {
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
 	sink.Status.ObservedGeneration = sink.Generation
 }
 

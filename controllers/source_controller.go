@@ -73,6 +73,8 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return reconcile.Result{}, nil
 	}
 
+	defer source.SaveStatus(ctx, r.Log, r.Client)
+
 	err = r.ObserveSourceStatefulSet(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err

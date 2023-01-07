@@ -62,6 +62,8 @@ func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, nil
 	}
 
+	defer mesh.SaveStatus(ctx, r.Log, r.Client)
+
 	// make observations
 	err = r.ObserveFunctionMesh(ctx, req, mesh)
 	if err != nil {

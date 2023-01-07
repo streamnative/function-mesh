@@ -73,6 +73,8 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return reconcile.Result{}, nil
 	}
 
+	defer sink.SaveStatus(ctx, r.Log, r.Client)
+
 	err = r.ObserveSinkStatefulSet(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err

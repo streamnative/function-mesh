@@ -35,8 +35,6 @@ import (
 )
 
 func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function) error {
-	defer function.SaveStatus(ctx, r.Log, r.Client)
-
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
 		Namespace: function.Namespace,
@@ -89,8 +87,6 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, fun
 }
 
 func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
-	defer function.SaveStatus(ctx, r.Log, r.Client)
-
 	condition := function.Status.Conditions[v1alpha1.StatefulSet]
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
@@ -118,8 +114,6 @@ func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, funct
 }
 
 func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, function *v1alpha1.Function) error {
-	defer function.SaveStatus(ctx, r.Log, r.Client)
-
 	svc := &corev1.Service{}
 	svcName := spec.MakeHeadlessServiceName(spec.MakeFunctionObjectMeta(function).Name)
 	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace,
@@ -147,8 +141,6 @@ func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, functio
 }
 
 func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
-	defer function.SaveStatus(ctx, r.Log, r.Client)
-
 	condition := function.Status.Conditions[v1alpha1.Service]
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
@@ -176,8 +168,6 @@ func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function 
 }
 
 func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *v1alpha1.Function) error {
-	defer function.SaveStatus(ctx, r.Log, r.Client)
-
 	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		delete(function.Status.Conditions, v1alpha1.HPA)
@@ -217,8 +207,6 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *v
 }
 
 func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
-	defer function.SaveStatus(ctx, r.Log, r.Client)
-
 	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, clear the exists HPA
 		hpa := &autov2beta2.HorizontalPodAutoscaler{}
@@ -263,8 +251,6 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1a
 }
 
 func (r *FunctionReconciler) ObserveFunctionVPA(ctx context.Context, function *v1alpha1.Function) error {
-	defer function.SaveStatus(ctx, r.Log, r.Client)
-
 	if function.Spec.Pod.VPA == nil {
 		delete(function.Status.Conditions, v1alpha1.VPA)
 		return nil
@@ -305,8 +291,6 @@ func (r *FunctionReconciler) ObserveFunctionVPA(ctx context.Context, function *v
 }
 
 func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
-	defer function.SaveStatus(ctx, r.Log, r.Client)
-
 	if function.Spec.Pod.VPA == nil {
 		// VPA not enabled, clear the exists VPA
 		vpa := &vpav1.VerticalPodAutoscaler{}
@@ -351,7 +335,6 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 }
 
 func (r *FunctionReconciler) UpdateObservedGeneration(ctx context.Context, function *v1alpha1.Function) {
-	defer function.SaveStatus(ctx, r.Log, r.Client)
 	function.Status.ObservedGeneration = function.Generation
 }
 

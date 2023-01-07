@@ -74,6 +74,8 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return reconcile.Result{}, nil
 	}
 
+	defer function.SaveStatus(ctx, r.Log, r.Client)
+
 	err = r.ObserveFunctionStatefulSet(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err

@@ -45,14 +45,12 @@ func (r *FunctionMeshReconciler) ObserveFunctionMesh(ctx context.Context, req ct
 	}
 
 	// Observation only
-	r.observeMeshes(ctx, mesh)
+	r.observeMeshes(mesh)
 
 	return nil
 }
 
 func (r *FunctionMeshReconciler) observeFunctions(ctx context.Context, mesh *v1alpha1.FunctionMesh) error {
-	defer mesh.SaveStatus(ctx, r.Log, r.Client)
-
 	orphanedFunctions := map[string]bool{}
 
 	if len(mesh.Status.FunctionConditions) > 0 {
@@ -106,8 +104,6 @@ func (r *FunctionMeshReconciler) observeFunctions(ctx context.Context, mesh *v1a
 }
 
 func (r *FunctionMeshReconciler) observeSources(ctx context.Context, mesh *v1alpha1.FunctionMesh) error {
-	defer mesh.SaveStatus(ctx, r.Log, r.Client)
-
 	orphanedSources := map[string]bool{}
 
 	if len(mesh.Status.SourceConditions) > 0 {
@@ -160,8 +156,6 @@ func (r *FunctionMeshReconciler) observeSources(ctx context.Context, mesh *v1alp
 }
 
 func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha1.FunctionMesh) error {
-	defer mesh.SaveStatus(ctx, r.Log, r.Client)
-
 	orphanedSinks := map[string]bool{}
 
 	if len(mesh.Status.SinkConditions) > 0 {
@@ -213,9 +207,7 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 	return nil
 }
 
-func (r *FunctionMeshReconciler) observeMeshes(ctx context.Context, mesh *v1alpha1.FunctionMesh) {
-	defer mesh.SaveStatus(ctx, r.Log, r.Client)
-
+func (r *FunctionMeshReconciler) observeMeshes(mesh *v1alpha1.FunctionMesh) {
 	for _, cond := range mesh.Status.FunctionConditions {
 		if cond.Type == string(v1alpha1.Ready) && cond.Status == metav1.ConditionTrue {
 			continue
@@ -252,8 +244,6 @@ func (r *FunctionMeshReconciler) observeMeshes(ctx context.Context, mesh *v1alph
 
 func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctrl.Request,
 	mesh *v1alpha1.FunctionMesh, newGeneration bool) error {
-	defer mesh.SaveStatus(ctx, r.Log, r.Client)
-
 	for _, functionSpec := range mesh.Spec.Functions {
 		condition := mesh.Status.FunctionConditions[functionSpec.Name]
 		if !newGeneration &&
@@ -410,7 +400,6 @@ func makeComponentName(prefix, name string) string {
 }
 
 func (r *FunctionMeshReconciler) UpdateObservedGeneration(ctx context.Context, mesh *v1alpha1.FunctionMesh) {
-	defer mesh.SaveStatus(ctx, r.Log, r.Client)
 	mesh.Status.ObservedGeneration = mesh.Generation
 }
 
