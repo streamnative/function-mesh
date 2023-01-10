@@ -86,9 +86,10 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, source 
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
+func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v1alpha1.Source) error {
 	condition := source.Status.Conditions[v1alpha1.StatefulSet]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		source.Generation == source.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -140,9 +141,10 @@ func (r *SourceReconciler) ObserveSourceService(ctx context.Context, source *v1a
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
+func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alpha1.Source) error {
 	condition := source.Status.Conditions[v1alpha1.Service]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		source.Generation == source.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -206,7 +208,7 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, source *v1alpha
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
+func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.Source) error {
 	if source.Spec.MaxReplicas == nil {
 		// HPA not enabled, clear the exists HPA
 		hpa := &autov2beta2.HorizontalPodAutoscaler{}
@@ -225,7 +227,8 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.
 	}
 
 	condition := source.Status.Conditions[v1alpha1.HPA]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		source.Generation == source.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -290,7 +293,7 @@ func (r *SourceReconciler) ObserveSourceVPA(ctx context.Context, source *v1alpha
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
+func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.Source) error {
 	if source.Spec.Pod.VPA == nil {
 		// VPA not enabled, clear the exists VPA
 		vpa := &vpav1.VerticalPodAutoscaler{}
@@ -309,7 +312,8 @@ func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.
 	}
 
 	condition := source.Status.Conditions[v1alpha1.VPA]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		source.Generation == source.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -332,10 +336,6 @@ func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.
 		v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
 		"creating or updating vpa for source..."))
 	return nil
-}
-
-func (r *SourceReconciler) UpdateObservedGeneration(ctx context.Context, source *v1alpha1.Source) {
-	source.Status.ObservedGeneration = source.Generation
 }
 
 func (r *SourceReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet, source *v1alpha1.Source) bool {

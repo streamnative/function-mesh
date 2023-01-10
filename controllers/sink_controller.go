@@ -94,33 +94,28 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 	}
 
-	isNewGeneration := r.checkIfSinkGenerationsIsIncreased(sink)
-
-	err = r.ApplySinkStatefulSet(ctx, sink, isNewGeneration)
+	err = r.ApplySinkStatefulSet(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySinkService(ctx, sink, isNewGeneration)
+	err = r.ApplySinkService(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySinkHPA(ctx, sink, isNewGeneration)
+	err = r.ApplySinkHPA(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		err = r.ApplySinkVPA(ctx, sink, isNewGeneration)
+		err = r.ApplySinkVPA(ctx, sink)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 
-	r.UpdateObservedGeneration(ctx, sink)
+	// update status.ObservedGeneration when reconciliation succeeds
+	sink.Status.ObservedGeneration = sink.Generation
 	return ctrl.Result{}, nil
-}
-
-func (r *SinkReconciler) checkIfSinkGenerationsIsIncreased(sink *v1alpha1.Sink) bool {
-	return sink.Generation != sink.Status.ObservedGeneration
 }
 
 func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {

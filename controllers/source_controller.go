@@ -94,33 +94,28 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	isNewGeneration := r.checkIfSourceGenerationsIsIncreased(source)
-
-	err = r.ApplySourceStatefulSet(ctx, source, isNewGeneration)
+	err = r.ApplySourceStatefulSet(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySourceService(ctx, source, isNewGeneration)
+	err = r.ApplySourceService(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySourceHPA(ctx, source, isNewGeneration)
+	err = r.ApplySourceHPA(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		err = r.ApplySourceVPA(ctx, source, isNewGeneration)
+		err = r.ApplySourceVPA(ctx, source)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 
-	r.UpdateObservedGeneration(ctx, source)
+	// update status.ObservedGeneration when reconciliation succeeds
+	source.Status.ObservedGeneration = source.Generation
 	return ctrl.Result{}, nil
-}
-
-func (r *SourceReconciler) checkIfSourceGenerationsIsIncreased(source *v1alpha1.Source) bool {
-	return source.Generation != source.Status.ObservedGeneration
 }
 
 func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {

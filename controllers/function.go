@@ -86,9 +86,10 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, fun
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
+func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function) error {
 	condition := function.Status.Conditions[v1alpha1.StatefulSet]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		function.Generation == function.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -140,9 +141,10 @@ func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, functio
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
+func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function *v1alpha1.Function) error {
 	condition := function.Status.Conditions[v1alpha1.Service]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		function.Generation == function.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -206,7 +208,7 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *v
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
+func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1alpha1.Function) error {
 	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, clear the exists HPA
 		hpa := &autov2beta2.HorizontalPodAutoscaler{}
@@ -225,7 +227,8 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1a
 	}
 
 	condition := function.Status.Conditions[v1alpha1.HPA]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		function.Generation == function.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -290,7 +293,7 @@ func (r *FunctionReconciler) ObserveFunctionVPA(ctx context.Context, function *v
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
+func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1alpha1.Function) error {
 	if function.Spec.Pod.VPA == nil {
 		// VPA not enabled, clear the exists VPA
 		vpa := &vpav1.VerticalPodAutoscaler{}
@@ -309,7 +312,8 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 	}
 
 	condition := function.Status.Conditions[v1alpha1.VPA]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		function.Generation == function.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -332,10 +336,6 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 		v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
 		"creating or updating vpa for function..."))
 	return nil
-}
-
-func (r *FunctionReconciler) UpdateObservedGeneration(ctx context.Context, function *v1alpha1.Function) {
-	function.Status.ObservedGeneration = function.Generation
 }
 
 func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet, function *v1alpha1.Function) bool {

@@ -95,33 +95,28 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	isNewGeneration := r.checkIfFunctionGenerationsIsIncreased(function)
-
-	err = r.ApplyFunctionStatefulSet(ctx, function, isNewGeneration)
+	err = r.ApplyFunctionStatefulSet(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplyFunctionService(ctx, function, isNewGeneration)
+	err = r.ApplyFunctionService(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplyFunctionHPA(ctx, function, isNewGeneration)
+	err = r.ApplyFunctionHPA(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		err = r.ApplyFunctionVPA(ctx, function, isNewGeneration)
+		err = r.ApplyFunctionVPA(ctx, function)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 
-	r.UpdateObservedGeneration(ctx, function)
+	// update status.ObservedGeneration when reconciliation succeeds
+	function.Status.ObservedGeneration = function.Generation
 	return ctrl.Result{}, nil
-}
-
-func (r *FunctionReconciler) checkIfFunctionGenerationsIsIncreased(function *v1alpha1.Function) bool {
-	return function.Generation != function.Status.ObservedGeneration
 }
 
 func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {

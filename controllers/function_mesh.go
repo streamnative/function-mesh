@@ -243,7 +243,9 @@ func (r *FunctionMeshReconciler) observeMeshes(mesh *v1alpha1.FunctionMesh) {
 }
 
 func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctrl.Request,
-	mesh *v1alpha1.FunctionMesh, newGeneration bool) error {
+	mesh *v1alpha1.FunctionMesh) error {
+	newGeneration := mesh.Generation == mesh.Status.ObservedGeneration
+
 	for _, functionSpec := range mesh.Spec.Functions {
 		condition := mesh.Status.FunctionConditions[functionSpec.Name]
 		if !newGeneration &&
@@ -397,10 +399,6 @@ func (r *FunctionMeshReconciler) CreateOrUpdateSource(ctx context.Context, sourc
 
 func makeComponentName(prefix, name string) string {
 	return prefix + "-" + name
-}
-
-func (r *FunctionMeshReconciler) UpdateObservedGeneration(ctx context.Context, mesh *v1alpha1.FunctionMesh) {
-	mesh.Status.ObservedGeneration = mesh.Generation
 }
 
 func checkComponentsReady(conditions map[v1alpha1.Component]metav1.Condition, isHPAEnabled bool, isVPAEnabled bool) bool {

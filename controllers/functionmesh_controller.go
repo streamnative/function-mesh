@@ -70,20 +70,15 @@ func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, err
 	}
 
-	isNewGeneration := r.checkIfFunctionMeshGenerationsIsIncreased(mesh)
-
 	// apply changes
-	err = r.UpdateFunctionMesh(ctx, req, mesh, isNewGeneration)
+	err = r.UpdateFunctionMesh(ctx, req, mesh)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	r.UpdateObservedGeneration(ctx, mesh)
+	// update status.ObservedGeneration when reconciliation succeeds
+	mesh.Status.ObservedGeneration = mesh.Generation
 	return ctrl.Result{}, nil
-}
-
-func (r *FunctionMeshReconciler) checkIfFunctionMeshGenerationsIsIncreased(mesh *v1alpha1.FunctionMesh) bool {
-	return mesh.Generation != mesh.Status.ObservedGeneration
 }
 
 func (r *FunctionMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {

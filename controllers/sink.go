@@ -86,9 +86,10 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, sink *v1alp
 	return nil
 }
 
-func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
+func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha1.Sink) error {
 	condition := sink.Status.Conditions[v1alpha1.StatefulSet]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		sink.Generation == sink.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -140,9 +141,10 @@ func (r *SinkReconciler) ObserveSinkService(ctx context.Context, sink *v1alpha1.
 	return nil
 }
 
-func (r *SinkReconciler) ApplySinkService(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
+func (r *SinkReconciler) ApplySinkService(ctx context.Context, sink *v1alpha1.Sink) error {
 	condition := sink.Status.Conditions[v1alpha1.Service]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		sink.Generation == sink.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -206,7 +208,7 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, sink *v1alpha1.Sink
 	return nil
 }
 
-func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
+func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink) error {
 	if sink.Spec.MaxReplicas == nil {
 		// HPA not enabled, clear the exists HPA
 		hpa := &autov2beta2.HorizontalPodAutoscaler{}
@@ -225,7 +227,8 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, 
 	}
 
 	condition := sink.Status.Conditions[v1alpha1.HPA]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		sink.Generation == sink.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -290,7 +293,7 @@ func (r *SinkReconciler) ObserveSinkVPA(ctx context.Context, sink *v1alpha1.Sink
 	return nil
 }
 
-func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
+func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink) error {
 	if sink.Spec.Pod.VPA == nil {
 		// VPA not enabled, clear the exists VPA
 		vpa := &vpav1.VerticalPodAutoscaler{}
@@ -309,7 +312,8 @@ func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink, 
 	}
 
 	condition := sink.Status.Conditions[v1alpha1.VPA]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		sink.Generation == sink.Status.ObservedGeneration {
 		return nil
 	}
 
@@ -332,10 +336,6 @@ func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink, 
 		v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
 		"creating or updating vpa for sink..."))
 	return nil
-}
-
-func (r *SinkReconciler) UpdateObservedGeneration(ctx context.Context, sink *v1alpha1.Sink) {
-	sink.Status.ObservedGeneration = sink.Generation
 }
 
 func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet, sink *v1alpha1.Sink) bool {
