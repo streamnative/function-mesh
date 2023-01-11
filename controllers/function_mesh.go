@@ -244,7 +244,7 @@ func (r *FunctionMeshReconciler) observeMeshes(mesh *v1alpha1.FunctionMesh) {
 
 func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctrl.Request,
 	mesh *v1alpha1.FunctionMesh) error {
-	newGeneration := mesh.Generation == mesh.Status.ObservedGeneration
+	newGeneration := mesh.Generation != mesh.Status.ObservedGeneration
 
 	for _, functionSpec := range mesh.Spec.Functions {
 		condition := mesh.Status.FunctionConditions[functionSpec.Name]
