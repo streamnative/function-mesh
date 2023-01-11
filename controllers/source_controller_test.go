@@ -26,11 +26,13 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/spec"
 	appv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
 )
 
 var _ = Describe("Source Controller", func() {
@@ -38,7 +40,7 @@ var _ = Describe("Source Controller", func() {
 		pulsarConfig := makeSamplePulsarConfig()
 		source := makeSourceSample()
 		if source.Status.Conditions == nil {
-			source.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
+			source.Status.Conditions = make(map[v1alpha1.Component]metav1.Condition)
 		}
 		statefulSet := spec.MakeSourceStatefulSet(source)
 

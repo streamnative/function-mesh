@@ -20,10 +20,10 @@ package spec
 import (
 	"testing"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 )
 
 func TestGetValFromPtrOrDefault(t *testing.T) {

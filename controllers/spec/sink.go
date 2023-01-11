@@ -18,13 +18,16 @@
 package spec
 
 import (
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscaling "k8s.io/api/autoscaling/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/utils"
 )
 
 func MakeSinkHPA(sink *v1alpha1.Sink) *autov2beta2.HorizontalPodAutoscaler {
@@ -159,4 +162,14 @@ func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {
 	}
 	log.Info(string(json))
 	return string(json)
+}
+
+func MakeSinkVPA(sink *v1alpha1.Sink) *vpav1.VerticalPodAutoscaler {
+	objectMeta := MakeSinkObjectMeta(sink)
+	targetRef := &autoscaling.CrossVersionObjectReference{
+		Kind:       sink.Kind,
+		Name:       sink.Name,
+		APIVersion: sink.APIVersion,
+	}
+	return makeVPA(objectMeta, targetRef, sink.Spec.Pod.VPA)
 }

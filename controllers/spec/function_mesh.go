@@ -18,8 +18,9 @@
 package spec
 
 import (
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 )
 
 func MakeFunctionComponent(functionName string, mesh *v1alpha1.FunctionMesh,

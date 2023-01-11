@@ -19,31 +19,22 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
-	autoscaling "k8s.io/api/autoscaling/v1"
-
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
 )
 
 func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, source *v1alpha1.Source) error {
-	condition, ok := source.Status.Conditions[v1alpha1.StatefulSet]
-	if !ok {
-		source.Status.Conditions[v1alpha1.StatefulSet] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.StatefulSetReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
-		return nil
-	}
-
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
 		Namespace: source.Namespace,
@@ -51,47 +42,57 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, source 
 	}, statefulSet)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Info("source statefulSet is not ready yet...",
+			r.Log.Info("source statefulset is not ready yet...",
 				"namespace", source.Namespace, "name", source.Name,
-				"statefulSet name", statefulSet.Name)
-			condition.Status = metav1.ConditionFalse
-			condition.Action = v1alpha1.Create
-			source.Status.Conditions[v1alpha1.StatefulSet] = condition
+				"statefulset name", statefulSet.Name)
+			source.SetCondition(v1alpha1.StatefulSet, v1alpha1.CreateCondition(
+				v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"source statefulset is not ready yet..."))
 			return nil
 		}
+		source.SetCondition(v1alpha1.StatefulSet, v1alpha1.CreateCondition(
+			v1alpha1.Error, metav1.ConditionFalse, v1alpha1.StatefulSetError,
+			fmt.Sprintf("failed to fetch source statefulset: %v", err)))
 		return err
 	}
 
 	selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
 	if err != nil {
-		r.Log.Error(err, "error retrieving statefulSet selector")
+		r.Log.Error(err, "error retrieving statefulset selector")
+		source.SetCondition(v1alpha1.StatefulSet, v1alpha1.CreateCondition(
+			v1alpha1.Error, metav1.ConditionFalse, v1alpha1.StatefulSetError,
+			fmt.Sprintf("error retrieving statefulset selector: %v", err)))
 		return err
 	}
 	source.Status.Selector = selector.String()
+	source.Status.Replicas = *source.Spec.Replicas
 
 	if r.checkIfStatefulSetNeedUpdate(statefulSet, source) {
-		condition.Status = metav1.ConditionFalse
-		condition.Action = v1alpha1.Update
-		source.Status.Conditions[v1alpha1.StatefulSet] = condition
+		source.SetCondition(v1alpha1.StatefulSet, v1alpha1.CreateCondition(
+			v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"need to update source statefulset..."))
 		return nil
 	}
 
 	if statefulSet.Status.ReadyReplicas == *source.Spec.Replicas {
-		condition.Action = v1alpha1.NoAction
-	} else {
-		condition.Action = v1alpha1.Wait
+		source.SetCondition(v1alpha1.StatefulSet, v1alpha1.CreateCondition(
+			v1alpha1.Ready, metav1.ConditionTrue, v1alpha1.StatefulSetIsReady,
+			""))
+		return nil
 	}
-	condition.Status = metav1.ConditionTrue
-	source.Status.Replicas = *statefulSet.Spec.Replicas
-	source.Status.Conditions[v1alpha1.StatefulSet] = condition
+	source.SetCondition(v1alpha1.StatefulSet, v1alpha1.CreateCondition(
+		v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+		"source statefulset is pending creation..."))
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
+func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v1alpha1.Source) error {
 	condition := source.Status.Conditions[v1alpha1.StatefulSet]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		source.Generation == source.Status.ObservedGeneration {
 		return nil
 	}
+
 	desiredStatefulSet := spec.MakeSourceStatefulSet(source)
 	desiredStatefulSetSpec := desiredStatefulSet.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
@@ -99,53 +100,54 @@ func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v
 		desiredStatefulSet.Spec = desiredStatefulSetSpec
 		return nil
 	}); err != nil {
-		r.Log.Error(err, "error create or update statefulSet workload for source",
+		r.Log.Error(err, "error create or update statefulset workload for source",
 			"namespace", source.Namespace, "name", source.Name,
-			"statefulSet name", desiredStatefulSet.Name)
+			"statefulset name", desiredStatefulSet.Name)
+		source.SetCondition(v1alpha1.StatefulSet, v1alpha1.CreateCondition(
+			v1alpha1.Error, metav1.ConditionFalse, v1alpha1.ErrorCreatingStatefulSet,
+			fmt.Sprintf("error create or update statefulset workload for source: %v", err)))
 		return err
 	}
+	source.SetCondition(v1alpha1.StatefulSet, v1alpha1.CreateCondition(
+		v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+		"creating or updating statefulset workload for source..."))
 	return nil
 }
 
 func (r *SourceReconciler) ObserveSourceService(ctx context.Context, source *v1alpha1.Source) error {
-	condition, ok := source.Status.Conditions[v1alpha1.Service]
-	if !ok {
-		source.Status.Conditions[v1alpha1.Service] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.ServiceReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
-		return nil
-	}
-
 	svc := &corev1.Service{}
 	svcName := spec.MakeHeadlessServiceName(spec.MakeSourceObjectMeta(source).Name)
 	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
 		Name: svcName}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			condition.Status = metav1.ConditionFalse
-			condition.Action = v1alpha1.Create
-			source.Status.Conditions[v1alpha1.Service] = condition
 			r.Log.Info("source service is not created...",
 				"namespace", source.Namespace, "name", source.Name,
 				"service name", svcName)
+			source.SetCondition(v1alpha1.Service, v1alpha1.CreateCondition(
+				v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"source service is not created..."))
 			return nil
 		}
+		source.SetCondition(v1alpha1.Service, v1alpha1.CreateCondition(
+			v1alpha1.Error, metav1.ConditionFalse, v1alpha1.ServiceError,
+			fmt.Sprintf("failed to fetch source service: %v", err)))
 		return err
 	}
 
-	condition.Action = v1alpha1.NoAction
-	condition.Status = metav1.ConditionTrue
-	source.Status.Conditions[v1alpha1.Service] = condition
+	source.SetCondition(v1alpha1.Service, v1alpha1.CreateCondition(
+		v1alpha1.Ready, metav1.ConditionTrue, v1alpha1.ServiceIsReady,
+		""))
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
+func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alpha1.Source) error {
 	condition := source.Status.Conditions[v1alpha1.Service]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		source.Generation == source.Status.ObservedGeneration {
 		return nil
 	}
+
 	desiredService := spec.MakeSourceService(source)
 	desiredServiceSpec := desiredService.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredService, func() error {
@@ -156,24 +158,21 @@ func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alp
 		r.Log.Error(err, "error create or update service for source",
 			"namespace", source.Namespace, "name", source.Name,
 			"service name", desiredService.Name)
+		source.SetCondition(v1alpha1.Service, v1alpha1.CreateCondition(
+			v1alpha1.Error, metav1.ConditionFalse, v1alpha1.ErrorCreatingService,
+			fmt.Sprintf("error create or update service for source: %v", err)))
 		return err
 	}
+	source.SetCondition(v1alpha1.Service, v1alpha1.CreateCondition(
+		v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+		"creating or updating service for source..."))
 	return nil
 }
 
 func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, source *v1alpha1.Source) error {
 	if source.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
-		return nil
-	}
-
-	condition, ok := source.Status.Conditions[v1alpha1.HPA]
-	if !ok {
-		source.Status.Conditions[v1alpha1.HPA] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.HPAReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
+		delete(source.Status.Conditions, v1alpha1.HPA)
 		return nil
 	}
 
@@ -182,39 +181,57 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, source *v1alpha
 		Name: spec.MakeSourceObjectMeta(source).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			condition.Status = metav1.ConditionFalse
-			condition.Action = v1alpha1.Create
-			source.Status.Conditions[v1alpha1.HPA] = condition
 			r.Log.Info("hpa is not created for source...",
 				"namespace", source.Namespace, "name", source.Name,
 				"hpa name", hpa.Name)
+			source.SetCondition(v1alpha1.HPA, v1alpha1.CreateCondition(
+				v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"hpa is not created for source..."))
 			return nil
 		}
+		source.SetCondition(v1alpha1.HPA, v1alpha1.CreateCondition(
+			v1alpha1.Error, metav1.ConditionFalse, v1alpha1.HPAError,
+			fmt.Sprintf("failed to fetch source hpa: %v", err)))
 		return err
 	}
 
 	if r.checkIfHPANeedUpdate(hpa, source) {
-		condition.Status = metav1.ConditionFalse
-		condition.Action = v1alpha1.Update
-		source.Status.Conditions[v1alpha1.HPA] = condition
+		source.SetCondition(v1alpha1.HPA, v1alpha1.CreateCondition(
+			v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"need to update source hpa..."))
 		return nil
 	}
 
-	condition.Action = v1alpha1.NoAction
-	condition.Status = metav1.ConditionTrue
-	source.Status.Conditions[v1alpha1.HPA] = condition
+	source.SetCondition(v1alpha1.HPA, v1alpha1.CreateCondition(
+		v1alpha1.Ready, metav1.ConditionTrue, v1alpha1.HPAIsReady,
+		""))
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
+func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.Source) error {
 	if source.Spec.MaxReplicas == nil {
-		// HPA not enabled, skip further action
+		// HPA not enabled, clear the exists HPA
+		hpa := &autov2beta2.HorizontalPodAutoscaler{}
+		hpa.Namespace = source.Namespace
+		hpa.Name = spec.MakeSourceObjectMeta(source).Name
+		if err := r.Delete(ctx, hpa); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
+			source.SetCondition(v1alpha1.HPA, v1alpha1.CreateCondition(
+				v1alpha1.Error, metav1.ConditionFalse, v1alpha1.HPAError,
+				fmt.Sprintf("failed to delete source hpa: %v", err)))
+			return err
+		}
 		return nil
 	}
+
 	condition := source.Status.Conditions[v1alpha1.HPA]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if condition.Status == metav1.ConditionTrue &&
+		source.Generation == source.Status.ObservedGeneration {
 		return nil
 	}
+
 	desiredHPA := spec.MakeSourceHPA(source)
 	desiredHPASpec := desiredHPA.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredHPA, func() error {
@@ -225,36 +242,99 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.
 		r.Log.Error(err, "error create or update hpa for source",
 			"namespace", source.Namespace, "name", source.Name,
 			"hpa name", desiredHPA.Name)
+		source.SetCondition(v1alpha1.HPA, v1alpha1.CreateCondition(
+			v1alpha1.Error, metav1.ConditionFalse, v1alpha1.ErrorCreatingHPA,
+			fmt.Sprintf("error create or update hpa for source: %v", err)))
 		return err
 	}
+	source.SetCondition(v1alpha1.HPA, v1alpha1.CreateCondition(
+		v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+		"creating or updating hpa for source..."))
 	return nil
 }
 
 func (r *SourceReconciler) ObserveSourceVPA(ctx context.Context, source *v1alpha1.Source) error {
-	return observeVPA(ctx, r, types.NamespacedName{Namespace: source.Namespace,
-		Name: spec.MakeSourceObjectMeta(source).Name}, source.Spec.Pod.VPA, source.Status.Conditions)
-}
-
-func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.Source) error {
-
-	condition, ok := source.Status.Conditions[v1alpha1.VPA]
-
-	if !ok || condition.Status == metav1.ConditionTrue {
+	if source.Spec.Pod.VPA == nil {
+		delete(source.Status.Conditions, v1alpha1.VPA)
 		return nil
 	}
 
-	objectMeta := spec.MakeSourceObjectMeta(source)
-	targetRef := &autoscaling.CrossVersionObjectReference{
-		Kind:       source.Kind,
-		Name:       source.Name,
-		APIVersion: source.APIVersion,
-	}
-
-	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, source.Spec.Pod.VPA, "source", source.Namespace, source.Name)
+	vpa := &vpav1.VerticalPodAutoscaler{}
+	err := r.Get(ctx, types.NamespacedName{
+		Namespace: source.Namespace,
+		Name:      spec.MakeSourceObjectMeta(source).Name,
+	}, vpa)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			r.Log.Info("vpa is not created for source...",
+				"namespace", source.Namespace, "name", source.Name,
+				"vpa name", vpa.Name)
+			source.SetCondition(v1alpha1.VPA, v1alpha1.CreateCondition(
+				v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"vpa is not created for source..."))
+			return nil
+		}
+		source.SetCondition(v1alpha1.VPA, v1alpha1.CreateCondition(
+			v1alpha1.Error, metav1.ConditionFalse, v1alpha1.VPAError,
+			fmt.Sprintf("failed to fetch source vpa: %v", err)))
 		return err
 	}
 
+	if r.checkIfVPANeedUpdate(vpa, source) {
+		source.SetCondition(v1alpha1.VPA, v1alpha1.CreateCondition(
+			v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"need to update source vpa..."))
+		return nil
+	}
+
+	source.SetCondition(v1alpha1.VPA, v1alpha1.CreateCondition(
+		v1alpha1.Ready, metav1.ConditionTrue, v1alpha1.VPAIsReady,
+		""))
+	return nil
+}
+
+func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.Source) error {
+	if source.Spec.Pod.VPA == nil {
+		// VPA not enabled, clear the exists VPA
+		vpa := &vpav1.VerticalPodAutoscaler{}
+		vpa.Namespace = source.Namespace
+		vpa.Name = spec.MakeSourceObjectMeta(source).Name
+		if err := r.Delete(ctx, vpa); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
+			source.SetCondition(v1alpha1.VPA, v1alpha1.CreateCondition(
+				v1alpha1.Error, metav1.ConditionFalse, v1alpha1.VPAError,
+				fmt.Sprintf("failed to delete source vpa: %v", err)))
+			return err
+		}
+		return nil
+	}
+
+	condition := source.Status.Conditions[v1alpha1.VPA]
+	if condition.Status == metav1.ConditionTrue &&
+		source.Generation == source.Status.ObservedGeneration {
+		return nil
+	}
+
+	desiredVPA := spec.MakeSourceVPA(source)
+	desiredVPASpec := desiredVPA.Spec
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredVPA, func() error {
+		// source vpa mutate logic
+		desiredVPA.Spec = desiredVPASpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error create or update vpa for source",
+			"namespace", source.Namespace, "name", source.Name,
+			"vpa name", desiredVPA.Name)
+		source.SetCondition(v1alpha1.VPA, v1alpha1.CreateCondition(
+			v1alpha1.Error, metav1.ConditionFalse, v1alpha1.ErrorCreatingVPA,
+			fmt.Sprintf("error create or update vpa for source: %v", err)))
+		return err
+	}
+	source.SetCondition(v1alpha1.VPA, v1alpha1.CreateCondition(
+		v1alpha1.Pending, metav1.ConditionFalse, v1alpha1.PendingCreation,
+		"creating or updating vpa for source..."))
 	return nil
 }
 
@@ -264,4 +344,8 @@ func (r *SourceReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.Stat
 
 func (r *SourceReconciler) checkIfHPANeedUpdate(hpa *autov2beta2.HorizontalPodAutoscaler, source *v1alpha1.Source) bool {
 	return !spec.CheckIfHPASpecIsEqual(&hpa.Spec, &spec.MakeSourceHPA(source).Spec)
+}
+
+func (r *SourceReconciler) checkIfVPANeedUpdate(vpa *vpav1.VerticalPodAutoscaler, source *v1alpha1.Source) bool {
+	return !spec.CheckIfVPASpecIsEqual(&vpa.Spec, &spec.MakeSourceVPA(source).Spec)
 }

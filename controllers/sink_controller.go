@@ -21,9 +21,6 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/spec"
-	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -35,6 +32,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
+	"github.com/streamnative/function-mesh/utils"
 )
 
 // SinkReconciler reconciles a Topic object
@@ -72,9 +73,7 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return reconcile.Result{}, nil
 	}
 
-	if sink.Status.Conditions == nil {
-		sink.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
-	}
+	defer sink.SaveStatus(ctx, r.Log, r.Client)
 
 	err = r.ObserveSinkStatefulSet(ctx, sink)
 	if err != nil {
@@ -94,42 +93,29 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			return reconcile.Result{}, err
 		}
 	}
-	err = r.Status().Update(ctx, sink)
+
+	err = r.ApplySinkStatefulSet(ctx, sink)
 	if err != nil {
-		r.Log.Error(err, "failed to update sink status")
-		return ctrl.Result{}, err
+		return reconcile.Result{}, err
+	}
+	err = r.ApplySinkService(ctx, sink)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	err = r.ApplySinkHPA(ctx, sink)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+		err = r.ApplySinkVPA(ctx, sink)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
-	isNewGeneration := r.checkIfSinkGenerationsIsIncreased(sink)
-
-	err = r.ApplySinkStatefulSet(ctx, sink, isNewGeneration)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	err = r.ApplySinkService(ctx, sink, isNewGeneration)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	err = r.ApplySinkHPA(ctx, sink, isNewGeneration)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	err = r.ApplySinkVPA(ctx, sink)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
+	// update status.ObservedGeneration when reconciliation succeeds
 	sink.Status.ObservedGeneration = sink.Generation
-	err = r.Status().Update(ctx, sink)
-	if err != nil {
-		r.Log.Error(err, "failed to update sink status")
-		return ctrl.Result{}, err
-	}
 	return ctrl.Result{}, nil
-}
-
-func (r *SinkReconciler) checkIfSinkGenerationsIsIncreased(sink *v1alpha1.Sink) bool {
-	return sink.Generation != sink.Status.ObservedGeneration
 }
 
 func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
