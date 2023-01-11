@@ -30,11 +30,11 @@ type BuiltinAutoScaler interface {
 }
 
 func isDefaultHPAEnabled(minReplicas, maxReplicas *int32, podPolicy v1alpha1.PodPolicy) bool {
-	return minReplicas != nil && maxReplicas != nil && podPolicy.AutoScalingBehavior == nil && len(podPolicy.AutoScalingMetrics) == 0 && len(podPolicy.BuiltinAutoscaler) == 0 && *maxReplicas > *minReplicas
+	return minReplicas != nil && maxReplicas != nil && podPolicy.AutoScalingBehavior == nil && len(podPolicy.AutoScalingMetrics) == 0 && len(podPolicy.BuiltinAutoscaler) == 0 && *maxReplicas >= *minReplicas
 }
 
 func isBuiltinHPAEnabled(minReplicas, maxReplicas *int32, podPolicy v1alpha1.PodPolicy) bool {
-	return minReplicas != nil && maxReplicas != nil && len(podPolicy.BuiltinAutoscaler) > 0 && *maxReplicas > *minReplicas
+	return minReplicas != nil && maxReplicas != nil && len(podPolicy.BuiltinAutoscaler) > 0 && *maxReplicas >= *minReplicas
 }
 
 type HPARuleAverageUtilizationCPUPercent struct {
