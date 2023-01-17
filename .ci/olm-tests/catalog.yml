@@ -5,4 +5,4 @@ metadata:
   namespace: olm
 spec:
   sourceType: grpc
-  image: kind-registry:5000/streamnativeio/function-mesh-catalog:v0.9.0
+  image: kind-registry:5000/streamnativeio/function-mesh-catalog:v0.10.0
