@@ -1,3 +1,12 @@
+# Function Mesh v0.10.0 Release Notes
+
+## v0.10.0 What's New
+
+* [Controller] Use wget for http/https package in downloader container ([#556](https://github.com/streamnative/function-mesh/pull/556))
+* [Controller] Add exclusivity to the BuiltinHPARule ([#549](https://github.com/streamnative/function-mesh/pull/549))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2023-01+is%3Aclosed+).
+
 # Function Mesh v0.9.0 Release Notes
 
 ## v0.9.0 What's New
