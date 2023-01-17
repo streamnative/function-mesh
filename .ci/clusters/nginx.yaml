@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-demo
+data:
+  default.conf: |
+    server {
+      listen       80;
+
+      # download
+      autoindex on;               # enable directory listing output
+      autoindex_exact_size off;   # output file sizes rounded to kilobytes, megabytes, and gigabytes
+      autoindex_localtime on;     # output local times in the directory
+
+      location / {
+        root /tmp;
+      }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-server
+  labels:
+    app: nginx
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+  type: LoadBalancer
+  selector:
+    app: nginx
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  serviceName: nginx-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.14.2
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-demo
+            items:
+              - key: default.conf
+                path: default.conf
