@@ -21,9 +21,6 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/spec"
-	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -35,6 +32,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
+	"github.com/streamnative/function-mesh/utils"
 )
 
 // FunctionReconciler reconciles a Function object
@@ -73,12 +74,20 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return reconcile.Result{}, nil
 	}
 
-	// initialize component status map
-	if function.Status.Conditions == nil {
-		function.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
+	if result, err := r.observe(ctx, function); err != nil {
+		return result, err
+	}
+	if result, err := r.reconcile(ctx, function); err != nil {
+		return result, err
 	}
 
-	err = r.ObserveFunctionStatefulSet(ctx, function)
+	return ctrl.Result{}, nil
+}
+
+func (r *FunctionReconciler) observe(ctx context.Context, function *v1alpha1.Function) (ctrl.Result, error) {
+	defer function.SaveStatus(ctx, r.Log, r.Client)
+
+	err := r.ObserveFunctionStatefulSet(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -96,42 +105,33 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return reconcile.Result{}, err
 		}
 	}
-	err = r.Status().Update(ctx, function)
-	if err != nil {
-		r.Log.Error(err, "failed to update function status")
-		return ctrl.Result{}, err
-	}
 
-	isNewGeneration := r.checkIfFunctionGenerationsIsIncreased(function)
-
-	err = r.ApplyFunctionStatefulSet(ctx, function, isNewGeneration)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	err = r.ApplyFunctionService(ctx, function, isNewGeneration)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	err = r.ApplyFunctionHPA(ctx, function, isNewGeneration)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	err = r.ApplyFunctionVPA(ctx, function)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	function.Status.ObservedGeneration = function.Generation
-	err = r.Status().Update(ctx, function)
-	if err != nil {
-		r.Log.Error(err, "failed to update function status")
-		return ctrl.Result{}, err
-	}
-	return ctrl.Result{}, nil
+	return reconcile.Result{}, nil
 }
 
-func (r *FunctionReconciler) checkIfFunctionGenerationsIsIncreased(function *v1alpha1.Function) bool {
-	return function.Generation != function.Status.ObservedGeneration
+func (r *FunctionReconciler) reconcile(ctx context.Context, function *v1alpha1.Function) (ctrl.Result, error) {
+	defer function.SaveStatus(ctx, r.Log, r.Client)
+
+	err := r.ObserveFunctionStatefulSet(ctx, function)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	err = r.ObserveFunctionService(ctx, function)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	err = r.ObserveFunctionHPA(ctx, function)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+		err = r.ObserveFunctionVPA(ctx, function)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
+	return reconcile.Result{}, nil
 }
 
 func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {

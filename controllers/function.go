@@ -19,31 +19,23 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
-	autoscaling "k8s.io/api/autoscaling/v1"
-
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
 )
 
 func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function) error {
-	condition, ok := function.Status.Conditions[v1alpha1.StatefulSet]
-	if !ok {
-		function.Status.Conditions[v1alpha1.StatefulSet] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.StatefulSetReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
-		return nil
-	}
-
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
 		Namespace: function.Namespace,
@@ -54,42 +46,34 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, fun
 			r.Log.Info("function statefulSet is not ready yet...",
 				"namespace", function.Namespace, "name", function.Name,
 				"statefulSet name", statefulSet.Name)
-			condition.Status = metav1.ConditionFalse
-			condition.Action = v1alpha1.Create
-			function.Status.Conditions[v1alpha1.StatefulSet] = condition
 			return nil
 		}
+		function.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.StatefulSetError,
+			fmt.Sprintf("error fetching function statefulSet: %v", err))
 		return err
 	}
 
 	selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
 	if err != nil {
 		r.Log.Error(err, "error retrieving statefulSet selector")
+		function.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.StatefulSetError,
+			fmt.Sprintf("error retrieving statefulSet selector: %v", err))
 		return err
 	}
 	function.Status.Selector = selector.String()
 
-	if r.checkIfStatefulSetNeedUpdate(statefulSet, function) {
-		condition.Status = metav1.ConditionFalse
-		condition.Action = v1alpha1.Update
-		function.Status.Conditions[v1alpha1.StatefulSet] = condition
-		return nil
-	}
-
 	if statefulSet.Status.ReadyReplicas == *function.Spec.Replicas {
-		condition.Action = v1alpha1.NoAction
+		function.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionTrue, v1alpha1.StatefulSetIsReady, "")
 	} else {
-		condition.Action = v1alpha1.Wait
+		function.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"wait for the number of replicas of statefulSet to be ready")
 	}
-	condition.Status = metav1.ConditionTrue
 	function.Status.Replicas = *statefulSet.Spec.Replicas
-	function.Status.Conditions[v1alpha1.StatefulSet] = condition
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
-	condition := function.Status.Conditions[v1alpha1.StatefulSet]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function) error {
+	if !r.checkIfStatefulSetNeedUpdate(function) {
 		return nil
 	}
 	desiredStatefulSet := spec.MakeFunctionStatefulSet(function)
@@ -99,51 +83,40 @@ func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, funct
 		desiredStatefulSet.Spec = desiredStatefulSetSpec
 		return nil
 	}); err != nil {
-		r.Log.Error(err, "error create or update statefulSet workload for function",
+		r.Log.Error(err, "error creating or updating statefulSet for function",
 			"namespace", function.Namespace, "name", function.Name,
 			"statefulSet name", desiredStatefulSet.Name)
+		function.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.ErrorCreatingStatefulSet,
+			fmt.Sprintf("error creating or updating statefulSet for function: %v", err))
 		return err
 	}
+	function.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+		"creating or updating statefulSet for function...")
 	return nil
 }
 
 func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, function *v1alpha1.Function) error {
-	condition, ok := function.Status.Conditions[v1alpha1.Service]
-	if !ok {
-		function.Status.Conditions[v1alpha1.Service] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.ServiceReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
-		return nil
-	}
-
 	svc := &corev1.Service{}
 	svcName := spec.MakeHeadlessServiceName(spec.MakeFunctionObjectMeta(function).Name)
 	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace,
 		Name: svcName}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			condition.Status = metav1.ConditionFalse
-			condition.Action = v1alpha1.Create
-			function.Status.Conditions[v1alpha1.Service] = condition
 			r.Log.Info("function service is not created...",
 				"namespace", function.Namespace, "name", function.Name,
 				"service name", svcName)
 			return nil
 		}
+		function.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.ServiceError,
+			fmt.Sprintf("error fetching function service: %v", err))
 		return err
 	}
-
-	condition.Action = v1alpha1.NoAction
-	condition.Status = metav1.ConditionTrue
-	function.Status.Conditions[v1alpha1.Service] = condition
+	function.SetCondition(v1alpha1.ServiceReady, metav1.ConditionTrue, v1alpha1.ServiceIsReady, "")
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
-	condition := function.Status.Conditions[v1alpha1.Service]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function *v1alpha1.Function) error {
+	if !r.checkIfServiceNeedUpdate(function) {
 		return nil
 	}
 	desiredService := spec.MakeFunctionService(function)
@@ -153,66 +126,62 @@ func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function 
 		desiredService.Spec = desiredServiceSpec
 		return nil
 	}); err != nil {
-		r.Log.Error(err, "error create or update service for function",
+		r.Log.Error(err, "error creating or updating service for function",
 			"namespace", function.Namespace, "name", function.Name,
 			"service name", desiredService.Name)
+		function.SetCondition(v1alpha1.ServiceReady, metav1.ConditionFalse, v1alpha1.ErrorCreatingService,
+			fmt.Sprintf("error creating or updating service for function: %v", err))
 		return err
 	}
+	function.SetCondition(v1alpha1.ServiceReady, metav1.ConditionTrue, v1alpha1.ServiceIsReady, "")
 	return nil
 }
 
 func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *v1alpha1.Function) error {
 	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
-		return nil
-	}
-
-	condition, ok := function.Status.Conditions[v1alpha1.HPA]
-	if !ok {
-		function.Status.Conditions[v1alpha1.HPA] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.HPAReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
+		function.RemoveCondition(v1alpha1.HPAReady)
 		return nil
 	}
 
 	hpa := &autov2beta2.HorizontalPodAutoscaler{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace,
-		Name: spec.MakeFunctionObjectMeta(function).Name}, hpa)
+	err := r.Get(ctx, types.NamespacedName{
+		Namespace: function.Namespace,
+		Name:      spec.MakeFunctionObjectMeta(function).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			condition.Status = metav1.ConditionFalse
-			condition.Action = v1alpha1.Create
-			function.Status.Conditions[v1alpha1.HPA] = condition
 			r.Log.Info("hpa is not created for function...",
 				"namespace", function.Namespace, "name", function.Name,
 				"hpa name", hpa.Name)
 			return nil
 		}
+		function.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.HPAError,
+			fmt.Sprintf("error fetching function hpa: %v", err))
 		return err
 	}
 
-	if r.checkIfHPANeedUpdate(hpa, function) {
-		condition.Status = metav1.ConditionFalse
-		condition.Action = v1alpha1.Update
-		function.Status.Conditions[v1alpha1.HPA] = condition
-		return nil
-	}
-
-	condition.Action = v1alpha1.NoAction
-	condition.Status = metav1.ConditionTrue
-	function.Status.Conditions[v1alpha1.HPA] = condition
+	function.SetCondition(v1alpha1.HPAReady, metav1.ConditionTrue, v1alpha1.HPAIsReady, "")
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
+func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1alpha1.Function) error {
 	if function.Spec.MaxReplicas == nil {
-		// HPA not enabled, skip further action
+		// HPA not enabled, clear the exists HPA
+		hpa := &autov2beta2.HorizontalPodAutoscaler{}
+		hpa.Namespace = function.Namespace
+		hpa.Name = spec.MakeFunctionObjectMeta(function).Name
+		if err := r.Delete(ctx, hpa); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
+			function.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.HPAError,
+				fmt.Sprintf("error deleting hpa for function: %v", err))
+			return err
+		}
 		return nil
 	}
-	condition := function.Status.Conditions[v1alpha1.HPA]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+
+	if !r.checkIfHPANeedUpdate(function) {
 		return nil
 	}
 	desiredHPA := spec.MakeFunctionHPA(function)
@@ -222,46 +191,126 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1a
 		desiredHPA.Spec = desiredHPASpec
 		return nil
 	}); err != nil {
-		r.Log.Error(err, "error create or update hpa for function",
+		r.Log.Error(err, "error creating or updating hpa for function",
 			"namespace", function.Namespace, "name", function.Name,
 			"hpa name", desiredHPA.Name)
+		function.SetCondition(v1alpha1.HPAReady, metav1.ConditionFalse, v1alpha1.ErrorCreatingHPA,
+			fmt.Sprintf("error creating or updating hpa for function: %v", err))
 		return err
 	}
+	function.SetCondition(v1alpha1.HPAReady, metav1.ConditionTrue, v1alpha1.HPAIsReady, "")
 	return nil
 }
 
 func (r *FunctionReconciler) ObserveFunctionVPA(ctx context.Context, function *v1alpha1.Function) error {
-	return observeVPA(ctx, r, types.NamespacedName{Namespace: function.Namespace,
-		Name: spec.MakeFunctionObjectMeta(function).Name}, function.Spec.Pod.VPA, function.Status.Conditions)
-}
-
-func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1alpha1.Function) error {
-
-	condition, ok := function.Status.Conditions[v1alpha1.VPA]
-
-	if !ok || condition.Status == metav1.ConditionTrue {
+	if function.Spec.Pod.VPA == nil {
+		// VPA not enabled, skip further action
+		function.RemoveCondition(v1alpha1.VPAReady)
 		return nil
 	}
 
-	objectMeta := spec.MakeFunctionObjectMeta(function)
-	targetRef := &autoscaling.CrossVersionObjectReference{
-		Kind:       function.Kind,
-		Name:       function.Name,
-		APIVersion: function.APIVersion,
-	}
-
-	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, function.Spec.Pod.VPA, "function", function.Namespace, function.Name)
+	vpa := &vpav1.VerticalPodAutoscaler{}
+	err := r.Get(ctx, types.NamespacedName{
+		Namespace: function.Namespace,
+		Name:      spec.MakeFunctionObjectMeta(function).Name}, vpa)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			r.Log.Info("vpa is not created for function...",
+				"namespace", function.Namespace, "name", function.Name,
+				"vpa name", vpa.Name)
+			return nil
+		}
+		function.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.VPAError,
+			fmt.Sprintf("error fetching function vpa: %v", err))
 		return err
 	}
 
+	function.SetCondition(v1alpha1.VPAReady, metav1.ConditionTrue, v1alpha1.VPAIsReady, "")
 	return nil
 }
 
-func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet, function *v1alpha1.Function) bool {
-	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeFunctionStatefulSet(function).Spec)
+func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1alpha1.Function) error {
+	if function.Spec.Pod.VPA == nil {
+		// VPA not enabled, clear the exists VPA
+		vpa := &vpav1.VerticalPodAutoscaler{}
+		vpa.Namespace = function.Namespace
+		vpa.Name = spec.MakeFunctionObjectMeta(function).Name
+		if err := r.Delete(ctx, vpa); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
+			function.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.VPAError,
+				fmt.Sprintf("error deleting vpa for function: %v", err))
+			return err
+		}
+		return nil
+	}
+
+	if !r.checkIfVPANeedUpdate(function) {
+		return nil
+	}
+	desiredVPA := spec.MakeFunctionVPA(function)
+	desiredVPASpec := desiredVPA.Spec
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredVPA, func() error {
+		// function vpa mutate logic
+		desiredVPA.Spec = desiredVPASpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error creating or updating vpa for function",
+			"namespace", function.Namespace, "name", function.Name,
+			"vpa name", desiredVPA.Name)
+		function.SetCondition(v1alpha1.VPAReady, metav1.ConditionFalse, v1alpha1.ErrorCreatingVPA,
+			fmt.Sprintf("error creating or updating vpa for function: %v", err))
+		return err
+	}
+	function.SetCondition(v1alpha1.VPAReady, metav1.ConditionTrue, v1alpha1.VPAIsReady, "")
+	return nil
 }
 
-func (r *FunctionReconciler) checkIfHPANeedUpdate(hpa *autov2beta2.HorizontalPodAutoscaler, function *v1alpha1.Function) bool {
-	return !spec.CheckIfHPASpecIsEqual(&hpa.Spec, &spec.MakeFunctionHPA(function).Spec)
+func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(function *v1alpha1.Function) bool {
+	if statefulSetStatus := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.StatefulSetReady)); statefulSetStatus != nil {
+		if statefulSetStatus.ObservedGeneration != function.Generation {
+			return true
+		}
+		if statefulSetStatus.Status == metav1.ConditionTrue {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *FunctionReconciler) checkIfServiceNeedUpdate(function *v1alpha1.Function) bool {
+	if serviceStatus := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.ServiceReady)); serviceStatus != nil {
+		if serviceStatus.ObservedGeneration != function.Generation {
+			return true
+		}
+		if serviceStatus.Status == metav1.ConditionTrue {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *FunctionReconciler) checkIfHPANeedUpdate(function *v1alpha1.Function) bool {
+	if hpaStatus := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.HPAReady)); hpaStatus != nil {
+		if hpaStatus.ObservedGeneration != function.Generation {
+			return true
+		}
+		if hpaStatus.Status == metav1.ConditionTrue {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *FunctionReconciler) checkIfVPANeedUpdate(function *v1alpha1.Function) bool {
+	if vpaStatus := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.VPAReady)); vpaStatus != nil {
+		if vpaStatus.ObservedGeneration != function.Generation {
+			return true
+		}
+		if vpaStatus.Status == metav1.ConditionTrue {
+			return false
+		}
+	}
+	return true
 }

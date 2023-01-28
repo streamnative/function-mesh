@@ -38,11 +38,8 @@ type FunctionMeshSpec struct {
 type FunctionMeshStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	SourceConditions   map[string]ResourceCondition `json:"sourceConditions,omitempty"`
-	SinkConditions     map[string]ResourceCondition `json:"sinkConditions,omitempty"`
-	FunctionConditions map[string]ResourceCondition `json:"functionConditions,omitempty"`
-	ObservedGeneration int64                        `json:"observedGeneration,omitempty"`
-	Condition          *ResourceCondition           `json:"condition,omitempty"`
+	ObservedGeneration int64              `json:"observedGeneration,omitempty"`
+	Conditions         []metav1.Condition `json:"condition,omitempty"`
 }
 
 // +genclient
