@@ -266,6 +266,31 @@ func (r *Source) RemoveCondition(condType ResourceConditionType) {
 	meta.RemoveStatusCondition(&r.Status.Conditions, string(condType))
 }
 
+// SetComponentHash adds a new component hash to the Source
+func (r *Source) SetComponentHash(component Component, specHash string) {
+	if r.Status.ComponentHash == nil {
+		r.Status.ComponentHash = map[Component]string{}
+	}
+	r.Status.ComponentHash[component] = specHash
+}
+
+// GetComponentHash returns a specific component hash or nil
+func (r *Source) GetComponentHash(component Component) *string {
+	if r.Status.ComponentHash != nil {
+		if specHash, exist := r.Status.ComponentHash[component]; exist {
+			return &specHash
+		}
+	}
+	return nil
+}
+
+// RemoveComponentHash removes a specific component hash from the Source
+func (r *Source) RemoveComponentHash(component Component) {
+	if r.Status.ComponentHash != nil {
+		delete(r.Status.ComponentHash, component)
+	}
+}
+
 // SaveStatus will trigger FunctionMesh object update to save the current status
 // conditions
 func (r *FunctionMesh) SaveStatus(ctx context.Context, logger logr.Logger, c client.StatusClient) {

@@ -331,8 +331,6 @@ func (r *SinkReconciler) checkIfComponentNeedToUpdate(sink *v1alpha1.Sink, condT
 		}
 		// if the desired specification has not changed, we do not need to update the component
 		if specHash := sink.GetComponentHash(componentType); specHash != nil {
-			fmt.Println(*specHash)
-			fmt.Println(spec.GenerateSpecHash(desiredSpecBytes))
 			if *specHash == spec.GenerateSpecHash(desiredSpecBytes) {
 				return false
 			}

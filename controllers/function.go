@@ -331,8 +331,6 @@ func (r *FunctionReconciler) checkIfComponentNeedToUpdate(function *v1alpha1.Fun
 		}
 		// if the desired specification has not changed, we do not need to update the component
 		if specHash := function.GetComponentHash(componentType); specHash != nil {
-			fmt.Println(*specHash)
-			fmt.Println(spec.GenerateSpecHash(desiredSpecBytes))
 			if *specHash == spec.GenerateSpecHash(desiredSpecBytes) {
 				return false
 			}

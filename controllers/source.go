@@ -19,18 +19,17 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-
-	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
-
-	"k8s.io/apimachinery/pkg/api/meta"
 
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -48,6 +47,8 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, source 
 			r.Log.Info("source statefulSet is not ready yet...",
 				"namespace", source.Namespace, "name", source.Name,
 				"statefulSet name", statefulSet.Name)
+			source.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"source statefulSet is not ready yet...")
 			return nil
 		}
 		source.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.StatefulSetError,
@@ -64,18 +65,18 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, source 
 	}
 	source.Status.Selector = selector.String()
 
-	if statefulSet.Status.ReadyReplicas == *source.Spec.Replicas {
-		source.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionTrue, v1alpha1.StatefulSetIsReady, "")
-	} else {
+	if r.checkIfStatefulSetNeedToUpdate(source, statefulSet) {
 		source.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
-			"wait for the number of replicas of statefulSet to be ready")
+			"wait for the source statefulSet to be ready")
+	} else {
+		source.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionTrue, v1alpha1.StatefulSetIsReady, "")
 	}
 	source.Status.Replicas = *statefulSet.Spec.Replicas
 	return nil
 }
 
 func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v1alpha1.Source) error {
-	if !r.checkIfStatefulSetNeedUpdate(source) {
+	if meta.IsStatusConditionTrue(source.Status.Conditions, string(v1alpha1.StatefulSetReady)) {
 		return nil
 	}
 	desiredStatefulSet := spec.MakeSourceStatefulSet(source)
@@ -94,6 +95,8 @@ func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v
 	}
 	source.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
 		"creating or updating statefulSet for source...")
+	desiredStatefulSetSpecBytes, _ := json.Marshal(desiredStatefulSetSpec)
+	source.SetComponentHash(v1alpha1.StatefulSet, spec.GenerateSpecHash(desiredStatefulSetSpecBytes))
 	return nil
 }
 
@@ -107,18 +110,25 @@ func (r *SourceReconciler) ObserveSourceService(ctx context.Context, source *v1a
 			r.Log.Info("source service is not created...",
 				"namespace", source.Namespace, "name", source.Name,
 				"service name", svcName)
+			source.SetCondition(v1alpha1.ServiceReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"source service is not created...")
 			return nil
 		}
 		source.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.ServiceError,
 			fmt.Sprintf("error fetching source service: %v", err))
 		return err
 	}
-	source.SetCondition(v1alpha1.ServiceReady, metav1.ConditionTrue, v1alpha1.ServiceIsReady, "")
+	if r.checkIfServiceNeedToUpdate(source) {
+		source.SetCondition(v1alpha1.ServiceReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"wait for the source service to be ready")
+	} else {
+		source.SetCondition(v1alpha1.ServiceReady, metav1.ConditionTrue, v1alpha1.ServiceIsReady, "")
+	}
 	return nil
 }
 
 func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alpha1.Source) error {
-	if !r.checkIfServiceNeedUpdate(source) {
+	if meta.IsStatusConditionTrue(source.Status.Conditions, string(v1alpha1.ServiceReady)) {
 		return nil
 	}
 	desiredService := spec.MakeSourceService(source)
@@ -136,6 +146,8 @@ func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alp
 		return err
 	}
 	source.SetCondition(v1alpha1.ServiceReady, metav1.ConditionTrue, v1alpha1.ServiceIsReady, "")
+	desiredServiceSpecBytes, _ := json.Marshal(desiredServiceSpec)
+	source.SetComponentHash(v1alpha1.Service, spec.GenerateSpecHash(desiredServiceSpecBytes))
 	return nil
 }
 
@@ -143,25 +155,33 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, source *v1alpha
 	if source.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		source.RemoveCondition(v1alpha1.HPAReady)
+		source.RemoveComponentHash(v1alpha1.HPA)
 		return nil
 	}
 
 	hpa := &autov2beta2.HorizontalPodAutoscaler{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
-		Name: spec.MakeSourceObjectMeta(source).Name}, hpa)
+	err := r.Get(ctx, types.NamespacedName{
+		Namespace: source.Namespace,
+		Name:      spec.MakeSourceObjectMeta(source).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Info("hpa is not created for source...",
+			r.Log.Info("source hpa is not created...",
 				"namespace", source.Namespace, "name", source.Name,
 				"hpa name", hpa.Name)
+			source.SetCondition(v1alpha1.HPAReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"source hpa is not created...")
 			return nil
 		}
 		source.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.HPAError,
 			fmt.Sprintf("error fetching source hpa: %v", err))
 		return err
 	}
-
-	source.SetCondition(v1alpha1.HPAReady, metav1.ConditionTrue, v1alpha1.HPAIsReady, "")
+	if r.checkIfHPANeedUpdate(source) {
+		source.SetCondition(v1alpha1.HPAReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"wait for the source hpa to be ready")
+	} else {
+		source.SetCondition(v1alpha1.HPAReady, metav1.ConditionTrue, v1alpha1.HPAIsReady, "")
+	}
 	return nil
 }
 
@@ -181,7 +201,7 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.
 		}
 		return nil
 	}
-	if !r.checkIfHPANeedUpdate(source) {
+	if meta.IsStatusConditionTrue(source.Status.Conditions, string(v1alpha1.HPAReady)) {
 		return nil
 	}
 	desiredHPA := spec.MakeSourceHPA(source)
@@ -199,6 +219,8 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.
 		return err
 	}
 	source.SetCondition(v1alpha1.HPAReady, metav1.ConditionTrue, v1alpha1.HPAIsReady, "")
+	desiredHPASpecBytes, _ := json.Marshal(desiredHPASpec)
+	source.SetComponentHash(v1alpha1.HPA, spec.GenerateSpecHash(desiredHPASpecBytes))
 	return nil
 }
 
@@ -206,6 +228,7 @@ func (r *SourceReconciler) ObserveSourceVPA(ctx context.Context, source *v1alpha
 	if source.Spec.Pod.VPA == nil {
 		// VPA not enabled, skip further action
 		source.RemoveCondition(v1alpha1.VPAReady)
+		source.RemoveComponentHash(v1alpha1.VPA)
 		return nil
 	}
 
@@ -215,17 +238,23 @@ func (r *SourceReconciler) ObserveSourceVPA(ctx context.Context, source *v1alpha
 		Name:      spec.MakeSourceObjectMeta(source).Name}, vpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Info("vpa is not created for source...",
+			r.Log.Info("source vpa is not created...",
 				"namespace", source.Namespace, "name", source.Name,
 				"vpa name", vpa.Name)
+			source.SetCondition(v1alpha1.VPAReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"source vpa is not created...")
 			return nil
 		}
 		source.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.VPAError,
 			fmt.Sprintf("error fetching source vpa: %v", err))
 		return err
 	}
-
-	source.SetCondition(v1alpha1.VPAReady, metav1.ConditionTrue, v1alpha1.VPAIsReady, "")
+	if r.checkIfVPANeedUpdate(source) {
+		source.SetCondition(v1alpha1.VPAReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"wait for the source vpa to be ready")
+	} else {
+		source.SetCondition(v1alpha1.VPAReady, metav1.ConditionTrue, v1alpha1.VPAIsReady, "")
+	}
 	return nil
 }
 
@@ -245,8 +274,7 @@ func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.
 		}
 		return nil
 	}
-
-	if !r.checkIfVPANeedUpdate(source) {
+	if meta.IsStatusConditionTrue(source.Status.Conditions, string(v1alpha1.VPAReady)) {
 		return nil
 	}
 	desiredVPA := spec.MakeSourceVPA(source)
@@ -264,52 +292,48 @@ func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.
 		return err
 	}
 	source.SetCondition(v1alpha1.VPAReady, metav1.ConditionTrue, v1alpha1.VPAIsReady, "")
+	desiredVPASpecBytes, _ := json.Marshal(desiredVPASpec)
+	source.SetComponentHash(v1alpha1.VPA, spec.GenerateSpecHash(desiredVPASpecBytes))
 	return nil
 }
 
-func (r *SourceReconciler) checkIfStatefulSetNeedUpdate(source *v1alpha1.Source) bool {
-	if statefulSetStatus := meta.FindStatusCondition(source.Status.Conditions, string(v1alpha1.StatefulSetReady)); statefulSetStatus != nil {
-		if statefulSetStatus.ObservedGeneration != source.Generation {
-			return true
-		}
-		if statefulSetStatus.Status == metav1.ConditionTrue {
-			return false
-		}
-	}
-	return true
+func (r *SourceReconciler) checkIfStatefulSetNeedToUpdate(source *v1alpha1.Source, statefulSet *appsv1.StatefulSet) bool {
+	desiredObject := spec.MakeSourceStatefulSet(source)
+	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
+	return r.checkIfComponentNeedToUpdate(source, v1alpha1.StatefulSetReady, v1alpha1.StatefulSet, desiredSpecBytes) ||
+		statefulSet.Status.ReadyReplicas != *source.Spec.Replicas
 }
 
-func (r *SourceReconciler) checkIfServiceNeedUpdate(source *v1alpha1.Source) bool {
-	if serviceStatus := meta.FindStatusCondition(source.Status.Conditions, string(v1alpha1.ServiceReady)); serviceStatus != nil {
-		if serviceStatus.ObservedGeneration != source.Generation {
-			return true
-		}
-		if serviceStatus.Status == metav1.ConditionTrue {
-			return false
-		}
-	}
-	return true
+func (r *SourceReconciler) checkIfServiceNeedToUpdate(source *v1alpha1.Source) bool {
+	desiredObject := spec.MakeSourceService(source)
+	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
+	return r.checkIfComponentNeedToUpdate(source, v1alpha1.ServiceReady, v1alpha1.Service, desiredSpecBytes)
 }
 
 func (r *SourceReconciler) checkIfHPANeedUpdate(source *v1alpha1.Source) bool {
-	if hpaStatus := meta.FindStatusCondition(source.Status.Conditions, string(v1alpha1.HPAReady)); hpaStatus != nil {
-		if hpaStatus.ObservedGeneration != source.Generation {
-			return true
-		}
-		if hpaStatus.Status == metav1.ConditionTrue {
-			return false
-		}
-	}
-	return true
+	desiredObject := spec.MakeSourceHPA(source)
+	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
+	return r.checkIfComponentNeedToUpdate(source, v1alpha1.HPAReady, v1alpha1.HPA, desiredSpecBytes)
 }
 
 func (r *SourceReconciler) checkIfVPANeedUpdate(source *v1alpha1.Source) bool {
-	if vpaStatus := meta.FindStatusCondition(source.Status.Conditions, string(v1alpha1.VPAReady)); vpaStatus != nil {
-		if vpaStatus.ObservedGeneration != source.Generation {
-			return true
-		}
-		if vpaStatus.Status == metav1.ConditionTrue {
+	desiredObject := spec.MakeSourceVPA(source)
+	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
+	return r.checkIfComponentNeedToUpdate(source, v1alpha1.VPAReady, v1alpha1.VPA, desiredSpecBytes)
+}
+
+func (r *SourceReconciler) checkIfComponentNeedToUpdate(source *v1alpha1.Source, condType v1alpha1.ResourceConditionType,
+	componentType v1alpha1.Component, desiredSpecBytes []byte) bool {
+	if cond := meta.FindStatusCondition(source.Status.Conditions, string(condType)); cond != nil {
+		// if the generation has not changed, we do not need to update the component
+		if cond.ObservedGeneration == source.Generation {
 			return false
+		}
+		// if the desired specification has not changed, we do not need to update the component
+		if specHash := source.GetComponentHash(componentType); specHash != nil {
+			if *specHash == spec.GenerateSpecHash(desiredSpecBytes) {
+				return false
+			}
 		}
 	}
 	return true
