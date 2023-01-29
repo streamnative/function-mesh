@@ -74,6 +74,7 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return reconcile.Result{}, nil
 	}
 
+	defer function.SaveStatus(ctx, r.Log, r.Client)
 	if result, err := r.observe(ctx, function); err != nil {
 		return result, err
 	}
@@ -85,52 +86,38 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func (r *FunctionReconciler) observe(ctx context.Context, function *v1alpha1.Function) (ctrl.Result, error) {
-	defer function.SaveStatus(ctx, r.Log, r.Client)
-
-	err := r.ObserveFunctionStatefulSet(ctx, function)
-	if err != nil {
+	if err := r.ObserveFunctionStatefulSet(ctx, function); err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveFunctionService(ctx, function)
-	if err != nil {
+	if err := r.ObserveFunctionService(ctx, function); err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveFunctionHPA(ctx, function)
-	if err != nil {
+	if err := r.ObserveFunctionHPA(ctx, function); err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		err = r.ObserveFunctionVPA(ctx, function)
-		if err != nil {
+		if err := r.ObserveFunctionVPA(ctx, function); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
-
 	return reconcile.Result{}, nil
 }
 
 func (r *FunctionReconciler) reconcile(ctx context.Context, function *v1alpha1.Function) (ctrl.Result, error) {
-	defer function.SaveStatus(ctx, r.Log, r.Client)
-
-	err := r.ObserveFunctionStatefulSet(ctx, function)
-	if err != nil {
+	if err := r.ApplyFunctionStatefulSet(ctx, function); err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveFunctionService(ctx, function)
-	if err != nil {
+	if err := r.ApplyFunctionService(ctx, function); err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveFunctionHPA(ctx, function)
-	if err != nil {
+	if err := r.ApplyFunctionHPA(ctx, function); err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		err = r.ObserveFunctionVPA(ctx, function)
-		if err != nil {
+		if err := r.ApplyFunctionVPA(ctx, function); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
-
 	return reconcile.Result{}, nil
 }
 

@@ -19,6 +19,7 @@ package v1alpha1
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -67,15 +68,14 @@ const (
 	HPAError                 ResourceConditionReason = "HPAError"
 	VPAError                 ResourceConditionReason = "VPAError"
 	PendingCreation          ResourceConditionReason = "PendingCreation"
-	PendingTermination       ResourceConditionReason = "PendingTermination"
 	ServiceIsReady           ResourceConditionReason = "ServiceIsReady"
-	MeshIsReady              ResourceConditionReason = "MeshIsReady"
 	StatefulSetIsReady       ResourceConditionReason = "StatefulSetIsReady"
 	HPAIsReady               ResourceConditionReason = "HPAIsReady"
 	VPAIsReady               ResourceConditionReason = "VPAIsReady"
 	FunctionIsReady          ResourceConditionReason = "FunctionIsReady"
 	SourceIsReady            ResourceConditionReason = "SourceIsReady"
 	SinkIsReady              ResourceConditionReason = "SinkIsReady"
+	MeshIsReady              ResourceConditionReason = "MeshIsReady"
 )
 
 // SaveStatus will trigger Function object update to save the current status
@@ -116,8 +116,7 @@ func (r *Function) computeFunctionStatus() {
 // SetCondition adds a new condition to the Function
 func (r *Function) SetCondition(condType ResourceConditionType, status metav1.ConditionStatus,
 	reason ResourceConditionReason, message string) {
-	meta.SetStatusCondition(&r.Status.Conditions, CreateCondition(
-		r.Generation, condType, status, reason, message))
+	setCondition(&r.Status.Conditions, condType, status, reason, message, r.Generation)
 }
 
 // RemoveCondition removes a specific condition from the Function
@@ -163,8 +162,7 @@ func (r *Sink) computeSinkStatus() {
 // SetCondition adds a new condition to the Sink
 func (r *Sink) SetCondition(condType ResourceConditionType, status metav1.ConditionStatus,
 	reason ResourceConditionReason, message string) {
-	meta.SetStatusCondition(&r.Status.Conditions, CreateCondition(
-		r.Generation, condType, status, reason, message))
+	setCondition(&r.Status.Conditions, condType, status, reason, message, r.Generation)
 }
 
 // RemoveCondition removes a specific condition from the Sink
@@ -210,8 +208,7 @@ func (r *Source) computeSourceStatus() {
 // SetCondition adds a new condition to the Source
 func (r *Source) SetCondition(condType ResourceConditionType, status metav1.ConditionStatus,
 	reason ResourceConditionReason, message string) {
-	meta.SetStatusCondition(&r.Status.Conditions, CreateCondition(
-		r.Generation, condType, status, reason, message))
+	setCondition(&r.Status.Conditions, condType, status, reason, message, r.Generation)
 }
 
 // RemoveCondition removes a specific condition from the Source
@@ -235,12 +232,30 @@ func (r *FunctionMesh) SaveStatus(ctx context.Context, logger logr.Logger, c cli
 // SetCondition adds a new condition to the FunctionMesh
 func (r *FunctionMesh) SetCondition(condType ResourceConditionType, status metav1.ConditionStatus,
 	reason ResourceConditionReason, message string) {
-	meta.SetStatusCondition(&r.Status.Conditions, CreateCondition(
-		r.Generation, condType, status, reason, message))
+	setCondition(&r.Status.Conditions, condType, status, reason, message, r.Generation)
+}
+
+// RemoveCondition removes a specific condition from the FunctionMesh
+func (r *FunctionMesh) RemoveCondition(condType ResourceConditionType) {
+	meta.RemoveStatusCondition(&r.Status.Conditions, string(condType))
+}
+
+// SetComponentCondition adds a new component condition to the FunctionMesh
+func (r *FunctionMesh) SetComponentCondition(componentType string, componentName string, condType ResourceConditionType) {
+	switch componentType {
+	case FunctionComponent:
+		r.Status.FunctionConditions.Status[componentName] = condType
+	case SinkComponent:
+		r.Status.SinkConditions.Status[componentName] = condType
+	case SourceComponent:
+		r.Status.SourceConditions.Status[componentName] = condType
+	default:
+		return
+	}
 }
 
 // CreateCondition initializes a new status condition
-func CreateCondition(generation int64, condType ResourceConditionType, status metav1.ConditionStatus,
+func CreateCondition(generation *int64, condType ResourceConditionType, status metav1.ConditionStatus,
 	reason ResourceConditionReason, message string) metav1.Condition {
 	cond := &metav1.Condition{
 		Type:               string(condType),
@@ -248,7 +263,20 @@ func CreateCondition(generation int64, condType ResourceConditionType, status me
 		Reason:             string(reason),
 		Message:            message,
 		LastTransitionTime: metav1.Time{Time: time.Now()},
-		ObservedGeneration: generation,
+	}
+	if generation != nil {
+		cond.ObservedGeneration = *generation
 	}
 	return *cond
+}
+
+func setCondition(conditions *[]metav1.Condition, condType ResourceConditionType, status metav1.ConditionStatus,
+	reason ResourceConditionReason, message string, generation int64) {
+	if strings.Contains(string(condType), "Ready") && status == metav1.ConditionTrue {
+		meta.SetStatusCondition(conditions, CreateCondition(
+			&generation, condType, status, reason, message))
+	} else {
+		meta.SetStatusCondition(conditions, CreateCondition(
+			nil, condType, status, reason, message))
+	}
 }

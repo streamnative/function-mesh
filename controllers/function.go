@@ -46,6 +46,8 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, fun
 			r.Log.Info("function statefulSet is not ready yet...",
 				"namespace", function.Namespace, "name", function.Name,
 				"statefulSet name", statefulSet.Name)
+			function.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"function statefulSet is not ready yet...")
 			return nil
 		}
 		function.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.StatefulSetError,
@@ -62,18 +64,18 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, fun
 	}
 	function.Status.Selector = selector.String()
 
-	if statefulSet.Status.ReadyReplicas == *function.Spec.Replicas {
-		function.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionTrue, v1alpha1.StatefulSetIsReady, "")
-	} else {
+	if r.checkIfStatefulSetNeedUpdate(function) || statefulSet.Status.ReadyReplicas != *function.Spec.Replicas {
 		function.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
-			"wait for the number of replicas of statefulSet to be ready")
+			"wait for the function statefulSet to be ready")
+	} else {
+		function.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionTrue, v1alpha1.StatefulSetIsReady, "")
 	}
 	function.Status.Replicas = *statefulSet.Spec.Replicas
 	return nil
 }
 
 func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function) error {
-	if !r.checkIfStatefulSetNeedUpdate(function) {
+	if meta.IsStatusConditionTrue(function.Status.Conditions, string(v1alpha1.StatefulSetReady)) {
 		return nil
 	}
 	desiredStatefulSet := spec.MakeFunctionStatefulSet(function)
@@ -105,18 +107,25 @@ func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, functio
 			r.Log.Info("function service is not created...",
 				"namespace", function.Namespace, "name", function.Name,
 				"service name", svcName)
+			function.SetCondition(v1alpha1.ServiceReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"function service is not created...")
 			return nil
 		}
 		function.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.ServiceError,
 			fmt.Sprintf("error fetching function service: %v", err))
 		return err
 	}
-	function.SetCondition(v1alpha1.ServiceReady, metav1.ConditionTrue, v1alpha1.ServiceIsReady, "")
+	if r.checkIfServiceNeedUpdate(function) {
+		function.SetCondition(v1alpha1.ServiceReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"wait for the function service to be ready")
+	} else {
+		function.SetCondition(v1alpha1.ServiceReady, metav1.ConditionTrue, v1alpha1.ServiceIsReady, "")
+	}
 	return nil
 }
 
 func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function *v1alpha1.Function) error {
-	if !r.checkIfServiceNeedUpdate(function) {
+	if meta.IsStatusConditionTrue(function.Status.Conditions, string(v1alpha1.ServiceReady)) {
 		return nil
 	}
 	desiredService := spec.MakeFunctionService(function)
@@ -150,17 +159,23 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *v
 		Name:      spec.MakeFunctionObjectMeta(function).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Info("hpa is not created for function...",
+			r.Log.Info("function hpa is not created...",
 				"namespace", function.Namespace, "name", function.Name,
 				"hpa name", hpa.Name)
+			function.SetCondition(v1alpha1.HPAReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"function hpa is not created...")
 			return nil
 		}
 		function.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.HPAError,
 			fmt.Sprintf("error fetching function hpa: %v", err))
 		return err
 	}
-
-	function.SetCondition(v1alpha1.HPAReady, metav1.ConditionTrue, v1alpha1.HPAIsReady, "")
+	if r.checkIfHPANeedUpdate(function) {
+		function.SetCondition(v1alpha1.HPAReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"wait for the function hpa to be ready")
+	} else {
+		function.SetCondition(v1alpha1.HPAReady, metav1.ConditionTrue, v1alpha1.HPAIsReady, "")
+	}
 	return nil
 }
 
@@ -180,7 +195,7 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1a
 		}
 		return nil
 	}
-	if !r.checkIfHPANeedUpdate(function) {
+	if meta.IsStatusConditionTrue(function.Status.Conditions, string(v1alpha1.HPAReady)) {
 		return nil
 	}
 	desiredHPA := spec.MakeFunctionHPA(function)
@@ -214,17 +229,23 @@ func (r *FunctionReconciler) ObserveFunctionVPA(ctx context.Context, function *v
 		Name:      spec.MakeFunctionObjectMeta(function).Name}, vpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.Log.Info("vpa is not created for function...",
+			r.Log.Info("function vpa is not created...",
 				"namespace", function.Namespace, "name", function.Name,
 				"vpa name", vpa.Name)
+			function.SetCondition(v1alpha1.VPAReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"function vpa is not created...")
 			return nil
 		}
 		function.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.VPAError,
 			fmt.Sprintf("error fetching function vpa: %v", err))
 		return err
 	}
-
-	function.SetCondition(v1alpha1.VPAReady, metav1.ConditionTrue, v1alpha1.VPAIsReady, "")
+	if r.checkIfHPANeedUpdate(function) {
+		function.SetCondition(v1alpha1.VPAReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"wait for the function vpa to be ready")
+	} else {
+		function.SetCondition(v1alpha1.VPAReady, metav1.ConditionTrue, v1alpha1.VPAIsReady, "")
+	}
 	return nil
 }
 
@@ -244,8 +265,7 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 		}
 		return nil
 	}
-
-	if !r.checkIfVPANeedUpdate(function) {
+	if meta.IsStatusConditionTrue(function.Status.Conditions, string(v1alpha1.VPAReady)) {
 		return nil
 	}
 	desiredVPA := spec.MakeFunctionVPA(function)
@@ -267,49 +287,37 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 }
 
 func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(function *v1alpha1.Function) bool {
-	if statefulSetStatus := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.StatefulSetReady)); statefulSetStatus != nil {
-		if statefulSetStatus.ObservedGeneration != function.Generation {
+	if cond := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.StatefulSetReady)); cond != nil {
+		if cond.ObservedGeneration != function.Generation {
 			return true
 		}
-		if statefulSetStatus.Status == metav1.ConditionTrue {
-			return false
-		}
 	}
-	return true
+	return false
 }
 
 func (r *FunctionReconciler) checkIfServiceNeedUpdate(function *v1alpha1.Function) bool {
-	if serviceStatus := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.ServiceReady)); serviceStatus != nil {
-		if serviceStatus.ObservedGeneration != function.Generation {
+	if cond := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.ServiceReady)); cond != nil {
+		if cond.ObservedGeneration != function.Generation {
 			return true
 		}
-		if serviceStatus.Status == metav1.ConditionTrue {
-			return false
-		}
 	}
-	return true
+	return false
 }
 
 func (r *FunctionReconciler) checkIfHPANeedUpdate(function *v1alpha1.Function) bool {
-	if hpaStatus := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.HPAReady)); hpaStatus != nil {
-		if hpaStatus.ObservedGeneration != function.Generation {
+	if cond := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.HPAReady)); cond != nil {
+		if cond.ObservedGeneration != function.Generation {
 			return true
 		}
-		if hpaStatus.Status == metav1.ConditionTrue {
-			return false
-		}
 	}
-	return true
+	return false
 }
 
 func (r *FunctionReconciler) checkIfVPANeedUpdate(function *v1alpha1.Function) bool {
-	if vpaStatus := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.VPAReady)); vpaStatus != nil {
-		if vpaStatus.ObservedGeneration != function.Generation {
+	if cond := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.VPAReady)); cond != nil {
+		if cond.ObservedGeneration != function.Generation {
 			return true
 		}
-		if vpaStatus.Status == metav1.ConditionTrue {
-			return false
-		}
 	}
-	return true
+	return false
 }

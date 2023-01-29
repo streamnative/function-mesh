@@ -20,15 +20,15 @@ package controllers
 import (
 	"context"
 
-	"github.com/streamnative/function-mesh/controllers/spec"
-
 	"github.com/go-logr/logr"
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
 )
 
 // FunctionMeshReconciler reconciles a FunctionMesh object
@@ -62,53 +62,37 @@ func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, nil
 	}
 
-	// initialize component status map
-	if mesh.Status.FunctionConditions == nil {
-		mesh.Status.FunctionConditions = make(map[string]v1alpha1.ResourceCondition)
+	if result, err := r.observe(ctx, mesh); err != nil {
+		return result, err
 	}
-	if mesh.Status.SourceConditions == nil {
-		mesh.Status.SourceConditions = make(map[string]v1alpha1.ResourceCondition)
-	}
-	if mesh.Status.SinkConditions == nil {
-		mesh.Status.SinkConditions = make(map[string]v1alpha1.ResourceCondition)
-	}
-	if mesh.Status.Condition == nil {
-		mesh.Status.Condition = &v1alpha1.ResourceCondition{}
+	if result, err := r.reconcile(ctx, mesh); err != nil {
+		return result, err
 	}
 
-	// TODO validate function spec correctness such as no duplicated func name etc
-
-	// make observations
-	err = r.ObserveFunctionMesh(ctx, req, mesh)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	err = r.Status().Update(ctx, mesh)
-	if err != nil {
-		r.Log.Error(err, "failed to update mesh status")
-		return ctrl.Result{}, err
-	}
-
-	isNewGeneration := r.checkIfFunctionMeshGenerationsIsIncreased(mesh)
-
-	// apply changes
-	err = r.UpdateFunctionMesh(ctx, req, mesh, isNewGeneration)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	mesh.Status.ObservedGeneration = mesh.Generation
-	err = r.Status().Update(ctx, mesh)
-	if err != nil {
-		r.Log.Error(err, "failed to update functionmesh status")
-		return ctrl.Result{}, err
-	}
 	return ctrl.Result{}, nil
 }
 
-func (r *FunctionMeshReconciler) checkIfFunctionMeshGenerationsIsIncreased(mesh *v1alpha1.FunctionMesh) bool {
-	return mesh.Generation != mesh.Status.ObservedGeneration
+func (r *FunctionMeshReconciler) observe(ctx context.Context, mesh *v1alpha1.FunctionMesh) (ctrl.Result, error) {
+	defer mesh.SaveStatus(ctx, r.Log, r.Client)
+
+	r.initializeMesh(mesh)
+
+	if err := r.ObserveFunctionMesh(ctx, mesh); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func (r *FunctionMeshReconciler) reconcile(ctx context.Context, mesh *v1alpha1.FunctionMesh) (ctrl.Result, error) {
+	defer mesh.SaveStatus(ctx, r.Log, r.Client)
+
+	err := r.UpdateFunctionMesh(ctx, mesh)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
 }
 
 func (r *FunctionMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {
