@@ -124,6 +124,28 @@ func (r *Function) RemoveCondition(condType ResourceConditionType) {
 	meta.RemoveStatusCondition(&r.Status.Conditions, string(condType))
 }
 
+func (r *Function) SetComponentHash(component Component, specHash string) {
+	if r.Status.ComponentHash == nil {
+		r.Status.ComponentHash = map[Component]string{}
+	}
+	r.Status.ComponentHash[component] = specHash
+}
+
+func (r *Function) GetComponentHash(component Component) *string {
+	if r.Status.ComponentHash != nil {
+		if specHash, exist := r.Status.ComponentHash[component]; exist {
+			return &specHash
+		}
+	}
+	return nil
+}
+
+func (r *Function) RemoveComponentHash(component Component) {
+	if r.Status.ComponentHash != nil {
+		delete(r.Status.ComponentHash, component)
+	}
+}
+
 // SaveStatus will trigger Sink object update to save the current status
 // conditions
 func (r *Sink) SaveStatus(ctx context.Context, logger logr.Logger, c client.StatusClient) {

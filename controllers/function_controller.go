@@ -28,9 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -124,7 +122,7 @@ func (r *FunctionReconciler) reconcile(ctx context.Context, function *v1alpha1.F
 func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	manager := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Function{}).
-		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
 		Owns(&corev1.Secret{})

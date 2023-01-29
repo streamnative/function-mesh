@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -64,7 +65,7 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, fun
 	}
 	function.Status.Selector = selector.String()
 
-	if r.checkIfStatefulSetNeedUpdate(function) || statefulSet.Status.ReadyReplicas != *function.Spec.Replicas {
+	if r.checkIfStatefulSetNeedToUpdate(function, statefulSet) {
 		function.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
 			"wait for the function statefulSet to be ready")
 	} else {
@@ -94,6 +95,8 @@ func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, funct
 	}
 	function.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
 		"creating or updating statefulSet for function...")
+	desiredStatefulSetSpecBytes, _ := json.Marshal(desiredStatefulSetSpec)
+	function.SetComponentHash(v1alpha1.StatefulSet, spec.GenerateSpecHash(desiredStatefulSetSpecBytes))
 	return nil
 }
 
@@ -115,7 +118,7 @@ func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, functio
 			fmt.Sprintf("error fetching function service: %v", err))
 		return err
 	}
-	if r.checkIfServiceNeedUpdate(function) {
+	if r.checkIfServiceNeedToUpdate(function) {
 		function.SetCondition(v1alpha1.ServiceReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
 			"wait for the function service to be ready")
 	} else {
@@ -143,6 +146,8 @@ func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function 
 		return err
 	}
 	function.SetCondition(v1alpha1.ServiceReady, metav1.ConditionTrue, v1alpha1.ServiceIsReady, "")
+	desiredServiceSpecBytes, _ := json.Marshal(desiredServiceSpec)
+	function.SetComponentHash(v1alpha1.Service, spec.GenerateSpecHash(desiredServiceSpecBytes))
 	return nil
 }
 
@@ -150,6 +155,7 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *v
 	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		function.RemoveCondition(v1alpha1.HPAReady)
+		function.RemoveComponentHash(v1alpha1.HPA)
 		return nil
 	}
 
@@ -213,6 +219,8 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1a
 		return err
 	}
 	function.SetCondition(v1alpha1.HPAReady, metav1.ConditionTrue, v1alpha1.HPAIsReady, "")
+	desiredHPASpecBytes, _ := json.Marshal(desiredHPASpec)
+	function.SetComponentHash(v1alpha1.HPA, spec.GenerateSpecHash(desiredHPASpecBytes))
 	return nil
 }
 
@@ -220,6 +228,7 @@ func (r *FunctionReconciler) ObserveFunctionVPA(ctx context.Context, function *v
 	if function.Spec.Pod.VPA == nil {
 		// VPA not enabled, skip further action
 		function.RemoveCondition(v1alpha1.VPAReady)
+		function.RemoveComponentHash(v1alpha1.VPA)
 		return nil
 	}
 
@@ -240,7 +249,7 @@ func (r *FunctionReconciler) ObserveFunctionVPA(ctx context.Context, function *v
 			fmt.Sprintf("error fetching function vpa: %v", err))
 		return err
 	}
-	if r.checkIfHPANeedUpdate(function) {
+	if r.checkIfVPANeedUpdate(function) {
 		function.SetCondition(v1alpha1.VPAReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
 			"wait for the function vpa to be ready")
 	} else {
@@ -283,41 +292,51 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 		return err
 	}
 	function.SetCondition(v1alpha1.VPAReady, metav1.ConditionTrue, v1alpha1.VPAIsReady, "")
+	desiredVPASpecBytes, _ := json.Marshal(desiredVPASpec)
+	function.SetComponentHash(v1alpha1.VPA, spec.GenerateSpecHash(desiredVPASpecBytes))
 	return nil
 }
 
-func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(function *v1alpha1.Function) bool {
-	if cond := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.StatefulSetReady)); cond != nil {
-		if cond.ObservedGeneration != function.Generation {
-			return true
-		}
-	}
-	return false
+func (r *FunctionReconciler) checkIfStatefulSetNeedToUpdate(function *v1alpha1.Function, statefulSet *appsv1.StatefulSet) bool {
+	desiredObject := spec.MakeFunctionStatefulSet(function)
+	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
+	return checkIfComponentNeedToUpdate(function, v1alpha1.StatefulSetReady, v1alpha1.StatefulSet, desiredSpecBytes) ||
+		statefulSet.Status.ReadyReplicas != *function.Spec.Replicas
 }
 
-func (r *FunctionReconciler) checkIfServiceNeedUpdate(function *v1alpha1.Function) bool {
-	if cond := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.ServiceReady)); cond != nil {
-		if cond.ObservedGeneration != function.Generation {
-			return true
-		}
-	}
-	return false
+func (r *FunctionReconciler) checkIfServiceNeedToUpdate(function *v1alpha1.Function) bool {
+	desiredObject := spec.MakeFunctionService(function)
+	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
+	return checkIfComponentNeedToUpdate(function, v1alpha1.ServiceReady, v1alpha1.Service, desiredSpecBytes)
 }
 
 func (r *FunctionReconciler) checkIfHPANeedUpdate(function *v1alpha1.Function) bool {
-	if cond := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.HPAReady)); cond != nil {
-		if cond.ObservedGeneration != function.Generation {
-			return true
-		}
-	}
-	return false
+	desiredObject := spec.MakeFunctionHPA(function)
+	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
+	return checkIfComponentNeedToUpdate(function, v1alpha1.HPAReady, v1alpha1.HPA, desiredSpecBytes)
 }
 
 func (r *FunctionReconciler) checkIfVPANeedUpdate(function *v1alpha1.Function) bool {
-	if cond := meta.FindStatusCondition(function.Status.Conditions, string(v1alpha1.VPAReady)); cond != nil {
-		if cond.ObservedGeneration != function.Generation {
-			return true
+	desiredObject := spec.MakeFunctionVPA(function)
+	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
+	return checkIfComponentNeedToUpdate(function, v1alpha1.VPAReady, v1alpha1.VPA, desiredSpecBytes)
+}
+
+func checkIfComponentNeedToUpdate(function *v1alpha1.Function, condType v1alpha1.ResourceConditionType,
+	componentType v1alpha1.Component, desiredSpecBytes []byte) bool {
+	if cond := meta.FindStatusCondition(function.Status.Conditions, string(condType)); cond != nil {
+		// if the generation has not changed, we do not need to update the component
+		if cond.ObservedGeneration == function.Generation {
+			return false
+		}
+		// if the desired specification has not changed, we do not need to update the component
+		if specHash := function.GetComponentHash(componentType); specHash != nil {
+			fmt.Println(*specHash)
+			fmt.Println(spec.GenerateSpecHash(desiredSpecBytes))
+			if *specHash == spec.GenerateSpecHash(desiredSpecBytes) {
+				return false
+			}
 		}
 	}
-	return false
+	return true
 }

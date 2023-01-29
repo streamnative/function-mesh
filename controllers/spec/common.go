@@ -19,6 +19,7 @@ package spec
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -189,7 +190,7 @@ formatter=formatter
 args=(sys.stdout,)
 
 [formatter_formatter]
-format=[%(asctime)s] [%(levelname)s] aa %(filename)s: %(message)s
+format=[%(asctime)s] [%(levelname)s] %(filename)s: %(message)s
 datefmt=%Y-%m-%d %H:%M:%S %z`
 )
 
@@ -1739,4 +1740,10 @@ func getFilenameOfComponentPackage(componentPackage string) string {
 		return data[len(data)-1]
 	}
 	return componentPackage
+}
+
+func GenerateSpecHash(spec []byte) string {
+	h := sha256.New()
+	h.Write(spec)
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
