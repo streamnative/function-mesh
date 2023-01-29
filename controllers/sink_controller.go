@@ -28,9 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -73,6 +71,7 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return reconcile.Result{}, nil
 	}
 
+	defer sink.SaveStatus(ctx, r.Log, r.Client)
 	if result, err := r.observe(ctx, sink); err != nil {
 		return result, err
 	}
@@ -84,62 +83,47 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 }
 
 func (r *SinkReconciler) observe(ctx context.Context, sink *v1alpha1.Sink) (ctrl.Result, error) {
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
-
-	err := r.ObserveSinkStatefulSet(ctx, sink)
-	if err != nil {
+	if err := r.ObserveSinkStatefulSet(ctx, sink); err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveSinkService(ctx, sink)
-	if err != nil {
+	if err := r.ObserveSinkService(ctx, sink); err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveSinkHPA(ctx, sink)
-	if err != nil {
+	if err := r.ObserveSinkHPA(ctx, sink); err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		err = r.ObserveSinkVPA(ctx, sink)
-		if err != nil {
+		if err := r.ObserveSinkVPA(ctx, sink); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
-
 	return reconcile.Result{}, nil
 }
 
 func (r *SinkReconciler) reconcile(ctx context.Context, sink *v1alpha1.Sink) (ctrl.Result, error) {
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
-
-	err := r.ApplySinkStatefulSet(ctx, sink)
-	if err != nil {
+	if err := r.ApplySinkStatefulSet(ctx, sink); err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySinkService(ctx, sink)
-	if err != nil {
+	if err := r.ApplySinkService(ctx, sink); err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySinkHPA(ctx, sink)
-	if err != nil {
+	if err := r.ApplySinkHPA(ctx, sink); err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySinkVPA(ctx, sink)
-	if err != nil {
+	if err := r.ApplySinkVPA(ctx, sink); err != nil {
 		return reconcile.Result{}, err
 	}
-
 	return reconcile.Result{}, nil
 }
 
 func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	manager := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Sink{}).
-		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{})
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
 		manager.Owns(&vpav1.VerticalPodAutoscaler{})
 	}
-
 	return manager.Complete(r)
 }

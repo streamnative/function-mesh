@@ -124,6 +124,7 @@ func (r *Function) RemoveCondition(condType ResourceConditionType) {
 	meta.RemoveStatusCondition(&r.Status.Conditions, string(condType))
 }
 
+// SetComponentHash adds a new component hash to the Function
 func (r *Function) SetComponentHash(component Component, specHash string) {
 	if r.Status.ComponentHash == nil {
 		r.Status.ComponentHash = map[Component]string{}
@@ -131,6 +132,7 @@ func (r *Function) SetComponentHash(component Component, specHash string) {
 	r.Status.ComponentHash[component] = specHash
 }
 
+// GetComponentHash returns a specific component hash or nil
 func (r *Function) GetComponentHash(component Component) *string {
 	if r.Status.ComponentHash != nil {
 		if specHash, exist := r.Status.ComponentHash[component]; exist {
@@ -140,6 +142,7 @@ func (r *Function) GetComponentHash(component Component) *string {
 	return nil
 }
 
+// RemoveComponentHash removes a specific component hash from the Function
 func (r *Function) RemoveComponentHash(component Component) {
 	if r.Status.ComponentHash != nil {
 		delete(r.Status.ComponentHash, component)
@@ -190,6 +193,31 @@ func (r *Sink) SetCondition(condType ResourceConditionType, status metav1.Condit
 // RemoveCondition removes a specific condition from the Sink
 func (r *Sink) RemoveCondition(condType ResourceConditionType) {
 	meta.RemoveStatusCondition(&r.Status.Conditions, string(condType))
+}
+
+// SetComponentHash adds a new component hash to the Sink
+func (r *Sink) SetComponentHash(component Component, specHash string) {
+	if r.Status.ComponentHash == nil {
+		r.Status.ComponentHash = map[Component]string{}
+	}
+	r.Status.ComponentHash[component] = specHash
+}
+
+// GetComponentHash returns a specific component hash or nil
+func (r *Sink) GetComponentHash(component Component) *string {
+	if r.Status.ComponentHash != nil {
+		if specHash, exist := r.Status.ComponentHash[component]; exist {
+			return &specHash
+		}
+	}
+	return nil
+}
+
+// RemoveComponentHash removes a specific component hash from the Sink
+func (r *Sink) RemoveComponentHash(component Component) {
+	if r.Status.ComponentHash != nil {
+		delete(r.Status.ComponentHash, component)
+	}
 }
 
 // SaveStatus will trigger Source object update to save the current status

@@ -300,29 +300,29 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 func (r *FunctionReconciler) checkIfStatefulSetNeedToUpdate(function *v1alpha1.Function, statefulSet *appsv1.StatefulSet) bool {
 	desiredObject := spec.MakeFunctionStatefulSet(function)
 	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
-	return checkIfComponentNeedToUpdate(function, v1alpha1.StatefulSetReady, v1alpha1.StatefulSet, desiredSpecBytes) ||
+	return r.checkIfComponentNeedToUpdate(function, v1alpha1.StatefulSetReady, v1alpha1.StatefulSet, desiredSpecBytes) ||
 		statefulSet.Status.ReadyReplicas != *function.Spec.Replicas
 }
 
 func (r *FunctionReconciler) checkIfServiceNeedToUpdate(function *v1alpha1.Function) bool {
 	desiredObject := spec.MakeFunctionService(function)
 	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
-	return checkIfComponentNeedToUpdate(function, v1alpha1.ServiceReady, v1alpha1.Service, desiredSpecBytes)
+	return r.checkIfComponentNeedToUpdate(function, v1alpha1.ServiceReady, v1alpha1.Service, desiredSpecBytes)
 }
 
 func (r *FunctionReconciler) checkIfHPANeedUpdate(function *v1alpha1.Function) bool {
 	desiredObject := spec.MakeFunctionHPA(function)
 	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
-	return checkIfComponentNeedToUpdate(function, v1alpha1.HPAReady, v1alpha1.HPA, desiredSpecBytes)
+	return r.checkIfComponentNeedToUpdate(function, v1alpha1.HPAReady, v1alpha1.HPA, desiredSpecBytes)
 }
 
 func (r *FunctionReconciler) checkIfVPANeedUpdate(function *v1alpha1.Function) bool {
 	desiredObject := spec.MakeFunctionVPA(function)
 	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
-	return checkIfComponentNeedToUpdate(function, v1alpha1.VPAReady, v1alpha1.VPA, desiredSpecBytes)
+	return r.checkIfComponentNeedToUpdate(function, v1alpha1.VPAReady, v1alpha1.VPA, desiredSpecBytes)
 }
 
-func checkIfComponentNeedToUpdate(function *v1alpha1.Function, condType v1alpha1.ResourceConditionType,
+func (r *FunctionReconciler) checkIfComponentNeedToUpdate(function *v1alpha1.Function, condType v1alpha1.ResourceConditionType,
 	componentType v1alpha1.Component, desiredSpecBytes []byte) bool {
 	if cond := meta.FindStatusCondition(function.Status.Conditions, string(condType)); cond != nil {
 		// if the generation has not changed, we do not need to update the component

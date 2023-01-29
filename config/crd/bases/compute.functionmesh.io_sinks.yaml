@@ -3216,6 +3216,10 @@ spec:
             type: object
           status:
             properties:
+              componentHash:
+                additionalProperties:
+                  type: string
+                type: object
               conditions:
                 items:
                   properties:

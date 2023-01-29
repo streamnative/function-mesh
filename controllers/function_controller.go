@@ -126,7 +126,6 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
 		Owns(&corev1.Secret{})
-
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
 		manager.Owns(&vpav1.VerticalPodAutoscaler{})
 	}
