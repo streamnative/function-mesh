@@ -19,31 +19,23 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
-	autoscaling "k8s.io/api/autoscaling/v1"
-
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
 )
 
 func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, sink *v1alpha1.Sink) error {
-	condition, ok := sink.Status.Conditions[v1alpha1.StatefulSet]
-	if !ok {
-		sink.Status.Conditions[v1alpha1.StatefulSet] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.StatefulSetReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
-		return nil
-	}
-
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
 		Namespace: sink.Namespace,
@@ -54,42 +46,34 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, sink *v1alp
 			r.Log.Info("sink statefulSet is not found...",
 				"namespace", sink.Namespace, "name", sink.Name,
 				"statefulSet name", statefulSet.Name)
-			condition.Status = metav1.ConditionFalse
-			condition.Action = v1alpha1.Create
-			sink.Status.Conditions[v1alpha1.StatefulSet] = condition
 			return nil
 		}
+		sink.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.StatefulSetError,
+			fmt.Sprintf("error fetching sink statefulSet: %v", err))
 		return err
 	}
 
 	selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
 	if err != nil {
 		r.Log.Error(err, "error retrieving statefulSet selector")
+		sink.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.StatefulSetError,
+			fmt.Sprintf("error retrieving statefulSet selector: %v", err))
 		return err
 	}
 	sink.Status.Selector = selector.String()
 
-	if r.checkIfStatefulSetNeedUpdate(statefulSet, sink) {
-		condition.Status = metav1.ConditionFalse
-		condition.Action = v1alpha1.Update
-		sink.Status.Conditions[v1alpha1.StatefulSet] = condition
-		return nil
-	}
-
 	if statefulSet.Status.ReadyReplicas == *sink.Spec.Replicas {
-		condition.Action = v1alpha1.NoAction
+		sink.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionTrue, v1alpha1.StatefulSetIsReady, "")
 	} else {
-		condition.Action = v1alpha1.Wait
+		sink.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"wait for the number of replicas of statefulSet to be ready")
 	}
-	condition.Status = metav1.ConditionTrue
 	sink.Status.Replicas = *statefulSet.Spec.Replicas
-	sink.Status.Conditions[v1alpha1.StatefulSet] = condition
 	return nil
 }
 
-func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
-	condition := sink.Status.Conditions[v1alpha1.StatefulSet]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha1.Sink) error {
+	if !r.checkIfStatefulSetNeedUpdate(sink) {
 		return nil
 	}
 	desiredStatefulSet := spec.MakeSinkStatefulSet(sink)
@@ -99,51 +83,40 @@ func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha
 		desiredStatefulSet.Spec = desiredStatefulSetSpec
 		return nil
 	}); err != nil {
-		r.Log.Error(err, "error create or update statefulSet workload for sink",
+		r.Log.Error(err, "error creating or updating statefulSet workload for sink",
 			"namespace", sink.Namespace, "name", sink.Name,
 			"statefulSet name", desiredStatefulSet.Name)
+		sink.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.ErrorCreatingStatefulSet,
+			fmt.Sprintf("error creating or updating statefulSet for sink: %v", err))
 		return err
 	}
+	sink.SetCondition(v1alpha1.StatefulSetReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+		"creating or updating statefulSet for sink...")
 	return nil
 }
 
 func (r *SinkReconciler) ObserveSinkService(ctx context.Context, sink *v1alpha1.Sink) error {
-	condition, ok := sink.Status.Conditions[v1alpha1.Service]
-	if !ok {
-		sink.Status.Conditions[v1alpha1.Service] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.ServiceReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
-		return nil
-	}
-
 	svc := &corev1.Service{}
 	svcName := spec.MakeHeadlessServiceName(spec.MakeSinkObjectMeta(sink).Name)
 	err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace,
 		Name: svcName}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			condition.Status = metav1.ConditionFalse
-			condition.Action = v1alpha1.Create
-			sink.Status.Conditions[v1alpha1.Service] = condition
 			r.Log.Info("sink service is not created...",
 				"namespace", sink.Namespace, "name", sink.Name,
 				"service name", svcName)
 			return nil
 		}
+		sink.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.ServiceError,
+			fmt.Sprintf("error fetching sink service: %v", err))
 		return err
 	}
-
-	condition.Action = v1alpha1.NoAction
-	condition.Status = metav1.ConditionTrue
-	sink.Status.Conditions[v1alpha1.Service] = condition
+	sink.SetCondition(v1alpha1.ServiceReady, metav1.ConditionTrue, v1alpha1.ServiceIsReady, "")
 	return nil
 }
 
-func (r *SinkReconciler) ApplySinkService(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
-	condition := sink.Status.Conditions[v1alpha1.Service]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+func (r *SinkReconciler) ApplySinkService(ctx context.Context, sink *v1alpha1.Sink) error {
+	if !r.checkIfServiceNeedUpdate(sink) {
 		return nil
 	}
 	desiredService := spec.MakeSinkService(sink)
@@ -153,27 +126,21 @@ func (r *SinkReconciler) ApplySinkService(ctx context.Context, sink *v1alpha1.Si
 		desiredService.Spec = desiredServiceSpec
 		return nil
 	}); err != nil {
-		r.Log.Error(err, "error create or update service for sink",
+		r.Log.Error(err, "error creating or updating service for sink",
 			"namespace", sink.Namespace, "name", sink.Name,
 			"service name", desiredService.Name)
+		sink.SetCondition(v1alpha1.ServiceReady, metav1.ConditionFalse, v1alpha1.ErrorCreatingService,
+			fmt.Sprintf("error creating or updating service for sink: %v", err))
 		return err
 	}
+	sink.SetCondition(v1alpha1.ServiceReady, metav1.ConditionTrue, v1alpha1.ServiceIsReady, "")
 	return nil
 }
 
 func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, sink *v1alpha1.Sink) error {
 	if sink.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
-		return nil
-	}
-
-	condition, ok := sink.Status.Conditions[v1alpha1.HPA]
-	if !ok {
-		sink.Status.Conditions[v1alpha1.HPA] = v1alpha1.ResourceCondition{
-			Condition: v1alpha1.HPAReady,
-			Status:    metav1.ConditionFalse,
-			Action:    v1alpha1.Create,
-		}
+		sink.RemoveCondition(v1alpha1.HPAReady)
 		return nil
 	}
 
@@ -182,37 +149,37 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, sink *v1alpha1.Sink
 		Name: spec.MakeSinkObjectMeta(sink).Name}, hpa)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			condition.Status = metav1.ConditionFalse
-			condition.Action = v1alpha1.Create
-			sink.Status.Conditions[v1alpha1.HPA] = condition
-			r.Log.Info("sink hpa is not created for sink...",
+			r.Log.Info("hpa is not created for sink...",
 				"namespace", sink.Namespace, "name", sink.Name,
 				"hpa name", hpa.Name)
 			return nil
 		}
+		sink.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.HPAError,
+			fmt.Sprintf("error fetching sink hpa: %v", err))
 		return err
 	}
 
-	if r.checkIfHPANeedUpdate(hpa, sink) {
-		condition.Status = metav1.ConditionFalse
-		condition.Action = v1alpha1.Update
-		sink.Status.Conditions[v1alpha1.HPA] = condition
-		return nil
-	}
-
-	condition.Action = v1alpha1.NoAction
-	condition.Status = metav1.ConditionTrue
-	sink.Status.Conditions[v1alpha1.HPA] = condition
+	sink.SetCondition(v1alpha1.HPAReady, metav1.ConditionTrue, v1alpha1.HPAIsReady, "")
 	return nil
 }
 
-func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
+func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink) error {
 	if sink.Spec.MaxReplicas == nil {
-		// HPA not enabled, skip further action
+		// HPA not enabled, clear the exists HPA
+		hpa := &autov2beta2.HorizontalPodAutoscaler{}
+		hpa.Namespace = sink.Namespace
+		hpa.Name = spec.MakeSinkObjectMeta(sink).Name
+		if err := r.Delete(ctx, hpa); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
+			sink.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.HPAError,
+				fmt.Sprintf("error deleting hpa for sink: %v", err))
+			return err
+		}
 		return nil
 	}
-	condition := sink.Status.Conditions[v1alpha1.HPA]
-	if condition.Status == metav1.ConditionTrue && !newGeneration {
+	if !r.checkIfHPANeedUpdate(sink) {
 		return nil
 	}
 	desiredHPA := spec.MakeSinkHPA(sink)
@@ -222,46 +189,126 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, 
 		desiredHPA.Spec = desiredHPASpec
 		return nil
 	}); err != nil {
-		r.Log.Error(err, "error create or update hpa for sink",
+		r.Log.Error(err, "error creating or updating hpa for sink",
 			"namespace", sink.Namespace, "name", sink.Name,
 			"hpa name", desiredHPA.Name)
+		sink.SetCondition(v1alpha1.HPAReady, metav1.ConditionFalse, v1alpha1.ErrorCreatingHPA,
+			fmt.Sprintf("error creating or updating hpa for sink: %v", err))
 		return err
 	}
+	sink.SetCondition(v1alpha1.HPAReady, metav1.ConditionTrue, v1alpha1.HPAIsReady, "")
 	return nil
 }
 
 func (r *SinkReconciler) ObserveSinkVPA(ctx context.Context, sink *v1alpha1.Sink) error {
-	return observeVPA(ctx, r, types.NamespacedName{Namespace: sink.Namespace,
-		Name: spec.MakeSinkObjectMeta(sink).Name}, sink.Spec.Pod.VPA, sink.Status.Conditions)
-}
-
-func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink) error {
-
-	condition, ok := sink.Status.Conditions[v1alpha1.VPA]
-
-	if !ok || condition.Status == metav1.ConditionTrue {
+	if sink.Spec.Pod.VPA == nil {
+		// VPA not enabled, skip further action
+		sink.RemoveCondition(v1alpha1.VPAReady)
 		return nil
 	}
 
-	objectMeta := spec.MakeSinkObjectMeta(sink)
-	targetRef := &autoscaling.CrossVersionObjectReference{
-		Kind:       sink.Kind,
-		Name:       sink.Name,
-		APIVersion: sink.APIVersion,
-	}
-
-	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, sink.Spec.Pod.VPA, "sink", sink.Namespace, sink.Name)
+	vpa := &vpav1.VerticalPodAutoscaler{}
+	err := r.Get(ctx, types.NamespacedName{
+		Namespace: sink.Namespace,
+		Name:      spec.MakeSinkObjectMeta(sink).Name}, vpa)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			r.Log.Info("vpa is not created for sink...",
+				"namespace", sink.Namespace, "name", sink.Name,
+				"vpa name", vpa.Name)
+			return nil
+		}
+		sink.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.VPAError,
+			fmt.Sprintf("error fetching sink vpa: %v", err))
 		return err
 	}
 
+	sink.SetCondition(v1alpha1.VPAReady, metav1.ConditionTrue, v1alpha1.VPAIsReady, "")
 	return nil
 }
 
-func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet, sink *v1alpha1.Sink) bool {
-	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeSinkStatefulSet(sink).Spec)
+func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink) error {
+	if sink.Spec.Pod.VPA == nil {
+		// VPA not enabled, clear the exists VPA
+		vpa := &vpav1.VerticalPodAutoscaler{}
+		vpa.Namespace = sink.Namespace
+		vpa.Name = spec.MakeSinkObjectMeta(sink).Name
+		if err := r.Delete(ctx, vpa); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
+			sink.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.VPAError,
+				fmt.Sprintf("error deleting vpa for sink: %v", err))
+			return err
+		}
+		return nil
+	}
+
+	if !r.checkIfVPANeedUpdate(sink) {
+		return nil
+	}
+	desiredVPA := spec.MakeSinkVPA(sink)
+	desiredVPASpec := desiredVPA.Spec
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredVPA, func() error {
+		// function vpa mutate logic
+		desiredVPA.Spec = desiredVPASpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error creating or updating vpa for sink",
+			"namespace", sink.Namespace, "name", sink.Name,
+			"vpa name", desiredVPA.Name)
+		sink.SetCondition(v1alpha1.VPAReady, metav1.ConditionFalse, v1alpha1.ErrorCreatingVPA,
+			fmt.Sprintf("error creating or updating vpa for sink: %v", err))
+		return err
+	}
+	sink.SetCondition(v1alpha1.VPAReady, metav1.ConditionTrue, v1alpha1.VPAIsReady, "")
+	return nil
 }
 
-func (r *SinkReconciler) checkIfHPANeedUpdate(hpa *autov2beta2.HorizontalPodAutoscaler, sink *v1alpha1.Sink) bool {
-	return !spec.CheckIfHPASpecIsEqual(&hpa.Spec, &spec.MakeSinkHPA(sink).Spec)
+func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(sink *v1alpha1.Sink) bool {
+	if statefulSetStatus := meta.FindStatusCondition(sink.Status.Conditions, string(v1alpha1.StatefulSetReady)); statefulSetStatus != nil {
+		if statefulSetStatus.ObservedGeneration != sink.Generation {
+			return true
+		}
+		if statefulSetStatus.Status == metav1.ConditionTrue {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *SinkReconciler) checkIfServiceNeedUpdate(sink *v1alpha1.Sink) bool {
+	if serviceStatus := meta.FindStatusCondition(sink.Status.Conditions, string(v1alpha1.ServiceReady)); serviceStatus != nil {
+		if serviceStatus.ObservedGeneration != sink.Generation {
+			return true
+		}
+		if serviceStatus.Status == metav1.ConditionTrue {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *SinkReconciler) checkIfHPANeedUpdate(sink *v1alpha1.Sink) bool {
+	if hpaStatus := meta.FindStatusCondition(sink.Status.Conditions, string(v1alpha1.HPAReady)); hpaStatus != nil {
+		if hpaStatus.ObservedGeneration != sink.Generation {
+			return true
+		}
+		if hpaStatus.Status == metav1.ConditionTrue {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *SinkReconciler) checkIfVPANeedUpdate(sink *v1alpha1.Sink) bool {
+	if vpaStatus := meta.FindStatusCondition(sink.Status.Conditions, string(v1alpha1.VPAReady)); vpaStatus != nil {
+		if vpaStatus.ObservedGeneration != sink.Generation {
+			return true
+		}
+		if vpaStatus.Status == metav1.ConditionTrue {
+			return false
+		}
+	}
+	return true
 }

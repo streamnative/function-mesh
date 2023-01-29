@@ -180,7 +180,6 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1a
 		}
 		return nil
 	}
-
 	if !r.checkIfHPANeedUpdate(function) {
 		return nil
 	}

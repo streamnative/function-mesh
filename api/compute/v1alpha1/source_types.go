@@ -97,10 +97,9 @@ type BatchSourceConfig struct {
 type SourceStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Conditions         []metav1.Condition `json:"conditions"`
-	Replicas           int32              `json:"replicas"`
-	Selector           string             `json:"selector"`
-	ObservedGeneration int64              `json:"observedGeneration,omitempty"`
+	Conditions []metav1.Condition `json:"conditions"`
+	Replicas   int32              `json:"replicas"`
+	Selector   string             `json:"selector"`
 }
 
 // +genclient

@@ -83,12 +83,34 @@ const (
 func (r *Function) SaveStatus(ctx context.Context, logger logr.Logger, c client.StatusClient) {
 	logger.Info("Updating status on FunctionStatus", "resource version", r.ResourceVersion)
 
+	r.computeFunctionStatus()
 	err := c.Status().Update(ctx, r)
 	if err != nil {
 		logger.Error(err, "failed to update status on FunctionStatus", "function", r)
 	} else {
 		logger.Info("Updated status on FunctionStatus", "resource version", r.ResourceVersion)
 	}
+}
+
+func (r *Function) computeFunctionStatus() {
+	subComponentsReady := meta.IsStatusConditionTrue(r.Status.Conditions, string(StatefulSetReady)) &&
+		meta.IsStatusConditionTrue(r.Status.Conditions, string(ServiceReady))
+	if r.Spec.Pod.VPA != nil {
+		subComponentsReady = subComponentsReady &&
+			meta.IsStatusConditionTrue(r.Status.Conditions, string(VPAReady))
+	}
+	if r.Spec.MaxReplicas != nil {
+		subComponentsReady = subComponentsReady &&
+			meta.IsStatusConditionTrue(r.Status.Conditions, string(HPAReady))
+	}
+	if subComponentsReady {
+		r.SetCondition(Ready, metav1.ConditionTrue, FunctionIsReady, "")
+		meta.RemoveStatusCondition(&r.Status.Conditions, string(Error))
+		return
+	}
+	r.SetCondition(Ready, metav1.ConditionFalse,
+		PendingCreation, "function is not ready yet...")
+	return
 }
 
 // SetCondition adds a new condition to the Function
@@ -98,6 +120,7 @@ func (r *Function) SetCondition(condType ResourceConditionType, status metav1.Co
 		r.Generation, condType, status, reason, message))
 }
 
+// RemoveCondition removes a specific condition from the Function
 func (r *Function) RemoveCondition(condType ResourceConditionType) {
 	meta.RemoveStatusCondition(&r.Status.Conditions, string(condType))
 }
@@ -107,12 +130,34 @@ func (r *Function) RemoveCondition(condType ResourceConditionType) {
 func (r *Sink) SaveStatus(ctx context.Context, logger logr.Logger, c client.StatusClient) {
 	logger.Info("Updating status on SinkStatus", "resource version", r.ResourceVersion)
 
+	r.computeSinkStatus()
 	err := c.Status().Update(ctx, r)
 	if err != nil {
 		logger.Error(err, "failed to update status on SinkStatus", "sink", r)
 	} else {
 		logger.Info("Updated status on SinkStatus", "resource version", r.ResourceVersion)
 	}
+}
+
+func (r *Sink) computeSinkStatus() {
+	subComponentsReady := meta.IsStatusConditionTrue(r.Status.Conditions, string(StatefulSetReady)) &&
+		meta.IsStatusConditionTrue(r.Status.Conditions, string(ServiceReady))
+	if r.Spec.Pod.VPA != nil {
+		subComponentsReady = subComponentsReady &&
+			meta.IsStatusConditionTrue(r.Status.Conditions, string(VPAReady))
+	}
+	if r.Spec.MaxReplicas != nil {
+		subComponentsReady = subComponentsReady &&
+			meta.IsStatusConditionTrue(r.Status.Conditions, string(HPAReady))
+	}
+	if subComponentsReady {
+		r.SetCondition(Ready, metav1.ConditionTrue, SinkIsReady, "")
+		meta.RemoveStatusCondition(&r.Status.Conditions, string(Error))
+		return
+	}
+	r.SetCondition(Ready, metav1.ConditionFalse,
+		PendingCreation, "function is not ready yet...")
+	return
 }
 
 // SetCondition adds a new condition to the Sink
@@ -122,11 +167,17 @@ func (r *Sink) SetCondition(condType ResourceConditionType, status metav1.Condit
 		r.Generation, condType, status, reason, message))
 }
 
+// RemoveCondition removes a specific condition from the Sink
+func (r *Sink) RemoveCondition(condType ResourceConditionType) {
+	meta.RemoveStatusCondition(&r.Status.Conditions, string(condType))
+}
+
 // SaveStatus will trigger Source object update to save the current status
 // conditions
 func (r *Source) SaveStatus(ctx context.Context, logger logr.Logger, c client.StatusClient) {
 	logger.Info("Updating status on SourceStatus", "resource version", r.ResourceVersion)
 
+	r.computeSourceStatus()
 	err := c.Status().Update(ctx, r)
 	if err != nil {
 		logger.Error(err, "failed to update status on SourceStatus", "source", r)
@@ -135,11 +186,37 @@ func (r *Source) SaveStatus(ctx context.Context, logger logr.Logger, c client.St
 	}
 }
 
+func (r *Source) computeSourceStatus() {
+	subComponentsReady := meta.IsStatusConditionTrue(r.Status.Conditions, string(StatefulSetReady)) &&
+		meta.IsStatusConditionTrue(r.Status.Conditions, string(ServiceReady))
+	if r.Spec.Pod.VPA != nil {
+		subComponentsReady = subComponentsReady &&
+			meta.IsStatusConditionTrue(r.Status.Conditions, string(VPAReady))
+	}
+	if r.Spec.MaxReplicas != nil {
+		subComponentsReady = subComponentsReady &&
+			meta.IsStatusConditionTrue(r.Status.Conditions, string(HPAReady))
+	}
+	if subComponentsReady {
+		r.SetCondition(Ready, metav1.ConditionTrue, SourceIsReady, "")
+		meta.RemoveStatusCondition(&r.Status.Conditions, string(Error))
+		return
+	}
+	r.SetCondition(Ready, metav1.ConditionFalse,
+		PendingCreation, "function is not ready yet...")
+	return
+}
+
 // SetCondition adds a new condition to the Source
 func (r *Source) SetCondition(condType ResourceConditionType, status metav1.ConditionStatus,
 	reason ResourceConditionReason, message string) {
 	meta.SetStatusCondition(&r.Status.Conditions, CreateCondition(
 		r.Generation, condType, status, reason, message))
+}
+
+// RemoveCondition removes a specific condition from the Source
+func (r *Source) RemoveCondition(condType ResourceConditionType) {
+	meta.RemoveStatusCondition(&r.Status.Conditions, string(condType))
 }
 
 // SaveStatus will trigger FunctionMesh object update to save the current status
