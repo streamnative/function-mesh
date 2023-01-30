@@ -110,8 +110,10 @@ func (r *SinkReconciler) reconcile(ctx context.Context, sink *v1alpha1.Sink) (ct
 	if err := r.ApplySinkHPA(ctx, sink); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ApplySinkVPA(ctx, sink); err != nil {
-		return reconcile.Result{}, err
+	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+		if err := r.ApplySinkVPA(ctx, sink); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 	return reconcile.Result{}, nil
 }

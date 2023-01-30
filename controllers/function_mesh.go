@@ -465,7 +465,7 @@ func (r *FunctionMeshReconciler) initializeMesh(mesh *v1alpha1.FunctionMesh) {
 			if _, exist := mesh.Status.SourceConditions[source.Name]; !exist {
 				specBytes, _ := json.Marshal(source)
 				specHash := spec.GenerateSpecHash(specBytes)
-				mesh.Status.SinkConditions[source.Name] = &v1alpha1.ComponentCondition{
+				mesh.Status.SourceConditions[source.Name] = &v1alpha1.ComponentCondition{
 					Status: v1alpha1.Wait,
 					Hash:   &specHash,
 				}
