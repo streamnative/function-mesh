@@ -6,8 +6,7 @@ metadata:
 spec:
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
-  replicas: 1
-  maxReplicas: 3
+  minReplicas: 1
   logTopic: persistent://public/default/go-function-logs
   input:
     topics:

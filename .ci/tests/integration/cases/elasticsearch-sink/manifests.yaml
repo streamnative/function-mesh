@@ -4,8 +4,7 @@ metadata:
   name: sink-sample
 spec:
   className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
-  replicas: 1
-  maxReplicas: 1
+  minReplicas: 1
   input:
     topics:
       - persistent://public/default/input-sink-topic

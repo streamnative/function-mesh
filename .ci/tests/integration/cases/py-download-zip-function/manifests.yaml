@@ -7,8 +7,7 @@ spec:
   className: exclamation
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
-  replicas: 1
-  maxReplicas: 1
+  minReplicas: 1
   logTopic: persistent://public/default/py-function-logs
   input:
     topics:

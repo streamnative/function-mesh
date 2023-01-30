@@ -8,8 +8,7 @@ spec:
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
-  replicas: 1
-  maxReplicas: 5
+  minReplicas: 1
   logTopic: persistent://public/default/logging-function-logs
   input:
     topics:

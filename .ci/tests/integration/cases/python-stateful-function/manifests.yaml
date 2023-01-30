@@ -8,7 +8,7 @@ spec:
   className: wordcount_function.WordCountFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
-  replicas: 1
+  minReplicas: 1
   logTopic: persistent://public/default/logging-stateful-function-logs
   input:
     topics:

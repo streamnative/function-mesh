@@ -7,8 +7,7 @@ spec:
     - name: sink-one
       image: streamnative/pulsar-io-elastic-search:2.9.2.23
       className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
-      replicas: 1
-      maxReplicas: 1
+      minReplicas: 1
       input:
         topics:
         - persistent://public/default/elasticsearch-sink
@@ -37,8 +36,7 @@ spec:
     - name: function-one
       image: streamnative/pulsar-functions-java-sample:2.9.2.23
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
-      replicas: 1
-      maxReplicas: 1
+      minReplicas: 1
       input:
         topics:
           - persistent://public/default/functionmesh-input-topic
@@ -63,8 +61,7 @@ spec:
   sources:
     - name: source-one
       className: org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource
-      replicas: 1
-      maxReplicas: 1
+      minReplicas: 1
       output:
         producerConf:
           maxPendingMessages: 1000

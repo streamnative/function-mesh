@@ -7,8 +7,7 @@ spec:
   image: streamnative/pulsar-functions-go-sample:2.9.2.23
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
-  replicas: 1
-  maxReplicas: 1
+  minReplicas: 1
   logTopic: persistent://public/default/go-function-logs
   input:
     topics:

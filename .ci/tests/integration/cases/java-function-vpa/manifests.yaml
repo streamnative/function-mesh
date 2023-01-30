@@ -8,7 +8,7 @@ spec:
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
-  replicas: 2
+  minReplicas: 2
   pod:
     vpa:
       updatePolicy:

@@ -4,8 +4,7 @@ metadata:
   name: source-sample
 spec:
   className: org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource
-  replicas: 1
-  maxReplicas: 1
+  minReplicas: 1
   output:
     producerConf:
       maxPendingMessages: 1000
