@@ -116,7 +116,6 @@ func (r *Function) computeFunctionStatus() {
 	}
 	r.SetCondition(Ready, metav1.ConditionFalse,
 		PendingCreation, "function is not ready yet...")
-	return
 }
 
 // SetCondition adds a new condition to the Function
@@ -187,7 +186,6 @@ func (r *Sink) computeSinkStatus() {
 	}
 	r.SetCondition(Ready, metav1.ConditionFalse,
 		PendingCreation, "function is not ready yet...")
-	return
 }
 
 // SetCondition adds a new condition to the Sink
@@ -258,7 +256,6 @@ func (r *Source) computeSourceStatus() {
 	}
 	r.SetCondition(Ready, metav1.ConditionFalse,
 		PendingCreation, "function is not ready yet...")
-	return
 }
 
 // SetCondition adds a new condition to the Source

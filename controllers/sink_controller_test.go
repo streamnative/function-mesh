@@ -23,15 +23,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/streamnative/function-mesh/controllers/spec"
-
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	appv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/spec"
 )
 
 var _ = Describe("Sink Controller", func() {
@@ -39,7 +38,7 @@ var _ = Describe("Sink Controller", func() {
 		pulsarConfig := makeSamplePulsarConfig()
 		sink := makeSinkSample()
 		if sink.Status.Conditions == nil {
-			sink.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
+			sink.Status.Conditions = []metav1.Condition{}
 		}
 		statefulSet := spec.MakeSinkStatefulSet(sink)
 

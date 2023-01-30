@@ -20,13 +20,14 @@ package spec
 import (
 	"testing"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	autoscaling "k8s.io/api/autoscaling/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 )
 
 func TestMakeVPA(t *testing.T) {
@@ -257,7 +258,7 @@ func TestMakeVPA(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, MakeVPA(tt.args.objectMeta, tt.args.targetRef, tt.args.vpa), "MakeVPA(%v, %v, %v)", tt.args.objectMeta, tt.args.targetRef, tt.args.vpa)
+			assert.Equalf(t, tt.want, makeVPA(tt.args.objectMeta, tt.args.targetRef, tt.args.vpa), "MakeVPA(%v, %v, %v)", tt.args.objectMeta, tt.args.targetRef, tt.args.vpa)
 		})
 	}
 }

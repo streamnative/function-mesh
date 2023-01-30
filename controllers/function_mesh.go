@@ -65,7 +65,7 @@ func (r *FunctionMeshReconciler) observeFunctions(ctx context.Context, mesh *v1a
 	}()
 
 	if len(mesh.Status.FunctionConditions) > 0 {
-		for name, _ := range mesh.Status.FunctionConditions {
+		for name := range mesh.Status.FunctionConditions {
 			orphanedFunctions[name] = true
 		}
 	}
@@ -134,7 +134,7 @@ func (r *FunctionMeshReconciler) observeSources(ctx context.Context, mesh *v1alp
 	}()
 
 	if len(mesh.Status.SourceConditions) > 0 {
-		for name, _ := range mesh.Status.SourceConditions {
+		for name := range mesh.Status.SourceConditions {
 			orphanedSources[name] = true
 		}
 	}
@@ -203,7 +203,7 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 	}()
 
 	if len(mesh.Status.SinkConditions) > 0 {
-		for name, _ := range mesh.Status.SinkConditions {
+		for name := range mesh.Status.SinkConditions {
 			orphanedSinks[name] = true
 		}
 	}
