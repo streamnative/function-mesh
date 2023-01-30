@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// ResourceConditionType indicates the available resource condition type
 type ResourceConditionType string
 
 const (
@@ -56,6 +57,7 @@ const (
 	VPAReady ResourceConditionType = "VPAReady"
 )
 
+// ResourceConditionReason indicates the reason why the resource is in its current condition
 type ResourceConditionReason string
 
 const (
