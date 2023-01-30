@@ -62,6 +62,7 @@ func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, nil
 	}
 
+	defer mesh.SaveStatus(ctx, r.Log, r.Client)
 	if result, err := r.observe(ctx, mesh); err != nil {
 		return result, err
 	}
@@ -73,25 +74,17 @@ func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request
 }
 
 func (r *FunctionMeshReconciler) observe(ctx context.Context, mesh *v1alpha1.FunctionMesh) (ctrl.Result, error) {
-	defer mesh.SaveStatus(ctx, r.Log, r.Client)
-
 	r.initializeMesh(mesh)
-
 	if err := r.ObserveFunctionMesh(ctx, mesh); err != nil {
 		return reconcile.Result{}, err
 	}
-
 	return reconcile.Result{}, nil
 }
 
 func (r *FunctionMeshReconciler) reconcile(ctx context.Context, mesh *v1alpha1.FunctionMesh) (ctrl.Result, error) {
-	defer mesh.SaveStatus(ctx, r.Log, r.Client)
-
-	err := r.UpdateFunctionMesh(ctx, mesh)
-	if err != nil {
+	if err := r.UpdateFunctionMesh(ctx, mesh); err != nil {
 		return reconcile.Result{}, err
 	}
-
 	return reconcile.Result{}, nil
 }
 

@@ -9707,37 +9707,40 @@ spec:
                   type: object
                 type: array
               functionConditions:
-                properties:
-                  ready:
-                    type: boolean
-                  status:
-                    additionalProperties:
+                additionalProperties:
+                  properties:
+                    hash:
                       type: string
-                    type: object
-                required:
-                - ready
+                    status:
+                      type: string
+                  required:
+                  - hash
+                  - status
+                  type: object
                 type: object
               sinkConditions:
-                properties:
-                  ready:
-                    type: boolean
-                  status:
-                    additionalProperties:
+                additionalProperties:
+                  properties:
+                    hash:
                       type: string
-                    type: object
-                required:
-                - ready
+                    status:
+                      type: string
+                  required:
+                  - hash
+                  - status
+                  type: object
                 type: object
               sourceConditions:
-                properties:
-                  ready:
-                    type: boolean
-                  status:
-                    additionalProperties:
+                additionalProperties:
+                  properties:
+                    hash:
                       type: string
-                    type: object
-                required:
-                - ready
+                    status:
+                      type: string
+                  required:
+                  - hash
+                  - status
+                  type: object
                 type: object
             type: object
         type: object

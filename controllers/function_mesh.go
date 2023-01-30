@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -32,23 +33,17 @@ import (
 )
 
 func (r *FunctionMeshReconciler) ObserveFunctionMesh(ctx context.Context, mesh *v1alpha1.FunctionMesh) error {
-	defer mesh.SaveStatus(ctx, r.Log, r.Client)
-
 	if err := r.observeFunctions(ctx, mesh); err != nil {
 		return err
 	}
-
 	if err := r.observeSources(ctx, mesh); err != nil {
 		return err
 	}
-
 	if err := r.observeSinks(ctx, mesh); err != nil {
 		return err
 	}
-
 	// Observation only
 	r.observeMeshes(mesh)
-
 	return nil
 }
 
@@ -57,13 +52,20 @@ func (r *FunctionMeshReconciler) observeFunctions(ctx context.Context, mesh *v1a
 	unreadyFunctions := []string{}
 
 	defer func() {
-		if len(unreadyFunctions) > 0 {
-			mesh.Status.FunctionConditions.Ready = false
+		if len(mesh.Spec.Functions) > 0 {
+			if len(unreadyFunctions) == 0 {
+				mesh.SetCondition(v1alpha1.FunctionReady, metav1.ConditionTrue, v1alpha1.FunctionIsReady, "")
+				return
+			}
+			mesh.SetCondition(v1alpha1.FunctionReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"wait for sub functions to be ready")
+		} else {
+			mesh.RemoveCondition(v1alpha1.FunctionReady)
 		}
 	}()
 
-	if len(mesh.Status.FunctionConditions.Status) > 0 {
-		for name, _ := range mesh.Status.FunctionConditions.Status {
+	if len(mesh.Status.FunctionConditions) > 0 {
+		for name, _ := range mesh.Status.FunctionConditions {
 			orphanedFunctions[name] = true
 		}
 	}
@@ -79,25 +81,36 @@ func (r *FunctionMeshReconciler) observeFunctions(ctx context.Context, mesh *v1a
 		}, function)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				r.Log.Info("function is not ready", "name", functionSpec.Name)
+				r.Log.Info("mesh function is not ready yet...",
+					"namespace", mesh.Namespace, "name", mesh.Name,
+					"function name", functionSpec.Name)
+				mesh.Status.FunctionConditions[functionSpec.Name].SetStatus(v1alpha1.Wait)
+				mesh.SetCondition(v1alpha1.FunctionReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+					"mesh function is not ready yet...")
 				unreadyFunctions = append(unreadyFunctions, functionSpec.Name)
 				continue
 			}
-			mesh.SetComponentCondition(v1alpha1.FunctionComponent, functionSpec.Name, v1alpha1.Error)
+			mesh.Status.FunctionConditions[functionSpec.Name].SetStatus(v1alpha1.Error)
+			mesh.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.FunctionError,
+				fmt.Sprintf("error fetching function: %v", err))
 			unreadyFunctions = append(unreadyFunctions, functionSpec.Name)
 			return err
 		}
 
-		if meta.IsStatusConditionTrue(function.Status.Conditions, string(v1alpha1.Ready)) {
-			mesh.SetComponentCondition(v1alpha1.FunctionComponent, functionSpec.Name, v1alpha1.Ready)
+		// if the function needs to be updated or if the function is not ready,
+		// it will be added to the unready inventory.
+		if r.checkIfFunctionNeedUpdate(mesh, &functionSpec) ||
+			!meta.IsStatusConditionTrue(function.Status.Conditions, string(v1alpha1.Ready)) {
+			mesh.Status.FunctionConditions[functionSpec.Name].SetStatus(v1alpha1.Wait)
+			unreadyFunctions = append(unreadyFunctions, functionSpec.Name)
 			continue
 		}
-		unreadyFunctions = append(unreadyFunctions, functionSpec.Name)
+		mesh.Status.FunctionConditions[functionSpec.Name].SetStatus(v1alpha1.Ready)
 	}
 
 	for name, isOrphaned := range orphanedFunctions {
 		if isOrphaned {
-			mesh.SetComponentCondition(v1alpha1.FunctionComponent, name, v1alpha1.Orphaned)
+			mesh.Status.FunctionConditions[name].SetStatus(v1alpha1.Orphaned)
 		}
 	}
 	return nil
@@ -108,13 +121,20 @@ func (r *FunctionMeshReconciler) observeSources(ctx context.Context, mesh *v1alp
 	unreadySources := []string{}
 
 	defer func() {
-		if len(unreadySources) > 0 {
-			mesh.Status.SourceConditions.Ready = false
+		if len(mesh.Spec.Sources) > 0 {
+			if len(unreadySources) == 0 {
+				mesh.SetCondition(v1alpha1.SourceReady, metav1.ConditionTrue, v1alpha1.SourceIsReady, "")
+				return
+			}
+			mesh.SetCondition(v1alpha1.SourceReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"wait for sub sources to be ready")
+		} else {
+			mesh.RemoveCondition(v1alpha1.SourceReady)
 		}
 	}()
 
-	if len(mesh.Status.SourceConditions.Status) > 0 {
-		for name, _ := range mesh.Status.SourceConditions.Status {
+	if len(mesh.Status.SourceConditions) > 0 {
+		for name, _ := range mesh.Status.SourceConditions {
 			orphanedSources[name] = true
 		}
 	}
@@ -130,25 +150,36 @@ func (r *FunctionMeshReconciler) observeSources(ctx context.Context, mesh *v1alp
 		}, source)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				r.Log.Info("source is not ready", "name", sourceSpec.Name)
+				r.Log.Info("mesh source is not ready yet...",
+					"namespace", mesh.Namespace, "name", mesh.Name,
+					"source name", sourceSpec.Name)
+				mesh.Status.SourceConditions[sourceSpec.Name].SetStatus(v1alpha1.Wait)
+				mesh.SetCondition(v1alpha1.SourceReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+					"mesh source is not ready yet...")
 				unreadySources = append(unreadySources, sourceSpec.Name)
 				continue
 			}
-			mesh.SetComponentCondition(v1alpha1.SourceComponent, source.Name, v1alpha1.Error)
+			mesh.Status.SourceConditions[sourceSpec.Name].SetStatus(v1alpha1.Error)
+			mesh.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.SourceError,
+				fmt.Sprintf("error fetching source: %v", err))
 			unreadySources = append(unreadySources, sourceSpec.Name)
 			return err
 		}
 
-		if meta.IsStatusConditionTrue(source.Status.Conditions, string(v1alpha1.Ready)) {
-			mesh.SetComponentCondition(v1alpha1.SourceComponent, source.Name, v1alpha1.Ready)
+		// if the source needs to be updated or if the source is not ready,
+		// it will be added to the unready inventory.
+		if r.checkIfSourceNeedUpdate(mesh, &sourceSpec) ||
+			!meta.IsStatusConditionTrue(source.Status.Conditions, string(v1alpha1.Ready)) {
+			mesh.Status.SourceConditions[sourceSpec.Name].SetStatus(v1alpha1.Wait)
+			unreadySources = append(unreadySources, sourceSpec.Name)
 			continue
 		}
-		unreadySources = append(unreadySources, sourceSpec.Name)
+		mesh.Status.SourceConditions[sourceSpec.Name].SetStatus(v1alpha1.Ready)
 	}
 
 	for name, isOrphaned := range orphanedSources {
 		if isOrphaned {
-			mesh.SetComponentCondition(v1alpha1.SourceComponent, name, v1alpha1.Orphaned)
+			mesh.Status.SourceConditions[name].SetStatus(v1alpha1.Orphaned)
 		}
 	}
 	return nil
@@ -159,13 +190,20 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 	unreadySinks := []string{}
 
 	defer func() {
-		if len(unreadySinks) > 0 {
-			mesh.Status.SinkConditions.Ready = false
+		if len(mesh.Spec.Sinks) > 0 {
+			if len(unreadySinks) == 0 {
+				mesh.SetCondition(v1alpha1.SinkReady, metav1.ConditionTrue, v1alpha1.SinkIsReady, "")
+				return
+			}
+			mesh.SetCondition(v1alpha1.SinkReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+				"wait for sub sinks to be ready")
+		} else {
+			mesh.RemoveCondition(v1alpha1.SinkReady)
 		}
 	}()
 
-	if len(mesh.Status.SinkConditions.Status) > 0 {
-		for name, _ := range mesh.Status.SinkConditions.Status {
+	if len(mesh.Status.SinkConditions) > 0 {
+		for name, _ := range mesh.Status.SinkConditions {
 			orphanedSinks[name] = true
 		}
 	}
@@ -181,59 +219,65 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 		}, sink)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				r.Log.Info("sink is not ready", "name", sinkSpec.Name)
+				r.Log.Info("mesh sink is not ready yet...",
+					"namespace", mesh.Namespace, "name", mesh.Name,
+					"sink name", sinkSpec.Name)
+				mesh.Status.SinkConditions[sinkSpec.Name].SetStatus(v1alpha1.Wait)
+				mesh.SetCondition(v1alpha1.SinkReady, metav1.ConditionFalse, v1alpha1.PendingCreation,
+					"mesh sink is not ready yet...")
 				unreadySinks = append(unreadySinks, sinkSpec.Name)
 				continue
 			}
-			mesh.SetComponentCondition(v1alpha1.SinkComponent, sink.Name, v1alpha1.Error)
+			mesh.Status.SinkConditions[sinkSpec.Name].SetStatus(v1alpha1.Error)
+			mesh.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.SinkError,
+				fmt.Sprintf("error fetching sink: %v", err))
 			unreadySinks = append(unreadySinks, sinkSpec.Name)
 			return err
 		}
 
-		if meta.IsStatusConditionTrue(sink.Status.Conditions, string(v1alpha1.Ready)) {
-			mesh.SetComponentCondition(v1alpha1.SinkComponent, sink.Name, v1alpha1.Ready)
+		// if the sink needs to be updated or if the sink is not ready,
+		// it will be added to the unready inventory.
+		if r.checkIfSinkNeedUpdate(mesh, &sinkSpec) ||
+			!meta.IsStatusConditionTrue(sink.Status.Conditions, string(v1alpha1.Ready)) {
+			mesh.Status.SinkConditions[sinkSpec.Name].SetStatus(v1alpha1.Wait)
+			unreadySinks = append(unreadySinks, sinkSpec.Name)
 			continue
 		}
-		unreadySinks = append(unreadySinks, sinkSpec.Name)
+		mesh.Status.SinkConditions[sinkSpec.Name].SetStatus(v1alpha1.Ready)
 	}
 
 	for name, isOrphaned := range orphanedSinks {
 		if isOrphaned {
-			mesh.SetComponentCondition(v1alpha1.SinkComponent, name, v1alpha1.Orphaned)
+			mesh.Status.SinkConditions[name].SetStatus(v1alpha1.Orphaned)
 		}
 	}
 	return nil
 }
 
 func (r *FunctionMeshReconciler) observeMeshes(mesh *v1alpha1.FunctionMesh) {
-	if mesh.Status.FunctionConditions != nil && !mesh.Status.FunctionConditions.Ready {
-		mesh.SetCondition(v1alpha1.Wait, metav1.ConditionTrue, v1alpha1.PendingCreation,
-			"wait for sub functions to be ready")
-		return
+	functionReady := len(mesh.Spec.Functions) == 0 ||
+		(len(mesh.Spec.Functions) > 0 && meta.IsStatusConditionTrue(mesh.Status.Conditions, string(v1alpha1.FunctionReady)))
+	sourceReady := len(mesh.Spec.Sources) == 0 ||
+		(len(mesh.Spec.Sources) > 0 && meta.IsStatusConditionTrue(mesh.Status.Conditions, string(v1alpha1.SourceReady)))
+	sinkReady := len(mesh.Spec.Sinks) == 0 ||
+		(len(mesh.Spec.Sinks) > 0 && meta.IsStatusConditionTrue(mesh.Status.Conditions, string(v1alpha1.SinkReady)))
+
+	if functionReady && sourceReady && sinkReady {
+		mesh.SetCondition(v1alpha1.Ready, metav1.ConditionTrue, v1alpha1.MeshIsReady, "")
+	} else {
+		mesh.SetCondition(v1alpha1.Ready, metav1.ConditionFalse, v1alpha1.PendingCreation,
+			"wait for sub components to be ready")
 	}
-	if mesh.Status.SinkConditions != nil && !mesh.Status.SinkConditions.Ready {
-		mesh.SetCondition(v1alpha1.Wait, metav1.ConditionTrue, v1alpha1.PendingCreation,
-			"wait for sub sinks to be ready")
-		return
-	}
-	if mesh.Status.SourceConditions != nil && !mesh.Status.SourceConditions.Ready {
-		mesh.SetCondition(v1alpha1.Wait, metav1.ConditionTrue, v1alpha1.PendingCreation,
-			"wait for sub source to be ready")
-		return
-	}
-	mesh.SetCondition(v1alpha1.Ready, metav1.ConditionTrue, v1alpha1.MeshIsReady, "")
 }
 
 func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, mesh *v1alpha1.FunctionMesh) error {
-	defer mesh.SaveStatus(ctx, r.Log, r.Client)
-
-	if !r.checkIfMeshNeedUpdate(mesh) {
+	if meta.IsStatusConditionTrue(mesh.Status.Conditions, string(v1alpha1.Ready)) {
 		return nil
 	}
 
 	for _, functionSpec := range mesh.Spec.Functions {
-		condition := mesh.Status.FunctionConditions.Status[functionSpec.Name]
-		if functionSpec.MaxReplicas != nil && condition == v1alpha1.Ready {
+		condition := mesh.Status.FunctionConditions[functionSpec.Name]
+		if condition.Status == v1alpha1.Ready {
 			continue
 		}
 		desiredFunction := spec.MakeFunctionComponent(makeComponentName(mesh.Name, functionSpec.Name), mesh, &functionSpec)
@@ -245,18 +289,20 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, mesh *v
 		}); err != nil {
 			r.Log.Error(err, "error creating or updating function",
 				"namespace", mesh.Namespace, "name", mesh.Name,
-				"function name", desiredFunction.Name)
-			mesh.SetComponentCondition(v1alpha1.FunctionComponent, functionSpec.Name, v1alpha1.Error)
+				"function name", functionSpec.Name)
+			mesh.Status.FunctionConditions[functionSpec.Name].SetStatus(v1alpha1.Error)
 			mesh.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.ErrorCreatingFunction,
 				fmt.Sprintf("error creating or updating function: %v", err))
 			return err
 		}
-		mesh.SetComponentCondition(v1alpha1.FunctionComponent, functionSpec.Name, v1alpha1.Wait)
+		specBytes, _ := json.Marshal(desiredFunctionSpec)
+		mesh.Status.FunctionConditions[functionSpec.Name].SetStatus(v1alpha1.Wait)
+		mesh.Status.FunctionConditions[functionSpec.Name].SetHash(spec.GenerateSpecHash(specBytes))
 	}
 
 	for _, sourceSpec := range mesh.Spec.Sources {
-		condition := mesh.Status.SourceConditions.Status[sourceSpec.Name]
-		if sourceSpec.MaxReplicas != nil && condition == v1alpha1.Ready {
+		condition := mesh.Status.SourceConditions[sourceSpec.Name]
+		if condition.Status == v1alpha1.Ready {
 			continue
 		}
 		desiredSource := spec.MakeSourceComponent(makeComponentName(mesh.Name, sourceSpec.Name), mesh, &sourceSpec)
@@ -268,18 +314,20 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, mesh *v
 		}); err != nil {
 			r.Log.Error(err, "error creating or updating source",
 				"namespace", mesh.Namespace, "name", mesh.Name,
-				"source name", desiredSource.Name)
-			mesh.SetComponentCondition(v1alpha1.SourceComponent, sourceSpec.Name, v1alpha1.Error)
+				"source name", sourceSpec.Name)
+			mesh.Status.SourceConditions[sourceSpec.Name].SetStatus(v1alpha1.Error)
 			mesh.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.ErrorCreatingSource,
 				fmt.Sprintf("error creating or updating source: %v", err))
 			return err
 		}
-		mesh.SetComponentCondition(v1alpha1.SourceComponent, sourceSpec.Name, v1alpha1.Wait)
+		specBytes, _ := json.Marshal(desiredSourceSpec)
+		mesh.Status.SourceConditions[sourceSpec.Name].SetStatus(v1alpha1.Wait)
+		mesh.Status.SourceConditions[sourceSpec.Name].SetHash(spec.GenerateSpecHash(specBytes))
 	}
 
 	for _, sinkSpec := range mesh.Spec.Sinks {
-		condition := mesh.Status.SinkConditions.Status[sinkSpec.Name]
-		if sinkSpec.MaxReplicas != nil && condition == v1alpha1.Ready {
+		condition := mesh.Status.SinkConditions[sinkSpec.Name]
+		if condition.Status == v1alpha1.Ready {
 			continue
 		}
 		desiredSink := spec.MakeSinkComponent(makeComponentName(mesh.Name, sinkSpec.Name), mesh, &sinkSpec)
@@ -291,19 +339,21 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, mesh *v
 		}); err != nil {
 			r.Log.Error(err, "error creating or updating sink",
 				"namespace", mesh.Namespace, "name", mesh.Name,
-				"sink name", desiredSink.Name)
-			mesh.SetComponentCondition(v1alpha1.SinkComponent, sinkSpec.Name, v1alpha1.Error)
+				"sink name", sinkSpec.Name)
+			mesh.Status.SinkConditions[sinkSpec.Name].SetStatus(v1alpha1.Error)
 			mesh.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.ErrorCreatingSink,
 				fmt.Sprintf("error creating or updating sink: %v", err))
 			return err
 		}
-		mesh.SetComponentCondition(v1alpha1.SinkComponent, sinkSpec.Name, v1alpha1.Wait)
+		specBytes, _ := json.Marshal(desiredSinkSpec)
+		mesh.Status.SinkConditions[sinkSpec.Name].SetStatus(v1alpha1.Wait)
+		mesh.Status.SinkConditions[sinkSpec.Name].SetHash(spec.GenerateSpecHash(specBytes))
 	}
 
 	// handle logic for cleaning up orphaned subcomponents
-	if len(mesh.Spec.Functions) != len(mesh.Status.FunctionConditions.Status) {
-		for name, cond := range mesh.Status.FunctionConditions.Status {
-			if cond == v1alpha1.Orphaned {
+	if len(mesh.Spec.Functions) != len(mesh.Status.FunctionConditions) {
+		for name, cond := range mesh.Status.FunctionConditions {
+			if cond.Status == v1alpha1.Orphaned {
 				// clean up the orphaned functions
 				function := &v1alpha1.Function{}
 				function.Namespace = mesh.Namespace
@@ -311,19 +361,19 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, mesh *v
 				if err := r.Delete(ctx, function); err != nil && !errors.IsNotFound(err) {
 					r.Log.Error(err, "error deleting orphaned function for mesh",
 						"namespace", mesh.Namespace, "name", mesh.Name,
-						"function name", function.Name)
+						"function name", name)
 					mesh.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.FunctionError,
 						fmt.Sprintf("error deleting orphaned function for mesh: %v", err))
 					return err
 				}
-				delete(mesh.Status.FunctionConditions.Status, name)
+				delete(mesh.Status.FunctionConditions, name)
 			}
 		}
 	}
 
-	if len(mesh.Spec.Sources) != len(mesh.Status.SourceConditions.Status) {
-		for name, cond := range mesh.Status.SourceConditions.Status {
-			if cond == v1alpha1.Orphaned {
+	if len(mesh.Spec.Sources) != len(mesh.Status.SourceConditions) {
+		for name, cond := range mesh.Status.SourceConditions {
+			if cond.Status == v1alpha1.Orphaned {
 				// clean up the orphaned sources
 				source := &v1alpha1.Source{}
 				source.Namespace = mesh.Namespace
@@ -331,19 +381,19 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, mesh *v
 				if err := r.Delete(ctx, source); err != nil && !errors.IsNotFound(err) {
 					r.Log.Error(err, "error deleting orphaned source for mesh",
 						"namespace", mesh.Namespace, "name", mesh.Name,
-						"source name", source.Name)
+						"source name", name)
 					mesh.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.SourceError,
 						fmt.Sprintf("error deleting orphaned source for mesh: %v", err))
 					return err
 				}
-				delete(mesh.Status.SourceConditions.Status, name)
+				delete(mesh.Status.SourceConditions, name)
 			}
 		}
 	}
 
-	if len(mesh.Spec.Sinks) != len(mesh.Status.SinkConditions.Status) {
-		for name, cond := range mesh.Status.SinkConditions.Status {
-			if cond == v1alpha1.Orphaned {
+	if len(mesh.Spec.Sinks) != len(mesh.Status.SinkConditions) {
+		for name, cond := range mesh.Status.SinkConditions {
+			if cond.Status == v1alpha1.Orphaned {
 				// clean up the orphaned sinks
 				sink := &v1alpha1.Sink{}
 				sink.Namespace = mesh.Namespace
@@ -351,12 +401,12 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, mesh *v
 				if err := r.Delete(ctx, sink); err != nil && !errors.IsNotFound(err) {
 					r.Log.Error(err, "error deleting orphaned sink for mesh",
 						"namespace", mesh.Namespace, "name", mesh.Name,
-						"sink name", sink.Name)
+						"sink name", name)
 					mesh.SetCondition(v1alpha1.Error, metav1.ConditionTrue, v1alpha1.SinkError,
 						fmt.Sprintf("error deleting orphaned sink for mesh: %v", err))
 					return err
 				}
-				delete(mesh.Status.SinkConditions.Status, name)
+				delete(mesh.Status.SinkConditions, name)
 			}
 		}
 	}
@@ -370,15 +420,18 @@ func makeComponentName(prefix, name string) string {
 func (r *FunctionMeshReconciler) initializeMesh(mesh *v1alpha1.FunctionMesh) {
 	// initialize function conditions
 	if len(mesh.Spec.Functions) > 0 {
-		mesh.Status.FunctionConditions = initializeComponentConditions(mesh.Status.FunctionConditions)
+		if mesh.Status.FunctionConditions == nil {
+			mesh.Status.FunctionConditions = make(map[string]*v1alpha1.ComponentCondition)
+		}
 		for _, function := range mesh.Spec.Functions {
-			if _, exist := mesh.Status.FunctionConditions.Status[function.Name]; exist {
-				r.Log.Error(fmt.Errorf("the function %s already exists", function.Name),
-					"the function will be overridden by the current specification.",
-					"namespace", mesh.Namespace, "mesh name", mesh.Name,
-					"function name", makeComponentName(mesh.Name, function.Name))
+			if _, exist := mesh.Status.FunctionConditions[function.Name]; !exist {
+				specBytes, _ := json.Marshal(function)
+				specHash := spec.GenerateSpecHash(specBytes)
+				mesh.Status.FunctionConditions[function.Name] = &v1alpha1.ComponentCondition{
+					Status: v1alpha1.Wait,
+					Hash:   &specHash,
+				}
 			}
-			mesh.Status.FunctionConditions.Status[function.Name] = v1alpha1.Wait
 		}
 	} else {
 		mesh.Status.FunctionConditions = nil
@@ -386,15 +439,18 @@ func (r *FunctionMeshReconciler) initializeMesh(mesh *v1alpha1.FunctionMesh) {
 
 	// initialize sink conditions
 	if len(mesh.Spec.Sinks) > 0 {
-		mesh.Status.SinkConditions = initializeComponentConditions(mesh.Status.SinkConditions)
+		if mesh.Status.SinkConditions == nil {
+			mesh.Status.SinkConditions = make(map[string]*v1alpha1.ComponentCondition)
+		}
 		for _, sink := range mesh.Spec.Sinks {
-			if _, exist := mesh.Status.SinkConditions.Status[sink.Name]; exist {
-				r.Log.Error(fmt.Errorf("the sink %s already exists", sink.Name),
-					"the sink will be overridden by the current specification.",
-					"namespace", mesh.Namespace, "mesh name", mesh.Name,
-					"sink name", makeComponentName(mesh.Name, sink.Name))
+			if _, exist := mesh.Status.SinkConditions[sink.Name]; !exist {
+				specBytes, _ := json.Marshal(sink)
+				specHash := spec.GenerateSpecHash(specBytes)
+				mesh.Status.SinkConditions[sink.Name] = &v1alpha1.ComponentCondition{
+					Status: v1alpha1.Wait,
+					Hash:   &specHash,
+				}
 			}
-			mesh.Status.SinkConditions.Status[sink.Name] = v1alpha1.Wait
 		}
 	} else {
 		mesh.Status.SinkConditions = nil
@@ -402,39 +458,64 @@ func (r *FunctionMeshReconciler) initializeMesh(mesh *v1alpha1.FunctionMesh) {
 
 	// initialize source conditions
 	if len(mesh.Spec.Sources) > 0 {
-		mesh.Status.SourceConditions = initializeComponentConditions(mesh.Status.SourceConditions)
+		if mesh.Status.SourceConditions == nil {
+			mesh.Status.SourceConditions = make(map[string]*v1alpha1.ComponentCondition)
+		}
 		for _, source := range mesh.Spec.Sources {
-			if _, exist := mesh.Status.SourceConditions.Status[source.Name]; exist {
-				r.Log.Error(fmt.Errorf("the source %s already exists", source.Name),
-					"the source will be overridden by the current specification.",
-					"namespace", mesh.Namespace, "mesh name", mesh.Name,
-					"source name", makeComponentName(mesh.Name, source.Name))
+			if _, exist := mesh.Status.SourceConditions[source.Name]; !exist {
+				specBytes, _ := json.Marshal(source)
+				specHash := spec.GenerateSpecHash(specBytes)
+				mesh.Status.SinkConditions[source.Name] = &v1alpha1.ComponentCondition{
+					Status: v1alpha1.Wait,
+					Hash:   &specHash,
+				}
 			}
-			mesh.Status.SourceConditions.Status[source.Name] = v1alpha1.Wait
 		}
 	} else {
 		mesh.Status.SourceConditions = nil
 	}
 }
 
-func initializeComponentConditions(componentCondition *v1alpha1.ComponentCondition) *v1alpha1.ComponentCondition {
-	if componentCondition == nil {
-		componentCondition = &v1alpha1.ComponentCondition{}
-		componentCondition.Ready = false
+func (r *FunctionMeshReconciler) checkIfFunctionNeedUpdate(mesh *v1alpha1.FunctionMesh, functionSpec *v1alpha1.FunctionSpec) bool {
+	desiredObject := spec.MakeFunctionComponent(makeComponentName(mesh.Name, functionSpec.Name), mesh, functionSpec)
+	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
+	cond, exist := mesh.Status.FunctionConditions[functionSpec.Name]
+	if exist {
+		if specHash := cond.Hash; specHash != nil {
+			// if the desired specification has not changed, we do not need to update the component
+			if *specHash == spec.GenerateSpecHash(desiredSpecBytes) {
+				return false
+			}
+		}
 	}
-	if componentCondition.Status == nil {
-		componentCondition.Status = map[string]v1alpha1.ResourceConditionType{}
-	}
-	return componentCondition
+	return true
 }
 
-func (r *FunctionMeshReconciler) checkIfMeshNeedUpdate(mesh *v1alpha1.FunctionMesh) bool {
-	if cond := meta.FindStatusCondition(mesh.Status.Conditions, string(v1alpha1.Ready)); cond != nil {
-		if cond.ObservedGeneration != mesh.Generation {
-			return true
+func (r *FunctionMeshReconciler) checkIfSourceNeedUpdate(mesh *v1alpha1.FunctionMesh, sourceSpec *v1alpha1.SourceSpec) bool {
+	desiredObject := spec.MakeSourceComponent(makeComponentName(mesh.Name, sourceSpec.Name), mesh, sourceSpec)
+	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
+	cond, exist := mesh.Status.SourceConditions[sourceSpec.Name]
+	if exist {
+		if specHash := cond.Hash; specHash != nil {
+			// if the desired specification has not changed, we do not need to update the component
+			if *specHash == spec.GenerateSpecHash(desiredSpecBytes) {
+				return false
+			}
 		}
-		if cond.Status == metav1.ConditionTrue {
-			return false
+	}
+	return true
+}
+
+func (r *FunctionMeshReconciler) checkIfSinkNeedUpdate(mesh *v1alpha1.FunctionMesh, sinkSpec *v1alpha1.SinkSpec) bool {
+	desiredObject := spec.MakeSinkComponent(makeComponentName(mesh.Name, sinkSpec.Name), mesh, sinkSpec)
+	desiredSpecBytes, _ := json.Marshal(desiredObject.Spec)
+	cond, exist := mesh.Status.SinkConditions[sinkSpec.Name]
+	if exist {
+		if specHash := cond.Hash; specHash != nil {
+			// if the desired specification has not changed, we do not need to update the component
+			if *specHash == spec.GenerateSpecHash(desiredSpecBytes) {
+				return false
+			}
 		}
 	}
 	return true

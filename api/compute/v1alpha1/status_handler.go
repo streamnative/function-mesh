@@ -40,6 +40,12 @@ const (
 	Orphaned ResourceConditionType = "Orphaned"
 	// Ready indicates the object is fully created
 	Ready ResourceConditionType = "Ready"
+	// FunctionReady indicates the Function is fully created
+	FunctionReady ResourceConditionType = "FunctionReady"
+	// SinkReady indicates the Sink is fully created
+	SinkReady ResourceConditionType = "SinkReady"
+	// SourceReady indicates the Source is fully created
+	SourceReady ResourceConditionType = "SourceReady"
 	// StatefulSetReady indicates the StatefulSet is fully created
 	StatefulSetReady ResourceConditionType = "StatefulSetReady"
 	// ServiceReady indicates the Service is fully created
@@ -315,18 +321,12 @@ func (r *FunctionMesh) RemoveCondition(condType ResourceConditionType) {
 	meta.RemoveStatusCondition(&r.Status.Conditions, string(condType))
 }
 
-// SetComponentCondition adds a new component condition to the FunctionMesh
-func (r *FunctionMesh) SetComponentCondition(componentType string, componentName string, condType ResourceConditionType) {
-	switch componentType {
-	case FunctionComponent:
-		r.Status.FunctionConditions.Status[componentName] = condType
-	case SinkComponent:
-		r.Status.SinkConditions.Status[componentName] = condType
-	case SourceComponent:
-		r.Status.SourceConditions.Status[componentName] = condType
-	default:
-		return
-	}
+func (r *ComponentCondition) SetStatus(status ResourceConditionType) {
+	r.Status = status
+}
+
+func (r *ComponentCondition) SetHash(specHash string) {
+	r.Hash = &specHash
 }
 
 // CreateCondition initializes a new status condition
