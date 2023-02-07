@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+package v1alpha2
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -99,19 +99,19 @@ type BatchSourceConfig struct {
 type SourceStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Conditions         map[apispec.Component]ResourceCondition `json:"conditions"`
-	Replicas           int32                                   `json:"replicas"`
-	Selector           string                                  `json:"selector"`
-	ObservedGeneration int64                                   `json:"observedGeneration,omitempty"`
+	Conditions    []metav1.Condition           `json:"conditions"`
+	Replicas      int32                        `json:"replicas"`
+	Selector      string                       `json:"selector"`
+	ComponentHash map[apispec.Component]string `json:"componentHash,omitempty"`
 }
 
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-//+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
+// +kubebuilder:storageversion
 
 // Source is the Schema for the sources API
-// +kubebuilder:pruning:PreserveUnknownFields
 type Source struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -120,7 +120,7 @@ type Source struct {
 	Status SourceStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // SourceList contains a list of Source
 type SourceList struct {

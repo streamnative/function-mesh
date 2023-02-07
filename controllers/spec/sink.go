@@ -26,11 +26,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 	"github.com/streamnative/function-mesh/utils"
 )
 
-func MakeSinkHPA(sink *v1alpha1.Sink) *autov2beta2.HorizontalPodAutoscaler {
+func MakeSinkHPA(sink *computeapi.Sink) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeSinkObjectMeta(sink)
 	targetRef := autov2beta2.CrossVersionObjectReference{
 		Kind:       sink.Kind,
@@ -46,27 +47,27 @@ func MakeSinkHPA(sink *v1alpha1.Sink) *autov2beta2.HorizontalPodAutoscaler {
 	return makeDefaultHPA(objectMeta, *sink.Spec.MinReplicas, *sink.Spec.MaxReplicas, targetRef)
 }
 
-func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
+func MakeSinkService(sink *computeapi.Sink) *corev1.Service {
 	labels := MakeSinkLabels(sink)
 	objectMeta := MakeSinkObjectMeta(sink)
 	return MakeService(objectMeta, labels)
 }
 
-func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
+func MakeSinkStatefulSet(sink *computeapi.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
 	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, MakeSinkContainer(sink),
 		makeSinkVolumes(sink), MakeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
 		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.VolumeMounts)
 }
 
-func MakeSinkServiceName(sink *v1alpha1.Sink) string {
+func MakeSinkServiceName(sink *computeapi.Sink) string {
 	objectMeta := MakeSinkObjectMeta(sink)
 	return MakeHeadlessServiceName(objectMeta.Name)
 }
 
-func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
+func MakeSinkObjectMeta(sink *computeapi.Sink) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
-		Name:      makeJobName(sink.Name, v1alpha1.SinkComponent),
+		Name:      makeJobName(sink.Name, apispec.SinkComponent),
 		Namespace: sink.Namespace,
 		Labels:    MakeSinkLabels(sink),
 		OwnerReferences: []metav1.OwnerReference{
@@ -75,7 +76,7 @@ func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
 	}
 }
 
-func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
+func MakeSinkContainer(sink *computeapi.Sink) *corev1.Container {
 	imagePullPolicy := sink.Spec.ImagePullPolicy
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
@@ -97,8 +98,8 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	}
 }
 
-func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
-	jobName := makeJobName(sink.Name, v1alpha1.SinkComponent)
+func MakeSinkLabels(sink *computeapi.Sink) map[string]string {
+	jobName := makeJobName(sink.Name, apispec.SinkComponent)
 	labels := map[string]string{
 		"app.kubernetes.io/name":            jobName,
 		"app.kubernetes.io/instance":        jobName,
@@ -113,7 +114,7 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 	return labels
 }
 
-func makeSinkVolumes(sink *v1alpha1.Sink) []corev1.Volume {
+func makeSinkVolumes(sink *computeapi.Sink) []corev1.Volume {
 	return generatePodVolumes(
 		sink.Spec.Pod.Volumes,
 		nil,
@@ -123,7 +124,7 @@ func makeSinkVolumes(sink *v1alpha1.Sink) []corev1.Volume {
 		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
 }
 
-func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
+func makeSinkVolumeMounts(sink *computeapi.Sink) []corev1.VolumeMount {
 	return generateContainerVolumeMounts(
 		sink.Spec.VolumeMounts,
 		nil,
@@ -134,7 +135,7 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
 		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang)
 }
 
-func MakeSinkCommand(sink *v1alpha1.Sink) []string {
+func MakeSinkCommand(sink *computeapi.Sink) []string {
 	spec := sink.Spec
 	var healthCheckInterval int32 = -1
 	if spec.Pod.Liveness != nil && spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
@@ -150,7 +151,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, healthCheckInterval)
 }
 
-func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {
+func generateSinkDetailsInJSON(sink *computeapi.Sink) string {
 	sinkDetails := convertSinkDetails(sink)
 	json, err := protojson.Marshal(sinkDetails)
 	if err != nil {
@@ -164,7 +165,7 @@ func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {
 	return string(json)
 }
 
-func MakeSinkVPA(sink *v1alpha1.Sink) *vpav1.VerticalPodAutoscaler {
+func MakeSinkVPA(sink *computeapi.Sink) *vpav1.VerticalPodAutoscaler {
 	objectMeta := MakeSinkObjectMeta(sink)
 	targetRef := &autoscaling.CrossVersionObjectReference{
 		Kind:       sink.Kind,

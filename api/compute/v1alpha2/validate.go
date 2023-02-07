@@ -15,18 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"encoding/json"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 )
 
-func validateJavaRuntime(java *JavaRuntime, className string) []*field.Error {
+func validateJavaRuntime(java *apispec.JavaRuntime, className string) []*field.Error {
 	var allErrs field.ErrorList
 	if java != nil {
 		if className == "" {
@@ -39,7 +40,7 @@ func validateJavaRuntime(java *JavaRuntime, className string) []*field.Error {
 			allErrs = append(allErrs, e)
 		}
 		if java.JarLocation != "" {
-			err := validPackageLocation(java.JarLocation)
+			err := apispec.ValidPackageLocation(java.JarLocation)
 			if err != nil {
 				e := field.Invalid(field.NewPath("spec").Child("java", "jarLocation"), java.JarLocation, err.Error())
 				allErrs = append(allErrs, e)
@@ -49,7 +50,7 @@ func validateJavaRuntime(java *JavaRuntime, className string) []*field.Error {
 	return allErrs
 }
 
-func validatePythonRuntime(python *PythonRuntime, className string) []*field.Error {
+func validatePythonRuntime(python *apispec.PythonRuntime, className string) []*field.Error {
 	var allErrs field.ErrorList
 	if python != nil {
 		if className == "" {
@@ -62,7 +63,7 @@ func validatePythonRuntime(python *PythonRuntime, className string) []*field.Err
 			allErrs = append(allErrs, e)
 		}
 		if python.PyLocation != "" {
-			err := validPackageLocation(python.PyLocation)
+			err := apispec.ValidPackageLocation(python.PyLocation)
 			if err != nil {
 				e := field.Invalid(field.NewPath("spec").Child("python", "pyLocation"), python.PyLocation, err.Error())
 				allErrs = append(allErrs, e)
@@ -72,7 +73,7 @@ func validatePythonRuntime(python *PythonRuntime, className string) []*field.Err
 	return allErrs
 }
 
-func validateGolangRuntime(golang *GoRuntime) []*field.Error {
+func validateGolangRuntime(golang *apispec.GoRuntime) []*field.Error {
 	var allErrs field.ErrorList
 	if golang != nil {
 		if golang.Go == "" {
@@ -81,7 +82,7 @@ func validateGolangRuntime(golang *GoRuntime) []*field.Error {
 			allErrs = append(allErrs, e)
 		}
 		if golang.GoLocation != "" {
-			err := validPackageLocation(golang.GoLocation)
+			err := apispec.ValidPackageLocation(golang.GoLocation)
 			if err != nil {
 				e := field.Invalid(field.NewPath("spec").Child("golang", "goLocation"), golang.GoLocation, err.Error())
 				allErrs = append(allErrs, e)
@@ -130,24 +131,24 @@ func validateReplicasAndMinReplicasAndMaxReplicas(replicas, minReplicas, maxRepl
 }
 
 func validateResourceRequirement(requirements corev1.ResourceRequirements) *field.Error {
-	if !validResourceRequirement(requirements) {
+	if !apispec.ValidResourceRequirement(requirements) {
 		return field.Invalid(field.NewPath("spec").Child("resources"), requirements, "resource requirement is invalid")
 	}
 	return nil
 }
 
-func validateTimeout(timeout int32, processingGuarantee ProcessGuarantee) *field.Error {
-	if timeout != 0 && processingGuarantee == EffectivelyOnce {
+func validateTimeout(timeout int32, processingGuarantee apispec.ProcessGuarantee) *field.Error {
+	if timeout != 0 && processingGuarantee == apispec.EffectivelyOnce {
 		return field.Invalid(field.NewPath("spec").Child("timeout"), timeout,
 			"message timeout can only be set for AtleastOnce processing guarantee")
 	}
 	return nil
 }
 
-func validateMaxMessageRetry(maxMessageRetry int32, processingGuarantee ProcessGuarantee,
+func validateMaxMessageRetry(maxMessageRetry int32, processingGuarantee apispec.ProcessGuarantee,
 	deadLetterTopic string) []*field.Error {
 	var allErrs field.ErrorList
-	if maxMessageRetry > 0 && processingGuarantee == EffectivelyOnce {
+	if maxMessageRetry > 0 && processingGuarantee == apispec.EffectivelyOnce {
 		e := field.Invalid(field.NewPath("spec").Child("maxMessageRetry"), maxMessageRetry,
 			"MaxMessageRetries and Effectively once are not compatible")
 		allErrs = append(allErrs, e)
@@ -161,8 +162,8 @@ func validateMaxMessageRetry(maxMessageRetry int32, processingGuarantee ProcessG
 	return allErrs
 }
 
-func validateRetainKeyOrdering(retainKeyOrdering bool, processingGuarantee ProcessGuarantee) *field.Error {
-	if retainKeyOrdering && processingGuarantee == EffectivelyOnce {
+func validateRetainKeyOrdering(retainKeyOrdering bool, processingGuarantee apispec.ProcessGuarantee) *field.Error {
+	if retainKeyOrdering && processingGuarantee == apispec.EffectivelyOnce {
 		return field.Invalid(field.NewPath("spec").Child("retainKeyOrdering"), retainKeyOrdering,
 			"when effectively once processing guarantee is specified, retain Key ordering cannot be set")
 	}
@@ -182,7 +183,7 @@ func validateRetainOrderingConflicts(retainKeyOrdering bool, retainOrdering bool
 	return allErrs
 }
 
-func validateFunctionConfig(config *Config) *field.Error {
+func validateFunctionConfig(config *apispec.Config) *field.Error {
 	if config != nil {
 		_, err := config.MarshalJSON()
 		if err != nil {
@@ -193,7 +194,7 @@ func validateFunctionConfig(config *Config) *field.Error {
 	return nil
 }
 
-func validateSinkConfig(config *Config) *field.Error {
+func validateSinkConfig(config *apispec.Config) *field.Error {
 	if config != nil {
 		_, err := config.MarshalJSON()
 		if err != nil {
@@ -204,7 +205,7 @@ func validateSinkConfig(config *Config) *field.Error {
 	return nil
 }
 
-func validateSourceConfig(config *Config) *field.Error {
+func validateSourceConfig(config *apispec.Config) *field.Error {
 	if config != nil {
 		_, err := config.MarshalJSON()
 		if err != nil {
@@ -215,7 +216,7 @@ func validateSourceConfig(config *Config) *field.Error {
 	return nil
 }
 
-func validateSecretsMap(secrets map[string]SecretRef) *field.Error {
+func validateSecretsMap(secrets map[string]apispec.SecretRef) *field.Error {
 	if secrets != nil {
 		_, err := json.Marshal(secrets)
 		if err != nil {
@@ -226,11 +227,11 @@ func validateSecretsMap(secrets map[string]SecretRef) *field.Error {
 	return nil
 }
 
-func validateInputOutput(input *InputConf, output *OutputConf) []*field.Error {
+func validateInputOutput(input *apispec.InputConf, output *apispec.OutputConf) []*field.Error {
 	var allErrs field.ErrorList
 	allInputTopics := []string{}
 	if input != nil {
-		allInputTopics = collectAllInputTopics(*input)
+		allInputTopics = apispec.CollectAllInputTopics(*input)
 		if len(allInputTopics) == 0 {
 			e := field.Invalid(field.NewPath("spec").Child("input"), *input,
 				"No input topic(s) specified for the function")
@@ -238,7 +239,7 @@ func validateInputOutput(input *InputConf, output *OutputConf) []*field.Error {
 		}
 
 		for _, topic := range allInputTopics {
-			err := isValidTopicName(topic)
+			err := apispec.IsValidTopicName(topic)
 			if err != nil {
 				e := field.Invalid(field.NewPath("spec").Child("input"), *input,
 					fmt.Sprintf("Input topic %s is invalid", topic))
@@ -263,7 +264,7 @@ func validateInputOutput(input *InputConf, output *OutputConf) []*field.Error {
 
 	if output != nil {
 		if output.Topic != "" {
-			err := isValidTopicName(output.Topic)
+			err := apispec.IsValidTopicName(output.Topic)
 			if err != nil {
 				e := field.Invalid(field.NewPath("spec").Child("output", "topic"), output.Topic,
 					fmt.Sprintf("Output topic %s is invalid", output.Topic))
@@ -302,7 +303,7 @@ func validateInputOutput(input *InputConf, output *OutputConf) []*field.Error {
 
 func validateLogTopic(logTopic string) *field.Error {
 	if logTopic != "" {
-		err := isValidTopicName(logTopic)
+		err := apispec.IsValidTopicName(logTopic)
 		if err != nil {
 			return field.Invalid(field.NewPath("spec").Child("logTopic"), logTopic,
 				fmt.Sprintf("Log topic %s is invalid", logTopic))
@@ -313,7 +314,7 @@ func validateLogTopic(logTopic string) *field.Error {
 
 func validateDeadLetterTopic(deadLetterTopic string) *field.Error {
 	if deadLetterTopic != "" {
-		err := isValidTopicName(deadLetterTopic)
+		err := apispec.IsValidTopicName(deadLetterTopic)
 		if err != nil {
 			return field.Invalid(field.NewPath("spec").Child("deadLetterTopic"), deadLetterTopic,
 				fmt.Sprintf("DeadLetter topic %s is invalid", deadLetterTopic))
@@ -329,7 +330,7 @@ func validateAutoAck(autoAck *bool) *field.Error {
 	return nil
 }
 
-func validateStatefulFunctionConfigs(statefulFunctionConfigs *Stateful, runtime Runtime) *field.Error {
+func validateStatefulFunctionConfigs(statefulFunctionConfigs *apispec.Stateful, runtime apispec.Runtime) *field.Error {
 	if statefulFunctionConfigs != nil {
 		if statefulFunctionConfigs.Pulsar != nil {
 			if isGolangRuntime(runtime) {
@@ -345,11 +346,11 @@ func validateStatefulFunctionConfigs(statefulFunctionConfigs *Stateful, runtime 
 	return nil
 }
 
-func isGolangRuntime(runtime Runtime) bool {
+func isGolangRuntime(runtime apispec.Runtime) bool {
 	return runtime.Golang != nil && runtime.Python == nil && runtime.Java == nil
 }
 
-func validateWindowConfigs(windowConfig *WindowConfig) *field.Error {
+func validateWindowConfigs(windowConfig *apispec.WindowConfig) *field.Error {
 	if windowConfig != nil {
 		if windowConfig.WindowLengthDurationMs == nil && windowConfig.WindowLengthCount == nil {
 			return field.Invalid(field.NewPath("spec").Child("windowConfig"), windowConfig,
@@ -389,7 +390,7 @@ func validateWindowConfigs(windowConfig *WindowConfig) *field.Error {
 	return nil
 }
 
-func validateMessaging(messaging *Messaging) *field.Error {
+func validateMessaging(messaging *apispec.Messaging) *field.Error {
 	if messaging == nil || messaging.Pulsar == nil || messaging.Pulsar.PulsarConfig == "" {
 		return field.Invalid(field.NewPath("spec").Child("pulsar"), messaging,
 			"Pulsar configuration needs to be set")
@@ -397,18 +398,18 @@ func validateMessaging(messaging *Messaging) *field.Error {
 	return nil
 }
 
-func validateBuiltinHPARules(rules []BuiltinHPARule) *field.Error {
+func validateBuiltinHPARules(rules []apispec.BuiltinHPARule) *field.Error {
 	isCPURuleExists := false
 	isMemoryRuleExists := false
 	for _, rule := range rules {
 		switch rule {
-		case AverageUtilizationCPUPercent20, AverageUtilizationCPUPercent50, AverageUtilizationCPUPercent80:
+		case apispec.AverageUtilizationCPUPercent20, apispec.AverageUtilizationCPUPercent50, apispec.AverageUtilizationCPUPercent80:
 			if isCPURuleExists {
 				return field.Invalid(field.NewPath("spec").Child("pod", "builtinAutoscaler"), rules,
 					"Duplicate CPU autoscaler metrics are set")
 			}
 			isCPURuleExists = true
-		case AverageUtilizationMemoryPercent20, AverageUtilizationMemoryPercent50, AverageUtilizationMemoryPercent80:
+		case apispec.AverageUtilizationMemoryPercent20, apispec.AverageUtilizationMemoryPercent50, apispec.AverageUtilizationMemoryPercent80:
 			if isMemoryRuleExists {
 				return field.Invalid(field.NewPath("spec").Child("pod", "builtinAutoscaler"), rules,
 					"Duplicate Memory autoscaler metrics are set")

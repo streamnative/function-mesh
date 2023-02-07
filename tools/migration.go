@@ -23,13 +23,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	cmdutils "github.com/streamnative/pulsarctl/pkg/cmdutils"
 	"github.com/streamnative/pulsarctl/pkg/pulsar/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
+
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 )
 
 func main() {
@@ -75,10 +77,10 @@ func main() {
 					workerIDList := strings.Split(workerID, "-")
 					pulsarCluster := workerIDList[1]
 					replicas := int32(functionConfig.Parallelism)
-					sourceSpecs := make(map[string]v1alpha1.ConsumerConfig)
+					sourceSpecs := make(map[string]apispec.ConsumerConfig)
 					for s := range functionConfig.InputSpecs {
 						receiveQueueSize := int32(functionConfig.InputSpecs[s].ReceiverQueueSize)
-						sourceSpecs[s] = v1alpha1.ConsumerConfig{
+						sourceSpecs[s] = apispec.ConsumerConfig{
 							SchemaType:        functionConfig.InputSpecs[s].SchemaType,
 							SerdeClassName:    functionConfig.InputSpecs[s].SerdeClassName,
 							IsRegexPattern:    functionConfig.InputSpecs[s].IsRegexPattern,
@@ -106,12 +108,12 @@ func main() {
 						strValue := fmt.Sprintf("%v", value)
 						funcConfig[strKey] = strValue
 					}
-					funcConfigData := v1alpha1.NewConfig(funcConfig)
+					funcConfigData := apispec.NewConfig(funcConfig)
 					maxMessageRetry := int32(0)
 					if functionConfig.MaxMessageRetries != nil {
 						maxMessageRetry = int32(*functionConfig.MaxMessageRetries)
 					}
-					functionSpec := v1alpha1.FunctionSpec{
+					functionSpec := computeapi.FunctionSpec{
 						Name:                functionConfig.Name,
 						ClassName:           functionConfig.ClassName,
 						Tenant:              functionConfig.Tenant,
@@ -123,7 +125,7 @@ func main() {
 						// https://github.com/streamnative/pulsarctl/blob/master/pkg/pulsar/utils/function_confg.go
 						// RetainKeyOrdering:   functionConfig.RetainKeyOrdering,
 						Replicas: &replicas,
-						Input: v1alpha1.InputConf{
+						Input: apispec.InputConf{
 							Topics:              topics,
 							TopicPattern:        topicPattern,
 							CustomSerdeSources:  functionConfig.CustomSerdeInputs,
@@ -132,7 +134,7 @@ func main() {
 						},
 						MaxReplicas: &replicas,
 						Timeout:     timeoutMs,
-						Output: v1alpha1.OutputConf{
+						Output: apispec.OutputConf{
 							Topic:              functionConfig.Output,
 							SinkSerdeClassName: functionConfig.OutputSerdeClassName,
 							SinkSchemaType:     functionConfig.OutputSchemaType,
@@ -157,11 +159,11 @@ func main() {
 					if functionConfig.ProcessingGuarantees != "" {
 						switch strings.ToLower(functionConfig.ProcessingGuarantees) {
 						case "atleast_once":
-							functionSpec.ProcessingGuarantee = v1alpha1.AtleastOnce
+							functionSpec.ProcessingGuarantee = apispec.AtleastOnce
 						case "atmost_once":
-							functionSpec.ProcessingGuarantee = v1alpha1.AtmostOnce
+							functionSpec.ProcessingGuarantee = apispec.AtmostOnce
 						case "effectively_once":
-							functionSpec.ProcessingGuarantee = v1alpha1.EffectivelyOnce
+							functionSpec.ProcessingGuarantee = apispec.EffectivelyOnce
 						}
 					}
 					if functionConfig.SubName != "" {
@@ -187,7 +189,7 @@ func main() {
 						Namespace: functionConfig.Namespace,
 						Name:      functionConfig.Name,
 					}
-					functionData := v1alpha1.Function{
+					functionData := computeapi.Function{
 						TypeMeta:   typeMeta,
 						ObjectMeta: objectMeta,
 						Spec:       functionSpec,

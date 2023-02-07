@@ -21,19 +21,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/utils"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
+	"github.com/streamnative/function-mesh/utils"
 )
 
 func TestGetDownloadCommand(t *testing.T) {
 	testData := []struct {
 		downloadPath     string
 		componentPackage string
-		tlsConfig        *v1alpha1.PulsarTLSConfig
-		oauth2Config     *v1alpha1.OAuth2Config
+		tlsConfig        *apispec.PulsarTLSConfig
+		oauth2Config     *apispec.OAuth2Config
 		expectedCommand  []string
 	}{
 		// test get the download command with package name
@@ -83,7 +85,7 @@ func TestGetDownloadCommand(t *testing.T) {
 		},
 		// test get the download command with an oauth2 config
 		{"function://public/default/test@v1", "function-package.jar", nil,
-			&v1alpha1.OAuth2Config{
+			&apispec.OAuth2Config{
 				Audience:      "test-audience",
 				IssuerURL:     "test-issuer-url",
 				KeySecretName: "test-private-key",
@@ -111,8 +113,8 @@ func TestGetDownloadCommand(t *testing.T) {
 		},
 		// test get the download command with a tls config
 		{"function://public/default/test@v1", "function-package.jar",
-			&v1alpha1.PulsarTLSConfig{
-				TLSConfig: v1alpha1.TLSConfig{
+			&apispec.PulsarTLSConfig{
+				TLSConfig: apispec.TLSConfig{
 					Enabled:              true,
 					AllowInsecure:        false,
 					HostnameVerification: true,
@@ -130,8 +132,8 @@ func TestGetDownloadCommand(t *testing.T) {
 			},
 		},
 		{"function://public/default/test@v1", "function-package.jar",
-			&v1alpha1.PulsarTLSConfig{
-				TLSConfig: v1alpha1.TLSConfig{
+			&apispec.PulsarTLSConfig{
+				TLSConfig: apispec.TLSConfig{
 					Enabled:              false,
 					AllowInsecure:        false,
 					HostnameVerification: true,
@@ -146,8 +148,8 @@ func TestGetDownloadCommand(t *testing.T) {
 			},
 		},
 		{"function://public/default/test@v1", "function-package.jar",
-			&v1alpha1.PulsarTLSConfig{
-				TLSConfig: v1alpha1.TLSConfig{
+			&apispec.PulsarTLSConfig{
+				TLSConfig: apispec.TLSConfig{
 					Enabled:              true,
 					AllowInsecure:        true,
 					HostnameVerification: false,
@@ -165,8 +167,8 @@ func TestGetDownloadCommand(t *testing.T) {
 			},
 		},
 		{"http://aaa.bbb.ccc/test.jar", "function-package.jar",
-			&v1alpha1.PulsarTLSConfig{
-				TLSConfig: v1alpha1.TLSConfig{
+			&apispec.PulsarTLSConfig{
+				TLSConfig: apispec.TLSConfig{
 					Enabled:              true,
 					AllowInsecure:        true,
 					HostnameVerification: false,
@@ -184,7 +186,7 @@ func TestGetDownloadCommand(t *testing.T) {
 	}
 
 	for _, v := range testData {
-		var authConfig v1alpha1.AuthConfig
+		var authConfig apispec.AuthConfig
 		if v.oauth2Config != nil {
 			authConfig.OAuth2Config = v.oauth2Config
 		}
@@ -195,7 +197,7 @@ func TestGetDownloadCommand(t *testing.T) {
 
 func TestGetLegacyDownloadCommand(t *testing.T) {
 	doTest := func(downloadPath, componentPackage string, expectedCommand []string) {
-		var tlsConfig *v1alpha1.PulsarTLSConfig
+		var tlsConfig *apispec.PulsarTLSConfig
 		actualResult := getLegacyDownloadCommand(downloadPath, componentPackage, false, false, tlsConfig, nil)
 		assert.Equal(t, expectedCommand, actualResult)
 	}
@@ -258,51 +260,51 @@ func TestGetLegacyDownloadCommand(t *testing.T) {
 }
 
 func TestGetFunctionRunnerImage(t *testing.T) {
-	javaRuntime := v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+	javaRuntime := apispec.Runtime{Java: &apispec.JavaRuntime{
 		Jar:         "test.jar",
 		JarLocation: "test",
 	}}
-	image := getFunctionRunnerImage(&v1alpha1.FunctionSpec{Runtime: javaRuntime})
+	image := getFunctionRunnerImage(&computeapi.FunctionSpec{Runtime: javaRuntime})
 	assert.Equal(t, image, DefaultJavaRunnerImage)
 
-	pythonRuntime := v1alpha1.Runtime{Python: &v1alpha1.PythonRuntime{
+	pythonRuntime := apispec.Runtime{Python: &apispec.PythonRuntime{
 		Py:         "test.py",
 		PyLocation: "test",
 	}}
-	image = getFunctionRunnerImage(&v1alpha1.FunctionSpec{Runtime: pythonRuntime})
+	image = getFunctionRunnerImage(&computeapi.FunctionSpec{Runtime: pythonRuntime})
 	assert.Equal(t, image, DefaultPythonRunnerImage)
 
-	goRuntime := v1alpha1.Runtime{Golang: &v1alpha1.GoRuntime{
+	goRuntime := apispec.Runtime{Golang: &apispec.GoRuntime{
 		Go:         "test",
 		GoLocation: "test",
 	}}
-	image = getFunctionRunnerImage(&v1alpha1.FunctionSpec{Runtime: goRuntime})
+	image = getFunctionRunnerImage(&computeapi.FunctionSpec{Runtime: goRuntime})
 	assert.Equal(t, image, DefaultGoRunnerImage)
 }
 
 func TestGetSinkRunnerImage(t *testing.T) {
-	spec := v1alpha1.SinkSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+	spec := computeapi.SinkSpec{Runtime: apispec.Runtime{Java: &apispec.JavaRuntime{
 		Jar:         "test.jar",
 		JarLocation: "",
 	}}}
 	image := getSinkRunnerImage(&spec)
 	assert.Equal(t, image, DefaultRunnerImage)
 
-	spec = v1alpha1.SinkSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+	spec = computeapi.SinkSpec{Runtime: apispec.Runtime{Java: &apispec.JavaRuntime{
 		Jar:         "test.jar",
 		JarLocation: "test",
 	}}}
 	image = getSinkRunnerImage(&spec)
 	assert.Equal(t, image, DefaultRunnerImage)
 
-	spec = v1alpha1.SinkSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+	spec = computeapi.SinkSpec{Runtime: apispec.Runtime{Java: &apispec.JavaRuntime{
 		Jar:         "test.jar",
 		JarLocation: "sink://public/default/test",
 	}}}
 	image = getSinkRunnerImage(&spec)
 	assert.Equal(t, image, DefaultJavaRunnerImage)
 
-	spec = v1alpha1.SinkSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+	spec = computeapi.SinkSpec{Runtime: apispec.Runtime{Java: &apispec.JavaRuntime{
 		Jar:         "test.jar",
 		JarLocation: "",
 	}}, Image: "streamnative/pulsar-io-test:2.7.1"}
@@ -311,28 +313,28 @@ func TestGetSinkRunnerImage(t *testing.T) {
 }
 
 func TestGetSourceRunnerImage(t *testing.T) {
-	spec := v1alpha1.SourceSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+	spec := computeapi.SourceSpec{Runtime: apispec.Runtime{Java: &apispec.JavaRuntime{
 		Jar:         "test.jar",
 		JarLocation: "",
 	}}}
 	image := getSourceRunnerImage(&spec)
 	assert.Equal(t, image, DefaultRunnerImage)
 
-	spec = v1alpha1.SourceSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+	spec = computeapi.SourceSpec{Runtime: apispec.Runtime{Java: &apispec.JavaRuntime{
 		Jar:         "test.jar",
 		JarLocation: "test",
 	}}}
 	image = getSourceRunnerImage(&spec)
 	assert.Equal(t, image, DefaultRunnerImage)
 
-	spec = v1alpha1.SourceSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+	spec = computeapi.SourceSpec{Runtime: apispec.Runtime{Java: &apispec.JavaRuntime{
 		Jar:         "test.jar",
 		JarLocation: "sink://public/default/test",
 	}}}
 	image = getSourceRunnerImage(&spec)
 	assert.Equal(t, image, DefaultJavaRunnerImage)
 
-	spec = v1alpha1.SourceSpec{Runtime: v1alpha1.Runtime{Java: &v1alpha1.JavaRuntime{
+	spec = computeapi.SourceSpec{Runtime: apispec.Runtime{Java: &apispec.JavaRuntime{
 		Jar:         "test.jar",
 		JarLocation: "",
 	}}, Image: "streamnative/pulsar-io-test:2.7.1"}
@@ -369,28 +371,28 @@ func makeSampleObjectMeta(name string) *metav1.ObjectMeta {
 	}
 }
 
-func makeGoFunctionSample(functionName string) *v1alpha1.Function {
+func makeGoFunctionSample(functionName string) *computeapi.Function {
 	maxPending := int32(1000)
 	replicas := int32(1)
 	minReplicas := int32(1)
 	maxReplicas := int32(5)
 	trueVal := true
-	return &v1alpha1.Function{
+	return &computeapi.Function{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Function",
-			APIVersion: "compute.functionmesh.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha2",
 		},
 		ObjectMeta: *makeSampleObjectMeta(functionName),
-		Spec: v1alpha1.FunctionSpec{
+		Spec: computeapi.FunctionSpec{
 			Name:        functionName,
 			Tenant:      "public",
 			ClusterName: TestClusterName,
-			Input: v1alpha1.InputConf{
+			Input: apispec.InputConf{
 				Topics: []string{
 					"persistent://public/default/go-function-input-topic",
 				},
 			},
-			Output: v1alpha1.OutputConf{
+			Output: apispec.OutputConf{
 				Topic: "persistent://public/default/go-function-output-topic",
 			},
 			LogTopic:                     "persistent://public/default/go-function-logs",
@@ -402,13 +404,13 @@ func makeGoFunctionSample(functionName string) *v1alpha1.Function {
 			MaxReplicas:                  &maxReplicas,
 			AutoAck:                      &trueVal,
 			MaxPendingAsyncRequests:      &maxPending,
-			Messaging: v1alpha1.Messaging{
-				Pulsar: &v1alpha1.PulsarMessaging{
+			Messaging: apispec.Messaging{
+				Pulsar: &apispec.PulsarMessaging{
 					PulsarConfig: TestClusterName,
 				},
 			},
-			Runtime: v1alpha1.Runtime{
-				Golang: &v1alpha1.GoRuntime{
+			Runtime: apispec.Runtime{
+				Golang: &apispec.GoRuntime{
 					Go: "/pulsar/go-func",
 				},
 			},
@@ -419,11 +421,11 @@ func makeGoFunctionSample(functionName string) *v1alpha1.Function {
 func TestGeneratePodVolumes(t *testing.T) {
 	type args struct {
 		podVolumes    []corev1.Volume
-		producerConf  *v1alpha1.ProducerConfig
-		consumerConfs map[string]v1alpha1.ConsumerConfig
-		trustCert     *v1alpha1.PulsarTLSConfig
-		authConfig    *v1alpha1.AuthConfig
-		logConf       map[int32]*v1alpha1.LogConfig
+		producerConf  *apispec.ProducerConfig
+		consumerConfs map[string]apispec.ConsumerConfig
+		trustCert     *apispec.PulsarTLSConfig
+		authConfig    *apispec.AuthConfig
+		logConf       map[int32]*apispec.LogConfig
 	}
 	tests := []struct {
 		name string
@@ -444,9 +446,9 @@ func TestGeneratePodVolumes(t *testing.T) {
 		{
 			name: "generate pod volumes from producer conf",
 			args: args{
-				producerConf: &v1alpha1.ProducerConfig{
-					CryptoConfig: &v1alpha1.CryptoConfig{
-						CryptoSecrets: []v1alpha1.CryptoSecret{{
+				producerConf: &apispec.ProducerConfig{
+					CryptoConfig: &apispec.CryptoConfig{
+						CryptoSecrets: []apispec.CryptoSecret{{
 							SecretName: "test-producer-secret",
 							SecretKey:  "test-producer-key",
 						}},
@@ -472,18 +474,18 @@ func TestGeneratePodVolumes(t *testing.T) {
 			name: "generate pod volumes from consumer conf",
 			args: args{
 				podVolumes: nil,
-				producerConf: &v1alpha1.ProducerConfig{
-					CryptoConfig: &v1alpha1.CryptoConfig{
-						CryptoSecrets: []v1alpha1.CryptoSecret{{
+				producerConf: &apispec.ProducerConfig{
+					CryptoConfig: &apispec.CryptoConfig{
+						CryptoSecrets: []apispec.CryptoSecret{{
 							SecretName: "test-producer-secret",
 							SecretKey:  "test-producer-key",
 						}},
 					},
 				},
-				consumerConfs: map[string]v1alpha1.ConsumerConfig{
+				consumerConfs: map[string]apispec.ConsumerConfig{
 					"test-consumer": {
-						CryptoConfig: &v1alpha1.CryptoConfig{
-							CryptoSecrets: []v1alpha1.CryptoSecret{{
+						CryptoConfig: &apispec.CryptoConfig{
+							CryptoSecrets: []apispec.CryptoSecret{{
 								SecretName: "test-consumer-secret",
 								SecretKey:  "test-consumer-key",
 							}},
@@ -526,26 +528,26 @@ func TestGeneratePodVolumes(t *testing.T) {
 			name: "generate pod volumes from trust cert",
 			args: args{
 				podVolumes: nil,
-				producerConf: &v1alpha1.ProducerConfig{
-					CryptoConfig: &v1alpha1.CryptoConfig{
-						CryptoSecrets: []v1alpha1.CryptoSecret{{
+				producerConf: &apispec.ProducerConfig{
+					CryptoConfig: &apispec.CryptoConfig{
+						CryptoSecrets: []apispec.CryptoSecret{{
 							SecretName: "test-producer-secret",
 							SecretKey:  "test-producer-key",
 						}},
 					},
 				},
-				consumerConfs: map[string]v1alpha1.ConsumerConfig{
+				consumerConfs: map[string]apispec.ConsumerConfig{
 					"test-consumer": {
-						CryptoConfig: &v1alpha1.CryptoConfig{
-							CryptoSecrets: []v1alpha1.CryptoSecret{{
+						CryptoConfig: &apispec.CryptoConfig{
+							CryptoSecrets: []apispec.CryptoSecret{{
 								SecretName: "test-consumer-secret",
 								SecretKey:  "test-consumer-key",
 							}},
 						},
 					},
 				},
-				trustCert: &v1alpha1.PulsarTLSConfig{
-					TLSConfig: v1alpha1.TLSConfig{
+				trustCert: &apispec.PulsarTLSConfig{
+					TLSConfig: apispec.TLSConfig{
 						Enabled:              true,
 						AllowInsecure:        true,
 						HostnameVerification: true,
@@ -602,8 +604,8 @@ func TestGeneratePodVolumes(t *testing.T) {
 		{
 			name: "generate pod volumes from authConfig",
 			args: args{
-				authConfig: &v1alpha1.AuthConfig{
-					OAuth2Config: &v1alpha1.OAuth2Config{
+				authConfig: &apispec.AuthConfig{
+					OAuth2Config: &apispec.OAuth2Config{
 						Audience:      "test-aud",
 						IssuerURL:     "test-issuer",
 						KeySecretName: "test-private-key-secret",
@@ -631,12 +633,12 @@ func TestGeneratePodVolumes(t *testing.T) {
 		{
 			name: "generate pod volumes from runtime log configs",
 			args: args{
-				logConf: map[int32]*v1alpha1.LogConfig{
-					javaRuntimeLog: &v1alpha1.LogConfig{
+				logConf: map[int32]*apispec.LogConfig{
+					javaRuntimeLog: &apispec.LogConfig{
 						Name: "test-log-config",
 						Key:  "java-xml",
 					},
-					pythonRuntimeLog: &v1alpha1.LogConfig{
+					pythonRuntimeLog: &apispec.LogConfig{
 						Name: "test-log-config",
 						Key:  "python-ini",
 					},
@@ -697,12 +699,12 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 	utils.EnableInitContainers = true
 	type args struct {
 		volumeMounts  []corev1.VolumeMount
-		producerConf  *v1alpha1.ProducerConfig
-		consumerConfs map[string]v1alpha1.ConsumerConfig
-		trustCert     *v1alpha1.PulsarTLSConfig
-		authConfig    *v1alpha1.AuthConfig
-		logConf       map[int32]*v1alpha1.LogConfig
-		javaRuntime   *v1alpha1.JavaRuntime
+		producerConf  *apispec.ProducerConfig
+		consumerConfs map[string]apispec.ConsumerConfig
+		trustCert     *apispec.PulsarTLSConfig
+		authConfig    *apispec.AuthConfig
+		logConf       map[int32]*apispec.LogConfig
+		javaRuntime   *apispec.JavaRuntime
 	}
 	tests := []struct {
 		name string
@@ -712,9 +714,9 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		{
 			name: "generate volume mounts from producerConf",
 			args: args{
-				producerConf: &v1alpha1.ProducerConfig{
-					CryptoConfig: &v1alpha1.CryptoConfig{
-						CryptoSecrets: []v1alpha1.CryptoSecret{{
+				producerConf: &apispec.ProducerConfig{
+					CryptoConfig: &apispec.CryptoConfig{
+						CryptoSecrets: []apispec.CryptoSecret{{
 							SecretName: "test-producer-secret",
 							SecretKey:  "test-producer-key",
 							AsVolume:   "/test-producer",
@@ -732,9 +734,9 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		{
 			name: "not generate volume mounts if AsVolume is not set",
 			args: args{
-				producerConf: &v1alpha1.ProducerConfig{
-					CryptoConfig: &v1alpha1.CryptoConfig{
-						CryptoSecrets: []v1alpha1.CryptoSecret{{
+				producerConf: &apispec.ProducerConfig{
+					CryptoConfig: &apispec.CryptoConfig{
+						CryptoSecrets: []apispec.CryptoSecret{{
 							SecretName: "test-producer-secret",
 							SecretKey:  "test-producer-key",
 						}},
@@ -746,19 +748,19 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		{
 			name: "generate volume mounts from consumerConf",
 			args: args{
-				producerConf: &v1alpha1.ProducerConfig{
-					CryptoConfig: &v1alpha1.CryptoConfig{
-						CryptoSecrets: []v1alpha1.CryptoSecret{{
+				producerConf: &apispec.ProducerConfig{
+					CryptoConfig: &apispec.CryptoConfig{
+						CryptoSecrets: []apispec.CryptoSecret{{
 							SecretName: "test-producer-secret",
 							SecretKey:  "test-producer-key",
 							AsVolume:   "/test-producer",
 						}},
 					},
 				},
-				consumerConfs: map[string]v1alpha1.ConsumerConfig{
+				consumerConfs: map[string]apispec.ConsumerConfig{
 					"test-consumer": {
-						CryptoConfig: &v1alpha1.CryptoConfig{
-							CryptoSecrets: []v1alpha1.CryptoSecret{{
+						CryptoConfig: &apispec.CryptoConfig{
+							CryptoSecrets: []apispec.CryptoSecret{{
 								SecretName: "test-consumer-secret",
 								SecretKey:  "test-consumer-key",
 								AsVolume:   "/test-consumer",
@@ -781,19 +783,19 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		{
 			name: "generate volume mounts from trustCert",
 			args: args{
-				producerConf: &v1alpha1.ProducerConfig{
-					CryptoConfig: &v1alpha1.CryptoConfig{
-						CryptoSecrets: []v1alpha1.CryptoSecret{{
+				producerConf: &apispec.ProducerConfig{
+					CryptoConfig: &apispec.CryptoConfig{
+						CryptoSecrets: []apispec.CryptoSecret{{
 							SecretName: "test-producer-secret",
 							SecretKey:  "test-producer-key",
 							AsVolume:   "/test-producer",
 						}},
 					},
 				},
-				consumerConfs: map[string]v1alpha1.ConsumerConfig{
+				consumerConfs: map[string]apispec.ConsumerConfig{
 					"test-consumer": {
-						CryptoConfig: &v1alpha1.CryptoConfig{
-							CryptoSecrets: []v1alpha1.CryptoSecret{{
+						CryptoConfig: &apispec.CryptoConfig{
+							CryptoSecrets: []apispec.CryptoSecret{{
 								SecretName: "test-consumer-secret",
 								SecretKey:  "test-consumer-key",
 								AsVolume:   "/test-consumer",
@@ -801,8 +803,8 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 						},
 					},
 				},
-				trustCert: &v1alpha1.PulsarTLSConfig{
-					TLSConfig: v1alpha1.TLSConfig{
+				trustCert: &apispec.PulsarTLSConfig{
+					TLSConfig: apispec.TLSConfig{
 						Enabled:              true,
 						AllowInsecure:        true,
 						HostnameVerification: true,
@@ -829,19 +831,19 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		{
 			name: "generate volume mounts from runtime config",
 			args: args{
-				producerConf: &v1alpha1.ProducerConfig{
-					CryptoConfig: &v1alpha1.CryptoConfig{
-						CryptoSecrets: []v1alpha1.CryptoSecret{{
+				producerConf: &apispec.ProducerConfig{
+					CryptoConfig: &apispec.CryptoConfig{
+						CryptoSecrets: []apispec.CryptoSecret{{
 							SecretName: "test-producer-secret",
 							SecretKey:  "test-producer-key",
 							AsVolume:   "/test-producer",
 						}},
 					},
 				},
-				consumerConfs: map[string]v1alpha1.ConsumerConfig{
+				consumerConfs: map[string]apispec.ConsumerConfig{
 					"test-consumer": {
-						CryptoConfig: &v1alpha1.CryptoConfig{
-							CryptoSecrets: []v1alpha1.CryptoSecret{{
+						CryptoConfig: &apispec.CryptoConfig{
+							CryptoSecrets: []apispec.CryptoSecret{{
 								SecretName: "test-consumer-secret",
 								SecretKey:  "test-consumer-key",
 								AsVolume:   "/test-consumer",
@@ -849,8 +851,8 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 						},
 					},
 				},
-				trustCert: &v1alpha1.PulsarTLSConfig{
-					TLSConfig: v1alpha1.TLSConfig{
+				trustCert: &apispec.PulsarTLSConfig{
+					TLSConfig: apispec.TLSConfig{
 						Enabled:              true,
 						AllowInsecure:        true,
 						HostnameVerification: true,
@@ -858,7 +860,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 						CertSecretKey:        "test-trust-key",
 					},
 				},
-				javaRuntime: &v1alpha1.JavaRuntime{
+				javaRuntime: &apispec.JavaRuntime{
 					Jar:         "test.jar",
 					JarLocation: "/test-jar-location",
 				},
@@ -887,8 +889,8 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		{
 			name: "generate volume mounts from authSecret",
 			args: args{
-				authConfig: &v1alpha1.AuthConfig{
-					OAuth2Config: &v1alpha1.OAuth2Config{
+				authConfig: &apispec.AuthConfig{
+					OAuth2Config: &apispec.OAuth2Config{
 						Audience:      "test-aud",
 						IssuerURL:     "test-issuer",
 						KeySecretName: "test-private-key-secret",
@@ -906,12 +908,12 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		{
 			name: "generate volume mounts from runtime log config",
 			args: args{
-				logConf: map[int32]*v1alpha1.LogConfig{
-					javaRuntimeLog: &v1alpha1.LogConfig{
+				logConf: map[int32]*apispec.LogConfig{
+					javaRuntimeLog: &apispec.LogConfig{
 						Name: "test-log-config",
 						Key:  "java-xml",
 					},
-					pythonRuntimeLog: &v1alpha1.LogConfig{
+					pythonRuntimeLog: &apispec.LogConfig{
 						Name: "test-log-config",
 						Key:  "python-ini",
 					},

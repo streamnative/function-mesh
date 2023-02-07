@@ -20,6 +20,8 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -45,41 +47,41 @@ type FunctionSpec struct {
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
 	// If provided, a default HPA with CPU at average of 80% will be used.
 	// For complex HPA strategies, please refer to Pod.HPAutoscaler.
-	MaxReplicas *int32     `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
-	Input       InputConf  `json:"input,omitempty"`
-	Output      OutputConf `json:"output,omitempty"`
-	LogTopic    string     `json:"logTopic,omitempty"`
+	MaxReplicas *int32             `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
+	Input       apispec.InputConf  `json:"input,omitempty"`
+	Output      apispec.OutputConf `json:"output,omitempty"`
+	LogTopic    string             `json:"logTopic,omitempty"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
-	FuncConfig   *Config                     `json:"funcConfig,omitempty"`
-	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
-	SecretsMap   map[string]SecretRef        `json:"secretsMap,omitempty"`
-	VolumeMounts []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
+	FuncConfig   *apispec.Config              `json:"funcConfig,omitempty"`
+	Resources    corev1.ResourceRequirements  `json:"resources,omitempty"`
+	SecretsMap   map[string]apispec.SecretRef `json:"secretsMap,omitempty"`
+	VolumeMounts []corev1.VolumeMount         `json:"volumeMounts,omitempty"`
 
-	Timeout                      int32            `json:"timeout,omitempty"`
-	AutoAck                      *bool            `json:"autoAck,omitempty"`
-	MaxMessageRetry              int32            `json:"maxMessageRetry,omitempty"`
-	ProcessingGuarantee          ProcessGuarantee `json:"processingGuarantee,omitempty"`
-	RetainOrdering               bool             `json:"retainOrdering,omitempty"`
-	RetainKeyOrdering            bool             `json:"retainKeyOrdering,omitempty"`
-	DeadLetterTopic              string           `json:"deadLetterTopic,omitempty"`
-	ForwardSourceMessageProperty *bool            `json:"forwardSourceMessageProperty,omitempty"`
-	MaxPendingAsyncRequests      *int32           `json:"maxPendingAsyncRequests,omitempty"`
+	Timeout                      int32                    `json:"timeout,omitempty"`
+	AutoAck                      *bool                    `json:"autoAck,omitempty"`
+	MaxMessageRetry              int32                    `json:"maxMessageRetry,omitempty"`
+	ProcessingGuarantee          apispec.ProcessGuarantee `json:"processingGuarantee,omitempty"`
+	RetainOrdering               bool                     `json:"retainOrdering,omitempty"`
+	RetainKeyOrdering            bool                     `json:"retainKeyOrdering,omitempty"`
+	DeadLetterTopic              string                   `json:"deadLetterTopic,omitempty"`
+	ForwardSourceMessageProperty *bool                    `json:"forwardSourceMessageProperty,omitempty"`
+	MaxPendingAsyncRequests      *int32                   `json:"maxPendingAsyncRequests,omitempty"`
 
-	RuntimeFlags         string            `json:"runtimeFlags,omitempty"`
-	SubscriptionName     string            `json:"subscriptionName,omitempty"`
-	CleanupSubscription  bool              `json:"cleanupSubscription,omitempty"`
-	SubscriptionPosition SubscribePosition `json:"subscriptionPosition,omitempty"`
+	RuntimeFlags         string                    `json:"runtimeFlags,omitempty"`
+	SubscriptionName     string                    `json:"subscriptionName,omitempty"`
+	CleanupSubscription  bool                      `json:"cleanupSubscription,omitempty"`
+	SubscriptionPosition apispec.SubscribePosition `json:"subscriptionPosition,omitempty"`
 
-	Pod PodPolicy `json:"pod,omitempty"`
+	Pod apispec.PodPolicy `json:"pod,omitempty"`
 
-	WindowConfig *WindowConfig `json:"windowConfig,omitempty"`
-
-	// +kubebuilder:validation:Required
-	Messaging `json:",inline"`
+	WindowConfig *apispec.WindowConfig `json:"windowConfig,omitempty"`
 
 	// +kubebuilder:validation:Required
-	Runtime `json:",inline"`
+	apispec.Messaging `json:",inline"`
+
+	// +kubebuilder:validation:Required
+	apispec.Runtime `json:",inline"`
 
 	// Image is the container image used to run function pods.
 	// default is streamnative/pulsar-functions-java-runner
@@ -89,17 +91,17 @@ type FunctionSpec struct {
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	StateConfig *Stateful `json:"statefulConfig,omitempty"`
+	StateConfig *apispec.Stateful `json:"statefulConfig,omitempty"`
 }
 
 // FunctionStatus defines the observed state of Function
 type FunctionStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Conditions    []metav1.Condition   `json:"conditions"`
-	Replicas      int32                `json:"replicas"`
-	Selector      string               `json:"selector"`
-	ComponentHash map[Component]string `json:"componentHash,omitempty"`
+	Conditions         map[apispec.Component]ResourceCondition `json:"conditions"`
+	Replicas           int32                                   `json:"replicas"`
+	Selector           string                                  `json:"selector"`
+	ObservedGeneration int64                                   `json:"observedGeneration,omitempty"`
 }
 
 // +genclient

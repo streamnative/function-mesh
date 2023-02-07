@@ -18,15 +18,16 @@
 package spec
 
 import (
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
 )
 
-func MakeFunctionComponent(functionName string, mesh *v1alpha1.FunctionMesh,
-	spec *v1alpha1.FunctionSpec) *v1alpha1.Function {
-	return &v1alpha1.Function{
+func MakeFunctionComponent(functionName string, mesh *computeapi.FunctionMesh,
+	spec *computeapi.FunctionSpec) *computeapi.Function {
+	return &computeapi.Function{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "compute.functionmesh.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha2",
 			Kind:       "Function",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -40,10 +41,10 @@ func MakeFunctionComponent(functionName string, mesh *v1alpha1.FunctionMesh,
 	}
 }
 
-func MakeSourceComponent(sourceName string, mesh *v1alpha1.FunctionMesh, spec *v1alpha1.SourceSpec) *v1alpha1.Source {
-	return &v1alpha1.Source{
+func MakeSourceComponent(sourceName string, mesh *computeapi.FunctionMesh, spec *computeapi.SourceSpec) *computeapi.Source {
+	return &computeapi.Source{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "compute.functionmesh.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha2",
 			Kind:       "Source",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -57,10 +58,10 @@ func MakeSourceComponent(sourceName string, mesh *v1alpha1.FunctionMesh, spec *v
 	}
 }
 
-func MakeSinkComponent(sinkName string, mesh *v1alpha1.FunctionMesh, spec *v1alpha1.SinkSpec) *v1alpha1.Sink {
-	return &v1alpha1.Sink{
+func MakeSinkComponent(sinkName string, mesh *computeapi.FunctionMesh, spec *computeapi.SinkSpec) *computeapi.Sink {
+	return &computeapi.Sink{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "compute.functionmesh.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha2",
 			Kind:       "Sink",
 		},
 		ObjectMeta: metav1.ObjectMeta{

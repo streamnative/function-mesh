@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/spec"
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
+	apispec "github.com/streamnative/function-mesh/controllers/spec"
 	"github.com/streamnative/function-mesh/utils"
 )
 
@@ -56,7 +56,7 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	_ = r.Log.WithValues("sink", req.NamespacedName)
 
 	// your logic here
-	sink := &v1alpha1.Sink{}
+	sink := &computeapi.Sink{}
 	err := r.Get(ctx, req.NamespacedName, sink)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -66,7 +66,7 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return reconcile.Result{}, err
 	}
 
-	if !spec.IsManaged(sink) {
+	if !apispec.IsManaged(sink) {
 		r.Log.Info("Skipping sink not managed by the controller", "Name", req.String())
 		return reconcile.Result{}, nil
 	}
@@ -82,7 +82,7 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{}, nil
 }
 
-func (r *SinkReconciler) observe(ctx context.Context, sink *v1alpha1.Sink) (ctrl.Result, error) {
+func (r *SinkReconciler) observe(ctx context.Context, sink *computeapi.Sink) (ctrl.Result, error) {
 	if err := r.ObserveSinkStatefulSet(ctx, sink); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -100,7 +100,7 @@ func (r *SinkReconciler) observe(ctx context.Context, sink *v1alpha1.Sink) (ctrl
 	return reconcile.Result{}, nil
 }
 
-func (r *SinkReconciler) reconcile(ctx context.Context, sink *v1alpha1.Sink) (ctrl.Result, error) {
+func (r *SinkReconciler) reconcile(ctx context.Context, sink *computeapi.Sink) (ctrl.Result, error) {
 	if err := r.ApplySinkStatefulSet(ctx, sink); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -120,7 +120,7 @@ func (r *SinkReconciler) reconcile(ctx context.Context, sink *v1alpha1.Sink) (ct
 
 func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	manager := ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Sink{}).
+		For(&computeapi.Sink{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{})

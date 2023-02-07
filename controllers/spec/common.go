@@ -32,8 +32,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
 	"github.com/streamnative/function-mesh/controllers/proto"
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 	"github.com/streamnative/function-mesh/utils"
 )
 
@@ -242,9 +243,9 @@ func MakeHeadlessServiceName(serviceName string) string {
 
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderImage string,
 	container *corev1.Container,
-	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, pulsar v1alpha1.PulsarMessaging,
-	javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
-	goRuntime *v1alpha1.GoRuntime, definedVolumeMounts []corev1.VolumeMount) *appsv1.StatefulSet {
+	volumes []corev1.Volume, labels map[string]string, policy apispec.PodPolicy, pulsar apispec.PulsarMessaging,
+	javaRuntime *apispec.JavaRuntime, pythonRuntime *apispec.PythonRuntime,
+	goRuntime *apispec.GoRuntime, definedVolumeMounts []corev1.VolumeMount) *appsv1.StatefulSet {
 
 	volumeMounts := generateDownloaderVolumeMountsForDownloader(javaRuntime, pythonRuntime, goRuntime)
 	var downloaderContainer *corev1.Container
@@ -322,7 +323,7 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
-	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy,
+	volumes []corev1.Volume, labels map[string]string, policy apispec.PodPolicy,
 	serviceName string, downloaderContainer *corev1.Container) *appsv1.StatefulSetSpec {
 	return &appsv1.StatefulSetSpec{
 		Replicas: replicas,
@@ -339,7 +340,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 }
 
 func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
-	labels map[string]string, policy v1alpha1.PodPolicy,
+	labels map[string]string, policy apispec.PodPolicy,
 	downloaderContainer *corev1.Container) *corev1.PodTemplateSpec {
 	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, false)
 	if policy.SecurityContext != nil {
@@ -370,9 +371,9 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 }
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
-	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
-	state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
+	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]apispec.SecretRef,
+	state *apispec.Stateful,
+	tlsConfig TLSConfig, authConfig *apispec.AuthConfig, healthCheckInterval int32) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
@@ -387,8 +388,8 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 }
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
-	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
+	authProvided, tlsProvided bool, secretMaps map[string]apispec.SecretRef, state *apispec.Stateful,
+	tlsConfig TLSConfig, authConfig *apispec.AuthConfig, healthCheckInterval int32) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig, healthCheckInterval), " ")
@@ -401,7 +402,7 @@ func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, gen
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alpha1.Function) []string {
+func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *computeapi.Function) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
@@ -414,7 +415,7 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 	return []string{"sh", "-c", processCommand}
 }
 
-func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
+func MakeLivenessProbe(liveness *apispec.Liveness) *corev1.Probe {
 	if liveness == nil || liveness.PeriodSeconds <= 0 || utils.GrpcurlPersistentVolumeClaim == "" {
 		return nil
 	}
@@ -443,7 +444,7 @@ func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
 }
 
 func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *apispec.AuthConfig) []string {
 	args := []string{
 		PulsarAdminExecutableFile,
 		"--admin-url",
@@ -514,7 +515,7 @@ func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvide
 }
 
 func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, authProvided bool, tlsConfig TLSConfig,
-	authConfig *v1alpha1.AuthConfig) []string {
+	authConfig *apispec.AuthConfig) []string {
 	var args []string
 	if hasHTTPPrefix(downloadPath) {
 		args = append(args, "wget", downloadPath, "-O", componentPackage)
@@ -618,7 +619,7 @@ func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, auth
 	return args
 }
 
-func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
+func generateJavaLogConfigCommand(runtime *apispec.JavaRuntime) string {
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return ""
 	}
@@ -633,7 +634,7 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 	return ""
 }
 
-func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, error) {
+func renderJavaInstanceLog4jXMLTemplate(runtime *apispec.JavaRuntime) (string, error) {
 	tmpl := template.Must(template.New("spec").Parse(javaLog4jXMLTemplate))
 	var tpl bytes.Buffer
 	type logConfig struct {
@@ -651,27 +652,27 @@ func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, 
 	if runtime.Log != nil && runtime.Log.RotatePolicy != nil {
 		lc.RollingEnabled = true
 		switch *runtime.Log.RotatePolicy {
-		case v1alpha1.TimedPolicyWithDaily:
+		case apispec.TimedPolicyWithDaily:
 			lc.Policy = template.HTML(`<CronTriggeringPolicy>
                     <schedule>"0 0 0 \* \* \? \*"</schedule>
                 </CronTriggeringPolicy>`)
-		case v1alpha1.TimedPolicyWithWeekly:
+		case apispec.TimedPolicyWithWeekly:
 			lc.Policy = template.HTML(`<CronTriggeringPolicy>
                     <schedule>"0 0 0 \? \* 1 *"</schedule>
                 </CronTriggeringPolicy>`)
-		case v1alpha1.TimedPolicyWithMonthly:
+		case apispec.TimedPolicyWithMonthly:
 			lc.Policy = template.HTML(`<CronTriggeringPolicy>
                     <schedule>"0 0 0 1 \* \? \*"</schedule>
                 </CronTriggeringPolicy>`)
-		case v1alpha1.SizedPolicyWith10MB:
+		case apispec.SizedPolicyWith10MB:
 			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
                     <size>10MB</size>
                 </SizeBasedTriggeringPolicy>`)
-		case v1alpha1.SizedPolicyWith50MB:
+		case apispec.SizedPolicyWith50MB:
 			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
                     <size>50MB</size>
                 </SizeBasedTriggeringPolicy>`)
-		case v1alpha1.SizedPolicyWith100MB:
+		case apispec.SizedPolicyWith100MB:
 			lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
                     <size>100MB</size>
                 </SizeBasedTriggeringPolicy>`)
@@ -684,7 +685,7 @@ func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, 
 	return tpl.String(), nil
 }
 
-func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime) string {
+func generatePythonLogConfigCommand(name string, runtime *apispec.PythonRuntime) string {
 	commands := "sed -i.bak 's/^  Log.setLevel/#&/' /pulsar/instances/python-instance/log.py && "
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return commands
@@ -705,7 +706,7 @@ func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime
 	return ""
 }
 
-func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.PythonRuntime) (string, error) {
+func renderPythonInstanceLoggingINITemplate(name string, runtime *apispec.PythonRuntime) (string, error) {
 	tmpl := template.Must(template.New("spec").Parse(pythonLoggingINITemplate))
 	var tpl bytes.Buffer
 	type logConfig struct {
@@ -726,42 +727,42 @@ func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.Pytho
 		lc.RollingEnabled = true
 		logFile := fmt.Sprintf("logs/functions/%s-${%s}", name, EnvShardID)
 		switch *runtime.Log.RotatePolicy {
-		case v1alpha1.TimedPolicyWithDaily:
+		case apispec.TimedPolicyWithDaily:
 			lc.Handlers = "stream_handler,timed_rotating_file_handler"
 			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
 args=(\"%s\", 'D', 1, 5,)
 class=handlers.TimedRotatingFileHandler
 level=%s 
 formatter=formatter`, logFile, lc.Level))
-		case v1alpha1.TimedPolicyWithWeekly:
+		case apispec.TimedPolicyWithWeekly:
 			lc.Handlers = "stream_handler,timed_rotating_file_handler"
 			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
 args=(\"%s\", 'W0', 1, 5,)
 class=handlers.TimedRotatingFileHandler
 level=%s
 formatter=formatter`, logFile, lc.Level))
-		case v1alpha1.TimedPolicyWithMonthly:
+		case apispec.TimedPolicyWithMonthly:
 			lc.Handlers = "stream_handler,timed_rotating_file_handler"
 			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
 args=(\"%s\", 'D', 30, 5,)
 class=handlers.TimedRotatingFileHandler
 level=%s
 formatter=formatter`, logFile, lc.Level))
-		case v1alpha1.SizedPolicyWith10MB:
+		case apispec.SizedPolicyWith10MB:
 			lc.Handlers = "stream_handler,rotating_file_handler"
 			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
 args=(\"%s\", 'a', 10485760, 5,)
 class=handlers.RotatingFileHandler
 level=%s
 formatter=formatter`, logFile, lc.Level))
-		case v1alpha1.SizedPolicyWith50MB:
+		case apispec.SizedPolicyWith50MB:
 			lc.Handlers = "handler_stream_handler,rotating_file_handler"
 			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
 args=(%s, 'a', 52428800, 5,)
 class=handlers.RotatingFileHandler
 level=%s
 formatter=formatter`, logFile, lc.Level))
-		case v1alpha1.SizedPolicyWith100MB:
+		case apispec.SizedPolicyWith100MB:
 			lc.Handlers = "handler_stream_handler,rotating_file_handler"
 			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
 args=(%s, 'a', 104857600, 5,)
@@ -777,62 +778,62 @@ formatter=formatter`, logFile, lc.Level))
 	return tpl.String(), nil
 }
 
-func parseJavaLogLevel(runtime *v1alpha1.JavaRuntime) string {
-	var levelMap = map[v1alpha1.LogLevel]string{
-		v1alpha1.LogLevelAll:   "ALL",
-		v1alpha1.LogLevelDebug: "DEBUG",
-		v1alpha1.LogLevelTrace: "TRACE",
-		v1alpha1.LogLevelInfo:  "INFO",
-		v1alpha1.LogLevelWarn:  "WARN",
-		v1alpha1.LogLevelError: "ERROR",
-		v1alpha1.LogLevelFatal: "FATAL",
-		v1alpha1.LogLevelOff:   "OFF",
+func parseJavaLogLevel(runtime *apispec.JavaRuntime) string {
+	var levelMap = map[apispec.LogLevel]string{
+		apispec.LogLevelAll:   "ALL",
+		apispec.LogLevelDebug: "DEBUG",
+		apispec.LogLevelTrace: "TRACE",
+		apispec.LogLevelInfo:  "INFO",
+		apispec.LogLevelWarn:  "WARN",
+		apispec.LogLevelError: "ERROR",
+		apispec.LogLevelFatal: "FATAL",
+		apispec.LogLevelOff:   "OFF",
 	}
 	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == nil {
 		if level, exist := levelMap[runtime.Log.Level]; exist {
 			return level
 		}
-		return levelMap[v1alpha1.LogLevelInfo]
+		return levelMap[apispec.LogLevelInfo]
 	}
 	return ""
 }
 
-func parsePythonLogLevel(runtime *v1alpha1.PythonRuntime) string {
-	var levelMap = map[v1alpha1.LogLevel]string{
-		v1alpha1.LogLevelDebug: "DEBUG",
-		v1alpha1.LogLevelInfo:  "INFO",
-		v1alpha1.LogLevelWarn:  "WARNING",
-		v1alpha1.LogLevelError: "ERROR",
-		v1alpha1.LogLevelFatal: "CRITICAL",
+func parsePythonLogLevel(runtime *apispec.PythonRuntime) string {
+	var levelMap = map[apispec.LogLevel]string{
+		apispec.LogLevelDebug: "DEBUG",
+		apispec.LogLevelInfo:  "INFO",
+		apispec.LogLevelWarn:  "WARNING",
+		apispec.LogLevelError: "ERROR",
+		apispec.LogLevelFatal: "CRITICAL",
 	}
 	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == nil {
 		if level, exist := levelMap[runtime.Log.Level]; exist {
 			return level
 		}
-		return levelMap[v1alpha1.LogLevelInfo]
+		return levelMap[apispec.LogLevelInfo]
 	}
 	return ""
 }
 
-func parseGolangLogLevel(runtime *v1alpha1.GoRuntime) string {
+func parseGolangLogLevel(runtime *apispec.GoRuntime) string {
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return ""
 	}
-	var levelMap = map[v1alpha1.LogLevel]string{
-		v1alpha1.LogLevelDebug: "debug",
-		v1alpha1.LogLevelTrace: "trace",
-		v1alpha1.LogLevelInfo:  "info",
-		v1alpha1.LogLevelWarn:  "warn",
-		v1alpha1.LogLevelError: "error",
-		v1alpha1.LogLevelFatal: "fatal",
-		v1alpha1.LogLevelPanic: "panic",
+	var levelMap = map[apispec.LogLevel]string{
+		apispec.LogLevelDebug: "debug",
+		apispec.LogLevelTrace: "trace",
+		apispec.LogLevelInfo:  "info",
+		apispec.LogLevelWarn:  "warn",
+		apispec.LogLevelError: "error",
+		apispec.LogLevelFatal: "fatal",
+		apispec.LogLevelPanic: "panic",
 	}
 	if runtime.Log != nil && runtime.Log.Level != "" {
 		if level, exist := levelMap[runtime.Log.Level]; exist {
 			return level
 		}
 	}
-	return levelMap[v1alpha1.LogLevelInfo]
+	return levelMap[apispec.LogLevelInfo]
 }
 
 // TODO: do a more strict check for the package name https://github.com/streamnative/function-mesh/issues/49
@@ -852,9 +853,9 @@ func setShardIDEnvironmentVariableCommand() string {
 }
 
 func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, memory, extraDependenciesDir, uid string,
-	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
-	state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
+	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]apispec.SecretRef,
+	state *apispec.Stateful,
+	tlsConfig TLSConfig, authConfig *apispec.AuthConfig,
 	healthCheckInterval int32) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
@@ -905,8 +906,8 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 }
 
 func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid string, authProvided, tlsProvided bool,
-	secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig,
-	authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
+	secretMaps map[string]apispec.SecretRef, state *apispec.Stateful, tlsConfig TLSConfig,
+	authConfig *apispec.AuthConfig, healthCheckInterval int32) []string {
 	args := []string{
 		"exec",
 		"python",
@@ -941,7 +942,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 
 // This method is suitable for Java and Python runtime, not include Go runtime.
 func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
+	tlsConfig TLSConfig, authConfig *apispec.AuthConfig, healthCheckInterval int32) []string {
 	var hInterval int32 = -1
 	if healthCheckInterval > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
 		hInterval = healthCheckInterval
@@ -1030,7 +1031,7 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 	return args
 }
 
-func generateGoFunctionConf(function *v1alpha1.Function) string {
+func generateGoFunctionConf(function *computeapi.Function) string {
 	goFunctionConfs := convertGoFunctionConfs(function)
 	j, err := json.Marshal(goFunctionConfs)
 	if err != nil {
@@ -1042,7 +1043,7 @@ func generateGoFunctionConf(function *v1alpha1.Function) string {
 	return ret
 }
 
-func getProcessGoRuntimeArgs(goExecFilePath string, function *v1alpha1.Function) []string {
+func getProcessGoRuntimeArgs(goExecFilePath string, function *computeapi.Function) []string {
 	str := generateGoFunctionConf(function)
 	str = strings.ReplaceAll(str, "\"", "\\\"")
 	args := []string{
@@ -1067,13 +1068,13 @@ func getProcessGoRuntimeArgs(goExecFilePath string, function *v1alpha1.Function)
 	return args
 }
 
-func convertProcessingGuarantee(input v1alpha1.ProcessGuarantee) proto.ProcessingGuarantees {
+func convertProcessingGuarantee(input apispec.ProcessGuarantee) proto.ProcessingGuarantees {
 	switch input {
-	case v1alpha1.AtmostOnce:
+	case apispec.AtmostOnce:
 		return proto.ProcessingGuarantees_ATMOST_ONCE
-	case v1alpha1.AtleastOnce:
+	case apispec.AtleastOnce:
 		return proto.ProcessingGuarantees_ATLEAST_ONCE
-	case v1alpha1.EffectivelyOnce:
+	case apispec.EffectivelyOnce:
 		return proto.ProcessingGuarantees_EFFECTIVELY_ONCE
 	default:
 		// should never reach here
@@ -1081,11 +1082,11 @@ func convertProcessingGuarantee(input v1alpha1.ProcessGuarantee) proto.Processin
 	}
 }
 
-func convertSubPosition(pos v1alpha1.SubscribePosition) proto.SubscriptionPosition {
+func convertSubPosition(pos apispec.SubscribePosition) proto.SubscriptionPosition {
 	switch pos {
-	case v1alpha1.Earliest:
+	case apispec.Earliest:
 		return proto.SubscriptionPosition_EARLIEST
-	case v1alpha1.Latest:
+	case apispec.Latest:
 		return proto.SubscriptionPosition_LATEST
 	default:
 		return proto.SubscriptionPosition_EARLIEST
@@ -1110,7 +1111,7 @@ func generateResource(resources corev1.ResourceList) *proto.Resources {
 	}
 }
 
-func getUserConfig(configs *v1alpha1.Config) string {
+func getUserConfig(configs *apispec.Config) string {
 	if configs == nil {
 		return ""
 	}
@@ -1119,7 +1120,7 @@ func getUserConfig(configs *v1alpha1.Config) string {
 	return string(bytes)
 }
 
-func generateContainerEnv(function *v1alpha1.Function) []corev1.EnvVar {
+func generateContainerEnv(function *computeapi.Function) []corev1.EnvVar {
 	envs := generateBasicContainerEnv(function.Spec.SecretsMap, function.Spec.Pod.Env)
 
 	// add env to set logging level for Go runtime
@@ -1132,7 +1133,7 @@ func generateContainerEnv(function *v1alpha1.Function) []corev1.EnvVar {
 	return envs
 }
 
-func generateBasicContainerEnv(secrets map[string]v1alpha1.SecretRef, env []corev1.EnvVar) []corev1.EnvVar {
+func generateBasicContainerEnv(secrets map[string]apispec.SecretRef, env []corev1.EnvVar) []corev1.EnvVar {
 	vars := []corev1.EnvVar{{
 		Name:      "POD_NAME",
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
@@ -1181,7 +1182,7 @@ func generateContainerEnvFrom(messagingConfig string, authSecret string, tlsSecr
 	return envs
 }
 
-func generateContainerVolumesFromLogConfigs(confs map[int32]*v1alpha1.LogConfig) []corev1.Volume {
+func generateContainerVolumesFromLogConfigs(confs map[int32]*apispec.LogConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	if len(confs) > 0 {
 		if conf, exist := confs[javaRuntimeLog]; exist {
@@ -1226,7 +1227,7 @@ func generateContainerVolumesFromLogConfigs(confs map[int32]*v1alpha1.LogConfig)
 	return volumes
 }
 
-func generateContainerVolumesFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.Volume {
+func generateContainerVolumesFromConsumerConfigs(confs map[string]apispec.ConsumerConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	if len(confs) > 0 {
 		for _, conf := range confs {
@@ -1240,7 +1241,7 @@ func generateContainerVolumesFromConsumerConfigs(confs map[string]v1alpha1.Consu
 	return volumes
 }
 
-func generateContainerVolumesFromProducerConf(conf *v1alpha1.ProducerConfig) []corev1.Volume {
+func generateContainerVolumesFromProducerConf(conf *apispec.ProducerConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	if conf != nil && conf.CryptoConfig != nil && len(conf.CryptoConfig.CryptoSecrets) > 0 {
 		for _, c := range conf.CryptoConfig.CryptoSecrets {
@@ -1250,7 +1251,7 @@ func generateContainerVolumesFromProducerConf(conf *v1alpha1.ProducerConfig) []c
 	return volumes
 }
 
-func generateVolumeFromCryptoSecret(secret *v1alpha1.CryptoSecret) corev1.Volume {
+func generateVolumeFromCryptoSecret(secret *apispec.CryptoSecret) corev1.Volume {
 	return corev1.Volume{
 		Name: generateVolumeNameFromCryptoSecrets(secret),
 		VolumeSource: corev1.VolumeSource{
@@ -1284,7 +1285,7 @@ func generateVolumeFromTLSConfig(tlsConfig TLSConfig) corev1.Volume {
 	}
 }
 
-func generateVolumeFromOAuth2Config(config *v1alpha1.OAuth2Config) corev1.Volume {
+func generateVolumeFromOAuth2Config(config *apispec.OAuth2Config) corev1.Volume {
 	return corev1.Volume{
 		Name: generateVolumeNameFromOAuth2Config(config),
 		VolumeSource: corev1.VolumeSource{
@@ -1301,7 +1302,7 @@ func generateVolumeFromOAuth2Config(config *v1alpha1.OAuth2Config) corev1.Volume
 	}
 }
 
-func generateVolumeMountFromLogConfigs(confs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
+func generateVolumeMountFromLogConfigs(confs map[int32]*apispec.LogConfig) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{}
 	if len(confs) > 0 {
 		if conf, exist := confs[javaRuntimeLog]; exist {
@@ -1322,7 +1323,7 @@ func generateVolumeMountFromLogConfigs(confs map[int32]*v1alpha1.LogConfig) []co
 	return volumeMounts
 }
 
-func generateVolumeMountFromCryptoSecret(secret *v1alpha1.CryptoSecret) corev1.VolumeMount {
+func generateVolumeMountFromCryptoSecret(secret *apispec.CryptoSecret) corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      generateVolumeNameFromCryptoSecrets(secret),
 		MountPath: secret.AsVolume,
@@ -1336,14 +1337,14 @@ func generateVolumeMountFromTLSConfig(tlsConfig TLSConfig) corev1.VolumeMount {
 	}
 }
 
-func generateVolumeMountFromOAuth2Config(config *v1alpha1.OAuth2Config) corev1.VolumeMount {
+func generateVolumeMountFromOAuth2Config(config *apispec.OAuth2Config) corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      generateVolumeNameFromOAuth2Config(config),
 		MountPath: config.GetMountPath(),
 	}
 }
 
-func generateContainerVolumeMountsFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.VolumeMount {
+func generateContainerVolumeMountsFromConsumerConfigs(confs map[string]apispec.ConsumerConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	if len(confs) > 0 {
 		for _, conf := range confs {
@@ -1359,8 +1360,8 @@ func generateContainerVolumeMountsFromConsumerConfigs(confs map[string]v1alpha1.
 	return mounts
 }
 
-func generateDownloaderVolumeMountsForDownloader(javaRuntime *v1alpha1.JavaRuntime,
-	pythonRuntime *v1alpha1.PythonRuntime, goRuntime *v1alpha1.GoRuntime) []corev1.VolumeMount {
+func generateDownloaderVolumeMountsForDownloader(javaRuntime *apispec.JavaRuntime,
+	pythonRuntime *apispec.PythonRuntime, goRuntime *apispec.GoRuntime) []corev1.VolumeMount {
 	if !utils.EnableInitContainers {
 		return nil
 	}
@@ -1375,8 +1376,8 @@ func generateDownloaderVolumeMountsForDownloader(javaRuntime *v1alpha1.JavaRunti
 	return nil
 }
 
-func generateDownloaderVolumeMountsForRuntime(javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
-	goRuntime *v1alpha1.GoRuntime) []corev1.VolumeMount {
+func generateDownloaderVolumeMountsForRuntime(javaRuntime *apispec.JavaRuntime, pythonRuntime *apispec.PythonRuntime,
+	goRuntime *apispec.GoRuntime) []corev1.VolumeMount {
 	downloadPath := ""
 	if javaRuntime != nil && javaRuntime.JarLocation != "" {
 		downloadPath = javaRuntime.Jar
@@ -1402,7 +1403,7 @@ func generateDownloaderVolumeMountsForRuntime(javaRuntime *v1alpha1.JavaRuntime,
 	return nil
 }
 
-func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig) []corev1.VolumeMount {
+func generateContainerVolumeMountsFromProducerConf(conf *apispec.ProducerConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	if conf != nil && conf.CryptoConfig != nil && len(conf.CryptoConfig.CryptoSecrets) > 0 {
 		for _, c := range conf.CryptoConfig.CryptoSecrets {
@@ -1414,11 +1415,11 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 	return mounts
 }
 
-func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	logConfs map[int32]*v1alpha1.LogConfig, javaRuntime *v1alpha1.JavaRuntime,
-	pythonRuntime *v1alpha1.PythonRuntime,
-	goRuntime *v1alpha1.GoRuntime) []corev1.VolumeMount {
+func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *apispec.ProducerConfig,
+	consumerConfs map[string]apispec.ConsumerConfig, tlsConfig TLSConfig, authConfig *apispec.AuthConfig,
+	logConfs map[int32]*apispec.LogConfig, javaRuntime *apispec.JavaRuntime,
+	pythonRuntime *apispec.PythonRuntime,
+	goRuntime *apispec.GoRuntime) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
@@ -1445,9 +1446,9 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 	return mounts
 }
 
-func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.ProducerConfig,
-	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	logConf map[int32]*v1alpha1.LogConfig) []corev1.Volume {
+func generatePodVolumes(podVolumes []corev1.Volume, producerConf *apispec.ProducerConfig,
+	consumerConfs map[string]apispec.ConsumerConfig, tlsConfig TLSConfig, authConfig *apispec.AuthConfig,
+	logConf map[int32]*apispec.LogConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	volumes = append(volumes, podVolumes...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
@@ -1493,7 +1494,7 @@ func generateAnnotations(customAnnotations ...map[string]string) map[string]stri
 	return annotations
 }
 
-func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
+func getFunctionRunnerImage(spec *computeapi.FunctionSpec) string {
 	runtime := &spec.Runtime
 	img := spec.Image
 	if img != "" {
@@ -1508,7 +1509,7 @@ func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
 	return DefaultRunnerImage
 }
 
-func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
+func getSinkRunnerImage(spec *computeapi.SinkSpec) string {
 	img := spec.Image
 	if img != "" {
 		return img
@@ -1520,7 +1521,7 @@ func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
 	return DefaultRunnerImage
 }
 
-func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
+func getSourceRunnerImage(spec *computeapi.SourceSpec) string {
 	img := spec.Image
 	if img != "" {
 		return img
@@ -1542,7 +1543,7 @@ func getDefaultRunnerPodSecurityContext(uid, gid int64, nonRoot bool) *corev1.Po
 	}
 }
 
-func getJavaSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []string {
+func getJavaSecretProviderArgs(secretMaps map[string]apispec.SecretRef) []string {
 	var ret []string
 	if len(secretMaps) > 0 {
 		ret = []string{
@@ -1553,7 +1554,7 @@ func getJavaSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []strin
 	return ret
 }
 
-func getPythonSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []string {
+func getPythonSecretProviderArgs(secretMaps map[string]apispec.SecretRef) []string {
 	var ret []string
 	if len(secretMaps) > 0 {
 		ret = []string{
@@ -1582,9 +1583,9 @@ const (
 	golangRuntimeLog
 )
 
-func getRuntimeLogConfigNames(java *v1alpha1.JavaRuntime, python *v1alpha1.PythonRuntime,
-	golang *v1alpha1.GoRuntime) map[int32]*v1alpha1.LogConfig {
-	logConfMap := map[int32]*v1alpha1.LogConfig{}
+func getRuntimeLogConfigNames(java *apispec.JavaRuntime, python *apispec.PythonRuntime,
+	golang *apispec.GoRuntime) map[int32]*apispec.LogConfig {
+	logConfMap := map[int32]*apispec.LogConfig{}
 
 	if java != nil && java.Log != nil && java.Log.LogConfig != nil {
 		logConfMap[javaRuntimeLog] = java.Log.LogConfig

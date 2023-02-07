@@ -23,18 +23,17 @@ import (
 	"regexp"
 	"strings"
 
-	v1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
 	"k8s.io/apimachinery/pkg/util/validation"
 
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
 	"github.com/streamnative/function-mesh/controllers/proto"
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 	"github.com/streamnative/function-mesh/utils"
 )
 
-func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails {
+func convertFunctionDetails(function *computeapi.Function) *proto.FunctionDetails {
 	fd := &proto.FunctionDetails{
 		Tenant:               function.Spec.Tenant,
 		Namespace:            function.Spec.Namespace,
@@ -66,10 +65,10 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 	return fd
 }
 
-func generateFunctionConfig(function *v1alpha1.Function) *v1alpha1.Config {
+func generateFunctionConfig(function *computeapi.Function) *apispec.Config {
 	if function.Spec.WindowConfig != nil {
 		if function.Spec.FuncConfig == nil {
-			function.Spec.FuncConfig = &v1alpha1.Config{
+			function.Spec.FuncConfig = &apispec.Config{
 				Data: map[string]interface{}{},
 			}
 		}
@@ -79,14 +78,14 @@ func generateFunctionConfig(function *v1alpha1.Function) *v1alpha1.Config {
 	return function.Spec.FuncConfig
 }
 
-func fetchClassName(function *v1alpha1.Function) string {
+func fetchClassName(function *computeapi.Function) string {
 	if function.Spec.WindowConfig != nil {
 		return WindowFunctionExecutorClass
 	}
 	return function.Spec.ClassName
 }
 
-func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
+func convertGoFunctionConfs(function *computeapi.Function) *GoFunctionConf {
 	var hInterval int32 = -1
 	if function.Spec.Pod.Liveness != nil && function.Spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
 		hInterval = function.Spec.Pod.Liveness.PeriodSeconds
@@ -126,7 +125,7 @@ func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 	}
 }
 
-func generateInputSpec(sourceConf v1alpha1.InputConf) map[string]*proto.ConsumerSpec {
+func generateInputSpec(sourceConf apispec.InputConf) map[string]*proto.ConsumerSpec {
 	inputSpecs := make(map[string]*proto.ConsumerSpec)
 
 	for _, source := range sourceConf.Topics {
@@ -178,7 +177,7 @@ func generateInputSpec(sourceConf v1alpha1.InputConf) map[string]*proto.Consumer
 	return inputSpecs
 }
 
-func generateFunctionInputSpec(function *v1alpha1.Function) *proto.SourceSpec {
+func generateFunctionInputSpec(function *computeapi.Function) *proto.SourceSpec {
 	inputSpecs := generateInputSpec(function.Spec.Input)
 
 	return &proto.SourceSpec{
@@ -196,7 +195,7 @@ func generateFunctionInputSpec(function *v1alpha1.Function) *proto.SourceSpec {
 	}
 }
 
-func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
+func generateFunctionOutputSpec(function *computeapi.Function) *proto.SinkSpec {
 	sinkSpec := &proto.SinkSpec{
 		ClassName:                    "",
 		Configs:                      "",
@@ -233,12 +232,12 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 	return sinkSpec
 }
 
-func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
+func convertSourceDetails(source *computeapi.Source) *proto.FunctionDetails {
 	fd := &proto.FunctionDetails{
 		Tenant:               source.Spec.Tenant,
 		Namespace:            source.Spec.Namespace,
 		Name:                 source.Name,
-		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
+		ClassName:            "org.apache.pulsar.functions.spec.utils.IdentityFunction",
 		ProcessingGuarantees: convertProcessingGuarantee(source.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(source.Spec.SourceConfig),
 		Runtime:              proto.FunctionDetails_JAVA,
@@ -258,14 +257,14 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 	return fd
 }
 
-func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
+func generateSourceInputSpec(source *computeapi.Source) *proto.SourceSpec {
 	sourceConfig := source.Spec.SourceConfig
 	className := source.Spec.ClassName
 	if source.Spec.BatchSourceConfig != nil {
 		bytes, _ := json.Marshal(source.Spec.BatchSourceConfig)
-		sourceConfig.Data[v1alpha1.BatchSourceConfigKey] = string(bytes)
-		sourceConfig.Data[v1alpha1.BatchSourceClassNameKey] = source.Spec.ClassName
-		className = v1alpha1.BatchSourceClass
+		sourceConfig.Data[computeapi.BatchSourceConfigKey] = string(bytes)
+		sourceConfig.Data[computeapi.BatchSourceClassNameKey] = source.Spec.ClassName
+		className = computeapi.BatchSourceClass
 	}
 	configs := getUserConfig(sourceConfig)
 	return &proto.SourceSpec{
@@ -275,7 +274,7 @@ func generateSourceInputSpec(source *v1alpha1.Source) *proto.SourceSpec {
 	}
 }
 
-func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
+func generateSourceOutputSpec(source *computeapi.Source) *proto.SinkSpec {
 	var producerSpec proto.ProducerSpec
 	var cryptoSpec *proto.CryptoSpec
 	if source.Spec.Output.ProducerConf != nil {
@@ -304,12 +303,12 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 	}
 }
 
-func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
+func convertSinkDetails(sink *computeapi.Sink) *proto.FunctionDetails {
 	fd := &proto.FunctionDetails{
 		Tenant:               sink.Spec.Tenant,
 		Namespace:            sink.Spec.Namespace,
 		Name:                 sink.Name,
-		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
+		ClassName:            "org.apache.pulsar.functions.spec.utils.IdentityFunction",
 		ProcessingGuarantees: convertProcessingGuarantee(sink.Spec.ProcessingGuarantee),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              getBoolFromPtrOrDefault(sink.Spec.AutoAck, true),
@@ -329,7 +328,7 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 	return fd
 }
 
-func generateSinkInputSpec(sink *v1alpha1.Sink) *proto.SourceSpec {
+func generateSinkInputSpec(sink *computeapi.Sink) *proto.SourceSpec {
 	inputSpecs := generateInputSpec(sink.Spec.Input)
 
 	return &proto.SourceSpec{
@@ -344,15 +343,15 @@ func generateSinkInputSpec(sink *v1alpha1.Sink) *proto.SourceSpec {
 	}
 }
 
-func getSubscriptionType(retainOrdering bool, processingGuarantee v1alpha1.ProcessGuarantee) proto.SubscriptionType {
-	if retainOrdering || processingGuarantee == v1alpha1.EffectivelyOnce {
+func getSubscriptionType(retainOrdering bool, processingGuarantee apispec.ProcessGuarantee) proto.SubscriptionType {
+	if retainOrdering || processingGuarantee == apispec.EffectivelyOnce {
 		return proto.SubscriptionType_FAILOVER
 	}
 
 	return proto.SubscriptionType_SHARED
 }
 
-func generateSinkOutputSpec(sink *v1alpha1.Sink) *proto.SinkSpec {
+func generateSinkOutputSpec(sink *computeapi.Sink) *proto.SinkSpec {
 	configs := getUserConfig(sink.Spec.SinkConfig)
 	return &proto.SinkSpec{
 		ClassName:     sink.Spec.ClassName,
@@ -361,7 +360,7 @@ func generateSinkOutputSpec(sink *v1alpha1.Sink) *proto.SinkSpec {
 	}
 }
 
-func marshalSecretsMap(secrets map[string]v1alpha1.SecretRef) string {
+func marshalSecretsMap(secrets map[string]apispec.SecretRef) string {
 	bytes, err := json.Marshal(secrets)
 	if err != nil || string(bytes) == "null" {
 		return "{}"
@@ -369,14 +368,14 @@ func marshalSecretsMap(secrets map[string]v1alpha1.SecretRef) string {
 	return string(bytes)
 }
 
-func unmarshalConsumerConfig(conf string) v1alpha1.ConsumerConfig {
-	var config v1alpha1.ConsumerConfig
+func unmarshalConsumerConfig(conf string) apispec.ConsumerConfig {
+	var config apispec.ConsumerConfig
 	// TODO: check unmarshel error in admission hook
 	json.Unmarshal([]byte(conf), &config)
 	return config
 }
 
-func generateCryptoSpec(conf *v1alpha1.CryptoConfig) *proto.CryptoSpec {
+func generateCryptoSpec(conf *apispec.CryptoConfig) *proto.CryptoSpec {
 	if conf == nil {
 		return nil
 	}
@@ -413,7 +412,7 @@ func generateVolumeNameFromLogConfigs(name string, runtime string) string {
 	return sanitizeVolumeName(name + "-" + runtime + "-log-conf")
 }
 
-func generateVolumeNameFromCryptoSecrets(c *v1alpha1.CryptoSecret) string {
+func generateVolumeNameFromCryptoSecrets(c *apispec.CryptoSecret) string {
 	return sanitizeVolumeName(c.SecretName + "-" + c.SecretKey)
 }
 
@@ -421,7 +420,7 @@ func generateVolumeNameFromTLSConfig(c TLSConfig) string {
 	return sanitizeVolumeName(c.SecretName() + "-" + c.SecretKey())
 }
 
-func generateVolumeNameFromOAuth2Config(o *v1alpha1.OAuth2Config) string {
+func generateVolumeNameFromOAuth2Config(o *apispec.OAuth2Config) string {
 	return sanitizeVolumeName(o.KeySecretName + "-" + o.KeySecretKey)
 }
 

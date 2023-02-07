@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	computev1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	computev1alpha2 "github.com/streamnative/function-mesh/api/compute/v1alpha2"
 	"github.com/streamnative/function-mesh/controllers"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	"github.com/streamnative/function-mesh/utils"
@@ -50,6 +51,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(computev1alpha1.AddToScheme(scheme))
+	utilruntime.Must(computev1alpha2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -170,15 +172,15 @@ func main() {
 	// enable the webhook service by default
 	// Disable function-mesh webhook with `ENABLE_WEBHOOKS=false` when we run locally.
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&computev1alpha1.Function{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&computev1alpha2.Function{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Function")
 			os.Exit(1)
 		}
-		if err = (&computev1alpha1.Source{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&computev1alpha2.Source{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Source")
 			os.Exit(1)
 		}
-		if err = (&computev1alpha1.Sink{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&computev1alpha2.Sink{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Sink")
 			os.Exit(1)
 		}

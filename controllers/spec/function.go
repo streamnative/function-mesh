@@ -27,14 +27,15 @@ import (
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 	"github.com/streamnative/function-mesh/utils"
 )
 
 // log is for logging in this package.
 var log = logf.Log.WithName("function-resource")
 
-func MakeFunctionHPA(function *v1alpha1.Function) *autov2beta2.HorizontalPodAutoscaler {
+func MakeFunctionHPA(function *computeapi.Function) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeFunctionObjectMeta(function)
 	targetRef := autov2beta2.CrossVersionObjectReference{
 		Kind:       function.Kind,
@@ -50,13 +51,13 @@ func MakeFunctionHPA(function *v1alpha1.Function) *autov2beta2.HorizontalPodAuto
 	return makeDefaultHPA(objectMeta, *function.Spec.MinReplicas, *function.Spec.MaxReplicas, targetRef)
 }
 
-func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
+func MakeFunctionService(function *computeapi.Function) *corev1.Service {
 	labels := makeFunctionLabels(function)
 	objectMeta := MakeFunctionObjectMeta(function)
 	return MakeService(objectMeta, labels)
 }
 
-func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
+func MakeFunctionStatefulSet(function *computeapi.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
 	return MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		MakeFunctionContainer(function), makeFunctionVolumes(function), makeFunctionLabels(function), function.Spec.Pod,
@@ -64,9 +65,9 @@ func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 		function.Spec.VolumeMounts)
 }
 
-func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
+func MakeFunctionObjectMeta(function *computeapi.Function) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
-		Name:      makeJobName(function.Name, v1alpha1.FunctionComponent),
+		Name:      makeJobName(function.Name, apispec.FunctionComponent),
 		Namespace: function.Namespace,
 		Labels:    makeFunctionLabels(function),
 		OwnerReferences: []metav1.OwnerReference{
@@ -75,7 +76,7 @@ func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
 	}
 }
 
-func makeFunctionVolumes(function *v1alpha1.Function) []corev1.Volume {
+func makeFunctionVolumes(function *computeapi.Function) []corev1.Volume {
 	return generatePodVolumes(function.Spec.Pod.Volumes,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
@@ -84,7 +85,7 @@ func makeFunctionVolumes(function *v1alpha1.Function) []corev1.Volume {
 		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang))
 }
 
-func makeFunctionVolumeMounts(function *v1alpha1.Function) []corev1.VolumeMount {
+func makeFunctionVolumeMounts(function *computeapi.Function) []corev1.VolumeMount {
 	return generateContainerVolumeMounts(function.Spec.VolumeMounts,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
@@ -96,7 +97,7 @@ func makeFunctionVolumeMounts(function *v1alpha1.Function) []corev1.VolumeMount 
 		function.Spec.Golang)
 }
 
-func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
+func MakeFunctionContainer(function *computeapi.Function) *corev1.Container {
 	imagePullPolicy := function.Spec.ImagePullPolicy
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
@@ -118,8 +119,8 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	}
 }
 
-func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
-	jobName := makeJobName(function.Name, v1alpha1.FunctionComponent)
+func makeFunctionLabels(function *computeapi.Function) map[string]string {
+	jobName := makeJobName(function.Name, apispec.FunctionComponent)
 	labels := map[string]string{
 		"app.kubernetes.io/name":            jobName,
 		"app.kubernetes.io/instance":        jobName,
@@ -136,7 +137,7 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 	return labels
 }
 
-func makeFunctionCommand(function *v1alpha1.Function) []string {
+func makeFunctionCommand(function *computeapi.Function) []string {
 	spec := function.Spec
 	var healthCheckInterval int32 = -1
 	if spec.Pod.Liveness != nil && spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
@@ -173,7 +174,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 	return nil
 }
 
-func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
+func generateFunctionDetailsInJSON(function *computeapi.Function) string {
 	functionDetails := convertFunctionDetails(function)
 	json, err := protojson.Marshal(functionDetails)
 	if err != nil {
@@ -184,7 +185,7 @@ func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
 	return string(json)
 }
 
-func MakeFunctionVPA(function *v1alpha1.Function) *vpav1.VerticalPodAutoscaler {
+func MakeFunctionVPA(function *computeapi.Function) *vpav1.VerticalPodAutoscaler {
 	objectMeta := MakeFunctionObjectMeta(function)
 	targetRef := &autoscaling.CrossVersionObjectReference{
 		Kind:       function.Kind,

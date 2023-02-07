@@ -15,28 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Package spec define the specs
+// Package spec contains common API Schema definitions for the cloud API group
+// +kubebuilder:object:generate=true
+// +groupName=compute.functionmesh.io
 package spec
 
-import (
-	autoscaling "k8s.io/api/autoscaling/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
+type BuiltinHPARule string
 
-	apispec "github.com/streamnative/function-mesh/pkg/spec"
+const (
+	AverageUtilizationCPUPercent80 BuiltinHPARule = "AverageUtilizationCPUPercent80"
+	AverageUtilizationCPUPercent50 BuiltinHPARule = "AverageUtilizationCPUPercent50"
+	AverageUtilizationCPUPercent20 BuiltinHPARule = "AverageUtilizationCPUPercent20"
+
+	AverageUtilizationMemoryPercent80 BuiltinHPARule = "AverageUtilizationMemoryPercent80"
+	AverageUtilizationMemoryPercent50 BuiltinHPARule = "AverageUtilizationMemoryPercent50"
+	AverageUtilizationMemoryPercent20 BuiltinHPARule = "AverageUtilizationMemoryPercent20"
 )
-
-func makeVPA(objectMeta *metav1.ObjectMeta, targetRef *autoscaling.CrossVersionObjectReference, vpa *apispec.VPASpec) *vpav1.VerticalPodAutoscaler {
-	return &vpav1.VerticalPodAutoscaler{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "autoscaling.k8s.io/v1",
-			Kind:       "VerticalPodAutoscaler",
-		},
-		ObjectMeta: *objectMeta,
-		Spec: vpav1.VerticalPodAutoscalerSpec{
-			TargetRef:      targetRef,
-			UpdatePolicy:   vpa.UpdatePolicy,
-			ResourcePolicy: vpa.ResourcePolicy,
-		},
-	}
-}

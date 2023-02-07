@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+package v1alpha2
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -27,16 +27,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-const (
-	BatchSourceConfigKey    string = "__BATCHSOURCECONFIGS__"
-	BatchSourceClassNameKey string = "__BATCHSOURCECLASSNAME__"
-	// BatchSourceClass the source class for batch source
-	BatchSourceClass string = "org.apache.pulsar.functions.source.batch.BatchSourceExecutor"
-)
-
-// SourceSpec defines the desired state of Source
-// +kubebuilder:validation:Optional
-type SourceSpec struct {
+// FunctionSpec defines the desired state of Function
+type FunctionSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Name        string `json:"name,omitempty"`
@@ -44,7 +36,6 @@ type SourceSpec struct {
 	Tenant      string `json:"tenant,omitempty"`
 	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
-	SourceType  string `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
 	// +kubebuilder:validation:Minimum=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// +kubebuilder:validation:Minimum=1
@@ -56,19 +47,34 @@ type SourceSpec struct {
 	// If provided, a default HPA with CPU at average of 80% will be used.
 	// For complex HPA strategies, please refer to Pod.HPAutoscaler.
 	MaxReplicas *int32             `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
+	Input       apispec.InputConf  `json:"input,omitempty"`
 	Output      apispec.OutputConf `json:"output,omitempty"`
-
-	BatchSourceConfig *BatchSourceConfig `json:"batchSourceConfig,omitempty"`
+	LogTopic    string             `json:"logTopic,omitempty"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
-	SourceConfig                 *apispec.Config              `json:"sourceConfig,omitempty"`
-	Resources                    corev1.ResourceRequirements  `json:"resources,omitempty"`
-	SecretsMap                   map[string]apispec.SecretRef `json:"secretsMap,omitempty"`
-	ProcessingGuarantee          apispec.ProcessGuarantee     `json:"processingGuarantee,omitempty"`
-	RuntimeFlags                 string                       `json:"runtimeFlags,omitempty"`
-	VolumeMounts                 []corev1.VolumeMount         `json:"volumeMounts,omitempty"`
-	ForwardSourceMessageProperty *bool                        `json:"forwardSourceMessageProperty,omitempty"`
-	Pod                          apispec.PodPolicy            `json:"pod,omitempty"`
+	FuncConfig   *apispec.Config              `json:"funcConfig,omitempty"`
+	Resources    corev1.ResourceRequirements  `json:"resources,omitempty"`
+	SecretsMap   map[string]apispec.SecretRef `json:"secretsMap,omitempty"`
+	VolumeMounts []corev1.VolumeMount         `json:"volumeMounts,omitempty"`
+
+	Timeout                      int32                    `json:"timeout,omitempty"`
+	AutoAck                      *bool                    `json:"autoAck,omitempty"`
+	MaxMessageRetry              int32                    `json:"maxMessageRetry,omitempty"`
+	ProcessingGuarantee          apispec.ProcessGuarantee `json:"processingGuarantee,omitempty"`
+	RetainOrdering               bool                     `json:"retainOrdering,omitempty"`
+	RetainKeyOrdering            bool                     `json:"retainKeyOrdering,omitempty"`
+	DeadLetterTopic              string                   `json:"deadLetterTopic,omitempty"`
+	ForwardSourceMessageProperty *bool                    `json:"forwardSourceMessageProperty,omitempty"`
+	MaxPendingAsyncRequests      *int32                   `json:"maxPendingAsyncRequests,omitempty"`
+
+	RuntimeFlags         string                    `json:"runtimeFlags,omitempty"`
+	SubscriptionName     string                    `json:"subscriptionName,omitempty"`
+	CleanupSubscription  bool                      `json:"cleanupSubscription,omitempty"`
+	SubscriptionPosition apispec.SubscribePosition `json:"subscriptionPosition,omitempty"`
+
+	Pod apispec.PodPolicy `json:"pod,omitempty"`
+
+	WindowConfig *apispec.WindowConfig `json:"windowConfig,omitempty"`
 
 	// +kubebuilder:validation:Required
 	apispec.Messaging `json:",inline"`
@@ -76,7 +82,7 @@ type SourceSpec struct {
 	// +kubebuilder:validation:Required
 	apispec.Runtime `json:",inline"`
 
-	// Image is the container image used to run source pods.
+	// Image is the container image used to run function pods.
 	// default is streamnative/pulsar-functions-java-runner
 	Image string `json:"image,omitempty"`
 
@@ -87,48 +93,39 @@ type SourceSpec struct {
 	StateConfig *apispec.Stateful `json:"statefulConfig,omitempty"`
 }
 
-type BatchSourceConfig struct {
-	// +kubebuilder:validation:Required
-	DiscoveryTriggererClassName string `json:"discoveryTriggererClassName"`
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:pruning:PreserveUnknownFields
-	DiscoveryTriggererConfig *apispec.Config `json:"discoveryTriggererConfig,omitempty"`
-}
-
-// SourceStatus defines the observed state of Source
-type SourceStatus struct {
+// FunctionStatus defines the observed state of Function
+type FunctionStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Conditions         map[apispec.Component]ResourceCondition `json:"conditions"`
-	Replicas           int32                                   `json:"replicas"`
-	Selector           string                                  `json:"selector"`
-	ObservedGeneration int64                                   `json:"observedGeneration,omitempty"`
+	Conditions []metav1.Condition `json:"conditions"`
+	Replicas   int32              `json:"replicas"`
+	Selector   string             `json:"selector"`
 }
 
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-//+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
+// +kubebuilder:storageversion
 
-// Source is the Schema for the sources API
-// +kubebuilder:pruning:PreserveUnknownFields
-type Source struct {
+// Function is the Schema for the functions API
+type Function struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SourceSpec   `json:"spec,omitempty"`
-	Status SourceStatus `json:"status,omitempty"`
+	Spec   FunctionSpec   `json:"spec,omitempty"`
+	Status FunctionStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
-// SourceList contains a list of Source
-type SourceList struct {
+// FunctionList contains a list of Function
+type FunctionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Source `json:"items"`
+	Items           []Function `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Source{}, &SourceList{})
+	SchemeBuilder.Register(&Function{}, &FunctionList{})
 }

@@ -15,19 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Package v1alpha1 contains API Schema definitions for the cloud v1alpha1 API group
+// Package v1alpha2 contains API Schema definitions for the compute v1alpha2 API group
 // +kubebuilder:object:generate=true
 // +groupName=compute.functionmesh.io
-package v1alpha1
+package v1alpha2
 
-type BuiltinHPARule string
+import (
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/scheme"
+)
 
-const (
-	AverageUtilizationCPUPercent80 BuiltinHPARule = "AverageUtilizationCPUPercent80"
-	AverageUtilizationCPUPercent50 BuiltinHPARule = "AverageUtilizationCPUPercent50"
-	AverageUtilizationCPUPercent20 BuiltinHPARule = "AverageUtilizationCPUPercent20"
+var (
+	// GroupVersion is group version used to register these objects
+	GroupVersion = schema.GroupVersion{Group: "compute.functionmesh.io", Version: "v1alpha2"}
 
-	AverageUtilizationMemoryPercent80 BuiltinHPARule = "AverageUtilizationMemoryPercent80"
-	AverageUtilizationMemoryPercent50 BuiltinHPARule = "AverageUtilizationMemoryPercent50"
-	AverageUtilizationMemoryPercent20 BuiltinHPARule = "AverageUtilizationMemoryPercent20"
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
+	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
+
+	// AddToScheme adds the types in this group-version to the given scheme.
+	AddToScheme = SchemeBuilder.AddToScheme
 )

@@ -1,0 +1,12 @@
+apiVersion: compute.functionmesh.io/v1alpha2
+kind: Function
+metadata:
+  labels:
+    app.kubernetes.io/name: function
+    app.kubernetes.io/instance: function-sample
+    app.kubernetes.io/part-of: function-mesh
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: function-mesh
+  name: function-sample
+spec:
+  # TODO(user): Add fields here

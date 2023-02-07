@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"fmt"
@@ -27,6 +27,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 )
 
 // log is for logging in this package.
@@ -40,7 +42,7 @@ func (r *Source) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-source,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,verbs=create;update,versions=v1alpha1,name=msource.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
+// +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha2-source,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,verbs=create;update,versions=v1alpha2,name=msource.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
 var _ webhook.Defaulter = &Source{}
 
@@ -64,7 +66,7 @@ func (r *Source) Default() {
 	}
 
 	if r.Spec.ProcessingGuarantee == "" {
-		r.Spec.ProcessingGuarantee = AtleastOnce
+		r.Spec.ProcessingGuarantee = apispec.AtleastOnce
 	}
 
 	if r.Spec.Name == "" {
@@ -72,24 +74,24 @@ func (r *Source) Default() {
 	}
 
 	if r.Spec.ClusterName == "" {
-		r.Spec.ClusterName = DefaultCluster
+		r.Spec.ClusterName = apispec.DefaultCluster
 	}
 
 	if r.Spec.Tenant == "" {
-		r.Spec.Tenant = DefaultTenant
+		r.Spec.Tenant = apispec.DefaultTenant
 	}
 
 	if r.Spec.Namespace == "" {
-		r.Spec.Namespace = DefaultNamespace
+		r.Spec.Namespace = apispec.DefaultNamespace
 	}
 
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
-			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
+			r.Spec.Resources.Requests.Cpu().Set(apispec.DefaultResourceCPU)
 		}
 
 		if r.Spec.Resources.Requests.Memory() == nil {
-			r.Spec.Resources.Requests.Memory().Set(DefaultResourceMemory)
+			r.Spec.Resources.Requests.Memory().Set(apispec.DefaultResourceMemory)
 		}
 	}
 
@@ -99,7 +101,7 @@ func (r *Source) Default() {
 	}
 
 	if r.Spec.Output.ProducerConf == nil {
-		producerConf := &ProducerConfig{
+		producerConf := &apispec.ProducerConfig{
 			MaxPendingMessages:                 1000,
 			MaxPendingMessagesAcrossPartitions: 1000,
 			UseThreadLocalProducers:            true,
@@ -109,7 +111,7 @@ func (r *Source) Default() {
 	}
 
 	if r.Spec.Resources.Limits == nil {
-		paddingResourceLimit(&r.Spec.Resources)
+		apispec.PaddingResourceLimit(&r.Spec.Resources)
 	}
 
 	if r.Spec.Output.TypeClassName == "" {
@@ -118,7 +120,7 @@ func (r *Source) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-source,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,versions=v1alpha1,name=vsource.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
+// +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha2-source,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,versions=v1alpha2,name=vsource.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
 var _ webhook.Validator = &Source{}
 
@@ -129,8 +131,9 @@ func (r *Source) ValidateCreate() error {
 	var fieldErr *field.Error
 	var fieldErrs []*field.Error
 
-	if len(r.Name) > maxNameLength {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("name"), r.Name, fmt.Sprintf("source name must be no more than %d characters", maxNameLength)))
+	if len(r.Name) > apispec.MaxNameLength {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("name"), r.Name,
+			fmt.Sprintf("source name must be no more than %d characters", apispec.MaxNameLength)))
 	}
 
 	if r.Spec.SourceConfig == nil {
@@ -156,10 +159,11 @@ func (r *Source) ValidateCreate() error {
 	if r.Spec.Pod.VPA != nil {
 		if r.Spec.MaxReplicas != nil {
 			allErrs = append(allErrs,
-				field.Invalid(field.NewPath("spec").Child("pod").Child("vpa"), r.Spec.Pod.VPA, "you can not enable HPA and VPA at the same time"))
+				field.Invalid(field.NewPath("spec").Child("pod").Child("vpa"), r.Spec.Pod.VPA,
+					"you can not enable HPA and VPA at the same time"))
 		}
 
-		resourceErrors := validateResourcePolicy(r.Spec.Pod.VPA.ResourcePolicy)
+		resourceErrors := apispec.ValidateResourcePolicy(r.Spec.Pod.VPA.ResourcePolicy)
 		if resourceErrors != nil {
 			allErrs = append(allErrs, resourceErrors...)
 		}

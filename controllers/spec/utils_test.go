@@ -20,10 +20,11 @@ package spec
 import (
 	"testing"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 )
 
 func TestGetValFromPtrOrDefault(t *testing.T) {
@@ -39,7 +40,7 @@ func TestGetValFromPtrOrDefault(t *testing.T) {
 }
 
 func TestMarshalSecretsMap(t *testing.T) {
-	secrets := map[string]v1alpha1.SecretRef{
+	secrets := map[string]apispec.SecretRef{
 		"foo": {
 			Path: "path",
 		},
@@ -52,48 +53,48 @@ func TestMarshalSecretsMap(t *testing.T) {
 }
 
 func TestBatchSource(t *testing.T) {
-	source := &v1alpha1.Source{
+	source := &computeapi.Source{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Sink",
-			APIVersion: "compute.functionmesh.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha2",
 		},
 		ObjectMeta: *makeSampleObjectMeta("test-source"),
-		Spec: v1alpha1.SourceSpec{
+		Spec: computeapi.SourceSpec{
 			Name:        "test-suorce",
 			ClassName:   "org.apache.pulsar.ecosystem.io.bigquery.BigQuerySource",
 			Tenant:      "public",
 			ClusterName: TestClusterName,
-			Output: v1alpha1.OutputConf{
+			Output: apispec.OutputConf{
 				Topic:         "persistent://public/default/destination",
 				TypeClassName: "org.apache.pulsar.common.schema.KeyValue",
-				ProducerConf: &v1alpha1.ProducerConfig{
+				ProducerConf: &apispec.ProducerConfig{
 					MaxPendingMessages:                 1000,
 					MaxPendingMessagesAcrossPartitions: 50000,
 					UseThreadLocalProducers:            true,
 				},
 			},
-			BatchSourceConfig: &v1alpha1.BatchSourceConfig{
+			BatchSourceConfig: &computeapi.BatchSourceConfig{
 				DiscoveryTriggererClassName: "test-trigger-class",
-				DiscoveryTriggererConfig: &v1alpha1.Config{
+				DiscoveryTriggererConfig: &apispec.Config{
 					Data: map[string]interface{}{
 						"test-key": "test-value",
 					},
 				},
 			},
-			SourceConfig: &v1alpha1.Config{
+			SourceConfig: &apispec.Config{
 				Data: map[string]interface{}{
 					"tableName": "test-table",
 				},
 			},
-			Messaging: v1alpha1.Messaging{
-				Pulsar: &v1alpha1.PulsarMessaging{
+			Messaging: apispec.Messaging{
+				Pulsar: &apispec.PulsarMessaging{
 					PulsarConfig: TestClusterName,
 					//AuthConfig: "test-auth",
 				},
 			},
 			Image: "test-image",
-			Runtime: v1alpha1.Runtime{
-				Java: &v1alpha1.JavaRuntime{
+			Runtime: apispec.Runtime{
+				Java: &apispec.JavaRuntime{
 					Jar:         "connectors/test.jar",
 					JarLocation: "",
 				},
@@ -101,6 +102,6 @@ func TestBatchSource(t *testing.T) {
 		},
 	}
 	sourceSpec := generateSourceInputSpec(source)
-	assert.Equal(t, v1alpha1.BatchSourceClass, sourceSpec.ClassName)
+	assert.Equal(t, computeapi.BatchSourceClass, sourceSpec.ClassName)
 	assert.Equal(t, `{"__BATCHSOURCECLASSNAME__":"org.apache.pulsar.ecosystem.io.bigquery.BigQuerySource","__BATCHSOURCECONFIGS__":"{\"discoveryTriggererClassName\":\"test-trigger-class\",\"discoveryTriggererConfig\":{\"test-key\":\"test-value\"}}","tableName":"test-table"}`, sourceSpec.Configs)
 }

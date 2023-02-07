@@ -26,11 +26,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 	"github.com/streamnative/function-mesh/utils"
 )
 
-func MakeSourceHPA(source *v1alpha1.Source) *autov2beta2.HorizontalPodAutoscaler {
+func MakeSourceHPA(source *computeapi.Source) *autov2beta2.HorizontalPodAutoscaler {
 	objectMeta := MakeSourceObjectMeta(source)
 	targetRef := autov2beta2.CrossVersionObjectReference{
 		Kind:       source.Kind,
@@ -46,22 +47,22 @@ func MakeSourceHPA(source *v1alpha1.Source) *autov2beta2.HorizontalPodAutoscaler
 	return makeDefaultHPA(objectMeta, *source.Spec.MinReplicas, *source.Spec.MaxReplicas, targetRef)
 }
 
-func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
+func MakeSourceService(source *computeapi.Source) *corev1.Service {
 	labels := makeSourceLabels(source)
 	objectMeta := MakeSourceObjectMeta(source)
 	return MakeService(objectMeta, labels)
 }
 
-func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
+func MakeSourceStatefulSet(source *computeapi.Source) *appsv1.StatefulSet {
 	objectMeta := MakeSourceObjectMeta(source)
 	return MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, MakeSourceContainer(source),
 		makeSourceVolumes(source), makeSourceLabels(source), source.Spec.Pod, *source.Spec.Pulsar,
 		source.Spec.Java, source.Spec.Python, source.Spec.Golang, source.Spec.VolumeMounts)
 }
 
-func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {
+func MakeSourceObjectMeta(source *computeapi.Source) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
-		Name:      makeJobName(source.Name, v1alpha1.SourceComponent),
+		Name:      makeJobName(source.Name, apispec.SourceComponent),
 		Namespace: source.Namespace,
 		Labels:    makeSourceLabels(source),
 		OwnerReferences: []metav1.OwnerReference{
@@ -70,7 +71,7 @@ func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {
 	}
 }
 
-func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
+func MakeSourceContainer(source *computeapi.Source) *corev1.Container {
 	imagePullPolicy := source.Spec.ImagePullPolicy
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
@@ -92,8 +93,8 @@ func MakeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 	}
 }
 
-func makeSourceLabels(source *v1alpha1.Source) map[string]string {
-	jobName := makeJobName(source.Name, v1alpha1.SourceComponent)
+func makeSourceLabels(source *computeapi.Source) map[string]string {
+	jobName := makeJobName(source.Name, apispec.SourceComponent)
 	labels := map[string]string{
 		"app.kubernetes.io/name":            jobName,
 		"app.kubernetes.io/instance":        jobName,
@@ -108,7 +109,7 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 	return labels
 }
 
-func makeSourceVolumes(source *v1alpha1.Source) []corev1.Volume {
+func makeSourceVolumes(source *computeapi.Source) []corev1.Volume {
 	return generatePodVolumes(
 		source.Spec.Pod.Volumes,
 		source.Spec.Output.ProducerConf,
@@ -118,7 +119,7 @@ func makeSourceVolumes(source *v1alpha1.Source) []corev1.Volume {
 		getRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang))
 }
 
-func makeSourceVolumeMounts(source *v1alpha1.Source) []corev1.VolumeMount {
+func makeSourceVolumeMounts(source *computeapi.Source) []corev1.VolumeMount {
 	return generateContainerVolumeMounts(
 		source.Spec.VolumeMounts,
 		source.Spec.Output.ProducerConf,
@@ -129,7 +130,7 @@ func makeSourceVolumeMounts(source *v1alpha1.Source) []corev1.VolumeMount {
 		source.Spec.Java, source.Spec.Python, source.Spec.Golang)
 }
 
-func makeSourceCommand(source *v1alpha1.Source) []string {
+func makeSourceCommand(source *computeapi.Source) []string {
 	spec := source.Spec
 	var healthCheckInterval int32 = -1
 	if spec.Pod.Liveness != nil && spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
@@ -145,7 +146,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, healthCheckInterval)
 }
 
-func generateSourceDetailsInJSON(source *v1alpha1.Source) string {
+func generateSourceDetailsInJSON(source *computeapi.Source) string {
 	sourceDetails := convertSourceDetails(source)
 	json, err := protojson.Marshal(sourceDetails)
 	if err != nil {
@@ -159,7 +160,7 @@ func generateSourceDetailsInJSON(source *v1alpha1.Source) string {
 	return string(json)
 }
 
-func MakeSourceVPA(source *v1alpha1.Source) *vpav1.VerticalPodAutoscaler {
+func MakeSourceVPA(source *computeapi.Source) *vpav1.VerticalPodAutoscaler {
 	objectMeta := MakeSourceObjectMeta(source)
 	targetRef := &autoscaling.CrossVersionObjectReference{
 		Kind:       source.Kind,

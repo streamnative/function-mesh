@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	"github.com/streamnative/function-mesh/utils"
 )
@@ -57,7 +57,7 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	_ = r.Log.WithValues("function", req.NamespacedName)
 
 	// your logic here
-	function := &v1alpha1.Function{}
+	function := &computeapi.Function{}
 	err := r.Get(ctx, req.NamespacedName, function)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -83,7 +83,7 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
-func (r *FunctionReconciler) observe(ctx context.Context, function *v1alpha1.Function) (ctrl.Result, error) {
+func (r *FunctionReconciler) observe(ctx context.Context, function *computeapi.Function) (ctrl.Result, error) {
 	if err := r.ObserveFunctionStatefulSet(ctx, function); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -101,7 +101,7 @@ func (r *FunctionReconciler) observe(ctx context.Context, function *v1alpha1.Fun
 	return reconcile.Result{}, nil
 }
 
-func (r *FunctionReconciler) reconcile(ctx context.Context, function *v1alpha1.Function) (ctrl.Result, error) {
+func (r *FunctionReconciler) reconcile(ctx context.Context, function *computeapi.Function) (ctrl.Result, error) {
 	if err := r.ApplyFunctionStatefulSet(ctx, function); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -121,7 +121,7 @@ func (r *FunctionReconciler) reconcile(ctx context.Context, function *v1alpha1.F
 
 func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	manager := ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Function{}).
+		For(&computeapi.Function{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{}).

@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
 	"github.com/streamnative/function-mesh/controllers/spec"
 )
 
@@ -46,7 +46,7 @@ func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	_ = r.Log.WithValues("functionMesh", req.NamespacedName)
 
 	// your logic here
-	mesh := &v1alpha1.FunctionMesh{}
+	mesh := &computeapi.FunctionMesh{}
 	err := r.Get(ctx, req.NamespacedName, mesh)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -73,7 +73,7 @@ func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	return ctrl.Result{}, nil
 }
 
-func (r *FunctionMeshReconciler) observe(ctx context.Context, mesh *v1alpha1.FunctionMesh) (ctrl.Result, error) {
+func (r *FunctionMeshReconciler) observe(ctx context.Context, mesh *computeapi.FunctionMesh) (ctrl.Result, error) {
 	r.initializeMesh(mesh)
 	if err := r.ObserveFunctionMesh(ctx, mesh); err != nil {
 		return reconcile.Result{}, err
@@ -81,7 +81,7 @@ func (r *FunctionMeshReconciler) observe(ctx context.Context, mesh *v1alpha1.Fun
 	return reconcile.Result{}, nil
 }
 
-func (r *FunctionMeshReconciler) reconcile(ctx context.Context, mesh *v1alpha1.FunctionMesh) (ctrl.Result, error) {
+func (r *FunctionMeshReconciler) reconcile(ctx context.Context, mesh *computeapi.FunctionMesh) (ctrl.Result, error) {
 	if err := r.UpdateFunctionMesh(ctx, mesh); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -90,9 +90,9 @@ func (r *FunctionMeshReconciler) reconcile(ctx context.Context, mesh *v1alpha1.F
 
 func (r *FunctionMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.FunctionMesh{}).
-		Owns(&v1alpha1.Function{}).
-		Owns(&v1alpha1.Source{}).
-		Owns(&v1alpha1.Sink{}).
+		For(&computeapi.FunctionMesh{}).
+		Owns(&computeapi.Function{}).
+		Owns(&computeapi.Source{}).
+		Owns(&computeapi.Sink{}).
 		Complete(r)
 }

@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/spec"
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
+	apispec "github.com/streamnative/function-mesh/controllers/spec"
 	"github.com/streamnative/function-mesh/utils"
 )
 
@@ -56,7 +56,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	_ = r.Log.WithValues("source", req.NamespacedName)
 
 	// your logic here
-	source := &v1alpha1.Source{}
+	source := &computeapi.Source{}
 	err := r.Get(ctx, req.NamespacedName, source)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -66,7 +66,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return reconcile.Result{}, err
 	}
 
-	if !spec.IsManaged(source) {
+	if !apispec.IsManaged(source) {
 		r.Log.Info("Skipping source not managed by the controller", "Name", req.String())
 		return reconcile.Result{}, nil
 	}
@@ -82,7 +82,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return ctrl.Result{}, nil
 }
 
-func (r *SourceReconciler) observe(ctx context.Context, source *v1alpha1.Source) (ctrl.Result, error) {
+func (r *SourceReconciler) observe(ctx context.Context, source *computeapi.Source) (ctrl.Result, error) {
 	if err := r.ObserveSourceStatefulSet(ctx, source); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -100,7 +100,7 @@ func (r *SourceReconciler) observe(ctx context.Context, source *v1alpha1.Source)
 	return reconcile.Result{}, nil
 }
 
-func (r *SourceReconciler) reconcile(ctx context.Context, source *v1alpha1.Source) (ctrl.Result, error) {
+func (r *SourceReconciler) reconcile(ctx context.Context, source *computeapi.Source) (ctrl.Result, error) {
 	if err := r.ApplySourceStatefulSet(ctx, source); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -120,7 +120,7 @@ func (r *SourceReconciler) reconcile(ctx context.Context, source *v1alpha1.Sourc
 
 func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	manager := ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Source{}).
+		For(&computeapi.Source{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{})

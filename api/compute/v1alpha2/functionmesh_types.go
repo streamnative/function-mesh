@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,11 +40,10 @@ type FunctionMeshSpec struct {
 type FunctionMeshStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	SourceConditions   map[string]ResourceCondition `json:"sourceConditions,omitempty"`
-	SinkConditions     map[string]ResourceCondition `json:"sinkConditions,omitempty"`
-	FunctionConditions map[string]ResourceCondition `json:"functionConditions,omitempty"`
-	ObservedGeneration int64                        `json:"observedGeneration,omitempty"`
-	Condition          *ResourceCondition           `json:"condition,omitempty"`
+	Conditions         []metav1.Condition             `json:"conditions,omitempty"`
+	SourceConditions   map[string]*ComponentCondition `json:"sourceConditions,omitempty"`
+	SinkConditions     map[string]*ComponentCondition `json:"sinkConditions,omitempty"`
+	FunctionConditions map[string]*ComponentCondition `json:"functionConditions,omitempty"`
 }
 
 type ComponentCondition struct {
@@ -52,9 +51,9 @@ type ComponentCondition struct {
 	Hash   *string                       `json:"hash"`
 }
 
-// +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 
 // FunctionMesh is the Schema for the functionmeshes API
 type FunctionMesh struct {
@@ -65,7 +64,7 @@ type FunctionMesh struct {
 	Status FunctionMeshStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // FunctionMeshList contains a list of FunctionMesh
 type FunctionMeshList struct {

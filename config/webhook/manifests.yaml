@@ -12,14 +12,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-compute-functionmesh-io-v1alpha1-function
+      path: /mutate-compute-functionmesh-io-v1alpha2-function
   failurePolicy: Fail
   name: mfunction.kb.io
   rules:
   - apiGroups:
     - compute.functionmesh.io
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -33,14 +33,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-compute-functionmesh-io-v1alpha1-sink
+      path: /mutate-compute-functionmesh-io-v1alpha2-sink
   failurePolicy: Fail
   name: msink.kb.io
   rules:
   - apiGroups:
     - compute.functionmesh.io
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -54,14 +54,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-compute-functionmesh-io-v1alpha1-source
+      path: /mutate-compute-functionmesh-io-v1alpha2-source
   failurePolicy: Fail
   name: msource.kb.io
   rules:
   - apiGroups:
     - compute.functionmesh.io
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -82,14 +82,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-compute-functionmesh-io-v1alpha1-function
+      path: /validate-compute-functionmesh-io-v1alpha2-function
   failurePolicy: Fail
   name: vfunction.kb.io
   rules:
   - apiGroups:
     - compute.functionmesh.io
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -103,14 +103,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-compute-functionmesh-io-v1alpha1-sink
+      path: /validate-compute-functionmesh-io-v1alpha2-sink
   failurePolicy: Fail
   name: vsink.kb.io
   rules:
   - apiGroups:
     - compute.functionmesh.io
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -124,14 +124,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-compute-functionmesh-io-v1alpha1-source
+      path: /validate-compute-functionmesh-io-v1alpha2-source
   failurePolicy: Fail
   name: vsource.kb.io
   rules:
   - apiGroups:
     - compute.functionmesh.io
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE

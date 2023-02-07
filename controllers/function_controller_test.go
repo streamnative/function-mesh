@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -36,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
 	"github.com/streamnative/function-mesh/controllers/spec"
 )
 
@@ -75,7 +77,7 @@ var _ = Describe("Function Controller", func() {
 			}, function)
 			Expect(err).NotTo(HaveOccurred())
 
-			oldFunctionConfig := &v1alpha1.Config{}
+			oldFunctionConfig := &apispec.Config{}
 			oldFunctionConfig.Data = map[string]interface{}{
 				"configkey1": "configvalue1",
 				"configkey2": "configvalue2",
@@ -159,9 +161,9 @@ var _ = Describe("Function Controller (builtin HPA)", func() {
 		r := int32(100)
 		function := makeFunctionSample(TestFunctionBuiltinHPAName)
 		function.Spec.MaxReplicas = &r
-		function.Spec.Pod.BuiltinAutoscaler = []v1alpha1.BuiltinHPARule{
-			v1alpha1.AverageUtilizationCPUPercent20,
-			v1alpha1.AverageUtilizationMemoryPercent20,
+		function.Spec.Pod.BuiltinAutoscaler = []apispec.BuiltinHPARule{
+			apispec.AverageUtilizationCPUPercent20,
+			apispec.AverageUtilizationMemoryPercent20,
 		}
 
 		createFunction(function)
@@ -173,7 +175,7 @@ var _ = Describe("Function Controller (VPA)", func() {
 		mode := vpav1.UpdateModeAuto
 		controlledValues := vpav1.ContainerControlledValuesRequestsAndLimits
 		function := makeFunctionSample(TestFunctionVPAName)
-		function.Spec.Pod.VPA = &v1alpha1.VPASpec{
+		function.Spec.Pod.VPA = &apispec.VPASpec{
 			UpdatePolicy: &vpav1.PodUpdatePolicy{
 				UpdateMode: &mode,
 			},
@@ -205,8 +207,8 @@ var _ = Describe("Function Controller (VPA)", func() {
 var _ = Describe("Function Controller (Stateful Function)", func() {
 	Context("Simple Function Item with Stateful store config", func() {
 		function := makeFunctionSample(TestFunctionStatefulJavaName)
-		function.Spec.StateConfig = &v1alpha1.Stateful{
-			Pulsar: &v1alpha1.PulsarStateStore{
+		function.Spec.StateConfig = &apispec.Stateful{
+			Pulsar: &apispec.PulsarStateStore{
 				ServiceURL: "bk://localhost:4181",
 			},
 		}
@@ -215,7 +217,7 @@ var _ = Describe("Function Controller (Stateful Function)", func() {
 	})
 })
 
-func createFunction(function *v1alpha1.Function) {
+func createFunction(function *computeapi.Function) {
 
 	It("Function should be created", func() {
 		Eventually(func() bool {

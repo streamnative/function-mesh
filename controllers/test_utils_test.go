@@ -20,10 +20,12 @@ package controllers
 import (
 	"fmt"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 )
 
 const TestClusterName string = "test-pulsar"
@@ -60,30 +62,30 @@ func makeSamplePulsarConfig() *v1.ConfigMap {
 	}
 }
 
-func makeFunctionSample(functionName string) *v1alpha1.Function {
+func makeFunctionSample(functionName string) *computeapi.Function {
 	maxPending := int32(1000)
 	replicas := int32(1)
 	minReplicas := int32(1)
 	maxReplicas := int32(5)
 	trueVal := true
-	return &v1alpha1.Function{
+	return &computeapi.Function{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Function",
-			APIVersion: "compute.functionmesh.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha2",
 		},
 		ObjectMeta: *makeSampleObjectMeta(functionName),
-		Spec: v1alpha1.FunctionSpec{
+		Spec: computeapi.FunctionSpec{
 			Name:        functionName,
-			ClassName:   "org.apache.pulsar.functions.api.examples.ExclamationFunction",
+			ClassName:   "org.apache.pulsar.functions.spec.examples.ExclamationFunction",
 			Tenant:      "public",
 			ClusterName: TestClusterName,
-			Input: v1alpha1.InputConf{
+			Input: apispec.InputConf{
 				Topics: []string{
 					"persistent://public/default/java-function-input-topic",
 				},
 				TypeClassName: "java.lang.String",
 			},
-			Output: v1alpha1.OutputConf{
+			Output: apispec.OutputConf{
 				Topic:         "persistent://public/default/java-function-output-topic",
 				TypeClassName: "java.lang.String",
 			},
@@ -96,15 +98,15 @@ func makeFunctionSample(functionName string) *v1alpha1.Function {
 			MaxReplicas:                  &maxReplicas,
 			AutoAck:                      &trueVal,
 			MaxPendingAsyncRequests:      &maxPending,
-			Messaging: v1alpha1.Messaging{
-				Pulsar: &v1alpha1.PulsarMessaging{
+			Messaging: apispec.Messaging{
+				Pulsar: &apispec.PulsarMessaging{
 					PulsarConfig: TestClusterName,
 					//AuthConfig: "test-auth",
 				},
 			},
-			Runtime: v1alpha1.Runtime{
-				Java: &v1alpha1.JavaRuntime{
-					Jar:         "pulsar-functions-api-examples.jar",
+			Runtime: apispec.Runtime{
+				Java: &apispec.JavaRuntime{
+					Jar:         "pulsar-functions-spec-examples.jar",
 					JarLocation: "public/default/nlu-test-java-function",
 				},
 			},
@@ -112,23 +114,23 @@ func makeFunctionSample(functionName string) *v1alpha1.Function {
 	}
 }
 
-func makeFunctionSampleWithCryptoEnabled() *v1alpha1.Function {
+func makeFunctionSampleWithCryptoEnabled() *computeapi.Function {
 	function := makeFunctionSample(TestFunctionE2EName)
-	function.Spec.Input = v1alpha1.InputConf{
+	function.Spec.Input = apispec.InputConf{
 		Topics: []string{
 			"persistent://public/default/java-function-input-topic",
 		},
-		SourceSpecs: map[string]v1alpha1.ConsumerConfig{
-			"persistent://public/default/java-function-input-topic": v1alpha1.ConsumerConfig{
-				CryptoConfig: &v1alpha1.CryptoConfig{
-					CryptoKeyReaderClassName: "org.apache.pulsar.functions.api.examples.RawFileKeyReader",
+		SourceSpecs: map[string]apispec.ConsumerConfig{
+			"persistent://public/default/java-function-input-topic": apispec.ConsumerConfig{
+				CryptoConfig: &apispec.CryptoConfig{
+					CryptoKeyReaderClassName: "org.apache.pulsar.functions.spec.examples.RawFileKeyReader",
 					CryptoKeyReaderConfig: map[string]string{
 						"PUBLIC":  "/keys/test_ecdsa_pubkey.pem",
 						"PRIVATE": "/keys/test_ecdsa_privkey.pem",
 					},
 					EncryptionKeys:              []string{"myapp1"},
 					ProducerCryptoFailureAction: "FAIL",
-					CryptoSecrets: []v1alpha1.CryptoSecret{
+					CryptoSecrets: []apispec.CryptoSecret{
 						{
 							SecretName: "java-function-crypto-sample-crypto-secret",
 							SecretKey:  "test_ecdsa_privkey.pem",
@@ -147,18 +149,18 @@ func makeFunctionSampleWithCryptoEnabled() *v1alpha1.Function {
 	return function
 }
 
-func makeFunctionSampleWithKeyBasedBatcher() *v1alpha1.Function {
+func makeFunctionSampleWithKeyBasedBatcher() *computeapi.Function {
 	function := makeFunctionSample(TestFunctionKeyBatcherName)
-	function.Spec.Output = v1alpha1.OutputConf{
+	function.Spec.Output = apispec.OutputConf{
 		Topic: "persistent://public/default/java-function-output-topic",
-		ProducerConf: &v1alpha1.ProducerConfig{
+		ProducerConf: &apispec.ProducerConfig{
 			BatchBuilder: "KEY_BASED",
 		},
 	}
 	return function
 }
 
-func makeFunctionMeshSample() *v1alpha1.FunctionMesh {
+func makeFunctionMeshSample() *computeapi.FunctionMesh {
 	inputTopic := "persistent://public/default/functionmesh-input-topic"
 	middleTopic := "persistent://public/default/mid-topic"
 	outputTopic := "persistent://public/default/functionmesh-output-topic"
@@ -169,14 +171,14 @@ func makeFunctionMeshSample() *v1alpha1.FunctionMesh {
 	overwriteFunctionInputOutput(function1, inputTopic, middleTopic)
 	overwriteFunctionInputOutput(function2, middleTopic, outputTopic)
 
-	return &v1alpha1.FunctionMesh{
+	return &computeapi.FunctionMesh{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "FunctionMesh",
-			APIVersion: "compute.functionmesh.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha2",
 		},
 		ObjectMeta: *makeSampleObjectMeta(TestFunctionMeshName),
-		Spec: v1alpha1.FunctionMeshSpec{
-			Functions: []v1alpha1.FunctionSpec{
+		Spec: computeapi.FunctionMeshSpec{
+			Functions: []computeapi.FunctionSpec{
 				function1.Spec,
 				function2.Spec,
 			},
@@ -184,30 +186,30 @@ func makeFunctionMeshSample() *v1alpha1.FunctionMesh {
 	}
 }
 
-func makeSinkSample() *v1alpha1.Sink {
+func makeSinkSample() *computeapi.Sink {
 	replicas := int32(1)
 	minReplicas := int32(1)
 	maxReplicas := int32(1)
 	trueVal := true
-	sinkConfig := v1alpha1.NewConfig(map[string]interface{}{
+	sinkConfig := apispec.NewConfig(map[string]interface{}{
 		"elasticSearchUrl": "http://quickstart-es-http.default.svc.cluster.local:9200",
 		"indexName":        "my_index",
 		"typeName":         "doc",
 		"username":         "elastic",
 		"password":         "wJ757TmoXEd941kXm07Z2GW3",
 	})
-	return &v1alpha1.Sink{
+	return &computeapi.Sink{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Sink",
-			APIVersion: "compute.functionmesh.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha2",
 		},
 		ObjectMeta: *makeSampleObjectMeta(TestSinkName),
-		Spec: v1alpha1.SinkSpec{
+		Spec: computeapi.SinkSpec{
 			Name:        TestSinkName,
 			ClassName:   "org.apache.pulsar.io.elasticsearch.ElasticSearchSink",
 			Tenant:      "public",
 			ClusterName: TestClusterName,
-			Input: v1alpha1.InputConf{
+			Input: apispec.InputConf{
 				Topics: []string{
 					"persistent://public/default/input",
 				},
@@ -220,15 +222,15 @@ func makeSinkSample() *v1alpha1.Sink {
 			MinReplicas:     &minReplicas,
 			MaxReplicas:     &maxReplicas,
 			AutoAck:         &trueVal,
-			Messaging: v1alpha1.Messaging{
-				Pulsar: &v1alpha1.PulsarMessaging{
+			Messaging: apispec.Messaging{
+				Pulsar: &apispec.PulsarMessaging{
 					PulsarConfig: TestClusterName,
 					//AuthConfig: "test-auth",
 				},
 			},
 			Image: "streamnative/pulsar-io-elastic-search:2.10.0.0-rc10",
-			Runtime: v1alpha1.Runtime{
-				Java: &v1alpha1.JavaRuntime{
+			Runtime: apispec.Runtime{
+				Java: &apispec.JavaRuntime{
 					Jar:         "connectors/pulsar-io-elastic-search-2.10.0.0-rc10.nar",
 					JarLocation: "",
 				},
@@ -237,11 +239,11 @@ func makeSinkSample() *v1alpha1.Sink {
 	}
 }
 
-func makeSourceSample() *v1alpha1.Source {
+func makeSourceSample() *computeapi.Source {
 	replicas := int32(1)
 	minReplicas := int32(1)
 	maxReplicas := int32(1)
-	sourceConfig := v1alpha1.NewConfig(map[string]interface{}{
+	sourceConfig := apispec.NewConfig(map[string]interface{}{
 		"mongodb.hosts":      "rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017",
 		"mongodb.name":       "dbserver1",
 		"mongodb.user":       "debezium",
@@ -250,21 +252,21 @@ func makeSourceSample() *v1alpha1.Source {
 		"database.whitelist": "inventory",
 		"pulsar.service.url": "pulsar://test-pulsar-broker.default.svc.cluster.local:6650",
 	})
-	return &v1alpha1.Source{
+	return &computeapi.Source{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Sink",
-			APIVersion: "compute.functionmesh.io/v1alpha1",
+			APIVersion: "compute.functionmesh.io/v1alpha2",
 		},
 		ObjectMeta: *makeSampleObjectMeta(TestSourceName),
-		Spec: v1alpha1.SourceSpec{
+		Spec: computeapi.SourceSpec{
 			Name:        TestSourceName,
 			ClassName:   "org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource",
 			Tenant:      "public",
 			ClusterName: TestClusterName,
-			Output: v1alpha1.OutputConf{
+			Output: apispec.OutputConf{
 				Topic:         "persistent://public/default/destination",
 				TypeClassName: "org.apache.pulsar.common.schema.KeyValue",
-				ProducerConf: &v1alpha1.ProducerConfig{
+				ProducerConf: &apispec.ProducerConfig{
 					MaxPendingMessages:                 1000,
 					MaxPendingMessagesAcrossPartitions: 50000,
 					UseThreadLocalProducers:            true,
@@ -274,15 +276,15 @@ func makeSourceSample() *v1alpha1.Source {
 			Replicas:     &replicas,
 			MinReplicas:  &minReplicas,
 			MaxReplicas:  &maxReplicas,
-			Messaging: v1alpha1.Messaging{
-				Pulsar: &v1alpha1.PulsarMessaging{
+			Messaging: apispec.Messaging{
+				Pulsar: &apispec.PulsarMessaging{
 					PulsarConfig: TestClusterName,
 					//AuthConfig: "test-auth",
 				},
 			},
 			Image: "streamnative/pulsar-io-debezium-mongodb:2.10.0.0-rc10",
-			Runtime: v1alpha1.Runtime{
-				Java: &v1alpha1.JavaRuntime{
+			Runtime: apispec.Runtime{
+				Java: &apispec.JavaRuntime{
 					Jar:         "connectors/pulsar-io-debezium-mongodb-2.10.0.0-rc10.nar",
 					JarLocation: "",
 				},
@@ -291,14 +293,14 @@ func makeSourceSample() *v1alpha1.Source {
 	}
 }
 
-func overwriteFunctionInputOutput(function *v1alpha1.Function, input string, output string) {
-	function.Spec.Input = v1alpha1.InputConf{
+func overwriteFunctionInputOutput(function *computeapi.Function, input string, output string) {
+	function.Spec.Input = apispec.InputConf{
 		Topics: []string{
 			input,
 		},
 	}
 
-	function.Spec.Output = v1alpha1.OutputConf{
+	function.Spec.Output = apispec.OutputConf{
 		Topic: output,
 	}
 }

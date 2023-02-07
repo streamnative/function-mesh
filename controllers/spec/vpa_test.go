@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	apispec "github.com/streamnative/function-mesh/pkg/spec"
 )
 
 func TestMakeVPA(t *testing.T) {
@@ -36,7 +36,7 @@ func TestMakeVPA(t *testing.T) {
 	type args struct {
 		objectMeta *metav1.ObjectMeta
 		targetRef  *autoscaling.CrossVersionObjectReference
-		vpa        *v1alpha1.VPASpec
+		vpa        *apispec.VPASpec
 	}
 	tests := []struct {
 		name string
@@ -54,7 +54,7 @@ func TestMakeVPA(t *testing.T) {
 					Kind:       "Deployment",
 					Name:       "test-deployment",
 				},
-				vpa: &v1alpha1.VPASpec{
+				vpa: &apispec.VPASpec{
 					UpdatePolicy: &vpav1.PodUpdatePolicy{
 						UpdateMode: &mode,
 					},
@@ -127,7 +127,7 @@ func TestMakeVPA(t *testing.T) {
 					Kind:       "Deployment",
 					Name:       "test-deployment",
 				},
-				vpa: &v1alpha1.VPASpec{
+				vpa: &apispec.VPASpec{
 					UpdatePolicy: &vpav1.PodUpdatePolicy{
 						UpdateMode: &mode,
 					},
@@ -165,7 +165,7 @@ func TestMakeVPA(t *testing.T) {
 					Kind:       "Deployment",
 					Name:       "test-deployment",
 				},
-				vpa: &v1alpha1.VPASpec{
+				vpa: &apispec.VPASpec{
 					ResourcePolicy: &vpav1.PodResourcePolicy{
 						ContainerPolicies: []vpav1.ContainerResourcePolicy{{
 							ContainerName: "test-container",
@@ -234,7 +234,7 @@ func TestMakeVPA(t *testing.T) {
 					Kind:       "Deployment",
 					Name:       "test-deployment",
 				},
-				vpa: &v1alpha1.VPASpec{},
+				vpa: &apispec.VPASpec{},
 			},
 			want: &vpav1.VerticalPodAutoscaler{
 				ObjectMeta: metav1.ObjectMeta{
