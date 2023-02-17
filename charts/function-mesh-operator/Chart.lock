@@ -1,0 +1,6 @@
+dependencies:
+- name: admission-webhook
+  repository: ""
+  version: 0.2.8
+digest: sha256:b71d7e3328fa4e71d0262ac18121ce5dc62a709ab379e5790bed07c543b9c6a7
+generated: "2022-12-19T10:58:55.860604+08:00"
