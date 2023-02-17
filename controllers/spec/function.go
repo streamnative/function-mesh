@@ -99,6 +99,7 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
 	probe := MakeLivenessProbe(function.Spec.Pod.Liveness)
+	allowPrivilegeEscalation := false
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-function",
@@ -112,6 +113,12 @@ func MakeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 			function.Spec.Pulsar.TLSSecret),
 		VolumeMounts:  makeFunctionVolumeMounts(function),
 		LivenessProbe: probe,
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{"ALL"},
+			},
+			AllowPrivilegeEscalation: &allowPrivilegeEscalation,
+		},
 	}
 }
 

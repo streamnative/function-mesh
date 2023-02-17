@@ -20,6 +20,7 @@ package spec
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -464,4 +465,12 @@ func toServicePort(port *corev1.ContainerPort) corev1.ServicePort {
 		Port:       port.ContainerPort,
 		TargetPort: intstr.FromInt(int(port.ContainerPort)),
 	}
+}
+
+func getEnvOrDefault(key, fallback string) string {
+	env := os.Getenv(key)
+	if env != "" {
+		return env
+	}
+	return fallback
 }

@@ -341,7 +341,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy,
 	downloaderContainer *corev1.Container) *corev1.PodTemplateSpec {
-	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, false)
+	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, getEnvOrDefault("RUN_AS_NON_ROOT", "true"))
 	if policy.SecurityContext != nil {
 		podSecurityContext = policy.SecurityContext
 	}
@@ -1533,12 +1533,19 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 }
 
 // getDefaultRunnerPodSecurityContext returns a default PodSecurityContext that runs as non-root
-func getDefaultRunnerPodSecurityContext(uid, gid int64, nonRoot bool) *corev1.PodSecurityContext {
+func getDefaultRunnerPodSecurityContext(uid, gid int64, nonAsNonRootEnv string) *corev1.PodSecurityContext {
+	nonRoot, err := strconv.ParseBool(nonAsNonRootEnv)
+	if err != nil {
+		nonRoot = true
+	}
 	return &corev1.PodSecurityContext{
 		RunAsUser:    &uid,
 		RunAsGroup:   &gid,
 		RunAsNonRoot: &nonRoot,
 		FSGroup:      &gid,
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
 	}
 }
 
