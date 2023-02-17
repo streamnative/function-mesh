@@ -3,6 +3,7 @@
 ## v0.11.0 What's New
 
 * [Runner Images] Copy /pulsar/pulsar-client only when it exists ([#569](https://github.com/streamnative/function-mesh/pull/569))
+* [CVE] Resolve vulnerabilities ([#571](https://github.com/streamnative/function-mesh/pull/571))
 
 For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2023-02+is%3Aclosed+).
 
