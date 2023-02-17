@@ -5,7 +5,12 @@ FROM pulsar-functions-runner-base:latest
 
 COPY --from=pulsar --chown=$UID:$GID /pulsar/instances/python-instance /pulsar/instances/python-instance
 COPY --from=pulsar --chown=$UID:$GID /pulsar/instances/deps /pulsar/instances/deps
-COPY --from=pulsar --chown=$UID:$GID /pulsar/pulsar-client /pulsar/pulsar-client
+# Pulsar 2.11.0 removes /pulsar/pulsar-client from docker image
+# But it required with Pulsar 2.10.X and below
+# to make this Dockerfile compalicate with different Pulsar versions
+# Below is a hacky way to copy /pulsar/pulsar-client if exist in pulsar image
+COPY --from=pulsar --chown=$UID:$GID /pulsar/README /pulsar/pulsar-client /pulsar/pulsar-client/
+
 # Pulsar 2.8.0 removes /pulsar/cpp-client from docker image
 # But it required with Pulsar 2.7.X and below
 # to make this Dockerfile compalicate with different Pulsar versions
