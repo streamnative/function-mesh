@@ -1,6 +1,6 @@
 # function-mesh-operator
 
-![Version: 0.2.8](https://img.shields.io/badge/Version-0.2.8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.8.0](https://img.shields.io/badge/AppVersion-0.8.0-informational?style=flat-square)
+![Version: 0.2.12](https://img.shields.io/badge/Version-0.2.12-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.11.0](https://img.shields.io/badge/AppVersion-0.11.0-informational?style=flat-square)
 
 The Function Mesh operator Helm chart for Kubernetes
 
@@ -20,35 +20,35 @@ The Function Mesh operator Helm chart for Kubernetes
 
 | Repository | Name | Version |
 |------------|------|---------|
-| (Built-in) | admission-webhook | 0.2.8 |
+| (Built-in) | admission-webhook | 0.2.12  |
 
 ## Values
 
-| Key | Type | Default |
-|-----|------|---------|
-| admissionWebhook.enabled | bool | `true` |
-| controllerManager.affinity | object | `{}` |
-| controllerManager.autoFailover | bool | `true` |
-| controllerManager.configFile | string | `"/etc/config/config.yaml"` |
-| controllerManager.create | bool | `true` |
-| controllerManager.enableLeaderElection | bool | `true` |
-| controllerManager.healthProbe.port | int | `8000` |
-| controllerManager.metrics.port | int | `8080` |
-| controllerManager.nodeSelector | object | `{}` |
-| controllerManager.pprof.enable | bool | `false` |
-| controllerManager.pprof.port | int | `8090` |
-| controllerManager.replicas | int | `1` |
-| controllerManager.resources.requests.cpu | string | `"80m"` |
-| controllerManager.resources.requests.memory | string | `"50Mi"` |
-| controllerManager.selector | list | `[]` |
-| controllerManager.serviceAccount | string | `"function-mesh-controller-manager"` |
-| controllerManager.tolerations | list | `[]` |
-| controllerManager.enableInitContainers | bool | `false` |
-| imagePullPolicy | string | `"IfNotPresent"` |
-| imagePullSecrets | list | `[]` |
-| installation.namespace | string | `"function-mesh-system"` |
-| operatorImage | string | `"streamnative/function-mesh:v0.8.0"` |
-| rbac.create | bool | `true` |
+| Key | Type | Default                                |
+|-----|------|----------------------------------------|
+| admissionWebhook.enabled | bool | `true`                                 |
+| controllerManager.affinity | object | `{}`                                   |
+| controllerManager.autoFailover | bool | `true`                                 |
+| controllerManager.configFile | string | `"/etc/config/config.yaml"`            |
+| controllerManager.create | bool | `true`                                 |
+| controllerManager.enableLeaderElection | bool | `true`                                 |
+| controllerManager.healthProbe.port | int | `8000`                                 |
+| controllerManager.metrics.port | int | `8080`                                 |
+| controllerManager.nodeSelector | object | `{}`                                   |
+| controllerManager.pprof.enable | bool | `false`                                |
+| controllerManager.pprof.port | int | `8090`                                 |
+| controllerManager.replicas | int | `1`                                    |
+| controllerManager.resources.requests.cpu | string | `"80m"`                                |
+| controllerManager.resources.requests.memory | string | `"50Mi"`                               |
+| controllerManager.selector | list | `[]`                                   |
+| controllerManager.serviceAccount | string | `"function-mesh-controller-manager"`   |
+| controllerManager.tolerations | list | `[]`                                   |
+| controllerManager.enableInitContainers | bool | `false`                                |
+| imagePullPolicy | string | `"IfNotPresent"`                       |
+| imagePullSecrets | list | `[]`                                   |
+| installation.namespace | string | `"function-mesh-system"`               |
+| operatorImage | string | `"streamnative/function-mesh:v0.11.0"` |
+| rbac.create | bool | `true`                                 |
 
 ----------------------------------------------
 ## Function Mesh Helm Charts Usage
