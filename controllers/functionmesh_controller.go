@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -62,27 +63,30 @@ func (r *FunctionMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, nil
 	}
 
-	defer mesh.SaveStatus(ctx, r.Log, r.Client)
-	if result, err := r.observe(ctx, mesh); err != nil {
+	fmt.Println("231231231231")
+	helper := MakeMeshReconciliationHelper(mesh)
+	defer SaveStatus(ctx, r.Log, r.Client, helper)
+	if result, err := r.observe(ctx, mesh, helper); err != nil {
 		return result, err
 	}
-	if result, err := r.reconcile(ctx, mesh); err != nil {
+	if result, err := r.reconcile(ctx, mesh, helper); err != nil {
 		return result, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *FunctionMeshReconciler) observe(ctx context.Context, mesh *computeapi.FunctionMesh) (ctrl.Result, error) {
-	r.initializeMesh(mesh)
-	if err := r.ObserveFunctionMesh(ctx, mesh); err != nil {
+func (r *FunctionMeshReconciler) observe(ctx context.Context,
+	mesh *computeapi.FunctionMesh, helper ReconciliationHelper) (ctrl.Result, error) {
+	if err := r.ObserveFunctionMesh(ctx, mesh, helper); err != nil {
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
 }
 
-func (r *FunctionMeshReconciler) reconcile(ctx context.Context, mesh *computeapi.FunctionMesh) (ctrl.Result, error) {
-	if err := r.UpdateFunctionMesh(ctx, mesh); err != nil {
+func (r *FunctionMeshReconciler) reconcile(ctx context.Context,
+	mesh *computeapi.FunctionMesh, helper ReconciliationHelper) (ctrl.Result, error) {
+	if err := r.ReconcileFunctionMesh(ctx, mesh, helper); err != nil {
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil

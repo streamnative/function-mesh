@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -72,47 +73,52 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return reconcile.Result{}, nil
 	}
 
-	defer function.SaveStatus(ctx, r.Log, r.Client)
-	if result, err := r.observe(ctx, function); err != nil {
+	helper := MakeFunctionReconciliationHelper(function)
+	defer SaveStatus(ctx, r.Log, r.Client, helper)
+	if result, err := r.observe(ctx, function, helper); err != nil {
+		helper.SetNotReadyMessage(fmt.Sprintf("observe failed: [%v]", err))
 		return result, err
 	}
-	if result, err := r.reconcile(ctx, function); err != nil {
+	if result, err := r.reconcile(ctx, function, helper); err != nil {
+		helper.SetNotReadyMessage(fmt.Sprintf("reconcile failed: [%v]", err))
 		return result, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *FunctionReconciler) observe(ctx context.Context, function *computeapi.Function) (ctrl.Result, error) {
-	if err := r.ObserveFunctionStatefulSet(ctx, function); err != nil {
+func (r *FunctionReconciler) observe(ctx context.Context,
+	function *computeapi.Function, helper ReconciliationHelper) (ctrl.Result, error) {
+	if err := r.ObserveFunctionStatefulSet(ctx, function, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ObserveFunctionService(ctx, function); err != nil {
+	if err := r.ObserveFunctionService(ctx, function, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ObserveFunctionHPA(ctx, function); err != nil {
+	if err := r.ObserveFunctionHPA(ctx, function, helper); err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		if err := r.ObserveFunctionVPA(ctx, function); err != nil {
+		if err := r.ObserveFunctionVPA(ctx, function, helper); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 	return reconcile.Result{}, nil
 }
 
-func (r *FunctionReconciler) reconcile(ctx context.Context, function *computeapi.Function) (ctrl.Result, error) {
-	if err := r.ApplyFunctionStatefulSet(ctx, function); err != nil {
+func (r *FunctionReconciler) reconcile(ctx context.Context,
+	function *computeapi.Function, helper ReconciliationHelper) (ctrl.Result, error) {
+	if err := r.ApplyFunctionStatefulSet(ctx, function, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ApplyFunctionService(ctx, function); err != nil {
+	if err := r.ApplyFunctionService(ctx, function, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ApplyFunctionHPA(ctx, function); err != nil {
+	if err := r.ApplyFunctionHPA(ctx, function, helper); err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		if err := r.ApplyFunctionVPA(ctx, function); err != nil {
+		if err := r.ApplyFunctionVPA(ctx, function, helper); err != nil {
 			return reconcile.Result{}, err
 		}
 	}

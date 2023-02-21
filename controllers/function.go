@@ -25,7 +25,6 @@ import (
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
@@ -33,50 +32,41 @@ import (
 
 	computeapi "github.com/streamnative/function-mesh/api/compute/v1alpha2"
 	"github.com/streamnative/function-mesh/controllers/spec"
-	apispec "github.com/streamnative/function-mesh/pkg/spec"
 )
 
-func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, function *computeapi.Function) error {
+func (r *FunctionReconciler) ObserveFunctionStatefulSet(
+	ctx context.Context, function *computeapi.Function, helper ReconciliationHelper) error {
 	statefulSet := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{
 		Namespace: function.Namespace,
 		Name:      spec.MakeFunctionObjectMeta(function).Name,
 	}, statefulSet)
 	if err != nil {
+		helper.GetState().StatefulSetState = "unready"
 		if errors.IsNotFound(err) {
-			r.Log.Info("function statefulSet is not ready yet...",
-				"namespace", function.Namespace, "name", function.Name,
-				"statefulSet name", statefulSet.Name)
-			function.SetCondition(apispec.StatefulSetReady, metav1.ConditionFalse, apispec.PendingCreation,
-				"function statefulSet is not ready yet...")
 			return nil
 		}
-		function.SetCondition(apispec.Error, metav1.ConditionTrue, apispec.StatefulSetError,
-			fmt.Sprintf("error fetching function statefulSet: %v", err))
-		return err
+		return fmt.Errorf("error fetching statefulSet [%w]", err)
 	}
 
 	selector, err := metav1.LabelSelectorAsSelector(statefulSet.Spec.Selector)
 	if err != nil {
-		r.Log.Error(err, "error retrieving statefulSet selector")
-		function.SetCondition(apispec.Error, metav1.ConditionTrue, apispec.StatefulSetError,
-			fmt.Sprintf("error retrieving statefulSet selector: %v", err))
-		return err
+		helper.GetState().StatefulSetState = "unready"
+		return fmt.Errorf("error retrieving statefulSet selector [%w]", err)
 	}
 	function.Status.Selector = selector.String()
 
-	if r.checkIfStatefulSetNeedUpdate(function, statefulSet) {
-		function.SetCondition(apispec.StatefulSetReady, metav1.ConditionFalse, apispec.PendingCreation,
-			"wait for the function statefulSet to be ready")
-	} else {
-		function.SetCondition(apispec.StatefulSetReady, metav1.ConditionTrue, apispec.StatefulSetIsReady, "")
+	helper.GetState().StatefulSetState = "created"
+	if !r.isGenerationChanged(function) && statefulSet.Status.ReadyReplicas == *function.Spec.Replicas {
+		helper.GetState().StatefulSetState = "ready"
 	}
 	function.Status.Replicas = *statefulSet.Spec.Replicas
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *computeapi.Function) error {
-	if meta.IsStatusConditionTrue(function.Status.Conditions, string(apispec.StatefulSetReady)) {
+func (r *FunctionReconciler) ApplyFunctionStatefulSet(
+	ctx context.Context, function *computeapi.Function, helper ReconciliationHelper) error {
+	if helper.GetState().StatefulSetState == "ready" {
 		return nil
 	}
 	desiredStatefulSet := spec.MakeFunctionStatefulSet(function)
@@ -86,47 +76,36 @@ func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, funct
 		desiredStatefulSet.Spec = desiredStatefulSetSpec
 		return nil
 	}); err != nil {
-		r.Log.Error(err, "error creating or updating statefulSet for function",
-			"namespace", function.Namespace, "name", function.Name,
-			"statefulSet name", desiredStatefulSet.Name)
-		function.SetCondition(apispec.StatefulSetReady, metav1.ConditionFalse, apispec.ErrorCreatingStatefulSet,
-			fmt.Sprintf("error creating or updating statefulSet for function: %v", err))
-		return err
+		return fmt.Errorf("error creating or updating statefulSet [%w]", err)
 	}
-	function.SetCondition(apispec.StatefulSetReady, metav1.ConditionFalse, apispec.PendingCreation,
-		"creating or updating statefulSet for function...")
+	helper.GetState().StatefulSetState = "created"
 	return nil
 }
 
-func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, function *computeapi.Function) error {
+func (r *FunctionReconciler) ObserveFunctionService(
+	ctx context.Context, function *computeapi.Function, helper ReconciliationHelper) error {
 	svc := &corev1.Service{}
 	svcName := spec.MakeHeadlessServiceName(spec.MakeFunctionObjectMeta(function).Name)
 	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace,
 		Name: svcName}, svc)
 	if err != nil {
+		helper.GetState().ServiceState = "unready"
 		if errors.IsNotFound(err) {
-			r.Log.Info("function service is not created...",
-				"namespace", function.Namespace, "name", function.Name,
-				"service name", svcName)
-			function.SetCondition(apispec.ServiceReady, metav1.ConditionFalse, apispec.PendingCreation,
-				"function service is not created...")
 			return nil
 		}
-		function.SetCondition(apispec.Error, metav1.ConditionTrue, apispec.ServiceError,
-			fmt.Sprintf("error fetching function service: %v", err))
-		return err
+		return fmt.Errorf("error fetching service [%w]", err)
 	}
-	if r.checkIfServiceNeedUpdate(function) {
-		function.SetCondition(apispec.ServiceReady, metav1.ConditionFalse, apispec.PendingCreation,
-			"wait for the function service to be ready")
-	} else {
-		function.SetCondition(apispec.ServiceReady, metav1.ConditionTrue, apispec.ServiceIsReady, "")
+
+	helper.GetState().ServiceState = "created"
+	if !r.isGenerationChanged(function) {
+		helper.GetState().ServiceState = "ready"
 	}
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function *computeapi.Function) error {
-	if meta.IsStatusConditionTrue(function.Status.Conditions, string(apispec.ServiceReady)) {
+func (r *FunctionReconciler) ApplyFunctionService(
+	ctx context.Context, function *computeapi.Function, helper ReconciliationHelper) error {
+	if helper.GetState().ServiceState == "ready" {
 		return nil
 	}
 	desiredService := spec.MakeFunctionService(function)
@@ -136,21 +115,17 @@ func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function 
 		desiredService.Spec = desiredServiceSpec
 		return nil
 	}); err != nil {
-		r.Log.Error(err, "error creating or updating service for function",
-			"namespace", function.Namespace, "name", function.Name,
-			"service name", desiredService.Name)
-		function.SetCondition(apispec.ServiceReady, metav1.ConditionFalse, apispec.ErrorCreatingService,
-			fmt.Sprintf("error creating or updating service for function: %v", err))
-		return err
+		return fmt.Errorf("error creating or updating service [%w]", err)
 	}
-	function.SetCondition(apispec.ServiceReady, metav1.ConditionTrue, apispec.ServiceIsReady, "")
+	helper.GetState().ServiceState = "ready"
 	return nil
 }
 
-func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *computeapi.Function) error {
+func (r *FunctionReconciler) ObserveFunctionHPA(
+	ctx context.Context, function *computeapi.Function, helper ReconciliationHelper) error {
 	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
-		function.RemoveCondition(apispec.HPAReady)
+		helper.GetState().HPAState = "delete"
 		return nil
 	}
 
@@ -159,28 +134,22 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *c
 		Namespace: function.Namespace,
 		Name:      spec.MakeFunctionObjectMeta(function).Name}, hpa)
 	if err != nil {
+		helper.GetState().HPAState = "unready"
 		if errors.IsNotFound(err) {
-			r.Log.Info("function hpa is not created...",
-				"namespace", function.Namespace, "name", function.Name,
-				"hpa name", hpa.Name)
-			function.SetCondition(apispec.HPAReady, metav1.ConditionFalse, apispec.PendingCreation,
-				"function hpa is not created...")
 			return nil
 		}
-		function.SetCondition(apispec.Error, metav1.ConditionTrue, apispec.HPAError,
-			fmt.Sprintf("error fetching function hpa: %v", err))
-		return err
+		return fmt.Errorf("error fetching hpa [%w]", err)
 	}
-	if r.checkIfHPANeedUpdate(function) {
-		function.SetCondition(apispec.HPAReady, metav1.ConditionFalse, apispec.PendingCreation,
-			"wait for the function hpa to be ready")
-	} else {
-		function.SetCondition(apispec.HPAReady, metav1.ConditionTrue, apispec.HPAIsReady, "")
+
+	helper.GetState().HPAState = "created"
+	if !r.isGenerationChanged(function) {
+		helper.GetState().HPAState = "ready"
 	}
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *computeapi.Function) error {
+func (r *FunctionReconciler) ApplyFunctionHPA(
+	ctx context.Context, function *computeapi.Function, helper ReconciliationHelper) error {
 	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, clear the exists HPA
 		hpa := &autov2beta2.HorizontalPodAutoscaler{}
@@ -190,13 +159,11 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *com
 			if errors.IsNotFound(err) {
 				return nil
 			}
-			function.SetCondition(apispec.Error, metav1.ConditionTrue, apispec.HPAError,
-				fmt.Sprintf("error deleting hpa for function: %v", err))
-			return err
+			return fmt.Errorf("error deleting hpa [%w]", err)
 		}
 		return nil
 	}
-	if meta.IsStatusConditionTrue(function.Status.Conditions, string(apispec.HPAReady)) {
+	if helper.GetState().HPAState == "ready" {
 		return nil
 	}
 	desiredHPA := spec.MakeFunctionHPA(function)
@@ -206,21 +173,17 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *com
 		desiredHPA.Spec = desiredHPASpec
 		return nil
 	}); err != nil {
-		r.Log.Error(err, "error creating or updating hpa for function",
-			"namespace", function.Namespace, "name", function.Name,
-			"hpa name", desiredHPA.Name)
-		function.SetCondition(apispec.HPAReady, metav1.ConditionFalse, apispec.ErrorCreatingHPA,
-			fmt.Sprintf("error creating or updating hpa for function: %v", err))
-		return err
+		return fmt.Errorf("error creating or updating hpa [%w]", err)
 	}
-	function.SetCondition(apispec.HPAReady, metav1.ConditionTrue, apispec.HPAIsReady, "")
+	helper.GetState().HPAState = "ready"
 	return nil
 }
 
-func (r *FunctionReconciler) ObserveFunctionVPA(ctx context.Context, function *computeapi.Function) error {
+func (r *FunctionReconciler) ObserveFunctionVPA(
+	ctx context.Context, function *computeapi.Function, helper ReconciliationHelper) error {
 	if function.Spec.Pod.VPA == nil {
 		// VPA not enabled, skip further action
-		function.RemoveCondition(apispec.VPAReady)
+		helper.GetState().VPAState = "delete"
 		return nil
 	}
 
@@ -229,28 +192,22 @@ func (r *FunctionReconciler) ObserveFunctionVPA(ctx context.Context, function *c
 		Namespace: function.Namespace,
 		Name:      spec.MakeFunctionObjectMeta(function).Name}, vpa)
 	if err != nil {
+		helper.GetState().VPAState = "unready"
 		if errors.IsNotFound(err) {
-			r.Log.Info("function vpa is not created...",
-				"namespace", function.Namespace, "name", function.Name,
-				"vpa name", vpa.Name)
-			function.SetCondition(apispec.VPAReady, metav1.ConditionFalse, apispec.PendingCreation,
-				"function vpa is not created...")
 			return nil
 		}
-		function.SetCondition(apispec.Error, metav1.ConditionTrue, apispec.VPAError,
-			fmt.Sprintf("error fetching function vpa: %v", err))
-		return err
+		return fmt.Errorf("error fetching vpa [%w]", err)
 	}
-	if r.checkIfVPANeedUpdate(function) {
-		function.SetCondition(apispec.VPAReady, metav1.ConditionFalse, apispec.PendingCreation,
-			"wait for the function vpa to be ready")
-	} else {
-		function.SetCondition(apispec.VPAReady, metav1.ConditionTrue, apispec.VPAIsReady, "")
+
+	helper.GetState().VPAState = "created"
+	if !r.isGenerationChanged(function) {
+		helper.GetState().VPAState = "ready"
 	}
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *computeapi.Function) error {
+func (r *FunctionReconciler) ApplyFunctionVPA(
+	ctx context.Context, function *computeapi.Function, helper ReconciliationHelper) error {
 	if function.Spec.Pod.VPA == nil {
 		// VPA not enabled, clear the exists VPA
 		vpa := &vpav1.VerticalPodAutoscaler{}
@@ -260,13 +217,11 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *com
 			if errors.IsNotFound(err) {
 				return nil
 			}
-			function.SetCondition(apispec.Error, metav1.ConditionTrue, apispec.VPAError,
-				fmt.Sprintf("error deleting vpa for function: %v", err))
-			return err
+			return fmt.Errorf("error deleting vpa [%w]", err)
 		}
 		return nil
 	}
-	if meta.IsStatusConditionTrue(function.Status.Conditions, string(apispec.VPAReady)) {
+	if helper.GetState().VPAState == "ready" {
 		return nil
 	}
 	desiredVPA := spec.MakeFunctionVPA(function)
@@ -276,40 +231,13 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *com
 		desiredVPA.Spec = desiredVPASpec
 		return nil
 	}); err != nil {
-		r.Log.Error(err, "error creating or updating vpa for function",
-			"namespace", function.Namespace, "name", function.Name,
-			"vpa name", desiredVPA.Name)
-		function.SetCondition(apispec.VPAReady, metav1.ConditionFalse, apispec.ErrorCreatingVPA,
-			fmt.Sprintf("error creating or updating vpa for function: %v", err))
-		return err
+		return fmt.Errorf("error creating or updating vpa [%w]", err)
 	}
-	function.SetCondition(apispec.VPAReady, metav1.ConditionTrue, apispec.VPAIsReady, "")
+	helper.GetState().VPAState = "ready"
 	return nil
 }
 
-func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(function *computeapi.Function, statefulSet *appsv1.StatefulSet) bool {
-	return r.checkIfComponentNeedUpdate(function, apispec.StatefulSetReady) ||
-		statefulSet.Status.ReadyReplicas != *function.Spec.Replicas
-}
-
-func (r *FunctionReconciler) checkIfServiceNeedUpdate(function *computeapi.Function) bool {
-	return r.checkIfComponentNeedUpdate(function, apispec.ServiceReady)
-}
-
-func (r *FunctionReconciler) checkIfHPANeedUpdate(function *computeapi.Function) bool {
-	return r.checkIfComponentNeedUpdate(function, apispec.HPAReady)
-}
-
-func (r *FunctionReconciler) checkIfVPANeedUpdate(function *computeapi.Function) bool {
-	return r.checkIfComponentNeedUpdate(function, apispec.VPAReady)
-}
-
-func (r *FunctionReconciler) checkIfComponentNeedUpdate(function *computeapi.Function, condType apispec.ResourceConditionType) bool {
-	if cond := meta.FindStatusCondition(function.Status.Conditions, string(condType)); cond != nil {
-		// if the generation has not changed, we do not need to update the component
-		if cond.ObservedGeneration == function.Generation {
-			return false
-		}
-	}
-	return true
+func (r *FunctionReconciler) isGenerationChanged(function *computeapi.Function) bool {
+	// if the generation has not changed, we do not need to update the component
+	return function.Generation != function.Status.ObservedGeneration
 }

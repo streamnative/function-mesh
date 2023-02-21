@@ -71,47 +71,50 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return reconcile.Result{}, nil
 	}
 
-	defer source.SaveStatus(ctx, r.Log, r.Client)
-	if result, err := r.observe(ctx, source); err != nil {
+	helper := MakeSourceReconciliationHelper(source)
+	defer SaveStatus(ctx, r.Log, r.Client, helper)
+	if result, err := r.observe(ctx, source, helper); err != nil {
 		return result, err
 	}
-	if result, err := r.reconcile(ctx, source); err != nil {
+	if result, err := r.reconcile(ctx, source, helper); err != nil {
 		return result, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *SourceReconciler) observe(ctx context.Context, source *computeapi.Source) (ctrl.Result, error) {
-	if err := r.ObserveSourceStatefulSet(ctx, source); err != nil {
+func (r *SourceReconciler) observe(ctx context.Context,
+	source *computeapi.Source, helper ReconciliationHelper) (ctrl.Result, error) {
+	if err := r.ObserveSourceStatefulSet(ctx, source, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ObserveSourceService(ctx, source); err != nil {
+	if err := r.ObserveSourceService(ctx, source, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ObserveSourceHPA(ctx, source); err != nil {
+	if err := r.ObserveSourceHPA(ctx, source, helper); err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		if err := r.ObserveSourceVPA(ctx, source); err != nil {
+		if err := r.ObserveSourceVPA(ctx, source, helper); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 	return reconcile.Result{}, nil
 }
 
-func (r *SourceReconciler) reconcile(ctx context.Context, source *computeapi.Source) (ctrl.Result, error) {
-	if err := r.ApplySourceStatefulSet(ctx, source); err != nil {
+func (r *SourceReconciler) reconcile(ctx context.Context,
+	source *computeapi.Source, helper ReconciliationHelper) (ctrl.Result, error) {
+	if err := r.ApplySourceStatefulSet(ctx, source, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ApplySourceService(ctx, source); err != nil {
+	if err := r.ApplySourceService(ctx, source, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ApplySourceHPA(ctx, source); err != nil {
+	if err := r.ApplySourceHPA(ctx, source, helper); err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		if err := r.ApplySourceVPA(ctx, source); err != nil {
+		if err := r.ApplySourceVPA(ctx, source, helper); err != nil {
 			return reconcile.Result{}, err
 		}
 	}

@@ -33,6 +33,7 @@ func MakeFunctionComponent(functionName string, mesh *computeapi.FunctionMesh,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      functionName,
 			Namespace: mesh.Namespace,
+			Labels:    makeMeshLabels(mesh, functionName),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(mesh, mesh.GroupVersionKind()),
 			},
@@ -50,6 +51,7 @@ func MakeSourceComponent(sourceName string, mesh *computeapi.FunctionMesh, spec 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      sourceName,
 			Namespace: mesh.Namespace,
+			Labels:    makeMeshLabels(mesh, sourceName),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(mesh, mesh.GroupVersionKind()),
 			},
@@ -67,10 +69,23 @@ func MakeSinkComponent(sinkName string, mesh *computeapi.FunctionMesh, spec *com
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      sinkName,
 			Namespace: mesh.Namespace,
+			Labels:    makeMeshLabels(mesh, sinkName),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(mesh, mesh.GroupVersionKind()),
 			},
 		},
 		Spec: *spec,
 	}
+}
+
+func makeMeshLabels(mesh *computeapi.FunctionMesh, componentName string) map[string]string {
+	labels := map[string]string{
+		"app.kubernetes.io/name":            componentName,
+		"app.kubernetes.io/instance":        componentName,
+		"compute.functionmesh.io/app":       AppFunctionMesh,
+		"compute.functionmesh.io/part-of":   mesh.Name,
+		"compute.functionmesh.io/name":      componentName,
+		"compute.functionmesh.io/namespace": mesh.Namespace,
+	}
+	return labels
 }

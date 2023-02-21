@@ -71,47 +71,50 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return reconcile.Result{}, nil
 	}
 
-	defer sink.SaveStatus(ctx, r.Log, r.Client)
-	if result, err := r.observe(ctx, sink); err != nil {
+	helper := MakeSinkReconciliationHelper(sink)
+	defer SaveStatus(ctx, r.Log, r.Client, helper)
+	if result, err := r.observe(ctx, sink, helper); err != nil {
 		return result, err
 	}
-	if result, err := r.reconcile(ctx, sink); err != nil {
+	if result, err := r.reconcile(ctx, sink, helper); err != nil {
 		return result, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *SinkReconciler) observe(ctx context.Context, sink *computeapi.Sink) (ctrl.Result, error) {
-	if err := r.ObserveSinkStatefulSet(ctx, sink); err != nil {
+func (r *SinkReconciler) observe(ctx context.Context,
+	sink *computeapi.Sink, helper ReconciliationHelper) (ctrl.Result, error) {
+	if err := r.ObserveSinkStatefulSet(ctx, sink, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ObserveSinkService(ctx, sink); err != nil {
+	if err := r.ObserveSinkService(ctx, sink, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ObserveSinkHPA(ctx, sink); err != nil {
+	if err := r.ObserveSinkHPA(ctx, sink, helper); err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		if err := r.ObserveSinkVPA(ctx, sink); err != nil {
+		if err := r.ObserveSinkVPA(ctx, sink, helper); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 	return reconcile.Result{}, nil
 }
 
-func (r *SinkReconciler) reconcile(ctx context.Context, sink *computeapi.Sink) (ctrl.Result, error) {
-	if err := r.ApplySinkStatefulSet(ctx, sink); err != nil {
+func (r *SinkReconciler) reconcile(ctx context.Context,
+	sink *computeapi.Sink, helper ReconciliationHelper) (ctrl.Result, error) {
+	if err := r.ApplySinkStatefulSet(ctx, sink, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ApplySinkService(ctx, sink); err != nil {
+	if err := r.ApplySinkService(ctx, sink, helper); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.ApplySinkHPA(ctx, sink); err != nil {
+	if err := r.ApplySinkHPA(ctx, sink, helper); err != nil {
 		return reconcile.Result{}, err
 	}
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
-		if err := r.ApplySinkVPA(ctx, sink); err != nil {
+		if err := r.ApplySinkVPA(ctx, sink, helper); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
