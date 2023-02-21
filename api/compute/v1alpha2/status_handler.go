@@ -172,7 +172,7 @@ func (r *FunctionMesh) RemoveCondition(condType apispec.ResourceConditionType) {
 	meta.RemoveStatusCondition(&r.Status.Conditions, string(condType))
 }
 
-func (r *ComponentCondition) SetStatus(status apispec.ResourceConditionType) {
+func (r *MeshComponentStatus) SetStatus(status apispec.ResourceConditionType) {
 	r.Status = status
 }
 

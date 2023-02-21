@@ -416,13 +416,13 @@ func (r *FunctionMeshReconciler) initializeMesh(mesh *computeapi.FunctionMesh) {
 	// initialize function conditions
 	if len(mesh.Spec.Functions) > 0 {
 		if mesh.Status.FunctionConditions == nil {
-			mesh.Status.FunctionConditions = make(map[string]*computeapi.ComponentCondition)
+			mesh.Status.FunctionConditions = make(map[string]*computeapi.MeshComponentStatus)
 		}
 		for _, function := range mesh.Spec.Functions {
 			if _, exist := mesh.Status.FunctionConditions[function.Name]; !exist {
 				specBytes, _ := json.Marshal(function)
 				specHash := spec.GenerateSpecHash(specBytes)
-				mesh.Status.FunctionConditions[function.Name] = &computeapi.ComponentCondition{
+				mesh.Status.FunctionConditions[function.Name] = &computeapi.MeshComponentStatus{
 					Status: apispec.Wait,
 					Hash:   &specHash,
 				}
@@ -435,13 +435,13 @@ func (r *FunctionMeshReconciler) initializeMesh(mesh *computeapi.FunctionMesh) {
 	// initialize sink conditions
 	if len(mesh.Spec.Sinks) > 0 {
 		if mesh.Status.SinkConditions == nil {
-			mesh.Status.SinkConditions = make(map[string]*computeapi.ComponentCondition)
+			mesh.Status.SinkConditions = make(map[string]*computeapi.MeshComponentStatus)
 		}
 		for _, sink := range mesh.Spec.Sinks {
 			if _, exist := mesh.Status.SinkConditions[sink.Name]; !exist {
 				specBytes, _ := json.Marshal(sink)
 				specHash := spec.GenerateSpecHash(specBytes)
-				mesh.Status.SinkConditions[sink.Name] = &computeapi.ComponentCondition{
+				mesh.Status.SinkConditions[sink.Name] = &computeapi.MeshComponentStatus{
 					Status: apispec.Wait,
 					Hash:   &specHash,
 				}
@@ -454,13 +454,13 @@ func (r *FunctionMeshReconciler) initializeMesh(mesh *computeapi.FunctionMesh) {
 	// initialize source conditions
 	if len(mesh.Spec.Sources) > 0 {
 		if mesh.Status.SourceConditions == nil {
-			mesh.Status.SourceConditions = make(map[string]*computeapi.ComponentCondition)
+			mesh.Status.SourceConditions = make(map[string]*computeapi.MeshComponentStatus)
 		}
 		for _, source := range mesh.Spec.Sources {
 			if _, exist := mesh.Status.SourceConditions[source.Name]; !exist {
 				specBytes, _ := json.Marshal(source)
 				specHash := spec.GenerateSpecHash(specBytes)
-				mesh.Status.SourceConditions[source.Name] = &computeapi.ComponentCondition{
+				mesh.Status.SourceConditions[source.Name] = &computeapi.MeshComponentStatus{
 					Status: apispec.Wait,
 					Hash:   &specHash,
 				}

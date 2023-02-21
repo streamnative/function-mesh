@@ -58,7 +58,7 @@ type SourceSpec struct {
 	MaxReplicas *int32             `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
 	Output      apispec.OutputConf `json:"output,omitempty"`
 
-	BatchSourceConfig *BatchSourceConfig `json:"batchSourceConfig,omitempty"`
+	BatchSourceConfig *apispec.BatchSourceConfig `json:"batchSourceConfig,omitempty"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	SourceConfig                 *apispec.Config              `json:"sourceConfig,omitempty"`
@@ -85,14 +85,6 @@ type SourceSpec struct {
 
 	// +kubebuilder:validation:Optional
 	StateConfig *apispec.Stateful `json:"statefulConfig,omitempty"`
-}
-
-type BatchSourceConfig struct {
-	// +kubebuilder:validation:Required
-	DiscoveryTriggererClassName string `json:"discoveryTriggererClassName"`
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:pruning:PreserveUnknownFields
-	DiscoveryTriggererConfig *apispec.Config `json:"discoveryTriggererConfig,omitempty"`
 }
 
 // SourceStatus defines the observed state of Source

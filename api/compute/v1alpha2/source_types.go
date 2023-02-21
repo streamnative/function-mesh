@@ -58,7 +58,7 @@ type SourceSpec struct {
 	MaxReplicas *int32             `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
 	Output      apispec.OutputConf `json:"output,omitempty"`
 
-	BatchSourceConfig *BatchSourceConfig `json:"batchSourceConfig,omitempty"`
+	BatchSourceConfig *apispec.BatchSourceConfig `json:"batchSourceConfig,omitempty"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	SourceConfig                 *apispec.Config              `json:"sourceConfig,omitempty"`

@@ -19,8 +19,6 @@ package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	apispec "github.com/streamnative/function-mesh/pkg/spec"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -40,15 +38,19 @@ type FunctionMeshSpec struct {
 type FunctionMeshStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Conditions         []metav1.Condition             `json:"conditions,omitempty"`
-	SourceConditions   map[string]*ComponentCondition `json:"sourceConditions,omitempty"`
-	SinkConditions     map[string]*ComponentCondition `json:"sinkConditions,omitempty"`
-	FunctionConditions map[string]*ComponentCondition `json:"functionConditions,omitempty"`
+	Conditions         []metav1.Condition    `json:"conditions,omitempty"`
+	SourceStatus       []MeshComponentStatus `json:"sourceStatus,omitempty"`
+	SinkStatus         []MeshComponentStatus `json:"sinkStatus,omitempty"`
+	FunctionStatus     []MeshComponentStatus `json:"functionStatus,omitempty"`
+	ObservedGeneration int64                 `json:"observedGeneration"`
 }
 
-type ComponentCondition struct {
-	Status apispec.ResourceConditionType `json:"status"`
-	Hash   *string                       `json:"hash"`
+type MeshComponentStatus struct {
+	Name               string                 `json:"name"`
+	Type               string                 `json:"type"`
+	Message            string                 `json:"message,omitempty"`
+	LastTransitionTime metav1.Time            `json:"lastTransitionTime"`
+	Status             metav1.ConditionStatus `json:"status"`
 }
 
 // +kubebuilder:object:root=true

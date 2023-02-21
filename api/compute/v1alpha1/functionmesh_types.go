@@ -19,8 +19,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	apispec "github.com/streamnative/function-mesh/pkg/spec"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -45,11 +43,6 @@ type FunctionMeshStatus struct {
 	FunctionConditions map[string]ResourceCondition `json:"functionConditions,omitempty"`
 	ObservedGeneration int64                        `json:"observedGeneration,omitempty"`
 	Condition          *ResourceCondition           `json:"condition,omitempty"`
-}
-
-type ComponentCondition struct {
-	Status apispec.ResourceConditionType `json:"status"`
-	Hash   *string                       `json:"hash"`
 }
 
 // +genclient

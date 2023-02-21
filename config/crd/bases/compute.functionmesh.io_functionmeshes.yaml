@@ -19412,42 +19412,74 @@ spec:
                   - type
                   type: object
                 type: array
-              functionConditions:
-                additionalProperties:
+              functionStatus:
+                items:
                   properties:
-                    hash:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    name:
                       type: string
                     status:
                       type: string
+                    type:
+                      type: string
                   required:
-                  - hash
+                  - lastTransitionTime
+                  - name
                   - status
+                  - type
                   type: object
-                type: object
-              sinkConditions:
-                additionalProperties:
+                type: array
+              observedGeneration:
+                format: int64
+                type: integer
+              sinkStatus:
+                items:
                   properties:
-                    hash:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    name:
                       type: string
                     status:
                       type: string
+                    type:
+                      type: string
                   required:
-                  - hash
+                  - lastTransitionTime
+                  - name
                   - status
+                  - type
                   type: object
-                type: object
-              sourceConditions:
-                additionalProperties:
+                type: array
+              sourceStatus:
+                items:
                   properties:
-                    hash:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    name:
                       type: string
                     status:
                       type: string
+                    type:
+                      type: string
                   required:
-                  - hash
+                  - lastTransitionTime
+                  - name
                   - status
+                  - type
                   type: object
-                type: object
+                type: array
+            required:
+            - observedGeneration
             type: object
         type: object
     served: true

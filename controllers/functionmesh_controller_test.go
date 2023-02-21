@@ -32,13 +32,13 @@ var _ = Describe("FunctionMesh Controller", func() {
 		pulsarConfig := makeSamplePulsarConfig()
 		mesh := makeFunctionMeshSample()
 		if mesh.Status.FunctionConditions == nil {
-			mesh.Status.FunctionConditions = make(map[string]*computeapi.ComponentCondition)
+			mesh.Status.FunctionConditions = make(map[string]*computeapi.MeshComponentStatus)
 		}
 		if mesh.Status.SourceConditions == nil {
-			mesh.Status.SourceConditions = make(map[string]*computeapi.ComponentCondition)
+			mesh.Status.SourceConditions = make(map[string]*computeapi.MeshComponentStatus)
 		}
 		if mesh.Status.SinkConditions == nil {
-			mesh.Status.SinkConditions = make(map[string]*computeapi.ComponentCondition)
+			mesh.Status.SinkConditions = make(map[string]*computeapi.MeshComponentStatus)
 		}
 
 		It("Should create pulsar configmap successfully", func() {

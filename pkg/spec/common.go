@@ -320,6 +320,14 @@ type CryptoSecret struct {
 	//AsEnv      string `json:"asEnv,omitempty"`
 }
 
+type BatchSourceConfig struct {
+	// +kubebuilder:validation:Required
+	DiscoveryTriggererClassName string `json:"discoveryTriggererClassName"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
+	DiscoveryTriggererConfig *Config `json:"discoveryTriggererConfig,omitempty"`
+}
+
 // SubscribePosition enum type
 // +kubebuilder:validation:Enum=latest;earliest
 type SubscribePosition string
