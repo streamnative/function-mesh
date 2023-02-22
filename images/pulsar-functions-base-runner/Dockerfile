@@ -59,6 +59,7 @@ COPY --from=pulsar --chown=$UID:$GID /pulsar/lib /pulsar/lib
 
 # remove presto dependencies because they are not needed
 RUN rm -rf /pulsar/lib/presto || true
+RUN rm -rf /pulsar/conf/presto || true
 
 ENV PULSAR_ROOT_LOGGER=INFO,CONSOLE
 ENV java.io.tmpdir=/pulsar/tmp/
