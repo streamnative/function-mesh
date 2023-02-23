@@ -1404,12 +1404,11 @@ func generateDownloaderVolumeMountsForRuntime(javaRuntime *v1alpha1.JavaRuntime,
 				MountPath: mountPath,
 				SubPath:   subPath,
 			}}
-		} else {
-			return []corev1.VolumeMount{{
-				Name:      DownloaderVolume,
-				MountPath: mountPath[:len(mountPath)-len(subPath)],
-			}}
 		}
+		return []corev1.VolumeMount{{
+			Name:      DownloaderVolume,
+			MountPath: mountPath[:len(mountPath)-len(subPath)],
+		}}
 	}
 	return nil
 }
