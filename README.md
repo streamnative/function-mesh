@@ -47,6 +47,10 @@ git clone https://github.com/streamnative/function-mesh.git
 
 - install operator-sdk and use it to add CRD, controller or webhooks
 
+> **Note**
+>
+> The following command will generate the scaffolding files in the `api/<version>/` path, in this case `api/v1alpha1`, and then you need to move the files contained in it to the `api/<group>/<version>` directory manually, in this case `api/compute/v1alpha1`.
+
 ```bash
 operator-sdk create api --group compute --version v1alpha1 --kind Function --resource=true --controller=true
 ```
