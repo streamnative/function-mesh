@@ -1,0 +1,67 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: py-function-download-from-http2-sample
+  namespace: default
+spec:
+  className: exclamation
+  forwardSourceMessageProperty: true
+  maxPendingAsyncRequests: 1000
+  replicas: 1
+  maxReplicas: 1
+  logTopic: persistent://public/default/py-function-logs
+  input:
+    topics:
+      - persistent://public/default/input-download-from-http2-python-topic
+  output:
+    topic: persistent://public/default/output-download-from-http2-python-topic
+  resources:
+    requests:
+      cpu: 50m
+      memory: 1G
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+  # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
+  secretsMap:
+    "name":
+      path: "test-py-secret"
+      key: "username"
+    "pwd":
+      path: "test-py-secret"
+      key: "password"
+  pulsar:
+    pulsarConfig: "test-py-pulsar"
+    tlsConfig:
+      enabled: false
+      allowInsecure: true
+      hostnameVerification: true
+    authConfig:
+      oauth2Config:
+        audience: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
+        issuerUrl: https://sts.windows.net/06a8a086-ae6e-45b5-a22e-ad90de23013e/v2.0
+        scope: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
+        keySecretName: sn-platform-oauth2-private-key
+        keySecretKey: auth.json
+  python:
+    py: download/pulsar_functions/exclamation.zip
+    pyLocation: http://nginx-server.default.svc.cluster.local/exclamation.zip
+  clusterName: test
+  autoAck: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-py-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
+---
+apiVersion: v1
+data:
+  username: YWRtaW4=
+  password: MWYyZDFlMmU2N2Rm
+kind: Secret
+metadata:
+  name: test-py-secret
+type: Opaque
