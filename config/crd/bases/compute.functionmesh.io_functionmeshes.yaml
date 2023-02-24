@@ -227,6 +227,7 @@ spec:
                       format: int32
                       type: integer
                     minReplicas:
+                      default: 1
                       format: int32
                       minimum: 1
                       type: integer
@@ -3191,6 +3192,7 @@ spec:
                       - py
                       type: object
                     replicas:
+                      default: 1
                       format: int32
                       minimum: 1
                       type: integer
@@ -3500,6 +3502,7 @@ spec:
                       format: int32
                       type: integer
                     minReplicas:
+                      default: 1
                       format: int32
                       minimum: 1
                       type: integer
@@ -6408,6 +6411,7 @@ spec:
                       - py
                       type: object
                     replicas:
+                      default: 1
                       format: int32
                       minimum: 1
                       type: integer
@@ -6622,6 +6626,7 @@ spec:
                       format: int32
                       type: integer
                     minReplicas:
+                      default: 1
                       format: int32
                       minimum: 1
                       type: integer
@@ -9586,6 +9591,7 @@ spec:
                       - py
                       type: object
                     replicas:
+                      default: 1
                       format: int32
                       minimum: 1
                       type: integer

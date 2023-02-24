@@ -36,8 +36,10 @@ type FunctionSpec struct {
 	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=1
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 
 	DownloaderImage string `json:"downloaderImage,omitempty"`
