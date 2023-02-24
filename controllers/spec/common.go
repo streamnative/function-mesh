@@ -1533,7 +1533,7 @@ func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {
 }
 
 // getDefaultRunnerPodSecurityContext returns a default PodSecurityContext that runs as non-root
-func getDefaultRunnerPodSecurityContext(uid, gid int64, nonAsNonRootEnv string) *corev1.PodSecurityContext {
+func getDefaultRunnerPodSecurityContext(uid, gid int64, runAsNonRootEnv string) *corev1.PodSecurityContext {
 	nonRoot, err := strconv.ParseBool(nonAsNonRootEnv)
 	if err != nil {
 		nonRoot = true
