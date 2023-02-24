@@ -1390,13 +1390,24 @@ func generateDownloaderVolumeMountsForRuntime(javaRuntime *v1alpha1.JavaRuntime,
 		subPath := getFilenameOfComponentPackage(downloadPath)
 		mountPath := downloadPath
 		// for relative path, volume should be mounted to the WorkDir
+		// and path also should be under the $WorkDir dir
 		if !strings.HasPrefix(downloadPath, "/") {
 			mountPath = WorkDir + downloadPath
+		} else if !strings.HasPrefix(downloadPath, WorkDir) {
+			mountPath = strings.Replace(downloadPath, "/", WorkDir, 1)
+		}
+		// if mount path is in the $WorkDir instead of its sub path
+		// we should use SubPath to avoid the mounted volume overwrite the $WorkDir
+		if !strings.Contains(strings.Replace(mountPath, WorkDir, "", 1), "/") {
+			return []corev1.VolumeMount{{
+				Name:      DownloaderVolume,
+				MountPath: mountPath,
+				SubPath:   subPath,
+			}}
 		}
 		return []corev1.VolumeMount{{
 			Name:      DownloaderVolume,
-			MountPath: mountPath,
-			SubPath:   subPath,
+			MountPath: mountPath[:len(mountPath)-len(subPath)],
 		}}
 	}
 	return nil

@@ -287,6 +287,10 @@ function ci::verify_download_from_http_python_function() {
     ci::verify_exclamation_function_with_auth "persistent://public/default/input-download-from-http-python-topic" "persistent://public/default/output-download-from-http-python-topic" "test-message" "test-message!" 10
 }
 
+function ci::verify_download_from_http2_python_function() {
+    ci::verify_exclamation_function_with_auth "persistent://public/default/input-download-from-http2-python-topic" "persistent://public/default/output-download-from-http2-python-topic" "test-message" "test-message!" 10
+}
+
 function ci::verify_download_python_zip_function() {
     ci::verify_exclamation_function "persistent://public/default/input-download-python-zip-topic" "persistent://public/default/output-download-python-zip-topic" "test-message" "test-message!" 10
 }
