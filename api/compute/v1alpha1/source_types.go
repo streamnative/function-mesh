@@ -44,8 +44,10 @@ type SourceSpec struct {
 	ClusterName string `json:"clusterName,omitempty"`
 	SourceType  string `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
 	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=1
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 
 	DownloaderImage string `json:"downloaderImage,omitempty"`
