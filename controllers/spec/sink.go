@@ -78,6 +78,7 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
 	probe := MakeLivenessProbe(sink.Spec.Pod.Liveness)
+	allowPrivilegeEscalation := false
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-sink",
@@ -91,6 +92,12 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 			sink.Spec.Pulsar.TLSSecret),
 		VolumeMounts:  makeSinkVolumeMounts(sink),
 		LivenessProbe: probe,
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{"ALL"},
+			},
+			AllowPrivilegeEscalation: &allowPrivilegeEscalation,
+		},
 	}
 }
 
