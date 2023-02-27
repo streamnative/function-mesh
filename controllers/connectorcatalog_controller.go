@@ -20,12 +20,11 @@ package controllers
 import (
 	"context"
 
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
 )
 
 // ConnectorCatalogReconciler reconciles a ConnectorCatalog object
@@ -58,6 +57,6 @@ func (r *ConnectorCatalogReconciler) Reconcile(ctx context.Context, req ctrl.Req
 // SetupWithManager sets up the controller with the Manager.
 func (r *ConnectorCatalogReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&computev1alpha1.ConnectorCatalog{}).
+		For(&v1alpha1.ConnectorCatalog{}).
 		Complete(r)
 }

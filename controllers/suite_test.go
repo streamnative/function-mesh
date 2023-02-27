@@ -36,7 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/utils"
 	// +kubebuilder:scaffold:imports
 )
@@ -80,9 +79,6 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = vpav1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = computev1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme

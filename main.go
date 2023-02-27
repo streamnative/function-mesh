@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	computev1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	computev1alpha1 "github.com/streamnative/function-mesh/api/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	"github.com/streamnative/function-mesh/utils"
