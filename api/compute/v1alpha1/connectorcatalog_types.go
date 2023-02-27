@@ -39,6 +39,7 @@ type ConnectorCatalogStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // ConnectorCatalog is the Schema for the connectorcatalogs API
 type ConnectorCatalog struct {
