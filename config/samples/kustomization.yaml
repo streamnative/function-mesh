@@ -4,4 +4,5 @@ resources:
 - compute_v1alpha1_function.yaml
 - compute_v1alpha1_source.yaml
 - compute_v1alpha1_sink.yaml
+- compute_v1alpha1_connectorcatalog.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples
