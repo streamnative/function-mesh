@@ -28,6 +28,9 @@ import (
 type ConnectorCatalogSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	//+listType=map
+	//+listMapKey=id
 	ConnectorDefinitions []ConnectorDefinition `json:"connectorDefinitions"`
 }
 
@@ -67,23 +70,23 @@ type ConfigFieldDefinition struct {
 
 type ConnectorDefinition struct {
 	Id                     string                  `json:"id"`
-	Version                string                  `json:"version"`
-	ImageRegistry          string                  `json:"imageRegistry"`
-	ImageRepository        string                  `json:"imageRepository"`
-	ImageTag               string                  `json:"imageTag"`
-	TypeClassName          string                  `json:"typeClassName"`
-	SourceTypeClassName    string                  `json:"sourceTypeClassName"`
-	SinkTypeClassName      string                  `json:"sinkTypeClassName"`
-	JarFullName            string                  `json:"jarFullName"`
-	DefaultSchemaType      string                  `json:"defaultSchemaType"`
-	DefaultSerdeClassName  string                  `json:"defaultSerdeClassName"`
-	Name                   string                  `json:"name"`
-	Description            string                  `json:"description"`
-	SourceClass            string                  `json:"sourceClass"`
-	SinkClass              string                  `json:"sinkClass"`
-	SourceConfigClass      string                  `json:"sourceConfigClass"`
-	SinkConfigClass        string                  `json:"sinkConfigClass"`
-	ConfigFieldDefinitions []ConfigFieldDefinition `json:"configFieldDefinitions"`
+	Version                string                  `json:"version,omitempty"`
+	ImageRegistry          string                  `json:"imageRegistry,omitempty"`
+	ImageRepository        string                  `json:"imageRepository,omitempty"`
+	ImageTag               string                  `json:"imageTag,omitempty"`
+	TypeClassName          string                  `json:"typeClassName,omitempty"`
+	SourceTypeClassName    string                  `json:"sourceTypeClassName,omitempty"`
+	SinkTypeClassName      string                  `json:"sinkTypeClassName,omitempty"`
+	JarFullName            string                  `json:"jarFullName,omitempty"`
+	DefaultSchemaType      string                  `json:"defaultSchemaType,omitempty"`
+	DefaultSerdeClassName  string                  `json:"defaultSerdeClassName,omitempty"`
+	Name                   string                  `json:"name,omitempty"`
+	Description            string                  `json:"description,omitempty"`
+	SourceClass            string                  `json:"sourceClass,omitempty"`
+	SinkClass              string                  `json:"sinkClass,omitempty"`
+	SourceConfigClass      string                  `json:"sourceConfigClass,omitempty"`
+	SinkConfigClass        string                  `json:"sinkConfigClass,omitempty"`
+	ConfigFieldDefinitions []ConfigFieldDefinition `json:"configFieldDefinitions,omitempty"`
 }
 
 func init() {

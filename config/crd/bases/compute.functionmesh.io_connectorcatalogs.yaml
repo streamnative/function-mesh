@@ -82,26 +82,12 @@ spec:
                     version:
                       type: string
                   required:
-                  - configFieldDefinitions
-                  - defaultSchemaType
-                  - defaultSerdeClassName
-                  - description
                   - id
-                  - imageRegistry
-                  - imageRepository
-                  - imageTag
-                  - jarFullName
-                  - name
-                  - sinkClass
-                  - sinkConfigClass
-                  - sinkTypeClassName
-                  - sourceClass
-                  - sourceConfigClass
-                  - sourceTypeClassName
-                  - typeClassName
-                  - version
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - id
+                x-kubernetes-list-type: map
             required:
             - connectorDefinitions
             type: object
