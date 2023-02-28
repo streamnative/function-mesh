@@ -65,7 +65,7 @@ type ConnectorCatalogList struct {
 type ConfigFieldDefinition struct {
 	FieldName  string            `json:"fieldName"`
 	TypeName   string            `json:"typeName"`
-	Attributes map[string]string `json:"attributes"`
+	Attributes map[string]string `json:"attributes,omitempty"`
 }
 
 type ConnectorDefinition struct {
