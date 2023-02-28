@@ -2,13 +2,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  labels:
-    app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: connectorcatalog-editor-role
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: function-mesh
-    app.kubernetes.io/part-of: function-mesh
-    app.kubernetes.io/managed-by: kustomize
   name: connectorcatalog-editor-role
 rules:
 - apiGroups:
