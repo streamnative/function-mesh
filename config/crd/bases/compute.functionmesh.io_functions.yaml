@@ -226,7 +226,7 @@ spec:
               minReplicas:
                 default: 1
                 format: int32
-                minimum: 1
+                minimum: 0
                 type: integer
               name:
                 type: string
@@ -3191,7 +3191,7 @@ spec:
               replicas:
                 default: 1
                 format: int32
-                minimum: 1
+                minimum: 0
                 type: integer
               resources:
                 properties:
