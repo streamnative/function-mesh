@@ -69,7 +69,7 @@ func (r *ConnectorCatalog) ValidateCreate() error {
 	}
 
 	for _, def := range r.Spec.ConnectorDefinitions {
-		if def.Id == "" {
+		if def.ID == "" {
 			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("connectorDefinitions"), r.Spec.ConnectorDefinitions, "No Id specified"))
 		}
 
