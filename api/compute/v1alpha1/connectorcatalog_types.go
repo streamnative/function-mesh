@@ -70,7 +70,7 @@ type ConfigFieldDefinition struct {
 }
 
 type ConnectorDefinition struct {
-	Id                     string                  `json:"id"`
+	ID                     string                  `json:"id"`
 	Version                string                  `json:"version,omitempty"`
 	ImageRegistry          string                  `json:"imageRegistry,omitempty"`
 	ImageRepository        string                  `json:"imageRepository,omitempty"`
