@@ -41,3 +41,5 @@ resources:
   path: github.com/streamnative/function-mesh/api/compute/v1alpha1
   version: v1alpha1
 version: "3"
+plugins: 
+  go.sdk.operatorframework.io/v2-alpha: {}
