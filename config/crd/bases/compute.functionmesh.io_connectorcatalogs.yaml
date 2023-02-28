@@ -42,7 +42,6 @@ spec:
                           typeName:
                             type: string
                         required:
-                        - attributes
                         - fieldName
                         - typeName
                         type: object
