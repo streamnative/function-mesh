@@ -36,6 +36,12 @@ import (
 )
 
 func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails {
+	runtime := proto.FunctionDetails_JAVA
+	if function.Spec.Golang != nil {
+		runtime = proto.FunctionDetails_GO
+	} else if function.Spec.Python != nil {
+		runtime = proto.FunctionDetails_PYTHON
+	}
 	fd := &proto.FunctionDetails{
 		Tenant:               function.Spec.Tenant,
 		Namespace:            function.Spec.Namespace,
@@ -44,7 +50,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		LogTopic:             function.Spec.LogTopic,
 		ProcessingGuarantees: convertProcessingGuarantee(function.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(generateFunctionConfig(function)),
-		Runtime:              proto.FunctionDetails_JAVA,
+		Runtime:              runtime,
 		AutoAck:              getBoolFromPtrOrDefault(function.Spec.AutoAck, true),
 		Parallelism:          getInt32FromPtrOrDefault(function.Spec.Replicas, 1),
 		Source:               generateFunctionInputSpec(function),
