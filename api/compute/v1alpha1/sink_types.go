@@ -64,6 +64,7 @@ type SinkSpec struct {
 	MaxMessageRetry              int32            `json:"maxMessageRetry,omitempty"`
 	ProcessingGuarantee          ProcessGuarantee `json:"processingGuarantee,omitempty"`
 	RetainOrdering               bool             `json:"retainOrdering,omitempty"`
+	RetainKeyOrdering            bool             `json:"retainKeyOrdering,omitempty"`
 	DeadLetterTopic              string           `json:"deadLetterTopic,omitempty"`
 
 	RuntimeFlags         string            `json:"runtimeFlags,omitempty"`
