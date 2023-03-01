@@ -79,7 +79,7 @@ func main() {
 	var healthProbeAddr string
 	var enableLeaderElection, enablePprof bool
 	var configFile string
-	var namespace string
+	var watchedNamespace string
 	var enableInitContainers bool
 	var grpcurlPersistentVolumeClaim string
 	flag.StringVar(&metricsAddr, "metrics-addr", LookupEnvOrString("METRICS_ADDR", ":8080"), "The address the metric endpoint binds to.")
@@ -95,7 +95,7 @@ func main() {
 		"CertDir is the directory that contains the server key and certificate.\n\tif not set, webhook server would look up the server key and certificate in\n\t{TempDir}/k8s-webhook-server/serving-certs. The server key and certificate\n\tmust be named tls.key and tls.crt, respectively.")
 	flag.StringVar(&configFile, "config-file", LookupEnvOrString("CONFIG_FILE", ""),
 		"config file path for controller manager")
-	flag.StringVar(&namespace, "namespace", LookupEnvOrString("NAMESPACE", ""),
+	flag.StringVar(&watchedNamespace, "watched-namespace", LookupEnvOrString("WATCHED_NAMESPACE", ""),
 		"Namespace if specified restricts the manager's cache to watch objects in the desired namespace. Defaults to all namespaces.")
 	flag.BoolVar(&enablePprof, "enable-pprof", LookupEnvOrBool("ENABLE_PPROF", false), "Enable pprof for controller manager.")
 	flag.StringVar(&pprofAddr, "pprof-addr", LookupEnvOrString("PPROF_ADDR", ":8090"), "The address the pprof binds to.")
@@ -132,7 +132,7 @@ func main() {
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        leaderElectionID,
-		Namespace:               namespace,
+		Namespace:               watchedNamespace,
 		CertDir:                 certDir,
 	})
 	if err != nil {
