@@ -327,6 +327,8 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		RetryDetails:         generateRetryDetails(sink.Spec.MaxMessageRetry, sink.Spec.DeadLetterTopic),
 		RuntimeFlags:         sink.Spec.RuntimeFlags,
 		ComponentType:        proto.FunctionDetails_SINK,
+		RetainOrdering:       sink.Spec.RetainOrdering,
+		RetainKeyOrdering:    sink.Spec.RetainKeyOrdering,
 	}
 
 	if sink.Spec.SecretsMap != nil {
