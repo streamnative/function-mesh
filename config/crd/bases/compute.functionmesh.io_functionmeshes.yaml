@@ -6434,6 +6434,8 @@ spec:
                             x-kubernetes-int-or-string: true
                           type: object
                       type: object
+                    retainKeyOrdering:
+                      type: boolean
                     retainOrdering:
                       type: boolean
                     runtimeFlags:

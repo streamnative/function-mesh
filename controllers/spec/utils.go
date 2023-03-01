@@ -36,6 +36,12 @@ import (
 )
 
 func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails {
+	runtime := proto.FunctionDetails_JAVA
+	if function.Spec.Golang != nil {
+		runtime = proto.FunctionDetails_GO
+	} else if function.Spec.Python != nil {
+		runtime = proto.FunctionDetails_PYTHON
+	}
 	fd := &proto.FunctionDetails{
 		Tenant:               function.Spec.Tenant,
 		Namespace:            function.Spec.Namespace,
@@ -44,7 +50,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		LogTopic:             function.Spec.LogTopic,
 		ProcessingGuarantees: convertProcessingGuarantee(function.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(generateFunctionConfig(function)),
-		Runtime:              proto.FunctionDetails_JAVA,
+		Runtime:              runtime,
 		AutoAck:              getBoolFromPtrOrDefault(function.Spec.AutoAck, true),
 		Parallelism:          getInt32FromPtrOrDefault(function.Spec.Replicas, 1),
 		Source:               generateFunctionInputSpec(function),
@@ -186,7 +192,7 @@ func generateFunctionInputSpec(function *v1alpha1.Function) *proto.SourceSpec {
 		ClassName:                    "",
 		Configs:                      "",
 		TypeClassName:                function.Spec.Input.TypeClassName,
-		SubscriptionType:             proto.SubscriptionType_SHARED,
+		SubscriptionType:             getSubscriptionType(function.Spec.RetainOrdering, function.Spec.RetainKeyOrdering, function.Spec.ProcessingGuarantee),
 		InputSpecs:                   inputSpecs,
 		TimeoutMs:                    uint64(function.Spec.Timeout),
 		Builtin:                      "",
@@ -321,6 +327,8 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		RetryDetails:         generateRetryDetails(sink.Spec.MaxMessageRetry, sink.Spec.DeadLetterTopic),
 		RuntimeFlags:         sink.Spec.RuntimeFlags,
 		ComponentType:        proto.FunctionDetails_SINK,
+		RetainOrdering:       sink.Spec.RetainOrdering,
+		RetainKeyOrdering:    sink.Spec.RetainKeyOrdering,
 	}
 
 	if sink.Spec.SecretsMap != nil {
@@ -335,7 +343,7 @@ func generateSinkInputSpec(sink *v1alpha1.Sink) *proto.SourceSpec {
 
 	return &proto.SourceSpec{
 		TypeClassName:                sink.Spec.Input.TypeClassName,
-		SubscriptionType:             getSubscriptionType(sink.Spec.RetainOrdering, sink.Spec.ProcessingGuarantee),
+		SubscriptionType:             getSubscriptionType(sink.Spec.RetainOrdering, sink.Spec.RetainKeyOrdering, sink.Spec.ProcessingGuarantee),
 		InputSpecs:                   inputSpecs,
 		TimeoutMs:                    uint64(sink.Spec.Timeout),
 		SubscriptionName:             sink.Spec.SubscriptionName,
@@ -345,9 +353,13 @@ func generateSinkInputSpec(sink *v1alpha1.Sink) *proto.SourceSpec {
 	}
 }
 
-func getSubscriptionType(retainOrdering bool, processingGuarantee v1alpha1.ProcessGuarantee) proto.SubscriptionType {
+func getSubscriptionType(retainOrdering bool, retainKeyOrdering bool, processingGuarantee v1alpha1.ProcessGuarantee) proto.SubscriptionType {
 	if retainOrdering || processingGuarantee == v1alpha1.EffectivelyOnce {
 		return proto.SubscriptionType_FAILOVER
+	}
+
+	if retainKeyOrdering {
+		return proto.SubscriptionType_KEY_SHARED
 	}
 
 	return proto.SubscriptionType_SHARED
