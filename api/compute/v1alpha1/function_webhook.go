@@ -88,6 +88,12 @@ func (r *Function) Default() {
 		r.Spec.Namespace = DefaultNamespace
 	}
 
+	if r.Spec.SubscriptionName == "" && r.Spec.DeadLetterTopic == "" {
+		// otherwise the auto generated DeadLetterTopic($TOPIC-$SUBNAME-DLQ) will be invalid
+		// like: persistent://public/default/input-public/default/test-function-DLQ
+		r.Spec.SubscriptionName = fmt.Sprintf("%s-%s-%s", r.Spec.Tenant, r.Spec.Namespace, r.Spec.Name)
+	}
+
 	if r.Spec.MaxPendingAsyncRequests == nil {
 		maxPending := int32(1000)
 		r.Spec.MaxPendingAsyncRequests = &maxPending

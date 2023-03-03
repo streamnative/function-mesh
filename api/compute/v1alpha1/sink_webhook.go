@@ -89,6 +89,12 @@ func (r *Sink) Default() {
 		r.Spec.Namespace = DefaultNamespace
 	}
 
+	if r.Spec.SubscriptionName == "" && r.Spec.DeadLetterTopic == "" {
+		// otherwise the auto generated DeadLetterTopic($TOPIC-$SUBNAME-DLQ) will be invalid
+		// like: persistent://public/default/input-public/default/test-function-DLQ
+		r.Spec.SubscriptionName = fmt.Sprintf("%s-%s-%s", r.Spec.Tenant, r.Spec.Namespace, r.Spec.Name)
+	}
+
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
 			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
