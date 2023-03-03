@@ -1,3 +1,13 @@
+# Function Mesh v0.11.1 Release Notes
+
+## v0.11.1 What's New
+
+* [Controller] Set subscription type according to related parameters ([#592](https://github.com/streamnative/function-mesh/pull/592))
+* [Controller] Only use SubPath when jar(py|go)Location is /pulsar/xxx.suffix ([#579](https://github.com/streamnative/function-mesh/pull/579))
+* [Helm Charts] Add default values for minReplicas and replicas ([#582](https://github.com/streamnative/function-mesh/pull/582))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Acherry-pick%2F0.11+is%3Aclosed).
+
 # Function Mesh v0.11.0 Release Notes
 
 ## v0.11.0 What's New
