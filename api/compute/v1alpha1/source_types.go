@@ -43,10 +43,10 @@ type SourceSpec struct {
 	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	SourceType  string `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
-	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:default=1
 	Replicas *int32 `json:"replicas,omitempty"`
-	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:default=1
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 
