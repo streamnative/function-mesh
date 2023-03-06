@@ -21,6 +21,7 @@ import (
 	"flag"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/go-logr/logr"
 	computev1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -60,28 +61,28 @@ func main() {
 	var healthProbeAddr string
 	var enableLeaderElection, enablePprof bool
 	var configFile string
-	var namespace string
+	var watchedNamespace string
 	var enableInitContainers bool
 	var grpcurlPersistentVolumeClaim string
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&leaderElectionID, "leader-election-id", "a3f45fce.functionmesh.io",
+	flag.StringVar(&metricsAddr, "metrics-addr", lookupEnvOrString("METRICS_ADDR", ":8080"), "The address the metric endpoint binds to.")
+	flag.StringVar(&leaderElectionID, "leader-election-id", lookupEnvOrString("LEADER_ELECTION_ID", "a3f45fce.functionmesh.io"),
 		"the name of the configmap that leader election will use for holding the leader lock.")
-	flag.StringVar(&leaderElectionNamespace, "leader-election-namespace", "",
+	flag.StringVar(&leaderElectionNamespace, "leader-election-namespace", lookupEnvOrString("LEADER_ELECTION_NAMESPACE", ""),
 		"the namespace in which the leader election configmap will be created")
-	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
+	flag.BoolVar(&enableLeaderElection, "enable-leader-election", lookupEnvOrBool("ENABLE_LEADER_ELECTION", false),
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&healthProbeAddr, "health-probe-addr", ":8000", "The address the healthz/readyz endpoint binds to.")
-	flag.StringVar(&certDir, "cert-dir", "",
+	flag.StringVar(&healthProbeAddr, "health-probe-addr", lookupEnvOrString("HEALTH_PROBE_ADDR", ":8000"), "The address the healthz/readyz endpoint binds to.")
+	flag.StringVar(&certDir, "cert-dir", lookupEnvOrString("CERT_DIR", ""),
 		"CertDir is the directory that contains the server key and certificate.\n\tif not set, webhook server would look up the server key and certificate in\n\t{TempDir}/k8s-webhook-server/serving-certs. The server key and certificate\n\tmust be named tls.key and tls.crt, respectively.")
-	flag.StringVar(&configFile, "config-file", "",
+	flag.StringVar(&configFile, "config-file", lookupEnvOrString("CONFIG_FILE", ""),
 		"config file path for controller manager")
-	flag.StringVar(&namespace, "namespace", "",
+	flag.StringVar(&watchedNamespace, "watched-namespace", lookupEnvOrString("WATCHED_NAMESPACE", ""),
 		"Namespace if specified restricts the manager's cache to watch objects in the desired namespace. Defaults to all namespaces.")
-	flag.BoolVar(&enablePprof, "enable-pprof", false, "Enable pprof for controller manager.")
-	flag.StringVar(&pprofAddr, "pprof-addr", ":8090", "The address the pprof binds to.")
-	flag.BoolVar(&enableInitContainers, "enable-init-containers", false, "Whether to use an init container to download package")
-	flag.StringVar(&grpcurlPersistentVolumeClaim, "grpcurl-persistent-volume-claim", "", "The pvc name which contains grpcurl and InstanceCommunication.proto.")
+	flag.BoolVar(&enablePprof, "enable-pprof", lookupEnvOrBool("ENABLE_PPROF", false), "Enable pprof for controller manager.")
+	flag.StringVar(&pprofAddr, "pprof-addr", lookupEnvOrString("PPROF_ADDR", ":8090"), "The address the pprof binds to.")
+	flag.BoolVar(&enableInitContainers, "enable-init-containers", lookupEnvOrBool("ENABLE_INIT_CONTAINERS", false), "Whether to use an init container to download package")
+	flag.StringVar(&grpcurlPersistentVolumeClaim, "grpcurl-persistent-volume-claim", lookupEnvOrString("GRPCURL_PERSISTENT_VOLUME_CLAIM", ""), "The pvc name which contains grpcurl and InstanceCommunication.proto.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
@@ -113,7 +114,7 @@ func main() {
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        leaderElectionID,
-		Namespace:               namespace,
+		Namespace:               watchedNamespace,
 		CertDir:                 certDir,
 	})
 	if err != nil {
@@ -211,4 +212,22 @@ func checkGroupVersions(log logr.Logger) (utils.WatchFlags, error) {
 		watchFlags.WatchVPACRDs = true
 	}
 	return watchFlags, nil
+}
+
+func lookupEnvOrString(key string, defaultVal string) string {
+	if val, ok := os.LookupEnv(key); ok {
+		return val
+	}
+	return defaultVal
+}
+
+func lookupEnvOrBool(key string, defaultVal bool) bool {
+	if val, ok := os.LookupEnv(key); ok {
+		v, err := strconv.ParseBool(val)
+		if err != nil {
+			setupLog.Error(err, "unable to convert env: %s to bool", key)
+		}
+		return v
+	}
+	return defaultVal
 }
