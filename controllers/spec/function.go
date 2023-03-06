@@ -150,7 +150,8 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir,
 				string(function.UID),
 				spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig, healthCheckInterval)
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig, healthCheckInterval,
+				function.Spec.MaxPendingAsyncRequests)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {

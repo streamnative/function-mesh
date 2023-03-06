@@ -372,11 +372,12 @@ func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, healthCheckInterval int32,
+	maxPendingAsyncRequests *int32) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
-			authConfig, healthCheckInterval), " ")
+			authConfig, healthCheckInterval, maxPendingAsyncRequests), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
@@ -855,7 +856,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	healthCheckInterval int32) []string {
+	healthCheckInterval int32, maxPendingAsyncRequests *int32) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
@@ -900,6 +901,12 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 			statefulArgs = append(statefulArgs, "--state_storage_impl_class", state.Pulsar.JavaProvider.ClassName)
 		}
 		args = append(args, statefulArgs...)
+	}
+	if maxPendingAsyncRequests != nil {
+		args = append(args, []string{
+			"--pending_async_requests",
+			strconv.Itoa(int(*maxPendingAsyncRequests)),
+		}...)
 	}
 	return args
 }
