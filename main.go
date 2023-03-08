@@ -182,6 +182,10 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Sink")
 			os.Exit(1)
 		}
+		if err = (&computev1alpha1.ConnectorCatalog{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "ConnectorCatalog")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 

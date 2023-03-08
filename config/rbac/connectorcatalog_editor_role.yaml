@@ -1,0 +1,24 @@
+# permissions for end users to edit connectorcatalogs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: connectorcatalog-editor-role
+rules:
+- apiGroups:
+  - compute.functionmesh.io
+  resources:
+  - connectorcatalogs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - compute.functionmesh.io
+  resources:
+  - connectorcatalogs/status
+  verbs:
+  - get
