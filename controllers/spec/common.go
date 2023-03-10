@@ -413,7 +413,7 @@ func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/healthz",
+				Path: "/",
 				Port: intstr.FromInt(int(MetricsPort.ContainerPort)),
 			},
 		},
