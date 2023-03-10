@@ -325,7 +325,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 		},
 		ServiceName: serviceName,
 	}
-	if volumeClaimTemplates != nil && len(volumeClaimTemplates) > 0 {
+	if len(volumeClaimTemplates) > 0 {
 		spec.VolumeClaimTemplates = volumeClaimTemplates
 	}
 	return spec
