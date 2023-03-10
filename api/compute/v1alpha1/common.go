@@ -639,14 +639,21 @@ type VPASpec struct {
 }
 
 type Liveness struct {
-	// only enable health check after ensure the runner image has `grpcurl` installed into `/pulsar/bin` dir
-	// and has the `InstanceCommunication.proto` in the `/pulsar/conf` dir
 	// +kubebuilder:validation:Optional
 	PeriodSeconds int32 `json:"periodSeconds,omitempty"`
 
 	// some functions may take a long time to start up(like download packages), so we need to set the initial delay
 	// +kubebuilder:validation:Optional
 	InitialDelaySeconds int32 `json:"initialDelaySeconds,omitempty"`
+
+	// Minimum consecutive successes for the probe to be considered successful after having failed.
+	// Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
+	// +optional
+	SuccessThreshold int32 `json:"successThreshold,omitempty"`
+	// Minimum consecutive failures for the probe to be considered failed after having succeeded.
+	// Defaults to 3. Minimum value is 1.
+	// +optional
+	FailureThreshold int32 `json:"failureThreshold,omitempty"`
 }
 
 func (rc *ResourceCondition) SetCondition(condition ResourceConditionType, action ReconcileAction, status metav1.ConditionStatus) {

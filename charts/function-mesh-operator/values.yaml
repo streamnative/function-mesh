@@ -70,7 +70,6 @@ controllerManager:
     enable: false
     port: 8090
   enableInitContainers: false
-  grpcurlPersistentVolumeClaim: ""
 
 admissionWebhook:
   enabled: true

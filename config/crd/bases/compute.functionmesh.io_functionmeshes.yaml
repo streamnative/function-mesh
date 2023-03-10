@@ -1655,10 +1655,16 @@ spec:
                           type: object
                         liveness:
                           properties:
+                            failureThreshold:
+                              format: int32
+                              type: integer
                             initialDelaySeconds:
                               format: int32
                               type: integer
                             periodSeconds:
+                              format: int32
+                              type: integer
+                            successThreshold:
                               format: int32
                               type: integer
                           type: object
@@ -4874,10 +4880,16 @@ spec:
                           type: object
                         liveness:
                           properties:
+                            failureThreshold:
+                              format: int32
+                              type: integer
                             initialDelaySeconds:
                               format: int32
                               type: integer
                             periodSeconds:
+                              format: int32
+                              type: integer
+                            successThreshold:
                               format: int32
                               type: integer
                           type: object
@@ -8056,10 +8068,16 @@ spec:
                           type: object
                         liveness:
                           properties:
+                            failureThreshold:
+                              format: int32
+                              type: integer
                             initialDelaySeconds:
                               format: int32
                               type: integer
                             periodSeconds:
+                              format: int32
+                              type: integer
+                            successThreshold:
                               format: int32
                               type: integer
                           type: object

@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/streamnative/function-mesh/controllers/proto"
-	"github.com/streamnative/function-mesh/utils"
 )
 
 func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails {
@@ -94,10 +93,6 @@ func fetchClassName(function *v1alpha1.Function) string {
 }
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
-	var hInterval int32 = -1
-	if function.Spec.Pod.Liveness != nil && function.Spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
-		hInterval = function.Spec.Pod.Liveness.PeriodSeconds
-	}
 	return &GoFunctionConf{
 		FuncID:               fmt.Sprintf("${%s}-%s", EnvShardID, string(function.UID)),
 		PulsarServiceURL:     "${brokerServiceURL}",
@@ -129,7 +124,7 @@ func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 		DeadLetterTopic:             function.Spec.DeadLetterTopic,
 		UserConfig:                  getUserConfig(function.Spec.FuncConfig),
 		MetricsPort:                 int(MetricsPort.ContainerPort),
-		ExpectedHealthCheckInterval: hInterval,
+		ExpectedHealthCheckInterval: -1, // TurnOff BuiltIn HealthCheck to avoid instance exit
 	}
 }
 
