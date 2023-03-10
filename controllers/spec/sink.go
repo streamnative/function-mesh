@@ -139,10 +139,6 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
-	var healthCheckInterval int32 = -1
-	if spec.Pod.Liveness != nil && spec.Pod.Liveness.PeriodSeconds > 0 {
-		healthCheckInterval = spec.Pod.Liveness.PeriodSeconds
-	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
 		generateJavaLogConfigCommand(sink.Spec.Java),
@@ -150,7 +146,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),
 		spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
-		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, healthCheckInterval, nil)
+		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil)
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {

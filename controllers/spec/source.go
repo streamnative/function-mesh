@@ -134,10 +134,6 @@ func makeSourceVolumeMounts(source *v1alpha1.Source) []corev1.VolumeMount {
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
 	spec := source.Spec
-	var healthCheckInterval int32 = -1
-	if spec.Pod.Liveness != nil && spec.Pod.Liveness.PeriodSeconds > 0 {
-		healthCheckInterval = spec.Pod.Liveness.PeriodSeconds
-	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
 		generateJavaLogConfigCommand(source.Spec.Java),
@@ -145,7 +141,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		generateSourceDetailsInJSON(source),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(source.UID),
 		spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
-		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, healthCheckInterval, nil)
+		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil)
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {
