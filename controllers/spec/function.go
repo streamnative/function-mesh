@@ -19,7 +19,6 @@ package spec
 
 import (
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -143,7 +142,7 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	spec := function.Spec
 	var healthCheckInterval int32 = -1
-	if spec.Pod.Liveness != nil && spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
+	if spec.Pod.Liveness != nil && spec.Pod.Liveness.PeriodSeconds > 0 {
 		healthCheckInterval = spec.Pod.Liveness.PeriodSeconds
 	}
 

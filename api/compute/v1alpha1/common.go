@@ -639,8 +639,6 @@ type VPASpec struct {
 }
 
 type Liveness struct {
-	// only enable health check after ensure the runner image has `grpcurl` installed into `/pulsar/bin` dir
-	// and has the `InstanceCommunication.proto` in the `/pulsar/conf` dir
 	// +kubebuilder:validation:Optional
 	PeriodSeconds int32 `json:"periodSeconds,omitempty"`
 

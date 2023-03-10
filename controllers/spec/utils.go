@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/streamnative/function-mesh/controllers/proto"
-	"github.com/streamnative/function-mesh/utils"
 )
 
 func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails {
@@ -95,7 +94,7 @@ func fetchClassName(function *v1alpha1.Function) string {
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 	var hInterval int32 = -1
-	if function.Spec.Pod.Liveness != nil && function.Spec.Pod.Liveness.PeriodSeconds > 0 && utils.GrpcurlPersistentVolumeClaim != "" {
+	if function.Spec.Pod.Liveness != nil && function.Spec.Pod.Liveness.PeriodSeconds > 0 {
 		hInterval = function.Spec.Pod.Liveness.PeriodSeconds
 	}
 	return &GoFunctionConf{

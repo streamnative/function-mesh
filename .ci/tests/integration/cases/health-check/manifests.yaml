@@ -10,9 +10,10 @@ spec:
   maxPendingAsyncRequests: 1000
   replicas: 1
   maxReplicas: 5
-  liveness:
-    initialDelaySeconds: 10
-    periodSeconds: 10
+  pod:
+    liveness:
+      initialDelaySeconds: 10
+      periodSeconds: 10
   logTopic: persistent://public/default/logging-function-logs
   input:
     topics:
