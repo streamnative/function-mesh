@@ -36,7 +36,6 @@ type FunctionSpec struct {
 	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	// +kubebuilder:validation:Minimum=0
-	// +kubebuilder:default=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:default=1
