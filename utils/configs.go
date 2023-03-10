@@ -19,4 +19,3 @@
 package utils
 
 var EnableInitContainers = false
-var GrpcurlPersistentVolumeClaim = ""

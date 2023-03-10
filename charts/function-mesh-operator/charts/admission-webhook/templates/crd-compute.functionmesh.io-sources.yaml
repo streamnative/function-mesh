@@ -168,7 +168,7 @@ spec:
                 minReplicas:
                   default: 1
                   format: int32
-                  minimum: 1
+                  minimum: 0
                   type: integer
                 name:
                   type: string
@@ -1594,10 +1594,16 @@ spec:
                       type: object
                     liveness:
                       properties:
+                        failureThreshold:
+                          format: int32
+                          type: integer
                         initialDelaySeconds:
                           format: int32
                           type: integer
                         periodSeconds:
+                          format: int32
+                          type: integer
+                        successThreshold:
                           format: int32
                           type: integer
                       type: object
@@ -3133,7 +3139,7 @@ spec:
                 replicas:
                   default: 1
                   format: int32
-                  minimum: 1
+                  minimum: 0
                   type: integer
                 resources:
                   properties:
