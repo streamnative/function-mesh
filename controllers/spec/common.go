@@ -415,7 +415,6 @@ func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: "/healthz",
 				Port: intstr.FromInt(int(MetricsPort.ContainerPort)),
-				Host: "localhost",
 			},
 		},
 		InitialDelaySeconds: initialDelay,

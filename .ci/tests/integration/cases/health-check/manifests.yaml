@@ -12,7 +12,7 @@ spec:
   maxReplicas: 5
   pod:
     liveness:
-      initialDelaySeconds: 10
+      initialDelaySeconds: 30
       periodSeconds: 10
   logTopic: persistent://public/default/logging-function-logs
   input:
