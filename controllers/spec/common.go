@@ -27,15 +27,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"github.com/streamnative/function-mesh/controllers/proto"
-	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/proto"
+	"github.com/streamnative/function-mesh/utils"
 )
 
 const (
@@ -185,7 +186,7 @@ formatter=formatter
 args=(sys.stdout,)
 
 [formatter_formatter]
-format=[%(asctime)s] [%(levelname)s] aa %(filename)s: %(message)s
+format=[%(asctime)s] [%(levelname)s] %(filename)s: %(message)s
 datefmt=%Y-%m-%d %H:%M:%S %z`
 )
 
@@ -241,7 +242,8 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 	container *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, pulsar v1alpha1.PulsarMessaging,
 	javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
-	goRuntime *v1alpha1.GoRuntime, definedVolumeMounts []corev1.VolumeMount) *appsv1.StatefulSet {
+	goRuntime *v1alpha1.GoRuntime, definedVolumeMounts []corev1.VolumeMount,
+	volumeClaimTemplates []corev1.PersistentVolumeClaim) *appsv1.StatefulSet {
 
 	volumeMounts := generateDownloaderVolumeMountsForDownloader(javaRuntime, pythonRuntime, goRuntime)
 	var downloaderContainer *corev1.Container
@@ -304,14 +306,14 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 		},
 		ObjectMeta: *objectMeta,
 		Spec: *MakeStatefulSetSpec(replicas, container, podVolumes, labels, policy,
-			MakeHeadlessServiceName(objectMeta.Name), downloaderContainer),
+			MakeHeadlessServiceName(objectMeta.Name), downloaderContainer, volumeClaimTemplates),
 	}
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy,
-	serviceName string, downloaderContainer *corev1.Container) *appsv1.StatefulSetSpec {
-	return &appsv1.StatefulSetSpec{
+	serviceName string, downloaderContainer *corev1.Container, volumeClaimTemplates []corev1.PersistentVolumeClaim) *appsv1.StatefulSetSpec {
+	spec := &appsv1.StatefulSetSpec{
 		Replicas: replicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: labels,
@@ -323,6 +325,10 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 		},
 		ServiceName: serviceName,
 	}
+	if volumeClaimTemplates != nil && len(volumeClaimTemplates) > 0 {
+		spec.VolumeClaimTemplates = volumeClaimTemplates
+	}
+	return spec
 }
 
 func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,

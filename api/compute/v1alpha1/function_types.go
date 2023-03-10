@@ -92,6 +92,9 @@ type FunctionSpec struct {
 
 	// +kubebuilder:validation:Optional
 	StateConfig *Stateful `json:"statefulConfig,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 }
 
 // FunctionStatus defines the observed state of Function
