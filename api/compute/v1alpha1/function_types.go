@@ -37,6 +37,11 @@ type FunctionSpec struct {
 	ClusterName string `json:"clusterName,omitempty"`
 	// +kubebuilder:validation:Minimum=0
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Whether show the precise parallelism, if true, the `Parallelism` will be equal to the `Replicas`,
+	// in such case, update the `Replicas` will cause all pods being recreated since the command of pod is updated.
+	// else, the `Parallelism` will be 1, default to false.
+	// It just affects the result of context.getNumInstances, there will be only 1 process and 1 thread in each pod in any cases.
+	ShowPreciseParallelism bool `json:"showPreciseParallelism,omitempty"`
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:default=1
 	MinReplicas *int32 `json:"minReplicas,omitempty"`

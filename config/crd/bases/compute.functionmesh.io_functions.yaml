@@ -3249,6 +3249,8 @@ spec:
                       type: string
                   type: object
                 type: object
+              showPreciseParallelism:
+                type: boolean
               statefulConfig:
                 properties:
                   pulsar:

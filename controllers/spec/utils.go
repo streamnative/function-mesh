@@ -51,7 +51,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		UserConfig:           getUserConfig(generateFunctionConfig(function)),
 		Runtime:              runtime,
 		AutoAck:              getBoolFromPtrOrDefault(function.Spec.AutoAck, true),
-		Parallelism:          getInt32FromPtrOrDefault(function.Spec.Replicas, 1),
+		Parallelism:          getParallelism(function.Spec.Replicas, function.Spec.ShowPreciseParallelism),
 		Source:               generateFunctionInputSpec(function),
 		Sink:                 generateFunctionOutputSpec(function),
 		Resources:            generateResource(function.Spec.Resources.Requests),
@@ -108,7 +108,7 @@ func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 		//SecretsMap:                  marshalSecretsMap(function.Spec.SecretsMap),
 		Runtime:                     int32(proto.FunctionDetails_GO),
 		AutoACK:                     getBoolFromPtrOrDefault(function.Spec.AutoAck, true),
-		Parallelism:                 getInt32FromPtrOrDefault(function.Spec.Replicas, 1),
+		Parallelism:                 getParallelism(function.Spec.Replicas, function.Spec.ShowPreciseParallelism),
 		TimeoutMs:                   uint64(function.Spec.Timeout),
 		SubscriptionName:            function.Spec.SubscriptionName,
 		CleanupSubscription:         function.Spec.CleanupSubscription,
@@ -245,7 +245,7 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 		UserConfig:           getUserConfig(source.Spec.SourceConfig),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              true,
-		Parallelism:          getInt32FromPtrOrDefault(source.Spec.Replicas, 1),
+		Parallelism:          getParallelism(source.Spec.Replicas, source.Spec.ShowPreciseParallelism),
 		Source:               generateSourceInputSpec(source),
 		Sink:                 generateSourceOutputSpec(source),
 		Resources:            generateResource(source.Spec.Resources.Requests),
@@ -315,7 +315,7 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		ProcessingGuarantees: convertProcessingGuarantee(sink.Spec.ProcessingGuarantee),
 		Runtime:              proto.FunctionDetails_JAVA,
 		AutoAck:              getBoolFromPtrOrDefault(sink.Spec.AutoAck, true),
-		Parallelism:          getInt32FromPtrOrDefault(sink.Spec.Replicas, 1),
+		Parallelism:          getParallelism(sink.Spec.Replicas, sink.Spec.ShowPreciseParallelism),
 		Source:               generateSinkInputSpec(sink),
 		Sink:                 generateSinkOutputSpec(sink),
 		Resources:            generateResource(sink.Spec.Resources.Requests),
@@ -480,4 +480,11 @@ func getEnvOrDefault(key, fallback string) string {
 		return env
 	}
 	return fallback
+}
+
+func getParallelism(replicas *int32, showPreciseParallelism bool) int32 {
+	if showPreciseParallelism {
+		return getInt32FromPtrOrDefault(replicas, 1)
+	}
+	return 1
 }
