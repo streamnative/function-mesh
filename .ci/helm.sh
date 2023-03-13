@@ -476,3 +476,24 @@ function ci::verify_function_with_encryption() {
     fi
     return 1
 }
+
+function ci::verify_function_with_scale_down_to_zero() {
+    function_name=$1
+
+    kubectl patch functions -n ${NAMESPACE} ${function_name} -p '{"spec": {"replicas": 0}}'
+    num=1
+    while [[ ${num} -ne 0 ]]; do
+        sleep 5
+        num=$(kubectl get pods -n ${NAMESPACE} -l compute.functionmesh.io/name="${function_name}" --no-headers|wc -l)
+    done
+}
+
+function ci::verify_function_with_multi_pvs() {
+    function_name=$1
+
+    num=0
+    while [[ ${num} -ne 2 ]]; do
+        sleep 5
+        num=$(kubectl get pvc -n ${NAMESPACE} -l compute.functionmesh.io/name="${function_name}" --no-headers|wc -l)
+    done
+}
