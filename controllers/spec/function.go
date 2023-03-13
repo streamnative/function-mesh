@@ -18,13 +18,14 @@
 package spec
 
 import (
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 )
 
 // log is for logging in this package.
@@ -57,7 +58,7 @@ func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 	return MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		MakeFunctionContainer(function), makeFunctionVolumes(function), makeFunctionLabels(function), function.Spec.Pod,
 		*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang,
-		function.Spec.VolumeMounts)
+		function.Spec.VolumeMounts, function.Spec.VolumeClaimTemplates)
 }
 
 func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {

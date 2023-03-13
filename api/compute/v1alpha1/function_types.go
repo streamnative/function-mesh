@@ -36,7 +36,6 @@ type FunctionSpec struct {
 	Namespace   string `json:"namespace,omitempty"`
 	ClusterName string `json:"clusterName,omitempty"`
 	// +kubebuilder:validation:Minimum=0
-	// +kubebuilder:default=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:default=1
@@ -92,6 +91,9 @@ type FunctionSpec struct {
 
 	// +kubebuilder:validation:Optional
 	StateConfig *Stateful `json:"statefulConfig,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 }
 
 // FunctionStatus defines the observed state of Function
