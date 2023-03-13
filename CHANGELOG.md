@@ -1,3 +1,13 @@
+# Function Mesh v0.11.2 Release Notes
+
+## v0.11.2 What's New
+
+* [Controller] Set pending_async_requests arg when provided ([#599](https://github.com/streamnative/function-mesh/pull/599))
+* [Controller] Fix liveness probe ([#604](https://github.com/streamnative/function-mesh/pull/604))
+* [Controller] Support for configuring multi PVs for Function ([#605](https://github.com/streamnative/function-mesh/pull/605))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Acherry-pick%2F0.11.2+is%3Aclosed).
+
 # Function Mesh v0.11.1 Release Notes
 
 ## v0.11.1 What's New
