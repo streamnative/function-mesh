@@ -53,7 +53,7 @@ func (webhook *SinkWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ admission.CustomDefaulter = &SinkWebhook{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements admission.CustomDefaulter so a webhook will be registered for the type
 func (webhook *SinkWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
@@ -131,7 +131,7 @@ func (webhook *SinkWebhook) Default(ctx context.Context, obj runtime.Object) err
 
 var _ admission.CustomValidator = &SinkWebhook{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements admission.CustomValidator so a webhook will be registered for the type
 func (webhook *SinkWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
@@ -235,7 +235,7 @@ func (webhook *SinkWebhook) ValidateCreate(ctx context.Context, obj runtime.Obje
 	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "SinkWebhook"}, r.Name, allErrs)
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements admission.CustomValidator so a webhook will be registered for the type
 func (webhook *SinkWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
@@ -252,7 +252,7 @@ func (webhook *SinkWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj r
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements admission.CustomValidator so a webhook will be registered for the type
 func (webhook *SinkWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {

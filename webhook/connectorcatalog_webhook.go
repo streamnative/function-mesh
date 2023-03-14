@@ -51,7 +51,7 @@ func (webhook *ConnectorWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error
 
 var _ admission.CustomDefaulter = &ConnectorWebhook{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements admission.CustomDefaulter so a webhook will be registered for the type
 func (webhook *ConnectorWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
@@ -77,7 +77,7 @@ func (webhook *ConnectorWebhook) Default(ctx context.Context, obj runtime.Object
 
 var _ admission.CustomValidator = &ConnectorWebhook{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements admission.CustomValidator so a webhook will be registered for the type
 func (webhook *ConnectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
@@ -133,7 +133,7 @@ func (webhook *ConnectorWebhook) ValidateCreate(ctx context.Context, obj runtime
 	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "ConnectorCatalog"}, r.Name, allErrs)
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements admission.CustomValidator so a webhook will be registered for the type
 func (webhook *ConnectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
@@ -150,7 +150,7 @@ func (webhook *ConnectorWebhook) ValidateUpdate(ctx context.Context, oldObj, new
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements admission.CustomValidator so a webhook will be registered for the type
 func (webhook *ConnectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {

@@ -53,7 +53,7 @@ func (webhook *SourceWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ admission.CustomDefaulter = &SourceWebhook{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements admission.CustomDefaulter so a webhook will be registered for the type
 func (webhook *SourceWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
@@ -141,7 +141,7 @@ func (webhook *SourceWebhook) Default(ctx context.Context, obj runtime.Object) e
 
 var _ admission.CustomValidator = &SourceWebhook{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements admission.CustomValidator so a webhook will be registered for the type
 func (webhook *SourceWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
@@ -225,7 +225,7 @@ func (webhook *SourceWebhook) ValidateCreate(ctx context.Context, obj runtime.Ob
 	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "SourceWebhook"}, r.Name, allErrs)
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements admission.CustomValidator so a webhook will be registered for the type
 func (webhook *SourceWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
@@ -242,7 +242,7 @@ func (webhook *SourceWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements admission.CustomValidator so a webhook will be registered for the type
 func (webhook *SourceWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) error {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
