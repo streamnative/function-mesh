@@ -23,7 +23,6 @@ spec:
       cpu: 50m
       memory: 1G
     limits:
-      cpu: "0.2"
       memory: 1.1G
   # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
   secretsMap:

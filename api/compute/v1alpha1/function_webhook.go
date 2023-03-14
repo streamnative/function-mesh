@@ -99,7 +99,7 @@ func (r *Function) Default() {
 	}
 
 	if r.Spec.Resources.Requests != nil {
-		if r.Spec.Resources.Requests.Cpu() == nil {
+		if r.Spec.Resources.Requests.Cpu() == nil || r.Spec.Resources.Requests.Cpu().IsZero() {
 			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
 		}
 

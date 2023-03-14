@@ -390,21 +390,24 @@ const (
 )
 
 func validResourceRequirement(requirements corev1.ResourceRequirements) bool {
+	if requirements.Limits.Cpu().Sign() == 0 {
+		return validResource(requirements.Requests) && validResource(requirements.Limits) &&
+			requirements.Requests.Memory().Cmp(*requirements.Limits.Memory()) <= 0
+	}
 	return validResource(requirements.Requests) && validResource(requirements.Limits) &&
 		requirements.Requests.Memory().Cmp(*requirements.Limits.Memory()) <= 0 &&
 		requirements.Requests.Cpu().Cmp(*requirements.Limits.Cpu()) <= 0
 }
 
 func validResource(resources corev1.ResourceList) bool {
-	// cpu & memory > 0 and storage >= 0
-	return resources.Cpu().Sign() == 1 &&
+	// memory > 0 and cpu & storage >= 0
+	return resources.Cpu().Sign() >= 0 &&
 		resources.Memory().Sign() == 1 &&
 		resources.Storage().Sign() >= 0
 }
 
 func paddingResourceLimit(requirement *corev1.ResourceRequirements) {
 	// TODO: better padding calculation
-	requirement.Limits.Cpu().Set(requirement.Requests.Cpu().Value())
 	requirement.Limits.Memory().Set(requirement.Requests.Memory().Value())
 	requirement.Limits.Storage().Set(requirement.Requests.Storage().Value())
 }
