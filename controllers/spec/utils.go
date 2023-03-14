@@ -41,6 +41,12 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 	} else if function.Spec.Python != nil {
 		runtime = proto.FunctionDetails_PYTHON
 	}
+	deadLetterTopic := function.Spec.DeadLetterTopic
+	if function.Spec.DeadLetterTopic == "" && function.Spec.MaxMessageRetry > 0 && (function.Spec.SubscriptionName == "" || strings.Contains(function.Spec.SubscriptionName, "\\")) {
+		// otherwise the auto generated DeadLetterTopic($TOPIC-$SUBNAME-DLQ) will be invalid
+		// like: persistent://public/default/input-public/default/test-function-DLQ
+		deadLetterTopic = fmt.Sprintf("%s-%s-%s-DLQ", function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name)
+	}
 	fd := &proto.FunctionDetails{
 		Tenant:               function.Spec.Tenant,
 		Namespace:            function.Spec.Namespace,
@@ -56,7 +62,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		Sink:                 generateFunctionOutputSpec(function),
 		Resources:            generateResource(function.Spec.Resources.Requests),
 		PackageUrl:           "",
-		RetryDetails:         generateRetryDetails(function.Spec.MaxMessageRetry, function.Spec.DeadLetterTopic),
+		RetryDetails:         generateRetryDetails(function.Spec.MaxMessageRetry, deadLetterTopic),
 		RuntimeFlags:         function.Spec.RuntimeFlags,
 		ComponentType:        proto.FunctionDetails_FUNCTION,
 		CustomRuntimeOptions: "",
@@ -93,6 +99,12 @@ func fetchClassName(function *v1alpha1.Function) string {
 }
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
+	deadLetterTopic := function.Spec.DeadLetterTopic
+	if function.Spec.DeadLetterTopic == "" && function.Spec.MaxMessageRetry > 0 && (function.Spec.SubscriptionName == "" || strings.Contains(function.Spec.SubscriptionName, "\\")) {
+		// otherwise the auto generated DeadLetterTopic($TOPIC-$SUBNAME-DLQ) will be invalid
+		// like: persistent://public/default/input-public/default/test-function-DLQ
+		deadLetterTopic = fmt.Sprintf("%s-%s-%s-DLQ", function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name)
+	}
 	return &GoFunctionConf{
 		FuncID:               fmt.Sprintf("${%s}-%s", EnvShardID, string(function.UID)),
 		PulsarServiceURL:     "${brokerServiceURL}",
@@ -121,7 +133,7 @@ func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 		RAM:                         function.Spec.Resources.Requests.Memory().Value(),
 		Disk:                        function.Spec.Resources.Requests.Storage().Value(),
 		MaxMessageRetries:           function.Spec.MaxMessageRetry,
-		DeadLetterTopic:             function.Spec.DeadLetterTopic,
+		DeadLetterTopic:             deadLetterTopic,
 		UserConfig:                  getUserConfig(function.Spec.FuncConfig),
 		MetricsPort:                 int(MetricsPort.ContainerPort),
 		ExpectedHealthCheckInterval: -1, // TurnOff BuiltIn HealthCheck to avoid instance exit
@@ -307,6 +319,12 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 }
 
 func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
+	deadLetterTopic := sink.Spec.DeadLetterTopic
+	if sink.Spec.DeadLetterTopic == "" && sink.Spec.MaxMessageRetry > 0 && (sink.Spec.SubscriptionName == "" || strings.Contains(sink.Spec.SubscriptionName, "\\")) {
+		// otherwise the auto generated DeadLetterTopic($TOPIC-$SUBNAME-DLQ) will be invalid
+		// like: persistent://public/default/input-public/default/test-function-DLQ
+		deadLetterTopic = fmt.Sprintf("%s-%s-%s-DLQ", sink.Spec.Tenant, sink.Spec.Namespace, sink.Spec.Name)
+	}
 	fd := &proto.FunctionDetails{
 		Tenant:               sink.Spec.Tenant,
 		Namespace:            sink.Spec.Namespace,
@@ -319,7 +337,7 @@ func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
 		Source:               generateSinkInputSpec(sink),
 		Sink:                 generateSinkOutputSpec(sink),
 		Resources:            generateResource(sink.Spec.Resources.Requests),
-		RetryDetails:         generateRetryDetails(sink.Spec.MaxMessageRetry, sink.Spec.DeadLetterTopic),
+		RetryDetails:         generateRetryDetails(sink.Spec.MaxMessageRetry, deadLetterTopic),
 		RuntimeFlags:         sink.Spec.RuntimeFlags,
 		ComponentType:        proto.FunctionDetails_SINK,
 		RetainOrdering:       sink.Spec.RetainOrdering,
