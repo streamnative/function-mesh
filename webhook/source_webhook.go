@@ -15,10 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+package webhook
 
 import (
 	"fmt"
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -33,7 +34,11 @@ import (
 // log is for logging in this package.
 var sourcelog = logf.Log.WithName("source-resource")
 
-func (r *Source) SetupWebhookWithManager(mgr ctrl.Manager) error {
+type SourceWebhook struct {
+	v1alpha1.Source
+}
+
+func (r *SourceWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -43,10 +48,10 @@ func (r *Source) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-source,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,verbs=create;update,versions=v1alpha1,name=msource.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Defaulter = &Source{}
+var _ webhook.Defaulter = &SourceWebhook{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Source) Default() {
+func (r *SourceWebhook) Default() {
 	sourcelog.Info("default", "name", r.Name)
 
 	if !(r.Spec.Replicas != nil && r.Spec.MinReplicas != nil) {
@@ -65,7 +70,7 @@ func (r *Source) Default() {
 	}
 
 	if r.Spec.ProcessingGuarantee == "" {
-		r.Spec.ProcessingGuarantee = AtleastOnce
+		r.Spec.ProcessingGuarantee = v1alpha1.AtleastOnce
 	}
 
 	if r.Spec.Name == "" {
@@ -73,24 +78,24 @@ func (r *Source) Default() {
 	}
 
 	if r.Spec.ClusterName == "" {
-		r.Spec.ClusterName = DefaultCluster
+		r.Spec.ClusterName = v1alpha1.DefaultCluster
 	}
 
 	if r.Spec.Tenant == "" {
-		r.Spec.Tenant = DefaultTenant
+		r.Spec.Tenant = v1alpha1.DefaultTenant
 	}
 
 	if r.Spec.Namespace == "" {
-		r.Spec.Namespace = DefaultNamespace
+		r.Spec.Namespace = v1alpha1.DefaultNamespace
 	}
 
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
-			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
+			r.Spec.Resources.Requests.Cpu().Set(v1alpha1.DefaultResourceCPU)
 		}
 
 		if r.Spec.Resources.Requests.Memory() == nil {
-			r.Spec.Resources.Requests.Memory().Set(DefaultResourceMemory)
+			r.Spec.Resources.Requests.Memory().Set(v1alpha1.DefaultResourceMemory)
 		}
 	}
 
@@ -100,7 +105,7 @@ func (r *Source) Default() {
 	}
 
 	if r.Spec.Output.ProducerConf == nil {
-		producerConf := &ProducerConfig{
+		producerConf := &v1alpha1.ProducerConfig{
 			MaxPendingMessages:                 1000,
 			MaxPendingMessagesAcrossPartitions: 1000,
 			UseThreadLocalProducers:            true,
@@ -121,10 +126,10 @@ func (r *Source) Default() {
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-source,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,versions=v1alpha1,name=vsource.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Validator = &Source{}
+var _ webhook.Validator = &SourceWebhook{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Source) ValidateCreate() error {
+func (r *SourceWebhook) ValidateCreate() error {
 	sourcelog.Info("validate create source", "name", r.Name)
 	var allErrs field.ErrorList
 	var fieldErr *field.Error
@@ -195,11 +200,11 @@ func (r *Source) ValidateCreate() error {
 		return nil
 	}
 
-	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "Source"}, r.Name, allErrs)
+	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "SourceWebhook"}, r.Name, allErrs)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Source) ValidateUpdate(old runtime.Object) error {
+func (r *SourceWebhook) ValidateUpdate(old runtime.Object) error {
 	sourcelog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -207,7 +212,7 @@ func (r *Source) ValidateUpdate(old runtime.Object) error {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Source) ValidateDelete() error {
+func (r *SourceWebhook) ValidateDelete() error {
 	sourcelog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.

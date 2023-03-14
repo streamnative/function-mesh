@@ -15,9 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+package webhook
 
 import (
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -30,7 +31,11 @@ import (
 // log is for logging in this package.
 var connectorcataloglog = logf.Log.WithName("connectorcatalog-resource")
 
-func (r *ConnectorCatalog) SetupWebhookWithManager(mgr ctrl.Manager) error {
+type ConnectorWebhook struct {
+	v1alpha1.ConnectorCatalog
+}
+
+func (r *ConnectorWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -40,10 +45,10 @@ func (r *ConnectorCatalog) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-connectorcatalog,mutating=true,failurePolicy=fail,sideEffects=None,groups=compute.functionmesh.io,resources=connectorcatalogs,verbs=create;update,versions=v1alpha1,name=mconnectorcatalog.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &ConnectorCatalog{}
+var _ webhook.Defaulter = &ConnectorWebhook{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *ConnectorCatalog) Default() {
+func (r *ConnectorWebhook) Default() {
 	connectorcataloglog.Info("default", "name", r.Name)
 
 	for _, d := range r.Spec.ConnectorDefinitions {
@@ -56,10 +61,10 @@ func (r *ConnectorCatalog) Default() {
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-compute-functionmesh-io-v1alpha1-connectorcatalog,mutating=false,failurePolicy=fail,sideEffects=None,groups=compute.functionmesh.io,resources=connectorcatalogs,verbs=create;update,versions=v1alpha1,name=vconnectorcatalog.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &ConnectorCatalog{}
+var _ webhook.Validator = &ConnectorWebhook{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *ConnectorCatalog) ValidateCreate() error {
+func (r *ConnectorWebhook) ValidateCreate() error {
 	connectorcataloglog.Info("validate create", "name", r.Name)
 	var allErrs field.ErrorList
 
@@ -106,7 +111,7 @@ func (r *ConnectorCatalog) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *ConnectorCatalog) ValidateUpdate(old runtime.Object) error {
+func (r *ConnectorWebhook) ValidateUpdate(old runtime.Object) error {
 	connectorcataloglog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -114,7 +119,7 @@ func (r *ConnectorCatalog) ValidateUpdate(old runtime.Object) error {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *ConnectorCatalog) ValidateDelete() error {
+func (r *ConnectorWebhook) ValidateDelete() error {
 	connectorcataloglog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.

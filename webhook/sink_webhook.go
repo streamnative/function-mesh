@@ -15,10 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+package webhook
 
 import (
 	"fmt"
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -33,7 +34,11 @@ import (
 // log is for logging in this package.
 var sinklog = logf.Log.WithName("sink-resource")
 
-func (r *Sink) SetupWebhookWithManager(mgr ctrl.Manager) error {
+type SinkWebhook struct {
+	v1alpha1.Sink
+}
+
+func (r *SinkWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -43,10 +48,10 @@ func (r *Sink) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-sink,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=sinks,verbs=create;update,versions=v1alpha1,name=msink.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Defaulter = &Sink{}
+var _ webhook.Defaulter = &SinkWebhook{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Sink) Default() {
+func (r *SinkWebhook) Default() {
 	sinklog.Info("default", "name", r.Name)
 
 	if !(r.Spec.Replicas != nil && r.Spec.MinReplicas != nil) {
@@ -70,7 +75,7 @@ func (r *Sink) Default() {
 	}
 
 	if r.Spec.ProcessingGuarantee == "" {
-		r.Spec.ProcessingGuarantee = AtleastOnce
+		r.Spec.ProcessingGuarantee = v1alpha1.AtleastOnce
 	}
 
 	if r.Spec.Name == "" {
@@ -78,24 +83,24 @@ func (r *Sink) Default() {
 	}
 
 	if r.Spec.ClusterName == "" {
-		r.Spec.ClusterName = DefaultCluster
+		r.Spec.ClusterName = v1alpha1.DefaultCluster
 	}
 
 	if r.Spec.Tenant == "" {
-		r.Spec.Tenant = DefaultTenant
+		r.Spec.Tenant = v1alpha1.DefaultTenant
 	}
 
 	if r.Spec.Namespace == "" {
-		r.Spec.Namespace = DefaultNamespace
+		r.Spec.Namespace = v1alpha1.DefaultNamespace
 	}
 
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
-			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
+			r.Spec.Resources.Requests.Cpu().Set(v1alpha1.DefaultResourceCPU)
 		}
 
 		if r.Spec.Resources.Requests.Memory() == nil {
-			r.Spec.Resources.Requests.Memory().Set(DefaultResourceMemory)
+			r.Spec.Resources.Requests.Memory().Set(v1alpha1.DefaultResourceMemory)
 		}
 	}
 
@@ -111,10 +116,10 @@ func (r *Sink) Default() {
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-sink,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=sinks,versions=v1alpha1,name=vsink.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Validator = &Sink{}
+var _ webhook.Validator = &SinkWebhook{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Sink) ValidateCreate() error {
+func (r *SinkWebhook) ValidateCreate() error {
 	sinklog.Info("validate create sink", "name", r.Name)
 	var allErrs field.ErrorList
 	var fieldErr *field.Error
@@ -205,11 +210,11 @@ func (r *Sink) ValidateCreate() error {
 		return nil
 	}
 
-	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "Sink"}, r.Name, allErrs)
+	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "SinkWebhook"}, r.Name, allErrs)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Sink) ValidateUpdate(old runtime.Object) error {
+func (r *SinkWebhook) ValidateUpdate(old runtime.Object) error {
 	sinklog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -217,7 +222,7 @@ func (r *Sink) ValidateUpdate(old runtime.Object) error {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Sink) ValidateDelete() error {
+func (r *SinkWebhook) ValidateDelete() error {
 	sinklog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.

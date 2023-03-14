@@ -15,11 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+package webhook
 
 import (
 	"fmt"
 
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -33,7 +34,11 @@ import (
 // log is for logging in this package.
 var functionlog = logf.Log.WithName("function-resource")
 
-func (r *Function) SetupWebhookWithManager(mgr ctrl.Manager) error {
+type FunctionWebhook struct {
+	v1alpha1.Function
+}
+
+func (r *FunctionWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -42,10 +47,10 @@ func (r *Function) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-function,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=functions,verbs=create;update,versions=v1alpha1,name=mfunction.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Defaulter = &Function{}
+var _ webhook.Defaulter = &FunctionWebhook{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Function) Default() {
+func (r *FunctionWebhook) Default() {
 	functionlog.Info("default", "name", r.Name)
 
 	if !(r.Spec.Replicas != nil && r.Spec.MinReplicas != nil) {
@@ -69,7 +74,7 @@ func (r *Function) Default() {
 	}
 
 	if r.Spec.ProcessingGuarantee == "" {
-		r.Spec.ProcessingGuarantee = AtleastOnce
+		r.Spec.ProcessingGuarantee = v1alpha1.AtleastOnce
 	}
 
 	if r.Spec.Name == "" {
@@ -77,15 +82,15 @@ func (r *Function) Default() {
 	}
 
 	if r.Spec.ClusterName == "" {
-		r.Spec.ClusterName = DefaultCluster
+		r.Spec.ClusterName = v1alpha1.DefaultCluster
 	}
 
 	if r.Spec.Tenant == "" {
-		r.Spec.Tenant = DefaultTenant
+		r.Spec.Tenant = v1alpha1.DefaultTenant
 	}
 
 	if r.Spec.Namespace == "" {
-		r.Spec.Namespace = DefaultNamespace
+		r.Spec.Namespace = v1alpha1.DefaultNamespace
 	}
 
 	if r.Spec.MaxPendingAsyncRequests == nil {
@@ -100,11 +105,11 @@ func (r *Function) Default() {
 
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil || r.Spec.Resources.Requests.Cpu().IsZero() {
-			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
+			r.Spec.Resources.Requests.Cpu().Set(v1alpha1.DefaultResourceCPU)
 		}
 
 		if r.Spec.Resources.Requests.Memory() == nil {
-			r.Spec.Resources.Requests.Memory().Set(DefaultResourceMemory)
+			r.Spec.Resources.Requests.Memory().Set(v1alpha1.DefaultResourceMemory)
 		}
 	}
 
@@ -140,10 +145,10 @@ func (r *Function) Default() {
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-function,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=functions,versions=v1alpha1,name=vfunction.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Validator = &Function{}
+var _ webhook.Validator = &FunctionWebhook{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Function) ValidateCreate() error {
+func (r *FunctionWebhook) ValidateCreate() error {
 	functionlog.Info("validate create function", "name", r.Name)
 	var allErrs field.ErrorList
 	var fieldErr *field.Error
@@ -285,11 +290,11 @@ func (r *Function) ValidateCreate() error {
 		return nil
 	}
 
-	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "Function"}, r.Name, allErrs)
+	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "FunctionWebhook"}, r.Name, allErrs)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Function) ValidateUpdate(old runtime.Object) error {
+func (r *FunctionWebhook) ValidateUpdate(old runtime.Object) error {
 	functionlog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -297,7 +302,7 @@ func (r *Function) ValidateUpdate(old runtime.Object) error {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Function) ValidateDelete() error {
+func (r *FunctionWebhook) ValidateDelete() error {
 	functionlog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.

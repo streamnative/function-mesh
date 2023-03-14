@@ -19,6 +19,7 @@ package main
 
 import (
 	"flag"
+	"github.com/streamnative/function-mesh/webhook"
 	"net/http"
 	"os"
 	"strconv"
@@ -147,39 +148,39 @@ func main() {
 	}
 	if err = (&controllers.SourceReconciler{
 		Client:     mgr.GetClient(),
-		Log:        ctrl.Log.WithName("controllers").WithName("Source"),
+		Log:        ctrl.Log.WithName("controllers").WithName("SourceWebhook"),
 		Scheme:     mgr.GetScheme(),
 		WatchFlags: &watchFlags,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Source")
+		setupLog.Error(err, "unable to create controller", "controller", "SourceWebhook")
 		os.Exit(1)
 	}
 	if err = (&controllers.SinkReconciler{
 		Client:     mgr.GetClient(),
-		Log:        ctrl.Log.WithName("controllers").WithName("Sink"),
+		Log:        ctrl.Log.WithName("controllers").WithName("SinkWebhook"),
 		Scheme:     mgr.GetScheme(),
 		WatchFlags: &watchFlags,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Sink")
+		setupLog.Error(err, "unable to create controller", "controller", "SinkWebhook")
 		os.Exit(1)
 	}
 
 	// enable the webhook service by default
 	// Disable function-mesh webhook with `ENABLE_WEBHOOKS=false` when we run locally.
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&computev1alpha1.Function{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&webhook.FunctionWebhook{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Function")
 			os.Exit(1)
 		}
-		if err = (&computev1alpha1.Source{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Source")
+		if err = (&webhook.SourceWebhook{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "SourceWebhook")
 			os.Exit(1)
 		}
-		if err = (&computev1alpha1.Sink{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Sink")
+		if err = (&webhook.SinkWebhook{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "SinkWebhook")
 			os.Exit(1)
 		}
-		if err = (&computev1alpha1.ConnectorCatalog{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&webhook.ConnectorWebhook{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "ConnectorCatalog")
 			os.Exit(1)
 		}
