@@ -19,7 +19,6 @@ package main
 
 import (
 	"flag"
-	"github.com/streamnative/function-mesh/webhook"
 	"net/http"
 	"os"
 	"strconv"
@@ -29,6 +28,7 @@ import (
 	"github.com/streamnative/function-mesh/controllers"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	"github.com/streamnative/function-mesh/utils"
+	"github.com/streamnative/function-mesh/webhook"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
@@ -148,20 +148,20 @@ func main() {
 	}
 	if err = (&controllers.SourceReconciler{
 		Client:     mgr.GetClient(),
-		Log:        ctrl.Log.WithName("controllers").WithName("SourceWebhook"),
+		Log:        ctrl.Log.WithName("controllers").WithName("Source"),
 		Scheme:     mgr.GetScheme(),
 		WatchFlags: &watchFlags,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SourceWebhook")
+		setupLog.Error(err, "unable to create controller", "controller", "Source")
 		os.Exit(1)
 	}
 	if err = (&controllers.SinkReconciler{
 		Client:     mgr.GetClient(),
-		Log:        ctrl.Log.WithName("controllers").WithName("SinkWebhook"),
+		Log:        ctrl.Log.WithName("controllers").WithName("Sink"),
 		Scheme:     mgr.GetScheme(),
 		WatchFlags: &watchFlags,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SinkWebhook")
+		setupLog.Error(err, "unable to create controller", "controller", "Sink")
 		os.Exit(1)
 	}
 
@@ -173,11 +173,11 @@ func main() {
 			os.Exit(1)
 		}
 		if err = (&webhook.SourceWebhook{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "SourceWebhook")
+			setupLog.Error(err, "unable to create webhook", "webhook", "Source")
 			os.Exit(1)
 		}
 		if err = (&webhook.SinkWebhook{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "SinkWebhook")
+			setupLog.Error(err, "unable to create webhook", "webhook", "Sink")
 			os.Exit(1)
 		}
 		if err = (&webhook.ConnectorWebhook{}).SetupWebhookWithManager(mgr); err != nil {

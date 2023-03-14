@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -30,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
@@ -95,24 +95,24 @@ func (webhook *SinkWebhook) Default(ctx context.Context, obj runtime.Object) err
 	}
 
 	if r.Spec.ClusterName == "" {
-		r.Spec.ClusterName = v1alpha1.DefaultCluster
+		r.Spec.ClusterName = DefaultCluster
 	}
 
 	if r.Spec.Tenant == "" {
-		r.Spec.Tenant = v1alpha1.DefaultTenant
+		r.Spec.Tenant = DefaultTenant
 	}
 
 	if r.Spec.Namespace == "" {
-		r.Spec.Namespace = v1alpha1.DefaultNamespace
+		r.Spec.Namespace = DefaultNamespace
 	}
 
 	if r.Spec.Resources.Requests != nil {
 		if r.Spec.Resources.Requests.Cpu() == nil {
-			r.Spec.Resources.Requests.Cpu().Set(v1alpha1.DefaultResourceCPU)
+			r.Spec.Resources.Requests.Cpu().Set(DefaultResourceCPU)
 		}
 
 		if r.Spec.Resources.Requests.Memory() == nil {
-			r.Spec.Resources.Requests.Memory().Set(v1alpha1.DefaultResourceMemory)
+			r.Spec.Resources.Requests.Memory().Set(DefaultResourceMemory)
 		}
 	}
 

@@ -40,6 +40,13 @@ const (
 	PackageURLFunction string = "function://"
 	PackageURLSource   string = "source://"
 	PackageURLSink     string = "sink://"
+
+	DefaultTenant    string = "public"
+	DefaultNamespace string = "default"
+	DefaultCluster   string = "kubernetes"
+
+	DefaultResourceCPU    int64 = 1
+	DefaultResourceMemory int64 = 1073741824
 )
 
 func validPackageLocation(packageLocation string) error {

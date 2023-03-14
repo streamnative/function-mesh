@@ -376,13 +376,6 @@ const (
 	AtleastOnce     ProcessGuarantee = "atleast_once"
 	AtmostOnce      ProcessGuarantee = "atmost_once"
 	EffectivelyOnce ProcessGuarantee = "effectively_once"
-
-	DefaultTenant    string = "public"
-	DefaultNamespace string = "default"
-	DefaultCluster   string = "kubernetes"
-
-	DefaultResourceCPU    int64 = 1
-	DefaultResourceMemory int64 = 1073741824
 )
 
 const (
