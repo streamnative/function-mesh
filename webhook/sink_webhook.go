@@ -59,8 +59,8 @@ func (webhook *SinkWebhook) Default(ctx context.Context, obj runtime.Object) err
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != sinkKind {
+		return fmt.Errorf("expected Kind %q got %q", sinkKind, req.Kind.Kind)
 	}
 
 	r := obj.(*v1alpha1.Sink) //nolint:ifshort
@@ -137,8 +137,8 @@ func (webhook *SinkWebhook) ValidateCreate(ctx context.Context, obj runtime.Obje
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != sinkKind {
+		return fmt.Errorf("expected Kind %q got %q", sinkKind, req.Kind.Kind)
 	}
 
 	r := obj.(*v1alpha1.Sink) //nolint:ifshort
@@ -241,8 +241,8 @@ func (webhook *SinkWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj r
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != sinkKind {
+		return fmt.Errorf("expected Kind %q got %q", sinkKind, req.Kind.Kind)
 	}
 
 	r := oldObj.(*v1alpha1.Sink) //nolint:ifshort
@@ -258,8 +258,8 @@ func (webhook *SinkWebhook) ValidateDelete(ctx context.Context, obj runtime.Obje
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != sinkKind {
+		return fmt.Errorf("expected Kind %q got %q", sinkKind, req.Kind.Kind)
 	}
 
 	r := obj.(*v1alpha1.Sink) //nolint:ifshort

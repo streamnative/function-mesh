@@ -58,8 +58,8 @@ func (webhook *FunctionWebhook) Default(ctx context.Context, obj runtime.Object)
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != functionKind {
+		return fmt.Errorf("expected Kind %q got %q", functionKind, req.Kind.Kind)
 	}
 
 	r := obj.(*v1alpha1.Function) //nolint:ifshort
@@ -165,8 +165,8 @@ func (webhook *FunctionWebhook) ValidateCreate(ctx context.Context, obj runtime.
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != functionKind {
+		return fmt.Errorf("expected Kind %q got %q", functionKind, req.Kind.Kind)
 	}
 
 	r := obj.(*v1alpha1.Function) //nolint:ifshort
@@ -320,8 +320,8 @@ func (webhook *FunctionWebhook) ValidateUpdate(ctx context.Context, oldObj, newO
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != functionKind {
+		return fmt.Errorf("expected Kind %q got %q", functionKind, req.Kind.Kind)
 	}
 
 	r := oldObj.(*v1alpha1.Function) //nolint:ifshort
@@ -337,8 +337,8 @@ func (webhook *FunctionWebhook) ValidateDelete(ctx context.Context, obj runtime.
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != functionKind {
+		return fmt.Errorf("expected Kind %q got %q", functionKind, req.Kind.Kind)
 	}
 
 	r := obj.(*v1alpha1.Function) //nolint:ifshort

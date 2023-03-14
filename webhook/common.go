@@ -28,6 +28,11 @@ import (
 )
 
 const (
+	functionKind         = "Function"
+	sinkKind             = "Sink"
+	sourceKind           = "Source"
+	connectorCatalogKind = "ConnectorCatalog"
+
 	maxNameLength = 43
 
 	PackageURLHTTP     string = "http://"

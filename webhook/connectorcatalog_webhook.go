@@ -57,8 +57,8 @@ func (webhook *ConnectorWebhook) Default(ctx context.Context, obj runtime.Object
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != connectorCatalogKind {
+		return fmt.Errorf("expected Kind %q got %q", connectorCatalogKind, req.Kind.Kind)
 	}
 
 	r := obj.(*v1alpha1.ConnectorCatalog) //nolint:ifshort
@@ -83,8 +83,8 @@ func (webhook *ConnectorWebhook) ValidateCreate(ctx context.Context, obj runtime
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != connectorCatalogKind {
+		return fmt.Errorf("expected Kind %q got %q", connectorCatalogKind, req.Kind.Kind)
 	}
 
 	r := obj.(*v1alpha1.ConnectorCatalog) //nolint:ifshort
@@ -139,8 +139,8 @@ func (webhook *ConnectorWebhook) ValidateUpdate(ctx context.Context, oldObj, new
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != connectorCatalogKind {
+		return fmt.Errorf("expected Kind %q got %q", connectorCatalogKind, req.Kind.Kind)
 	}
 
 	r := oldObj.(*v1alpha1.ConnectorCatalog) //nolint:ifshort
@@ -156,8 +156,8 @@ func (webhook *ConnectorWebhook) ValidateDelete(ctx context.Context, obj runtime
 	if err != nil {
 		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if req.Kind.Kind != webhook.Kind {
-		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	if req.Kind.Kind != connectorCatalogKind {
+		return fmt.Errorf("expected Kind %q got %q", connectorCatalogKind, req.Kind.Kind)
 	}
 
 	r := obj.(*v1alpha1.ConnectorCatalog) //nolint:ifshort
