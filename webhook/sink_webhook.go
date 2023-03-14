@@ -18,8 +18,10 @@
 package webhook
 
 import (
+	"context"
 	"fmt"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -28,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // log is for logging in this package.
@@ -38,9 +39,11 @@ type SinkWebhook struct {
 	v1alpha1.Sink
 }
 
-func (r *SinkWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (webhook *SinkWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(&webhook.Sink).
+		WithDefaulter(webhook).
+		WithValidator(webhook).
 		Complete()
 }
 
@@ -48,10 +51,19 @@ func (r *SinkWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-sink,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=sinks,verbs=create;update,versions=v1alpha1,name=msink.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Defaulter = &SinkWebhook{}
+var _ admission.CustomDefaulter = &SinkWebhook{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *SinkWebhook) Default() {
+func (webhook *SinkWebhook) Default(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != webhook.Kind {
+		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.Sink) //nolint:ifshort
 	sinklog.Info("default", "name", r.Name)
 
 	if !(r.Spec.Replicas != nil && r.Spec.MinReplicas != nil) {
@@ -111,15 +123,25 @@ func (r *SinkWebhook) Default() {
 	if r.Spec.Input.TypeClassName == "" {
 		r.Spec.Input.TypeClassName = "[B"
 	}
+	return nil
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-sink,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=sinks,versions=v1alpha1,name=vsink.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Validator = &SinkWebhook{}
+var _ admission.CustomValidator = &SinkWebhook{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *SinkWebhook) ValidateCreate() error {
+func (webhook *SinkWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != webhook.Kind {
+		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.Sink) //nolint:ifshort
 	sinklog.Info("validate create sink", "name", r.Name)
 	var allErrs field.ErrorList
 	var fieldErr *field.Error
@@ -214,7 +236,16 @@ func (r *SinkWebhook) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *SinkWebhook) ValidateUpdate(old runtime.Object) error {
+func (webhook *SinkWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != webhook.Kind {
+		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	}
+
+	r := oldObj.(*v1alpha1.Sink) //nolint:ifshort
 	sinklog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -222,7 +253,16 @@ func (r *SinkWebhook) ValidateUpdate(old runtime.Object) error {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *SinkWebhook) ValidateDelete() error {
+func (webhook *SinkWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != webhook.Kind {
+		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.Sink) //nolint:ifshort
 	sinklog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.

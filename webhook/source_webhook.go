@@ -18,8 +18,10 @@
 package webhook
 
 import (
+	"context"
 	"fmt"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -28,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // log is for logging in this package.
@@ -38,9 +39,11 @@ type SourceWebhook struct {
 	v1alpha1.Source
 }
 
-func (r *SourceWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (webhook *SourceWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(&webhook.Source).
+		WithDefaulter(webhook).
+		WithValidator(webhook).
 		Complete()
 }
 
@@ -48,10 +51,19 @@ func (r *SourceWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-source,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,verbs=create;update,versions=v1alpha1,name=msource.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Defaulter = &SourceWebhook{}
+var _ admission.CustomDefaulter = &SourceWebhook{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *SourceWebhook) Default() {
+func (webhook *SourceWebhook) Default(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != webhook.Kind {
+		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.Source) //nolint:ifshort
 	sourcelog.Info("default", "name", r.Name)
 
 	if !(r.Spec.Replicas != nil && r.Spec.MinReplicas != nil) {
@@ -121,15 +133,25 @@ func (r *SourceWebhook) Default() {
 	if r.Spec.Output.TypeClassName == "" {
 		r.Spec.Output.TypeClassName = "[B"
 	}
+	return nil
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-source,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=sources,versions=v1alpha1,name=vsource.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Validator = &SourceWebhook{}
+var _ admission.CustomValidator = &SourceWebhook{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *SourceWebhook) ValidateCreate() error {
+func (webhook *SourceWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != webhook.Kind {
+		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.Source) //nolint:ifshort
 	sourcelog.Info("validate create source", "name", r.Name)
 	var allErrs field.ErrorList
 	var fieldErr *field.Error
@@ -204,7 +226,16 @@ func (r *SourceWebhook) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *SourceWebhook) ValidateUpdate(old runtime.Object) error {
+func (webhook *SourceWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != webhook.Kind {
+		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	}
+
+	r := oldObj.(*v1alpha1.Source) //nolint:ifshort
 	sourcelog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -212,7 +243,16 @@ func (r *SourceWebhook) ValidateUpdate(old runtime.Object) error {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *SourceWebhook) ValidateDelete() error {
+func (webhook *SourceWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != webhook.Kind {
+		return fmt.Errorf("expected Kind %q got %q", webhook.Kind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.Source) //nolint:ifshort
 	sourcelog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
