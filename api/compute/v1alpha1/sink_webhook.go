@@ -19,6 +19,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -89,7 +90,7 @@ func (r *Sink) Default() {
 		r.Spec.Namespace = DefaultNamespace
 	}
 
-	if r.Spec.SubscriptionName == "" && r.Spec.DeadLetterTopic == "" {
+	if r.Spec.DeadLetterTopic == "" && r.Spec.MaxMessageRetry > 0 && (r.Spec.SubscriptionName == "" || strings.Contains(r.Spec.SubscriptionName, "\\")) {
 		// otherwise the auto generated DeadLetterTopic($TOPIC-$SUBNAME-DLQ) will be invalid
 		// like: persistent://public/default/input-public/default/test-function-DLQ
 		r.Spec.DeadLetterTopic = fmt.Sprintf("%s-%s-%s-DLQ", r.Spec.Tenant, r.Spec.Namespace, r.Spec.Name)
