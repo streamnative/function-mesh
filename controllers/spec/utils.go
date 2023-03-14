@@ -41,12 +41,7 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 	} else if function.Spec.Python != nil {
 		runtime = proto.FunctionDetails_PYTHON
 	}
-	deadLetterTopic := function.Spec.DeadLetterTopic
-	if function.Spec.DeadLetterTopic == "" && function.Spec.MaxMessageRetry > 0 && (function.Spec.SubscriptionName == "" || strings.Contains(function.Spec.SubscriptionName, "\\")) {
-		// otherwise the auto generated DeadLetterTopic($TOPIC-$SUBNAME-DLQ) will be invalid
-		// like: persistent://public/default/input-public/default/test-function-DLQ
-		deadLetterTopic = fmt.Sprintf("%s-%s-%s-DLQ", function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name)
-	}
+	deadLetterTopic := getDeadLetterTopicOrDefault(function.Spec.DeadLetterTopic, function.Spec.SubscriptionName, function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name, function.Spec.MaxMessageRetry)
 	fd := &proto.FunctionDetails{
 		Tenant:               function.Spec.Tenant,
 		Namespace:            function.Spec.Namespace,
@@ -99,12 +94,7 @@ func fetchClassName(function *v1alpha1.Function) string {
 }
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
-	deadLetterTopic := function.Spec.DeadLetterTopic
-	if function.Spec.DeadLetterTopic == "" && function.Spec.MaxMessageRetry > 0 && (function.Spec.SubscriptionName == "" || strings.Contains(function.Spec.SubscriptionName, "\\")) {
-		// otherwise the auto generated DeadLetterTopic($TOPIC-$SUBNAME-DLQ) will be invalid
-		// like: persistent://public/default/input-public/default/test-function-DLQ
-		deadLetterTopic = fmt.Sprintf("%s-%s-%s-DLQ", function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name)
-	}
+	deadLetterTopic := getDeadLetterTopicOrDefault(function.Spec.DeadLetterTopic, function.Spec.SubscriptionName, function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name, function.Spec.MaxMessageRetry)
 	return &GoFunctionConf{
 		FuncID:               fmt.Sprintf("${%s}-%s", EnvShardID, string(function.UID)),
 		PulsarServiceURL:     "${brokerServiceURL}",
@@ -319,12 +309,7 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 }
 
 func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
-	deadLetterTopic := sink.Spec.DeadLetterTopic
-	if sink.Spec.DeadLetterTopic == "" && sink.Spec.MaxMessageRetry > 0 && (sink.Spec.SubscriptionName == "" || strings.Contains(sink.Spec.SubscriptionName, "\\")) {
-		// otherwise the auto generated DeadLetterTopic($TOPIC-$SUBNAME-DLQ) will be invalid
-		// like: persistent://public/default/input-public/default/test-function-DLQ
-		deadLetterTopic = fmt.Sprintf("%s-%s-%s-DLQ", sink.Spec.Tenant, sink.Spec.Namespace, sink.Spec.Name)
-	}
+	deadLetterTopic := getDeadLetterTopicOrDefault(sink.Spec.DeadLetterTopic, sink.Spec.SubscriptionName, sink.Spec.Tenant, sink.Spec.Namespace, sink.Spec.Name, sink.Spec.MaxMessageRetry)
 	fd := &proto.FunctionDetails{
 		Tenant:               sink.Spec.Tenant,
 		Namespace:            sink.Spec.Namespace,
@@ -498,4 +483,13 @@ func getEnvOrDefault(key, fallback string) string {
 		return env
 	}
 	return fallback
+}
+
+func getDeadLetterTopicOrDefault(deadLetterTopic, subscriptionName, tenant, namespace, name string, maxMessageRetry int32) string {
+	if deadLetterTopic == "" && maxMessageRetry > 0 && (subscriptionName == "" || strings.Contains(subscriptionName, "\\")) {
+		// otherwise the auto generated DeadLetterTopic($TOPIC-$SUBNAME-DLQ) will be invalid
+		// like: persistent://public/default/input-public/default/test-function-DLQ
+		return fmt.Sprintf("%s-%s-%s-DLQ", tenant, namespace, name)
+	}
+	return deadLetterTopic
 }
