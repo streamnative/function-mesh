@@ -12,6 +12,7 @@ RUN go mod download
 # Copy the go source
 COPY main.go main.go
 COPY api/ api/
+COPY webhook/ webhook/
 COPY controllers/ controllers/
 COPY utils/ utils/
 
