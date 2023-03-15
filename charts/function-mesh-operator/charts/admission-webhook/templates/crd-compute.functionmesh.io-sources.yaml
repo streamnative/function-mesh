@@ -3187,6 +3187,8 @@ spec:
                         type: string
                     type: object
                   type: object
+                showPreciseParallelism:
+                  type: boolean
                 sourceConfig:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true

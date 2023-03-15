@@ -3251,6 +3251,8 @@ spec:
                               type: string
                           type: object
                         type: object
+                      showPreciseParallelism:
+                        type: boolean
                       statefulConfig:
                         properties:
                           pulsar:
@@ -6651,6 +6653,8 @@ spec:
                               type: string
                           type: object
                         type: object
+                      showPreciseParallelism:
+                        type: boolean
                       sinkConfig:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
@@ -9851,6 +9855,8 @@ spec:
                               type: string
                           type: object
                         type: object
+                      showPreciseParallelism:
+                        type: boolean
                       sourceConfig:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
