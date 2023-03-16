@@ -19,11 +19,11 @@ package v1alpha1
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 
-	"fmt"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 
 	corev1 "k8s.io/api/core/v1"

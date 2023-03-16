@@ -19,12 +19,13 @@ package webhook
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	pctlutil "github.com/streamnative/pulsarctl/pkg/pulsar/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
-	"strings"
 )
 
 const (
