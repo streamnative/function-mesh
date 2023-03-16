@@ -15,11 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+// Package webhook defines mutate and validate webhook for FunctionMesh types
+package webhook
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -27,25 +30,40 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
 var functionlog = logf.Log.WithName("function-resource")
 
-func (r *Function) SetupWebhookWithManager(mgr ctrl.Manager) error {
+type FunctionWebhook struct {
+	v1alpha1.Function
+}
+
+func (webhook *FunctionWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(&webhook.Function).
+		WithDefaulter(webhook).
+		WithValidator(webhook).
 		Complete()
 }
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // +kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-function,mutating=true,failurePolicy=fail,groups=compute.functionmesh.io,resources=functions,verbs=create;update,versions=v1alpha1,name=mfunction.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Defaulter = &Function{}
+var _ admission.CustomDefaulter = &FunctionWebhook{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Function) Default() {
+// Default implements admission.CustomDefaulter so a webhook will be registered for the type
+func (webhook *FunctionWebhook) Default(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != functionKind {
+		return fmt.Errorf("expected Kind %q got %q", functionKind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.Function) //nolint:ifshort
 	functionlog.Info("default", "name", r.Name)
 
 	if !(r.Spec.Replicas != nil && r.Spec.MinReplicas != nil) {
@@ -69,7 +87,7 @@ func (r *Function) Default() {
 	}
 
 	if r.Spec.ProcessingGuarantee == "" {
-		r.Spec.ProcessingGuarantee = AtleastOnce
+		r.Spec.ProcessingGuarantee = v1alpha1.AtleastOnce
 	}
 
 	if r.Spec.Name == "" {
@@ -134,16 +152,25 @@ func (r *Function) Default() {
 			}
 		}
 	}
-
+	return nil
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // +kubebuilder:webhook:verbs=create;update,path=/validate-compute-functionmesh-io-v1alpha1-function,mutating=false,failurePolicy=fail,groups=compute.functionmesh.io,resources=functions,versions=v1alpha1,name=vfunction.kb.io,sideEffects=none,admissionReviewVersions={v1beta1,v1}
 
-var _ webhook.Validator = &Function{}
+var _ admission.CustomValidator = &FunctionWebhook{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Function) ValidateCreate() error {
+// ValidateCreate implements admission.CustomValidator so a webhook will be registered for the type
+func (webhook *FunctionWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != functionKind {
+		return fmt.Errorf("expected Kind %q got %q", functionKind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.Function) //nolint:ifshort
 	functionlog.Info("validate create function", "name", r.Name)
 	var allErrs field.ErrorList
 	var fieldErr *field.Error
@@ -285,19 +312,37 @@ func (r *Function) ValidateCreate() error {
 		return nil
 	}
 
-	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "Function"}, r.Name, allErrs)
+	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "FunctionWebhook"}, r.Name, allErrs)
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Function) ValidateUpdate(old runtime.Object) error {
+// ValidateUpdate implements admission.CustomValidator so a webhook will be registered for the type
+func (webhook *FunctionWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != functionKind {
+		return fmt.Errorf("expected Kind %q got %q", functionKind, req.Kind.Kind)
+	}
+
+	r := oldObj.(*v1alpha1.Function) //nolint:ifshort
 	functionlog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Function) ValidateDelete() error {
+// ValidateDelete implements admission.CustomValidator so a webhook will be registered for the type
+func (webhook *FunctionWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != functionKind {
+		return fmt.Errorf("expected Kind %q got %q", functionKind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.Function) //nolint:ifshort
 	functionlog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.

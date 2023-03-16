@@ -15,7 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+// Package webhook defines mutate and validate webhook for FunctionMesh types
+package webhook
 
 import (
 	"encoding/json"
@@ -23,10 +24,11 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-func validateJavaRuntime(java *JavaRuntime, className string) []*field.Error {
+func validateJavaRuntime(java *v1alpha1.JavaRuntime, className string) []*field.Error {
 	var allErrs field.ErrorList
 	if java != nil {
 		if className == "" {
@@ -49,7 +51,7 @@ func validateJavaRuntime(java *JavaRuntime, className string) []*field.Error {
 	return allErrs
 }
 
-func validatePythonRuntime(python *PythonRuntime, className string) []*field.Error {
+func validatePythonRuntime(python *v1alpha1.PythonRuntime, className string) []*field.Error {
 	var allErrs field.ErrorList
 	if python != nil {
 		if className == "" {
@@ -72,7 +74,7 @@ func validatePythonRuntime(python *PythonRuntime, className string) []*field.Err
 	return allErrs
 }
 
-func validateGolangRuntime(golang *GoRuntime) []*field.Error {
+func validateGolangRuntime(golang *v1alpha1.GoRuntime) []*field.Error {
 	var allErrs field.ErrorList
 	if golang != nil {
 		if golang.Go == "" {
@@ -138,18 +140,18 @@ func validateResourceRequirement(requirements corev1.ResourceRequirements) *fiel
 	return nil
 }
 
-func validateTimeout(timeout int32, processingGuarantee ProcessGuarantee) *field.Error {
-	if timeout != 0 && processingGuarantee == EffectivelyOnce {
+func validateTimeout(timeout int32, processingGuarantee v1alpha1.ProcessGuarantee) *field.Error {
+	if timeout != 0 && processingGuarantee == v1alpha1.EffectivelyOnce {
 		return field.Invalid(field.NewPath("spec").Child("timeout"), timeout,
 			"message timeout can only be set for AtleastOnce processing guarantee")
 	}
 	return nil
 }
 
-func validateMaxMessageRetry(maxMessageRetry int32, processingGuarantee ProcessGuarantee,
+func validateMaxMessageRetry(maxMessageRetry int32, processingGuarantee v1alpha1.ProcessGuarantee,
 	deadLetterTopic string) []*field.Error {
 	var allErrs field.ErrorList
-	if maxMessageRetry > 0 && processingGuarantee == EffectivelyOnce {
+	if maxMessageRetry > 0 && processingGuarantee == v1alpha1.EffectivelyOnce {
 		e := field.Invalid(field.NewPath("spec").Child("maxMessageRetry"), maxMessageRetry,
 			"MaxMessageRetries and Effectively once are not compatible")
 		allErrs = append(allErrs, e)
@@ -163,8 +165,8 @@ func validateMaxMessageRetry(maxMessageRetry int32, processingGuarantee ProcessG
 	return allErrs
 }
 
-func validateRetainKeyOrdering(retainKeyOrdering bool, processingGuarantee ProcessGuarantee) *field.Error {
-	if retainKeyOrdering && processingGuarantee == EffectivelyOnce {
+func validateRetainKeyOrdering(retainKeyOrdering bool, processingGuarantee v1alpha1.ProcessGuarantee) *field.Error {
+	if retainKeyOrdering && processingGuarantee == v1alpha1.EffectivelyOnce {
 		return field.Invalid(field.NewPath("spec").Child("retainKeyOrdering"), retainKeyOrdering,
 			"when effectively once processing guarantee is specified, retain Key ordering cannot be set")
 	}
@@ -184,7 +186,7 @@ func validateRetainOrderingConflicts(retainKeyOrdering bool, retainOrdering bool
 	return allErrs
 }
 
-func validateFunctionConfig(config *Config) *field.Error {
+func validateFunctionConfig(config *v1alpha1.Config) *field.Error {
 	if config != nil {
 		_, err := config.MarshalJSON()
 		if err != nil {
@@ -195,7 +197,7 @@ func validateFunctionConfig(config *Config) *field.Error {
 	return nil
 }
 
-func validateSinkConfig(config *Config) *field.Error {
+func validateSinkConfig(config *v1alpha1.Config) *field.Error {
 	if config != nil {
 		_, err := config.MarshalJSON()
 		if err != nil {
@@ -206,7 +208,7 @@ func validateSinkConfig(config *Config) *field.Error {
 	return nil
 }
 
-func validateSourceConfig(config *Config) *field.Error {
+func validateSourceConfig(config *v1alpha1.Config) *field.Error {
 	if config != nil {
 		_, err := config.MarshalJSON()
 		if err != nil {
@@ -217,7 +219,7 @@ func validateSourceConfig(config *Config) *field.Error {
 	return nil
 }
 
-func validateSecretsMap(secrets map[string]SecretRef) *field.Error {
+func validateSecretsMap(secrets map[string]v1alpha1.SecretRef) *field.Error {
 	if secrets != nil {
 		_, err := json.Marshal(secrets)
 		if err != nil {
@@ -228,7 +230,7 @@ func validateSecretsMap(secrets map[string]SecretRef) *field.Error {
 	return nil
 }
 
-func validateInputOutput(input *InputConf, output *OutputConf) []*field.Error {
+func validateInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf) []*field.Error {
 	var allErrs field.ErrorList
 	allInputTopics := []string{}
 	if input != nil {
@@ -331,7 +333,7 @@ func validateAutoAck(autoAck *bool) *field.Error {
 	return nil
 }
 
-func validateStatefulFunctionConfigs(statefulFunctionConfigs *Stateful, runtime Runtime) *field.Error {
+func validateStatefulFunctionConfigs(statefulFunctionConfigs *v1alpha1.Stateful, runtime v1alpha1.Runtime) *field.Error {
 	if statefulFunctionConfigs != nil {
 		if statefulFunctionConfigs.Pulsar != nil {
 			if isGolangRuntime(runtime) {
@@ -347,11 +349,11 @@ func validateStatefulFunctionConfigs(statefulFunctionConfigs *Stateful, runtime 
 	return nil
 }
 
-func isGolangRuntime(runtime Runtime) bool {
+func isGolangRuntime(runtime v1alpha1.Runtime) bool {
 	return runtime.Golang != nil && runtime.Python == nil && runtime.Java == nil
 }
 
-func validateWindowConfigs(windowConfig *WindowConfig) *field.Error {
+func validateWindowConfigs(windowConfig *v1alpha1.WindowConfig) *field.Error {
 	if windowConfig != nil {
 		if windowConfig.WindowLengthDurationMs == nil && windowConfig.WindowLengthCount == nil {
 			return field.Invalid(field.NewPath("spec").Child("windowConfig"), windowConfig,
@@ -391,7 +393,7 @@ func validateWindowConfigs(windowConfig *WindowConfig) *field.Error {
 	return nil
 }
 
-func validateMessaging(messaging *Messaging) *field.Error {
+func validateMessaging(messaging *v1alpha1.Messaging) *field.Error {
 	if messaging == nil || messaging.Pulsar == nil || messaging.Pulsar.PulsarConfig == "" {
 		return field.Invalid(field.NewPath("spec").Child("pulsar"), messaging,
 			"Pulsar configuration needs to be set")
@@ -399,18 +401,18 @@ func validateMessaging(messaging *Messaging) *field.Error {
 	return nil
 }
 
-func validateBuiltinHPARules(rules []BuiltinHPARule) *field.Error {
+func validateBuiltinHPARules(rules []v1alpha1.BuiltinHPARule) *field.Error {
 	isCPURuleExists := false
 	isMemoryRuleExists := false
 	for _, rule := range rules {
 		switch rule {
-		case AverageUtilizationCPUPercent20, AverageUtilizationCPUPercent50, AverageUtilizationCPUPercent80:
+		case v1alpha1.AverageUtilizationCPUPercent20, v1alpha1.AverageUtilizationCPUPercent50, v1alpha1.AverageUtilizationCPUPercent80:
 			if isCPURuleExists {
 				return field.Invalid(field.NewPath("spec").Child("pod", "builtinAutoscaler"), rules,
 					"Duplicate CPU autoscaler metrics are set")
 			}
 			isCPURuleExists = true
-		case AverageUtilizationMemoryPercent20, AverageUtilizationMemoryPercent50, AverageUtilizationMemoryPercent80:
+		case v1alpha1.AverageUtilizationMemoryPercent20, v1alpha1.AverageUtilizationMemoryPercent50, v1alpha1.AverageUtilizationMemoryPercent80:
 			if isMemoryRuleExists {
 				return field.Invalid(field.NewPath("spec").Child("pod", "builtinAutoscaler"), rules,
 					"Duplicate Memory autoscaler metrics are set")

@@ -85,8 +85,8 @@ spec:
                             typeName:
                               type: string
                           required:
-                          - fieldName
-                          - typeName
+                            - fieldName
+                            - typeName
                           type: object
                         type: array
                       sinkTypeClassName:
@@ -107,8 +107,8 @@ spec:
                             typeName:
                               type: string
                           required:
-                          - fieldName
-                          - typeName
+                            - fieldName
+                            - typeName
                           type: object
                         type: array
                       sourceTypeClassName:

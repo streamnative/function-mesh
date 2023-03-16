@@ -15,24 +15,35 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1alpha1
+// Package webhook defines mutate and validate webhook for FunctionMesh types
+package webhook
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
 var connectorcataloglog = logf.Log.WithName("connectorcatalog-resource")
 
-func (r *ConnectorCatalog) SetupWebhookWithManager(mgr ctrl.Manager) error {
+type ConnectorWebhook struct {
+	v1alpha1.ConnectorCatalog
+}
+
+func (webhook *ConnectorWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(&webhook.ConnectorCatalog).
+		WithDefaulter(webhook).
+		WithValidator(webhook).
 		Complete()
 }
 
@@ -40,10 +51,19 @@ func (r *ConnectorCatalog) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:webhook:path=/mutate-compute-functionmesh-io-v1alpha1-connectorcatalog,mutating=true,failurePolicy=fail,sideEffects=None,groups=compute.functionmesh.io,resources=connectorcatalogs,verbs=create;update,versions=v1alpha1,name=mconnectorcatalog.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &ConnectorCatalog{}
+var _ admission.CustomDefaulter = &ConnectorWebhook{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *ConnectorCatalog) Default() {
+// Default implements admission.CustomDefaulter so a webhook will be registered for the type
+func (webhook *ConnectorWebhook) Default(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != connectorCatalogKind {
+		return fmt.Errorf("expected Kind %q got %q", connectorCatalogKind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.ConnectorCatalog) //nolint:ifshort
 	connectorcataloglog.Info("default", "name", r.Name)
 
 	for _, d := range r.Spec.ConnectorDefinitions {
@@ -51,15 +71,25 @@ func (r *ConnectorCatalog) Default() {
 			d.Version = d.ImageTag
 		}
 	}
+	return nil
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-compute-functionmesh-io-v1alpha1-connectorcatalog,mutating=false,failurePolicy=fail,sideEffects=None,groups=compute.functionmesh.io,resources=connectorcatalogs,verbs=create;update,versions=v1alpha1,name=vconnectorcatalog.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &ConnectorCatalog{}
+var _ admission.CustomValidator = &ConnectorWebhook{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *ConnectorCatalog) ValidateCreate() error {
+// ValidateCreate implements admission.CustomValidator so a webhook will be registered for the type
+func (webhook *ConnectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != connectorCatalogKind {
+		return fmt.Errorf("expected Kind %q got %q", connectorCatalogKind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.ConnectorCatalog) //nolint:ifshort
 	connectorcataloglog.Info("validate create", "name", r.Name)
 	var allErrs field.ErrorList
 
@@ -105,16 +135,34 @@ func (r *ConnectorCatalog) ValidateCreate() error {
 	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "ConnectorCatalog"}, r.Name, allErrs)
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *ConnectorCatalog) ValidateUpdate(old runtime.Object) error {
+// ValidateUpdate implements admission.CustomValidator so a webhook will be registered for the type
+func (webhook *ConnectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != connectorCatalogKind {
+		return fmt.Errorf("expected Kind %q got %q", connectorCatalogKind, req.Kind.Kind)
+	}
+
+	r := oldObj.(*v1alpha1.ConnectorCatalog) //nolint:ifshort
 	connectorcataloglog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *ConnectorCatalog) ValidateDelete() error {
+// ValidateDelete implements admission.CustomValidator so a webhook will be registered for the type
+func (webhook *ConnectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != connectorCatalogKind {
+		return fmt.Errorf("expected Kind %q got %q", connectorCatalogKind, req.Kind.Kind)
+	}
+
+	r := obj.(*v1alpha1.ConnectorCatalog) //nolint:ifshort
 	connectorcataloglog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.

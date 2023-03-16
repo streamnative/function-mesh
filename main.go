@@ -27,6 +27,7 @@ import (
 	computev1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers"
 	"github.com/streamnative/function-mesh/controllers/spec"
+	"github.com/streamnative/function-mesh/pkg/webhook"
 	"github.com/streamnative/function-mesh/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -167,19 +168,19 @@ func main() {
 	// enable the webhook service by default
 	// Disable function-mesh webhook with `ENABLE_WEBHOOKS=false` when we run locally.
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&computev1alpha1.Function{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&webhook.FunctionWebhook{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Function")
 			os.Exit(1)
 		}
-		if err = (&computev1alpha1.Source{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&webhook.SourceWebhook{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Source")
 			os.Exit(1)
 		}
-		if err = (&computev1alpha1.Sink{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&webhook.SinkWebhook{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Sink")
 			os.Exit(1)
 		}
-		if err = (&computev1alpha1.ConnectorCatalog{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&webhook.ConnectorWebhook{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "ConnectorCatalog")
 			os.Exit(1)
 		}
