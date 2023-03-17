@@ -2,7 +2,7 @@
 
 ## v0.12.0 What's New
 
-* [Controller] Ensure the Pod Security Standard follows restricted specification ([#574](https://github.com/streamnative/function-mesh/pull/574))
+* [Controller] Ensure the Pod security standard follows restricted specifications ([#574](https://github.com/streamnative/function-mesh/pull/574))
 * [Controller] Fix `fsGroup` not work when volume mount use an existing directory as subpath ([#577](https://github.com/streamnative/function-mesh/issues/577))
 * [Controller] Add the default value for `minReplicas` and `replicas` ([#582](https://github.com/streamnative/function-mesh/pull/582))
 * [Controller] Introduce `ConnectorCatalog` CRD ([#585](https://github.com/streamnative/function-mesh/pull/585), [#610](https://github.com/streamnative/function-mesh/pull/610))
