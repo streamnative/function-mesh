@@ -8,7 +8,7 @@
 * [Controller] Introduce the `ConnectorCatalog` CRD ([#585](https://github.com/streamnative/function-mesh/pull/585), [#610](https://github.com/streamnative/function-mesh/pull/610))
 * [Controller] Allow passing Function Mesh Operator configurations through the environment variables ([#587](https://github.com/streamnative/function-mesh/pull/587))
 * [Controller] Allow scaling a function or connector to zero when HPA is disabled ([#590](https://github.com/streamnative/function-mesh/pull/590))
-* [Controller] Fix `SubscriptionType` is not handle properly ([#592](https://github.com/streamnative/function-mesh/pull/592))
+* [Controller] Fix the issue that `SubscriptionType` is not handled properly ([#592](https://github.com/streamnative/function-mesh/pull/592))
 * [Controller] Fix `DeadLetterTopic` is set to an incorrect value in some specific cases ([#595](https://github.com/streamnative/function-mesh/pull/595))
 * [Controller] Fix `MaxPendingAsyncRequests` is not working ([#599](https://github.com/streamnative/function-mesh/pull/599))
 * [Controller] Fix liveness probe is not working ([#604](https://github.com/streamnative/function-mesh/pull/604))
