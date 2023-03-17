@@ -6,7 +6,7 @@
 * [Controller] Fix the issue that the `fsGroup` does not work when a volume mount uses an existing directory as a subpath ([#577](https://github.com/streamnative/function-mesh/issues/577))
 * [Controller] Add the default value for `minReplicas` and `replicas` ([#582](https://github.com/streamnative/function-mesh/pull/582))
 * [Controller] Introduce the `ConnectorCatalog` CRD ([#585](https://github.com/streamnative/function-mesh/pull/585), [#610](https://github.com/streamnative/function-mesh/pull/610))
-* [Controller] Allow passing configs via ENV ([#587](https://github.com/streamnative/function-mesh/pull/587))
+* [Controller] Allow passing Function Mesh Operator configurations through the environment variables ([#587](https://github.com/streamnative/function-mesh/pull/587))
 * [Controller] Allow Function/Connector scale to zero when HPA is disabled ([#590](https://github.com/streamnative/function-mesh/pull/590))
 * [Controller] Fix `SubscriptionType` is not handle properly ([#592](https://github.com/streamnative/function-mesh/pull/592))
 * [Controller] Fix `DeadLetterTopic` is set to an incorrect value in some specific cases ([#595](https://github.com/streamnative/function-mesh/pull/595))
