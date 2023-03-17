@@ -1,3 +1,26 @@
+# Function Mesh v0.12.0 Release Notes
+
+## v0.12.0 What's New
+
+* [Controller] Ensure the Pod Security Standard follows restricted specification ([#574](https://github.com/streamnative/function-mesh/pull/574))
+* [Controller] Fix `fsGroup` not work when volume mount use an existing directory as subpath ([#577](https://github.com/streamnative/function-mesh/issues/577))
+* [Controller] Add the default value for `minReplicas` and `replicas` ([#582](https://github.com/streamnative/function-mesh/pull/582))
+* [Controller] Introduce `ConnectorCatalog` CRD ([#585](https://github.com/streamnative/function-mesh/pull/585), [#610](https://github.com/streamnative/function-mesh/pull/610))
+* [Controller] Allow passing configs via ENV ([#587](https://github.com/streamnative/function-mesh/pull/587))
+* [Controller] Allow Function/Connector scale to zero when HPA is disabled ([#590](https://github.com/streamnative/function-mesh/pull/590))
+* [Controller] Fix `SubscriptionType` is not handle properly ([#592](https://github.com/streamnative/function-mesh/pull/592))
+* [Controller] Fix `DeadLetterTopic` is set to an incorrect value in some specific cases ([#595](https://github.com/streamnative/function-mesh/pull/595))
+* [Controller] Fix `MaxPendingAsyncRequests` is not working ([#599](https://github.com/streamnative/function-mesh/pull/599))
+* [Controller] Fix liveness probe is not working ([#604](https://github.com/streamnative/function-mesh/pull/604))
+* [Controller] Add support to configure multiple PVs to CR ([#605](https://github.com/streamnative/function-mesh/pull/605))
+* [Controller] Introduce `ShowPreciseParallelism` to CRDs ([#607](https://github.com/streamnative/function-mesh/pull/607))
+* [Controller] Make `Limits.CPU` optional ([#608](https://github.com/streamnative/function-mesh/pull/608))
+* [Controller] Move `webhook` into `pkg` ([#613](https://github.com/streamnative/function-mesh/pull/613))
+* [Runner Image] Remove unused dependencies from runner images ([#576](https://github.com/streamnative/function-mesh/pull/576))
+* [CVE] Resolve vulnerabilities and bump dependencies ([#568](https://github.com/streamnative/function-mesh/pull/568), [#583](https://github.com/streamnative/function-mesh/pull/583), [#600](https://github.com/streamnative/function-mesh/pull/600))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2023-03+is%3Aclosed+).
+
 # Function Mesh v0.11.0 Release Notes
 
 ## v0.11.0 What's New
