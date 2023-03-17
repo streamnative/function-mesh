@@ -12,7 +12,7 @@
 * [Controller] Fix the issue that `DeadLetterTopic` is set to an incorrect value in some specific cases ([#595](https://github.com/streamnative/function-mesh/pull/595))
 * [Controller] Fix the issue that `MaxPendingAsyncRequests` is not working ([#599](https://github.com/streamnative/function-mesh/pull/599))
 * [Controller] Fix the issue that the liveness probe is not working ([#604](https://github.com/streamnative/function-mesh/pull/604))
-* [Controller] Add support to configure multiple PVs to CR ([#605](https://github.com/streamnative/function-mesh/pull/605))
+* [Controller] Support configuring multiple PVs to a CR ([#605](https://github.com/streamnative/function-mesh/pull/605))
 * [Controller] Introduce `ShowPreciseParallelism` to CRDs ([#607](https://github.com/streamnative/function-mesh/pull/607))
 * [Controller] Make `Limits.CPU` optional ([#608](https://github.com/streamnative/function-mesh/pull/608))
 * [Controller] Move `webhook` into `pkg` ([#613](https://github.com/streamnative/function-mesh/pull/613))
