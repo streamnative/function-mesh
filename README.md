@@ -4,7 +4,7 @@ A Kubernetes-Native way to run pulsar functions, connectors and composed functio
 ## Install
 
 ```bash
-curl -sSL https://github.com/streamnative/function-mesh/releases/download/v0.11.0/install.sh | bash
+curl -sSL https://github.com/streamnative/function-mesh/releases/download/v0.12.0/install.sh | bash
 ```
 
 The above command installs all the CRDs, required service account configuration, and all function-mesh operator components. Before you start running a function-mesh example, verify if Function Mesh is installed correctly.
@@ -26,16 +26,15 @@ Note:
 
 This table outlines the supported Kubernetes versions. We have tested these versions in their respective branches. But note that other versions might work as well.
 
-| Function Mesh operator                                       | Kubernetes 1.19 | Kubernetes 1.20 | Kubernetes 1.21 | Kubernetes 1.22 | Kubernetes 1.23 | Kubernetes 1.24 | Kubernetes 1.25 |
-| ------------------------------------------------------------ | --------------- |-----------------|-----------------|-----------------| --------------- | --------------- | --------------- |
-| [`v0.11.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.11.0) | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
+| Function Mesh operator                                                          | Kubernetes 1.19 | Kubernetes 1.20 | Kubernetes 1.21 | Kubernetes 1.22 | Kubernetes 1.23 | Kubernetes 1.24 | Kubernetes 1.25 |
+|---------------------------------------------------------------------------------| --------------- |-----------------|-----------------|-----------------| --------------- | --------------- | --------------- |
+| [`v0.12.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.12.0) | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
+| [`v0.11.2`](https://github.com/streamnative/function-mesh/releases/tag/v0.11.2) | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
 | [`v0.10.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.10.0) | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
-| [`v0.9.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.9.0) | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
-| [`v0.8.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.8.0) | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
-| [`v0.7.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.7.0) | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
-| [`v0.6.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.6.0) | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
-| [`v0.5.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.5.0) | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
-| [`Master`](https://github.com/streamnative/function-mesh/tree/master) | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
+| [`v0.9.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.9.0)   | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
+| [`v0.8.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.8.0)   | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
+| [`v0.7.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.7.0)   | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
+| [`Master`](https://github.com/streamnative/function-mesh/tree/master)           | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
 
 ## Development
 
