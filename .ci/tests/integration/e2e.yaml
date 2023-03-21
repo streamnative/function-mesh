@@ -160,3 +160,9 @@ verify:
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/health-check/verify.sh
       expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/java-function-inferring-type/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/mongodb-source-inferring-type/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/elasticsearch-sink-inferring-type/verify.sh
+      expected: expected.data.yaml
