@@ -21,6 +21,7 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"github.com/streamnative/function-mesh/controllers/spec"
 	"github.com/streamnative/function-mesh/pkg/config"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -123,7 +124,11 @@ func (webhook *SinkWebhook) Default(ctx context.Context, obj runtime.Object) err
 	}
 
 	imageCapabilities := config.DefaultImageCapabilities()
-	if r.Spec.Input.TypeClassName == "" && !imageCapabilities.InferTypeClassName.MatchImage(r.Spec.Image) {
+	image := r.Spec.Image
+	if image == "" {
+		image = spec.DefaultRunnerImage
+	}
+	if r.Spec.Input.TypeClassName == "" && !imageCapabilities.InferTypeClassName.MatchImage(image) {
 		r.Spec.Input.TypeClassName = "[B"
 	}
 	return nil

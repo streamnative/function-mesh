@@ -21,6 +21,7 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"github.com/streamnative/function-mesh/controllers/spec"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/pkg/config"
@@ -132,12 +133,17 @@ func (webhook *FunctionWebhook) Default(ctx context.Context, obj runtime.Object)
 	}
 
 	imageCapabilities := config.DefaultImageCapabilities()
+	image := r.Spec.Image
+	if image == "" {
+		image = spec.DefaultRunnerImage
+	}
+	canInferTypeClassName := r.Spec.Java != nil && imageCapabilities.InferTypeClassName.MatchImage(image)
 
-	if r.Spec.Input.TypeClassName == "" && !(r.Spec.Java != nil && imageCapabilities.InferTypeClassName.MatchImage(r.Spec.Image)) {
+	if r.Spec.Input.TypeClassName == "" && !canInferTypeClassName {
 		r.Spec.Input.TypeClassName = "[B"
 	}
 
-	if r.Spec.Input.TypeClassName == "" && !(r.Spec.Java != nil && imageCapabilities.InferTypeClassName.MatchImage(r.Spec.Image)) {
+	if r.Spec.Output.TypeClassName == "" && !canInferTypeClassName {
 		r.Spec.Output.TypeClassName = "[B"
 	}
 
