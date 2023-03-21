@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/pkg/config"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -130,11 +131,13 @@ func (webhook *FunctionWebhook) Default(ctx context.Context, obj runtime.Object)
 		paddingResourceLimit(&r.Spec.Resources)
 	}
 
-	if r.Spec.Input.TypeClassName == "" {
+	imageCapabilities := config.DefaultImageCapabilities()
+
+	if r.Spec.Input.TypeClassName == "" && !(r.Spec.Java != nil && imageCapabilities.InferTypeClassName.MatchImage(r.Spec.Image)) {
 		r.Spec.Input.TypeClassName = "[B"
 	}
 
-	if r.Spec.Output.TypeClassName == "" {
+	if r.Spec.Input.TypeClassName == "" && !(r.Spec.Java != nil && imageCapabilities.InferTypeClassName.MatchImage(r.Spec.Image)) {
 		r.Spec.Output.TypeClassName = "[B"
 	}
 

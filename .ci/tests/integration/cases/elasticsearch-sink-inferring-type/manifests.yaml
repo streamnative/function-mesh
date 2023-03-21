@@ -1,0 +1,44 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Sink
+metadata:
+  name: sink-sample-inferring-type
+spec:
+  className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
+  replicas: 1
+  maxReplicas: 1
+  input:
+    topics:
+      - persistent://public/default/input-sink-topic
+  sinkConfig:
+    elasticSearchUrl: "http://quickstart-es-http.default.svc.cluster.local:9200"
+    username: "elastic"
+    password: "QqB1OtT6m79vfP7H9H0q2a82"
+  pulsar:
+    pulsarConfig: "test-sink"
+    tlsConfig:
+      enabled: false
+      allowInsecure: false
+      hostnameVerification: true
+      certSecretName: sn-platform-tls-broker
+      certSecretKey: ""
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+    requests:
+      cpu: "0.1"
+      memory: 1G
+  image: streamnative/pulsar-io-elastic-search:2.9.3.16
+  java:
+    jar: connectors/pulsar-io-elastic-search-2.9.3.16.nar
+    jarLocation: "" # use pulsar provided connectors
+  clusterName: test-pulsar
+  autoAck: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-sink
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650

@@ -1,0 +1,53 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Source
+metadata:
+  name: source-sample-inferring-type
+spec:
+  className: org.apache.pulsar.io.debezium.mongodb.DebeziumMongoDbSource
+  replicas: 1
+  maxReplicas: 1
+  output:
+    producerConf:
+      maxPendingMessages: 1000
+      maxPendingMessagesAcrossPartitions: 50000
+      useThreadLocalProducers: true
+    topic: persistent://public/default/output-source-topic
+  forwardSourceMessageProperty: true
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+    requests:
+      cpu: "0.1"
+      memory: 1G
+  sourceConfig:
+    mongodb.hosts: rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017
+    mongodb.name: dbserver1
+    mongodb.user: debezium
+    mongodb.password: dbz
+    mongodb.task.id: "1"
+    database.whitelist: inventory
+    pulsar.service.url: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
+  pulsar:
+    pulsarConfig: "test-source"
+    tlsConfig:
+      enabled: false
+      allowInsecure: false
+      hostnameVerification: true
+      certSecretName: sn-platform-tls-broker
+      certSecretKey: ""
+  image: streamnative/pulsar-io-debezium-mongodb:2.9.3.16
+  java:
+    jar: connectors/pulsar-io-debezium-mongodb-2.9.3.16.nar
+    jarLocation: "" # use pulsar provided connectors
+    # use package name:
+    # jarLocation: function://public/default/nul-test-java-source@v1
+  clusterName: test-pulsar
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-source
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650

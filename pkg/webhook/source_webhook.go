@@ -21,6 +21,7 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"github.com/streamnative/function-mesh/pkg/config"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -131,7 +132,8 @@ func (webhook *SourceWebhook) Default(ctx context.Context, obj runtime.Object) e
 		paddingResourceLimit(&r.Spec.Resources)
 	}
 
-	if r.Spec.Output.TypeClassName == "" {
+	imageCapabilities := config.DefaultImageCapabilities()
+	if r.Spec.Output.TypeClassName == "" && !imageCapabilities.InferTypeClassName.MatchImage(r.Spec.Image) {
 		r.Spec.Output.TypeClassName = "[B"
 	}
 	return nil
