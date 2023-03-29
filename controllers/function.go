@@ -19,12 +19,10 @@ package controllers
 
 import (
 	"context"
-
-	autoscaling "k8s.io/api/autoscaling/v1"
-
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscaling "k8s.io/api/autoscaling/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -255,6 +253,66 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 		return err
 	}
 
+	return nil
+}
+
+func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, function *v1alpha1.Function) error {
+	if !spec.NeedCleanup(function) {
+		return nil
+	}
+	if function.Spec.CleanupSubscription {
+		// add finalizer if function is updated to clean up subscription
+		if function.ObjectMeta.DeletionTimestamp.IsZero() {
+			if !containsString(function.ObjectMeta.Finalizers, CleanUpFinalizerName) {
+				desiredJob := spec.MakeFunctionCleanUpJob(function)
+				if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredJob, func() error {
+					return nil
+				}); err != nil {
+					r.Log.Error(err, "error create or update clean up job for function",
+						"namespace", function.Namespace, "name", function.Name,
+						"job name", desiredJob.Name)
+					return err
+				}
+				function.ObjectMeta.Finalizers = append(function.ObjectMeta.Finalizers, CleanUpFinalizerName)
+				if err := r.Update(ctx, function); err != nil {
+					return err
+				}
+			}
+		} else {
+			desiredJob := spec.MakeFunctionCleanUpJob(function)
+			// if function is deleting, send an "INT" signal to the cleanup job to clean up subscription
+			if containsString(function.ObjectMeta.Finalizers, CleanUpFinalizerName) {
+				if err := spec.TriggerCleanup(ctx, r.Client, r.RestClient, r.Config, desiredJob); err != nil {
+					r.Log.Error(err, "error send signal to clean up job for function",
+						"namespace", function.Namespace, "name", function.Name)
+				}
+				function.ObjectMeta.Finalizers = removeString(function.ObjectMeta.Finalizers, CleanUpFinalizerName)
+				if err := r.Update(ctx, function); err != nil {
+					return err
+				}
+			} else {
+				// delete the cleanup job
+				if err := r.Delete(ctx, desiredJob); err != nil {
+					return err
+				}
+			}
+		}
+	} else {
+		// remove finalizer if function is updated to not cleanup subscription
+		if containsString(function.ObjectMeta.Finalizers, CleanUpFinalizerName) {
+			function.ObjectMeta.Finalizers = removeString(function.ObjectMeta.Finalizers, CleanUpFinalizerName)
+			if err := r.Update(ctx, function); err != nil {
+				return err
+			}
+
+			desiredJob := spec.MakeFunctionCleanUpJob(function)
+			// delete the cleanup job
+			if err := r.Delete(ctx, desiredJob); err != nil {
+				return err
+			}
+
+		}
+	}
 	return nil
 }
 

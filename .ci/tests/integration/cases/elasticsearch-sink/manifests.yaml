@@ -4,6 +4,7 @@ metadata:
   name: sink-sample
 spec:
   className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
+  cleanupSubscription: true
   replicas: 1
   maxReplicas: 1
   input:

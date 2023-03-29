@@ -177,6 +177,17 @@ rules:
       - get
       - list
       - update
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - create
+      - watch
+      - delete
+      - get
+      - list
+      - update
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1

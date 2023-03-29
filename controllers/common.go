@@ -33,6 +33,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	CleanUpFinalizerName = "cleanup.subscription.finalizer"
+)
+
 func observeVPA(ctx context.Context, r client.Reader, name types.NamespacedName, vpaSpec *v1alpha1.VPASpec, conditions map[v1alpha1.Component]v1alpha1.ResourceCondition) error {
 	_, ok := conditions[v1alpha1.VPA]
 	condition := v1alpha1.ResourceCondition{Condition: v1alpha1.VPAReady}
@@ -132,4 +136,23 @@ func applyVPA(ctx context.Context, r client.Client, logger logr.Logger, conditio
 		// do nothing
 	}
 	return nil
+}
+
+func containsString(arr []string, target string) bool {
+	for _, str := range arr {
+		if str == target {
+			return true
+		}
+	}
+	return false
+}
+
+func removeString(arr []string, target string) []string {
+	var result []string
+	for _, str := range arr {
+		if str != target {
+			result = append(result, str)
+		}
+	}
+	return result
 }

@@ -5,14 +5,15 @@ metadata:
   namespace: default
 spec:
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+  cleanupSubscription: true
+  subscriptionName: java-download-subscription
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1
   maxReplicas: 5
   logTopic: persistent://public/default/logging-function-logs
   input:
-    topics:
-    - persistent://public/default/input-download-java-topic
+    topicPattern: "persistent://public/default/input-download-java-topi.*"
     typeClassName: java.lang.String
   output:
     topic: persistent://public/default/output-download-java-topic

@@ -19,6 +19,7 @@ package main
 
 import (
 	"flag"
+	"k8s.io/client-go/kubernetes"
 	"net/http"
 	"os"
 	"strconv"
@@ -137,8 +138,15 @@ func main() {
 		setupLog.Error(err, "failed to check group versions")
 		os.Exit(1)
 	}
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(err, "failed to get rest client")
+		os.Exit(1)
+	}
 	if err = (&controllers.FunctionReconciler{
 		Client:     mgr.GetClient(),
+		Config:     mgr.GetConfig(),
+		RestClient: clientset.CoreV1().RESTClient(),
 		Log:        ctrl.Log.WithName("controllers").WithName("Function"),
 		Scheme:     mgr.GetScheme(),
 		WatchFlags: &watchFlags,
@@ -148,6 +156,8 @@ func main() {
 	}
 	if err = (&controllers.SourceReconciler{
 		Client:     mgr.GetClient(),
+		Config:     mgr.GetConfig(),
+		RestClient: clientset.CoreV1().RESTClient(),
 		Log:        ctrl.Log.WithName("controllers").WithName("Source"),
 		Scheme:     mgr.GetScheme(),
 		WatchFlags: &watchFlags,
@@ -157,6 +167,8 @@ func main() {
 	}
 	if err = (&controllers.SinkReconciler{
 		Client:     mgr.GetClient(),
+		Config:     mgr.GetConfig(),
+		RestClient: clientset.CoreV1().RESTClient(),
 		Log:        ctrl.Log.WithName("controllers").WithName("Sink"),
 		Scheme:     mgr.GetScheme(),
 		WatchFlags: &watchFlags,

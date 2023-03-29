@@ -19,6 +19,8 @@ package controllers
 
 import (
 	"context"
+	v1 "k8s.io/api/batch/v1"
+	"k8s.io/client-go/rest"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -40,6 +42,8 @@ import (
 // FunctionReconciler reconciles a Function object
 type FunctionReconciler struct {
 	client.Client
+	Config     *rest.Config
+	RestClient rest.Interface
 	Log        logr.Logger
 	Scheme     *runtime.Scheme
 	WatchFlags *utils.WatchFlags
@@ -47,7 +51,9 @@ type FunctionReconciler struct {
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functions,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functions/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functions/finalizers,verbs=get;update
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
@@ -56,6 +62,7 @@ type FunctionReconciler struct {
 
 func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("function", req.NamespacedName)
+	r.Log.Info("=========into reconcile")
 
 	// your logic here
 	function := &v1alpha1.Function{}
@@ -98,7 +105,7 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 	err = r.Status().Update(ctx, function)
 	if err != nil {
-		r.Log.Error(err, "failed to update function status")
+		r.Log.Error(err, "failed to update function status after observing resources")
 		return ctrl.Result{}, err
 	}
 
@@ -120,11 +127,19 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	err = r.ApplyFunctionCleanUpJob(ctx, function)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
+	// don't need to update status since function is deleting
+	if !function.ObjectMeta.DeletionTimestamp.IsZero() {
+		return ctrl.Result{}, nil
+	}
 	function.Status.ObservedGeneration = function.Generation
 	err = r.Status().Update(ctx, function)
 	if err != nil {
-		r.Log.Error(err, "failed to update function status")
+		r.Log.Error(err, "failed to update function status after applying resources")
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
@@ -140,7 +155,8 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
 		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
-		Owns(&corev1.Secret{})
+		Owns(&corev1.Secret{}).
+		Owns(&v1.Job{})
 
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
 		manager.Owns(&vpav1.VerticalPodAutoscaler{})

@@ -21,6 +21,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -44,15 +45,15 @@ func MakeSinkHPA(sink *v1alpha1.Sink) *autov2beta2.HorizontalPodAutoscaler {
 }
 
 func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
-	labels := MakeSinkLabels(sink)
+	labels := makeSinkLabels(sink)
 	objectMeta := MakeSinkObjectMeta(sink)
 	return MakeService(objectMeta, labels)
 }
 
 func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, MakeSinkContainer(sink),
-		makeSinkVolumes(sink), MakeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
+	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, makeSinkContainer(sink),
+		makeSinkVolumes(sink, sink.Spec.Pulsar.AuthConfig), makeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
 		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.VolumeMounts, nil)
 }
 
@@ -65,14 +66,14 @@ func MakeSinkObjectMeta(sink *v1alpha1.Sink) *metav1.ObjectMeta {
 	return &metav1.ObjectMeta{
 		Name:      makeJobName(sink.Name, v1alpha1.SinkComponent),
 		Namespace: sink.Namespace,
-		Labels:    MakeSinkLabels(sink),
+		Labels:    makeSinkLabels(sink),
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(sink, sink.GroupVersionKind()),
 		},
 	}
 }
 
-func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
+func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	imagePullPolicy := sink.Spec.ImagePullPolicy
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
@@ -90,7 +91,7 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret,
 			sink.Spec.Pulsar.TLSSecret),
-		VolumeMounts:  makeSinkVolumeMounts(sink),
+		VolumeMounts:  makeSinkVolumeMounts(sink, sink.Spec.Pulsar.AuthConfig),
 		LivenessProbe: probe,
 		SecurityContext: &corev1.SecurityContext{
 			Capabilities: &corev1.Capabilities{
@@ -101,7 +102,7 @@ func MakeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	}
 }
 
-func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
+func makeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 	jobName := makeJobName(sink.Name, v1alpha1.SinkComponent)
 	labels := map[string]string{
 		"app.kubernetes.io/name":            jobName,
@@ -117,23 +118,65 @@ func MakeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 	return labels
 }
 
-func makeSinkVolumes(sink *v1alpha1.Sink) []corev1.Volume {
+func MakeSinkCleanUpJob(sink *v1alpha1.Sink) *v1.Job {
+	objectMeta := &metav1.ObjectMeta{
+		Name:      makeJobName(sink.Name, v1alpha1.SinkComponent) + "-cleanup",
+		Namespace: sink.Namespace,
+		Labels:    makeSinkLabels(sink),
+	}
+	container := makeSinkContainer(sink)
+	container.Name = CleanupContainerName
+	container.LivenessProbe = nil
+	authConfig := sink.Spec.Pulsar.CleanupAuthConfig
+	if authConfig == nil {
+		authConfig = sink.Spec.Pulsar.AuthConfig
+	}
+	volumeMounts := makeSinkVolumeMounts(sink, authConfig)
+	container.VolumeMounts = volumeMounts
+	if sink.Spec.CleanupImage != "" {
+		container.Image = sink.Spec.CleanupImage
+	}
+	topicPattern := sink.Spec.Input.TopicPattern
+	inputSpecs := generateInputSpec(sink.Spec.Input)
+	inputTopics := make([]string, len(inputSpecs), len(inputSpecs))
+	for topic, spec := range inputSpecs {
+		if spec.IsRegexPattern {
+			topicPattern = topic
+		} else {
+			inputTopics = append(inputTopics, topic)
+		}
+	}
+	command := getCleanUpCommand(sink.Spec.Pulsar.AuthSecret != "",
+		sink.Spec.Pulsar.TLSSecret != "",
+		sink.Spec.Pulsar.TLSConfig,
+		authConfig,
+		inputTopics,
+		topicPattern,
+		sink.Spec.SubscriptionName,
+		sink.Spec.Tenant,
+		sink.Spec.Namespace,
+		sink.Spec.Name, false)
+	container.Command = command
+	return makeCleanUpJob(objectMeta, container, makeSinkVolumes(sink, authConfig), makeSinkLabels(sink), sink.Spec.Pod)
+}
+
+func makeSinkVolumes(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) []corev1.Volume {
 	return generatePodVolumes(
 		sink.Spec.Pod.Volumes,
 		nil,
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
-		sink.Spec.Pulsar.AuthConfig,
+		authConfig,
 		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
 }
 
-func makeSinkVolumeMounts(sink *v1alpha1.Sink) []corev1.VolumeMount {
+func makeSinkVolumeMounts(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {
 	return generateContainerVolumeMounts(
 		sink.Spec.VolumeMounts,
 		nil,
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
-		sink.Spec.Pulsar.AuthConfig,
+		authConfig,
 		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
 		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang)
 }

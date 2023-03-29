@@ -42,9 +42,16 @@ if [ $? -ne 0 ]; then
 fi
 
 verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_download_java_function true 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_java_result"
+  kubectl delete -f "${BASE_DIR}"/.ci/tests/integration-oauth2/cases/java-download-function/manifests.yaml > /dev/null 2>&1 || true
+  exit 1
+fi
+
+kubectl delete -f "${BASE_DIR}"/.ci/tests/integration-oauth2/cases/java-download-function/manifests.yaml > /dev/null 2>&1 || true
+verify_cleanup_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_cleanup_subscription_with_auth persistent://public/default/input-download-java-topic java-download-subscription 2>&1)
 if [ $? -eq 0 ]; then
   echo "e2e-test: ok" | yq eval -
 else
-  echo "$verify_java_result"
+  echo "$verify_cleanup_result"
 fi
-kubectl delete -f "${BASE_DIR}"/.ci/tests/integration-oauth2/cases/java-download-function/manifests.yaml > /dev/null 2>&1 || true

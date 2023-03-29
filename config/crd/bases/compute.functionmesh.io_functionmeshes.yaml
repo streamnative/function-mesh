@@ -34,6 +34,8 @@ spec:
                       type: boolean
                     className:
                       type: string
+                    cleanupImage:
+                      type: string
                     cleanupSubscription:
                       type: boolean
                     clusterName:
@@ -3163,6 +3165,27 @@ spec:
                           type: object
                         authSecret:
                           type: string
+                        cleanupAuthConfig:
+                          properties:
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
                         pulsarConfig:
                           type: string
                         tlsConfig:
@@ -3511,6 +3534,8 @@ spec:
                     autoAck:
                       type: boolean
                     className:
+                      type: string
+                    cleanupImage:
                       type: string
                     cleanupSubscription:
                       type: boolean
@@ -6575,6 +6600,27 @@ spec:
                           type: object
                         authSecret:
                           type: string
+                        cleanupAuthConfig:
+                          properties:
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
                         pulsarConfig:
                           type: string
                         tlsConfig:
@@ -6748,6 +6794,8 @@ spec:
                       - discoveryTriggererClassName
                       type: object
                     className:
+                      type: string
+                    cleanupImage:
                       type: string
                     clusterName:
                       type: string
@@ -9791,6 +9839,27 @@ spec:
                           type: object
                         authSecret:
                           type: string
+                        cleanupAuthConfig:
+                          properties:
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
                         pulsarConfig:
                           type: string
                         tlsConfig:

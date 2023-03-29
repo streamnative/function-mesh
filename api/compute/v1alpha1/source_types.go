@@ -55,6 +55,8 @@ type SourceSpec struct {
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 
 	DownloaderImage string `json:"downloaderImage,omitempty"`
+	// the image used to clean up subscription, if empty, the runner image will be used
+	CleanupImage string `json:"cleanupImage,omitempty"`
 
 	// MaxReplicas indicates the maximum number of replicas and enables the HorizontalPodAutoscaler
 	// If provided, a default HPA with CPU at average of 80% will be used.
