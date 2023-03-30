@@ -518,6 +518,11 @@ func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, auth
 		args = append(args, "wget", downloadPath, "-O", componentPackage)
 		return args
 	}
+	args = []string{
+		PulsarctlExecutableFile,
+		"--admin-service-url",
+		"$webServiceURL",
+	}
 	// activate oauth2 for pulsarctl
 	if authConfig != nil {
 		if authConfig.OAuth2Config != nil {
@@ -571,12 +576,6 @@ func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, auth
 			"$clientAuthenticationPlugin",
 			"--auth-params",
 			"$clientAuthenticationParameters",
-			"--admin-service-url",
-			"$webServiceURL",
-		}
-	} else {
-		args = []string{
-			PulsarctlExecutableFile,
 			"--admin-service-url",
 			"$webServiceURL",
 		}

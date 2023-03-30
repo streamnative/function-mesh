@@ -34,24 +34,25 @@ func TestGetDownloadCommand(t *testing.T) {
 		componentPackage string
 		tlsConfig        *v1alpha1.PulsarTLSConfig
 		oauth2Config     *v1alpha1.OAuth2Config
+		genericAuth      *v1alpha1.GenericAuth
 		expectedCommand  []string
 	}{
 		// test get the download command with package name
-		{"function://public/default/test@v1", "function-package.jar", nil, nil,
+		{"function://public/default/test@v1", "function-package.jar", nil, nil, nil,
 			[]string{
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
 			},
 		},
-		{"sink://public/default/test@v1", "sink-package.jar", nil, nil,
+		{"sink://public/default/test@v1", "sink-package.jar", nil, nil, nil,
 			[]string{
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"packages", "download", "sink://public/default/test@v1", "--path", "sink-package.jar",
 			},
 		},
-		{"source://public/default/test@v1", "source-package.jar", nil, nil,
+		{"source://public/default/test@v1", "source-package.jar", nil, nil, nil,
 			[]string{
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
@@ -59,7 +60,7 @@ func TestGetDownloadCommand(t *testing.T) {
 			},
 		},
 		// test get the download command with normal name
-		{"/test", "test.jar", nil, nil,
+		{"/test", "test.jar", nil, nil, nil,
 			[]string{
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
@@ -67,14 +68,14 @@ func TestGetDownloadCommand(t *testing.T) {
 			},
 		},
 		// test get the download command with a wrong package name
-		{"source/public/default/test@v1", "source-package.jar", nil, nil,
+		{"source/public/default/test@v1", "source-package.jar", nil, nil, nil,
 			[]string{
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"functions", "download", "--path", "source/public/default/test@v1", "--destination-file", "source-package.jar",
 			},
 		},
-		{"source:/public/default/test@v1", "source-package.jar", nil, nil,
+		{"source:/public/default/test@v1", "source-package.jar", nil, nil, nil,
 			[]string{
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
@@ -88,7 +89,7 @@ func TestGetDownloadCommand(t *testing.T) {
 				IssuerURL:     "test-issuer-url",
 				KeySecretName: "test-private-key",
 				KeySecretKey:  "auth.json",
-			},
+			}, nil,
 			[]string{
 				PulsarctlExecutableFile,
 				"context",
@@ -119,7 +120,7 @@ func TestGetDownloadCommand(t *testing.T) {
 					CertSecretName:       "test-secret",
 					CertSecretKey:        "test-key",
 				},
-			}, nil,
+			}, nil, nil,
 			[]string{
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
@@ -138,7 +139,7 @@ func TestGetDownloadCommand(t *testing.T) {
 					CertSecretName:       "test-secret",
 					CertSecretKey:        "test-key",
 				},
-			}, nil,
+			}, nil, nil,
 			[]string{
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
@@ -154,9 +155,33 @@ func TestGetDownloadCommand(t *testing.T) {
 					CertSecretName:       "test-secret",
 					CertSecretKey:        "test-key",
 				},
-			}, nil,
+			}, nil, nil,
 			[]string{
 				PulsarctlExecutableFile,
+				"--admin-service-url", "$webServiceURL",
+				"--tls-allow-insecure=true",
+				"--tls-enable-hostname-verification=false",
+				"--tls-trust-cert-path", "/etc/tls/pulsar-functions/test-key",
+				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
+			},
+		},
+		{"function://public/default/test@v1", "function-package.jar",
+			&v1alpha1.PulsarTLSConfig{
+				TLSConfig: v1alpha1.TLSConfig{
+					Enabled:              true,
+					AllowInsecure:        true,
+					HostnameVerification: false,
+					CertSecretName:       "test-secret",
+					CertSecretKey:        "test-key",
+				},
+			}, nil, &v1alpha1.GenericAuth{
+				ClientAuthenticationParameters: "auth-params",
+				ClientAuthenticationPlugin:     "auth-plugin",
+			},
+			[]string{
+				PulsarctlExecutableFile,
+				"--auth-plugin", "auth-plugin",
+				"--auth-params", "auth-params",
 				"--admin-service-url", "$webServiceURL",
 				"--tls-allow-insecure=true",
 				"--tls-enable-hostname-verification=false",
@@ -173,7 +198,7 @@ func TestGetDownloadCommand(t *testing.T) {
 					CertSecretName:       "test-secret",
 					CertSecretKey:        "test-key",
 				},
-			}, nil,
+			}, nil, nil,
 			[]string{
 				"wget",
 				"http://aaa.bbb.ccc/test.jar",
@@ -187,6 +212,8 @@ func TestGetDownloadCommand(t *testing.T) {
 		var authConfig v1alpha1.AuthConfig
 		if v.oauth2Config != nil {
 			authConfig.OAuth2Config = v.oauth2Config
+		} else if v.genericAuth != nil {
+			authConfig.GenericAuth = v.genericAuth
 		}
 		actualResult := getDownloadCommand(v.downloadPath, v.componentPackage, false, false, v.tlsConfig, &authConfig)
 		assert.Equal(t, v.expectedCommand, actualResult)
