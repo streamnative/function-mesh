@@ -126,6 +126,7 @@ broker:
 
 functions:
   functionState: true
+  useDedicatedRunner: false
 
 # enable TLS
 tls:
