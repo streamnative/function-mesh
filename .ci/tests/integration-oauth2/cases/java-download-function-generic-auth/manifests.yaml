@@ -41,8 +41,8 @@ spec:
       certSecretKey: ""
     authConfig:
       genericAuth:
-        clientAuthenticationParameters: eyJhdWRpZW5jZSI6ImFwaTovLzU2YzFiZDE0LTNiYTctNDgwNC1iNDdiLWQ0NmRlNmRjZTMzZS8uZGVmYXVsdCIsImlzc3VlclVybCI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0LzA2YThhMDg2LWFlNmUtNDViNS1hMjJlLWFkOTBkZTIzMDEzZS92Mi4wIiwicHJpdmF0ZUtleSI6Ii9tbnQvc2VjcmV0cy9hdXRoLmpzb24iLCJ0eXBlIjoiY2xpZW50X2NyZWRlbnRpYWxzIiwic2NvcGUiOiJhcGk6Ly81NmMxYmQxNC0zYmE3LTQ4MDQtYjQ3Yi1kNDZkZTZkY2UzM2UvLmRlZmF1bHQiLCJpc3N1ZXJfdXJsIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvMDZhOGEwODYtYWU2ZS00NWI1LWEyMmUtYWQ5MGRlMjMwMTNlL3YyLjAiLCJwcml2YXRlX2tleSI6Ii9tbnQvc2VjcmV0cy9hdXRoLmpzb24ifQo=
-        clientAuthenticationPlugin: b3JnLmFwYWNoZS5wdWxzYXIuY2xpZW50LmltcGwuYXV0aC5vYXV0aDIuQXV0aGVudGljYXRpb25PQXV0aDI=
+        clientAuthenticationParameters: '{"audience":"api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default","issuerUrl":"https://sts.windows.net/06a8a086-ae6e-45b5-a22e-ad90de23013e/v2.0","privateKey":"/mnt/secrets/auth.json","type":"client_credentials","scope":"api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default","issuer_url":"https://sts.windows.net/06a8a086-ae6e-45b5-a22e-ad90de23013e/v2.0","private_key":"/mnt/secrets/auth.json"}'
+        clientAuthenticationPlugin: org.apache.pulsar.client.impl.auth.oauth2.AuthenticationOAuth2
   java:
     jar: pulsar-functions-api-examples.jar
     jarLocation: function://public/default/test-java-function

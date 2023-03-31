@@ -451,7 +451,7 @@ func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvide
 				"--auth-plugin",
 				authConfig.GenericAuth.ClientAuthenticationPlugin,
 				"--auth-params",
-				authConfig.GenericAuth.ClientAuthenticationParameters,
+				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'",
 			}...)
 		}
 	} else if authProvided {
@@ -558,13 +558,13 @@ func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, auth
 				"oauth2",
 				"activate",
 				"--auth-params",
-				authConfig.GenericAuth.ClientAuthenticationParameters,
+				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'",
 				"|| true ) &&",
 				PulsarctlExecutableFile,
 				"--auth-plugin",
 				authConfig.GenericAuth.ClientAuthenticationPlugin,
 				"--auth-params",
-				authConfig.GenericAuth.ClientAuthenticationParameters,
+				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'",
 				"--admin-service-url",
 				"$webServiceURL",
 			}
@@ -998,7 +998,7 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 				"--client_auth_plugin",
 				authConfig.GenericAuth.ClientAuthenticationPlugin,
 				"--client_auth_params",
-				authConfig.GenericAuth.ClientAuthenticationParameters}...)
+				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'"}...)
 		}
 	} else if authProvided {
 		args = append(args, []string{
