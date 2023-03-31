@@ -179,6 +179,12 @@ func TestGetDownloadCommand(t *testing.T) {
 				ClientAuthenticationPlugin:     "auth-plugin",
 			},
 			[]string{
+				"( " + PulsarctlExecutableFile,
+				"oauth2",
+				"activate",
+				"--auth-params",
+				"auth-params",
+				" || true) &&",
 				PulsarctlExecutableFile,
 				"--auth-plugin", "auth-plugin",
 				"--auth-params", "auth-params",

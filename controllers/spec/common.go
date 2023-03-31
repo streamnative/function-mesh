@@ -554,6 +554,12 @@ func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, auth
 			}...)
 		} else if authConfig.GenericAuth != nil {
 			args = []string{
+				"( " + PulsarctlExecutableFile,
+				"oauth2",
+				"activate",
+				"--auth-params",
+				authConfig.GenericAuth.ClientAuthenticationParameters,
+				"|| true ) &&",
 				PulsarctlExecutableFile,
 				"--auth-plugin",
 				authConfig.GenericAuth.ClientAuthenticationPlugin,
