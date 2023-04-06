@@ -274,7 +274,7 @@ redhat-certificated-bundle: yq kustomize manifests
 	$(YQ) eval -i ".metadata.annotations.createdAt = \"$(BUILD_DATETIME)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i ".metadata.annotations.containerImage = \"$(shell docker inspect --format='{{json .RepoDigests}}' $(OPERATOR_IMG) | jq --arg IMAGE_TAG_BASE "$(IMAGE_TAG_BASE)" -c '.[] | select(index($$IMAGE_TAG_BASE))' -r)\"" bundle/manifests/function-mesh.clusterserviceversion.yaml
 	$(YQ) eval -i '.annotations += {"operators.operatorframework.io.bundle.channel.default.v1":"alpha"}' bundle/metadata/annotations.yaml
-	IMG_DIGIEST=$(shell docker inspect --format='{{json .RepoDigests}}' $(OPERATOR_IMG) | jq --arg IMAGE_TAG_BASE "$(IMAGE_TAG_BASE)" -c '.[] | select(index($$IMAGE_TAG_BASE))' -r) hack/postprocess-bundle.sh
+	IMG_DIGEST=$(shell docker inspect --format='{{json .RepoDigests}}' $(OPERATOR_IMG) | jq --arg IMAGE_TAG_BASE "$(IMAGE_TAG_BASE)" -c '.[] | select(index($$IMAGE_TAG_BASE))' -r) hack/postprocess-bundle.sh
 	operator-sdk bundle validate ./bundle --select-optional name=operatorhub
 	operator-sdk bundle validate ./bundle --select-optional suite=operatorframework
 
