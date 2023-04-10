@@ -438,13 +438,22 @@ func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvide
 		"--admin-url",
 		"$webServiceURL",
 	}
-	if authConfig != nil && authConfig.OAuth2Config != nil {
-		args = append(args, []string{
-			"--auth-plugin",
-			OAuth2AuthenticationPlugin,
-			"--auth-params",
-			authConfig.OAuth2Config.AuthenticationParameters(),
-		}...)
+	if authConfig != nil {
+		if authConfig.OAuth2Config != nil {
+			args = append(args, []string{
+				"--auth-plugin",
+				OAuth2AuthenticationPlugin,
+				"--auth-params",
+				authConfig.OAuth2Config.AuthenticationParameters(),
+			}...)
+		} else if authConfig.GenericAuth != nil {
+			args = append(args, []string{
+				"--auth-plugin",
+				authConfig.GenericAuth.ClientAuthenticationPlugin,
+				"--auth-params",
+				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'",
+			}...)
+		}
 	} else if authProvided {
 		args = append(args, []string{
 			"--auth-plugin",
@@ -509,34 +518,57 @@ func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, auth
 		args = append(args, "wget", downloadPath, "-O", componentPackage)
 		return args
 	}
+	args = []string{
+		PulsarctlExecutableFile,
+		"--admin-service-url",
+		"$webServiceURL",
+	}
 	// activate oauth2 for pulsarctl
-	if authConfig != nil && authConfig.OAuth2Config != nil {
-		args = []string{
-			PulsarctlExecutableFile,
-			"context",
-			"set",
-			"downloader",
-			"--admin-service-url",
-			"$webServiceURL",
-			"--issuer-endpoint",
-			authConfig.OAuth2Config.IssuerURL,
-			"--audience",
-			authConfig.OAuth2Config.Audience,
-			"--key-file",
-			authConfig.OAuth2Config.GetMountFile(),
-		}
-		if authConfig.OAuth2Config.Scope != "" {
+	if authConfig != nil {
+		if authConfig.OAuth2Config != nil {
+			args = []string{
+				PulsarctlExecutableFile,
+				"context",
+				"set",
+				"downloader",
+				"--admin-service-url",
+				"$webServiceURL",
+				"--issuer-endpoint",
+				authConfig.OAuth2Config.IssuerURL,
+				"--audience",
+				authConfig.OAuth2Config.Audience,
+				"--key-file",
+				authConfig.OAuth2Config.GetMountFile(),
+			}
+			if authConfig.OAuth2Config.Scope != "" {
+				args = append(args, []string{
+					"--scope",
+					authConfig.OAuth2Config.Scope,
+				}...)
+			}
 			args = append(args, []string{
-				"--scope",
-				authConfig.OAuth2Config.Scope,
+				"&& " + PulsarctlExecutableFile,
+				"oauth2",
+				"activate",
+				"&& " + PulsarctlExecutableFile,
 			}...)
+		} else if authConfig.GenericAuth != nil {
+			args = []string{
+				"( " + PulsarctlExecutableFile,
+				"oauth2",
+				"activate",
+				"--auth-params",
+				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'",
+				"|| true ) &&",
+				PulsarctlExecutableFile,
+				"--auth-plugin",
+				authConfig.GenericAuth.ClientAuthenticationPlugin,
+				"--auth-params",
+				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'",
+				"--admin-service-url",
+				"$webServiceURL",
+			}
 		}
-		args = append(args, []string{
-			"&& " + PulsarctlExecutableFile,
-			"oauth2",
-			"activate",
-			"&& " + PulsarctlExecutableFile,
-		}...)
 	} else if authProvided {
 		args = []string{
 			"( " + PulsarctlExecutableFile,
@@ -550,12 +582,6 @@ func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, auth
 			"$clientAuthenticationPlugin",
 			"--auth-params",
 			"$clientAuthenticationParameters",
-			"--admin-service-url",
-			"$webServiceURL",
-		}
-	} else {
-		args = []string{
-			PulsarctlExecutableFile,
 			"--admin-service-url",
 			"$webServiceURL",
 		}
@@ -967,6 +993,12 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 				OAuth2AuthenticationPlugin,
 				"--client_auth_params",
 				authConfig.OAuth2Config.AuthenticationParameters()}...)
+		} else if authConfig.GenericAuth != nil {
+			args = append(args, []string{
+				"--client_auth_plugin",
+				authConfig.GenericAuth.ClientAuthenticationPlugin,
+				"--client_auth_params",
+				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'"}...)
 		}
 	} else if authProvided {
 		args = append(args, []string{

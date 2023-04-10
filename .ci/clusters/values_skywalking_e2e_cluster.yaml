@@ -126,3 +126,4 @@ broker:
 
 functions:
   functionState: true
+  useDedicatedRunner: false

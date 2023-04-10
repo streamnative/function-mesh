@@ -106,6 +106,7 @@ func (c *PulsarTLSConfig) GetMountPath() string {
 
 type AuthConfig struct {
 	OAuth2Config *OAuth2Config `json:"oauth2Config,omitempty"`
+	GenericAuth  *GenericAuth  `json:"genericAuth,omitempty"`
 	// TODO: support other auth providers
 }
 
@@ -129,6 +130,11 @@ func (o *OAuth2Config) GetMountFile() string {
 
 func (o *OAuth2Config) AuthenticationParameters() string {
 	return fmt.Sprintf(`'{"privateKey":"%s","private_key":"%s","issuerUrl":"%s","issuer_url":"%s","audience":"%s","scope":"%s"}'`, o.GetMountFile(), o.GetMountFile(), o.IssuerURL, o.IssuerURL, o.Audience, o.Scope)
+}
+
+type GenericAuth struct {
+	ClientAuthenticationPlugin     string `json:"clientAuthenticationPlugin"`
+	ClientAuthenticationParameters string `json:"clientAuthenticationParameters"`
 }
 
 type PulsarStateStore struct {

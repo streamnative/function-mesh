@@ -125,6 +125,7 @@ broker:
 
 functions:
   functionState: true
+  useDedicatedRunner: false
   component: functions-worker
   enableCustomizerRuntime: false
   runtimeCustomizerClassName: "org.apache.pulsar.functions.runtime.kubernetes.BasicKubernetesManifestCustomizer"

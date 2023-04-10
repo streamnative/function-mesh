@@ -117,6 +117,8 @@ verify:
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/java-download-function/verify.sh
       expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration-oauth2/cases/java-download-function-generic-auth/verify.sh
+      expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/py-download-function/verify.sh
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/py-download-function-legacy/verify.sh

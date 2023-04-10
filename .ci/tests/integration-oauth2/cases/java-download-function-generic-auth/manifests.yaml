@@ -1,0 +1,77 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: function-download-sample-generic-auth
+  namespace: default
+spec:
+  className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+  forwardSourceMessageProperty: true
+  maxPendingAsyncRequests: 1000
+  replicas: 1
+  logTopic: persistent://public/default/logging-function-logs
+  input:
+    topics:
+    - persistent://public/default/input-download-java-generic-auth-topic
+    typeClassName: java.lang.String
+  output:
+    topic: persistent://public/default/output-download-java-generic-auth-topic
+    typeClassName: java.lang.String
+  resources:
+    requests:
+      cpu: 50m
+      memory: 1G
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+  # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
+  secretsMap:
+    "name":
+        path: "test-secret"
+        key: "username"
+    "pwd":
+        path: "test-secret"
+        key: "password"
+  pulsar:
+    pulsarConfig: "test-pulsar"
+    tlsConfig:
+      enabled: false
+      allowInsecure: false
+      hostnameVerification: true
+      certSecretName: sn-platform-tls-broker
+      certSecretKey: ""
+    authConfig:
+      genericAuth:
+        clientAuthenticationParameters: '{"audience":"api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default","issuerUrl":"https://sts.windows.net/06a8a086-ae6e-45b5-a22e-ad90de23013e/v2.0","privateKey":"/mnt/secrets/auth.json","type":"client_credentials","scope":"api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default","issuer_url":"https://sts.windows.net/06a8a086-ae6e-45b5-a22e-ad90de23013e/v2.0","private_key":"/mnt/secrets/auth.json"}'
+        clientAuthenticationPlugin: org.apache.pulsar.client.impl.auth.oauth2.AuthenticationOAuth2
+  java:
+    jar: pulsar-functions-api-examples.jar
+    jarLocation: function://public/default/test-java-function
+  pod:
+    volumes:
+      - name: sn-platform-oauth2-private-key
+        secret:
+          defaultMode: 420
+          secretName: sn-platform-oauth2-private-key
+  clusterName: test
+  autoAck: true
+  volumeMounts:
+    - mountPath: /mnt/secrets
+      name: sn-platform-oauth2-private-key
+      readOnly: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
+---
+apiVersion: v1
+data:
+  username: YWRtaW4=
+  password: MWYyZDFlMmU2N2Rm
+kind: Secret
+metadata:
+  name: test-secret
+type: Opaque

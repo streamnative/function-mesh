@@ -232,6 +232,10 @@ function ci::verify_download_java_function() {
     fi
 }
 
+function ci::verify_download_java_function_generic_auth() {
+    ci::verify_exclamation_function_with_auth "persistent://public/default/input-download-java-generic-auth-topic" "persistent://public/default/output-download-java-generic-auth-topic" "test-message" "test-message!" 10
+}
+
 function ci::verify_vpa_java_function() {
   kubectl wait -l name=function-sample-vpa-function --for=condition=RecommendationProvided --timeout=2m vpa && true
   cpu=`kubectl get vpa function-sample-vpa-function -o jsonpath='{.status.recommendation.containerRecommendations[0].target.cpu}'`
