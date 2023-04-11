@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
@@ -260,10 +261,11 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 	if !spec.NeedCleanup(function) {
 		return nil
 	}
+	hasCleanupFinalizer := containsCleanupFinalizer(function.ObjectMeta.Finalizers)
 	if function.Spec.CleanupSubscription {
 		// add finalizer if function is updated to clean up subscription
 		if function.ObjectMeta.DeletionTimestamp.IsZero() {
-			if !containsString(function.ObjectMeta.Finalizers, CleanUpFinalizerName) {
+			if !hasCleanupFinalizer {
 				desiredJob := spec.MakeFunctionCleanUpJob(function)
 				if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredJob, func() error {
 					return nil
@@ -281,12 +283,12 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 		} else {
 			desiredJob := spec.MakeFunctionCleanUpJob(function)
 			// if function is deleting, send an "INT" signal to the cleanup job to clean up subscription
-			if containsString(function.ObjectMeta.Finalizers, CleanUpFinalizerName) {
+			if hasCleanupFinalizer {
 				if err := spec.TriggerCleanup(ctx, r.Client, r.RestClient, r.Config, desiredJob); err != nil {
 					r.Log.Error(err, "error send signal to clean up job for function",
 						"namespace", function.Namespace, "name", function.Name)
 				}
-				function.ObjectMeta.Finalizers = removeString(function.ObjectMeta.Finalizers, CleanUpFinalizerName)
+				function.ObjectMeta.Finalizers = removeCleanupFinalizer(function.ObjectMeta.Finalizers)
 				if err := r.Update(ctx, function); err != nil {
 					return err
 				}
@@ -299,8 +301,8 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 		}
 	} else {
 		// remove finalizer if function is updated to not cleanup subscription
-		if containsString(function.ObjectMeta.Finalizers, CleanUpFinalizerName) {
-			function.ObjectMeta.Finalizers = removeString(function.ObjectMeta.Finalizers, CleanUpFinalizerName)
+		if hasCleanupFinalizer {
+			function.ObjectMeta.Finalizers = removeCleanupFinalizer(function.ObjectMeta.Finalizers)
 			if err := r.Update(ctx, function); err != nil {
 				return err
 			}

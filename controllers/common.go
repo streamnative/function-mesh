@@ -138,19 +138,19 @@ func applyVPA(ctx context.Context, r client.Client, logger logr.Logger, conditio
 	return nil
 }
 
-func containsString(arr []string, target string) bool {
+func containsCleanupFinalizer(arr []string) bool {
 	for _, str := range arr {
-		if str == target {
+		if str == CleanUpFinalizerName {
 			return true
 		}
 	}
 	return false
 }
 
-func removeString(arr []string, target string) []string {
+func removeCleanupFinalizer(arr []string) []string {
 	var result []string
 	for _, str := range arr {
-		if str != target {
+		if str != CleanUpFinalizerName {
 			result = append(result, str)
 		}
 	}

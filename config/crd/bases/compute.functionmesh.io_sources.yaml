@@ -3085,6 +3085,16 @@ spec:
                     type: string
                   cleanupAuthConfig:
                     properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
                       oauth2Config:
                         properties:
                           audience:

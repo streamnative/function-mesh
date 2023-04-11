@@ -138,7 +138,7 @@ func MakeSinkCleanUpJob(sink *v1alpha1.Sink) *v1.Job {
 	}
 	topicPattern := sink.Spec.Input.TopicPattern
 	inputSpecs := generateInputSpec(sink.Spec.Input)
-	inputTopics := make([]string, len(inputSpecs), len(inputSpecs))
+	inputTopics := make([]string, len(inputSpecs))
 	for topic, spec := range inputSpecs {
 		if spec.IsRegexPattern {
 			topicPattern = topic

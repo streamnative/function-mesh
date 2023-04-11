@@ -93,7 +93,7 @@ func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
 	}
 	topicPattern := function.Spec.Input.TopicPattern
 	inputSpecs := generateInputSpec(function.Spec.Input)
-	inputTopics := make([]string, len(inputSpecs), len(inputSpecs))
+	inputTopics := make([]string, len(inputSpecs))
 	for topic, spec := range inputSpecs {
 		if spec.IsRegexPattern {
 			topicPattern = topic

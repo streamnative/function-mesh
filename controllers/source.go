@@ -261,10 +261,11 @@ func (r *SourceReconciler) ApplySourceCleanUpJob(ctx context.Context, source *v1
 	if !spec.NeedCleanup(source) {
 		return nil
 	}
+	hasCleanupFinalizer := containsCleanupFinalizer(source.ObjectMeta.Finalizers)
 	if source.Spec.BatchSourceConfig != nil {
 		// add finalizer if source is updated to clean up subscription
 		if source.ObjectMeta.DeletionTimestamp.IsZero() {
-			if !containsString(source.ObjectMeta.Finalizers, CleanUpFinalizerName) {
+			if !hasCleanupFinalizer {
 				desiredJob := spec.MakeSourceCleanUpJob(source)
 				if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredJob, func() error {
 					return nil
@@ -282,12 +283,12 @@ func (r *SourceReconciler) ApplySourceCleanUpJob(ctx context.Context, source *v1
 		} else {
 			desiredJob := spec.MakeSourceCleanUpJob(source)
 			// if source is deleting, send an "INT" signal to the cleanup job to clean up subscription
-			if containsString(source.ObjectMeta.Finalizers, CleanUpFinalizerName) {
+			if hasCleanupFinalizer {
 				if err := spec.TriggerCleanup(ctx, r.Client, r.RestClient, r.Config, desiredJob); err != nil {
 					r.Log.Error(err, "error send signal to clean up job for source",
 						"namespace", source.Namespace, "name", source.Name)
 				}
-				source.ObjectMeta.Finalizers = removeString(source.ObjectMeta.Finalizers, CleanUpFinalizerName)
+				source.ObjectMeta.Finalizers = removeCleanupFinalizer(source.ObjectMeta.Finalizers)
 				if err := r.Update(ctx, source); err != nil {
 					return err
 				}
@@ -300,8 +301,8 @@ func (r *SourceReconciler) ApplySourceCleanUpJob(ctx context.Context, source *v1
 		}
 	} else {
 		// remove finalizer if source is updated to not cleanup subscription
-		if containsString(source.ObjectMeta.Finalizers, CleanUpFinalizerName) {
-			source.ObjectMeta.Finalizers = removeString(source.ObjectMeta.Finalizers, CleanUpFinalizerName)
+		if hasCleanupFinalizer {
+			source.ObjectMeta.Finalizers = removeCleanupFinalizer(source.ObjectMeta.Finalizers)
 			if err := r.Update(ctx, source); err != nil {
 				return err
 			}

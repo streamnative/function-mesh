@@ -559,3 +559,8 @@ function ci::verify_cleanup_batch_source_with_auth() {
         exit 1
     fi
 }
+
+function ci::create_topic() {
+  topic=$1
+  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics create ${topic}
+}

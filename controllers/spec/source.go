@@ -19,6 +19,7 @@ package spec
 
 import (
 	"fmt"
+
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
