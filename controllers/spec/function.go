@@ -74,10 +74,12 @@ func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
 }
 
 func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
+	labels := makeFunctionLabels(function)
+	labels["owner"] = string(function.GetUID())
 	objectMeta := &metav1.ObjectMeta{
 		Name:      makeJobName(function.Name, v1alpha1.FunctionComponent) + "-cleanup",
 		Namespace: function.Namespace,
-		Labels:    makeFunctionLabels(function),
+		Labels:    labels,
 	}
 	container := makeFunctionContainer(function)
 	container.Name = CleanupContainerName
@@ -93,7 +95,7 @@ func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
 	}
 	topicPattern := function.Spec.Input.TopicPattern
 	inputSpecs := generateInputSpec(function.Spec.Input)
-	inputTopics := make([]string, len(inputSpecs))
+	inputTopics := make([]string, 0, len(inputSpecs))
 	for topic, spec := range inputSpecs {
 		if spec.IsRegexPattern {
 			topicPattern = topic

@@ -322,11 +322,10 @@ function ci::verify_source() {
 function ci::verify_batch_source() {
     sleep 30
     kubectl logs --all-containers=true --tail=-1 -l compute.functionmesh.io/name=batch-source-sample | grep "Setting up instance consumer for BatchSource intermediate topic"
-    if [ $? -eq 0 ]; then
-        return 0
-    fi
-    return 1
-
+    while [[ $? -ne 0 ]]; do
+        sleep 5
+        kubectl logs --all-containers=true --tail=-1 -l compute.functionmesh.io/name=batch-source-sample | grep "Setting up instance consumer for BatchSource intermediate topic"
+    done
 }
 
 function ci::verify_crypto_function() {
@@ -531,11 +530,12 @@ function ci::verify_cleanup_subscription() {
 function ci::verify_cleanup_subscription_with_auth() {
     topic=$1
     sub=$2
-    num=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters topics subscriptions ${topic} | grep ${sub} | wc -l')
+    command="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters topics subscriptions $topic' | grep $sub | wc -l"
+    num=$(sh -c "$command")
     retry=0
     while [[ ${num} -ne 0 && $retry -lt 10 ]]; do
         sleep 5
-        num=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters topics subscriptions ${topic} | grep ${sub} | wc -l')
+        num=$(sh -c "$command")
         retry=$((retry+1))
     done
 
@@ -547,12 +547,12 @@ function ci::verify_cleanup_subscription_with_auth() {
 function ci::verify_cleanup_batch_source_with_auth() {
     topic=$1
     sub=$2
-    num=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters topics list public/default | grep ${topic} | wc -l')
+    num=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters topics list public/default' | grep ${topic} | wc -l)
     ci::verify_cleanup_subscription_with_auth ${topic} ${sub}
     retry=0
     while [[ ${num} -ne 0 && $retry -lt 10 ]]; do
         sleep 5
-        num=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters topics list public/default | grep ${topic} | wc -l')
+        num=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters topics list public/default' | grep ${topic} | wc -l)
         retry=$((retry+1))
     done
     if [ $retry -eq 10 ]; then

@@ -163,13 +163,16 @@ func generateSourceDetailsInJSON(source *v1alpha1.Source) string {
 }
 
 func MakeSourceCleanUpJob(source *v1alpha1.Source) *v1.Job {
+	labels := makeSourceLabels(source)
+	labels["owner"] = string(source.GetUID())
 	objectMeta := &metav1.ObjectMeta{
-		Name:      makeJobName(source.Name, v1alpha1.SinkComponent) + "-cleanup",
+		Name:      makeJobName(source.Name, v1alpha1.SourceComponent) + "-cleanup",
 		Namespace: source.Namespace,
-		Labels:    makeSourceLabels(source),
+		Labels:    labels,
 	}
 	container := makeSourceContainer(source)
 	container.LivenessProbe = nil
+	container.Name = CleanupContainerName
 	authConfig := source.Spec.Pulsar.CleanupAuthConfig
 	if authConfig == nil {
 		authConfig = source.Spec.Pulsar.AuthConfig

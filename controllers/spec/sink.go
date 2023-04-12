@@ -119,10 +119,12 @@ func makeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 }
 
 func MakeSinkCleanUpJob(sink *v1alpha1.Sink) *v1.Job {
+	labels := makeSinkLabels(sink)
+	labels["owner"] = string(sink.GetUID())
 	objectMeta := &metav1.ObjectMeta{
 		Name:      makeJobName(sink.Name, v1alpha1.SinkComponent) + "-cleanup",
 		Namespace: sink.Namespace,
-		Labels:    makeSinkLabels(sink),
+		Labels:    labels,
 	}
 	container := makeSinkContainer(sink)
 	container.Name = CleanupContainerName
@@ -138,7 +140,7 @@ func MakeSinkCleanUpJob(sink *v1alpha1.Sink) *v1.Job {
 	}
 	topicPattern := sink.Spec.Input.TopicPattern
 	inputSpecs := generateInputSpec(sink.Spec.Input)
-	inputTopics := make([]string, len(inputSpecs))
+	inputTopics := make([]string, 0, len(inputSpecs))
 	for topic, spec := range inputSpecs {
 		if spec.IsRegexPattern {
 			topicPattern = topic

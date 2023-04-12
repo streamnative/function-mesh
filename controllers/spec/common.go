@@ -24,23 +24,23 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	v1 "k8s.io/api/batch/v1"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/remotecommand"
 	"os"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sort"
 	"strconv"
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
@@ -579,13 +579,14 @@ func getCleanUpCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig, auth
 		}...)
 	} else {
 		for idx, topic := range inputTopics {
-			cleanupArgs = append(adminArgs, []string{
+			singleCleanupArg := append(adminArgs, []string{
 				"topics",
 				"unsubscribe",
 				"-s",
 				getSubscriptionNameOrDefault(subscriptionName, tenant, namespace, name),
 				topic,
 			}...)
+			cleanupArgs = append(cleanupArgs, singleCleanupArg...)
 			if idx < len(inputTopics)-1 {
 				cleanupArgs = append(cleanupArgs, "&& ")
 			}
@@ -603,7 +604,7 @@ func getCleanUpCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig, auth
 		cleanupArgs = append(cleanupArgs, deleteTopicArgs...)
 	}
 
-	return []string{"sh", "-c", "sleep infinity & pid=$!; echo $pid; trap \"kill $pid\" INT; trap 'exit 0' TERM; echo 'waiting....'; wait; echo 'cleaning...'; " + strings.Join(cleanupArgs, " ")}
+	return []string{"sh", "-c", "sleep infinity & pid=$!; echo $pid; trap \"kill $pid\" INT; trap 'exit 0' TERM; echo 'waiting...'; wait; echo 'cleaning...'; " + strings.Join(cleanupArgs, " ")}
 }
 
 func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool,

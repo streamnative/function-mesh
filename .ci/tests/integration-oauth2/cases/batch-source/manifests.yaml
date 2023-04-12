@@ -22,7 +22,9 @@ spec:
       cpu: "0.1"
       memory: 1G
   batchSourceConfig:
-    DiscoveryTriggererClassName: "org.apache.pulsar.io.batchdiscovery.ImmediateTriggerer"
+    discoveryTriggererClassName: "org.apache.pulsar.io.batchdiscovery.ImmediateTriggerer"
+  sourceConfig:
+    test: test
   pulsar:
     pulsarConfig: "test-source"
     tlsConfig:
