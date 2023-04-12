@@ -19,11 +19,11 @@ package controllers
 
 import (
 	"context"
-	autoscaling "k8s.io/api/autoscaling/v1"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscaling "k8s.io/api/autoscaling/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

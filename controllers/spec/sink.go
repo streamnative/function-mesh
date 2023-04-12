@@ -18,6 +18,7 @@
 package spec
 
 import (
+	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -80,6 +81,10 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	}
 	probe := MakeLivenessProbe(sink.Spec.Pod.Liveness)
 	allowPrivilegeEscalation := false
+	mounts := makeSinkVolumeMounts(sink, sink.Spec.Pulsar.AuthConfig)
+	if utils.EnableInitContainers {
+		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(sink.Spec.Java, nil, nil)...)
+	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-sink",
@@ -91,7 +96,7 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret,
 			sink.Spec.Pulsar.TLSSecret),
-		VolumeMounts:  makeSinkVolumeMounts(sink, sink.Spec.Pulsar.AuthConfig),
+		VolumeMounts:  mounts,
 		LivenessProbe: probe,
 		SecurityContext: &corev1.SecurityContext{
 			Capabilities: &corev1.Capabilities{
@@ -179,8 +184,7 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) 
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
-		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang)
+		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
 }
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {

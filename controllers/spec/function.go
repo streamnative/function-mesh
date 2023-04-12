@@ -18,6 +18,7 @@
 package spec
 
 import (
+	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -132,10 +133,7 @@ func makeFunctionVolumeMounts(function *v1alpha1.Function, authConfig *v1alpha1.
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
-		function.Spec.Java,
-		function.Spec.Python,
-		function.Spec.Golang)
+		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang))
 }
 
 func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
@@ -145,6 +143,10 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	}
 	probe := MakeLivenessProbe(function.Spec.Pod.Liveness)
 	allowPrivilegeEscalation := false
+	mounts := makeFunctionVolumeMounts(function, function.Spec.Pulsar.AuthConfig)
+	if utils.EnableInitContainers {
+		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(function.Spec.Java, function.Spec.Python, function.Spec.Golang)...)
+	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-function",
@@ -156,7 +158,7 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
 			function.Spec.Pulsar.TLSSecret),
-		VolumeMounts:  makeFunctionVolumeMounts(function, function.Spec.Pulsar.AuthConfig),
+		VolumeMounts:  mounts,
 		LivenessProbe: probe,
 		SecurityContext: &corev1.SecurityContext{
 			Capabilities: &corev1.Capabilities{

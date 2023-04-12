@@ -20,6 +20,7 @@ package spec
 import (
 	"fmt"
 
+	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -77,6 +78,10 @@ func makeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 	}
 	probe := MakeLivenessProbe(source.Spec.Pod.Liveness)
 	allowPrivilegeEscalation := false
+	mounts := makeSourceVolumeMounts(source, source.Spec.Pulsar.AuthConfig)
+	if utils.EnableInitContainers {
+		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(source.Spec.Java, nil, nil)...)
+	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-source",
@@ -88,7 +93,7 @@ func makeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom: generateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret,
 			source.Spec.Pulsar.TLSSecret),
-		VolumeMounts:  makeSourceVolumeMounts(source, source.Spec.Pulsar.AuthConfig),
+		VolumeMounts:  mounts,
 		LivenessProbe: probe,
 		SecurityContext: &corev1.SecurityContext{
 			Capabilities: &corev1.Capabilities{
@@ -132,8 +137,7 @@ func makeSourceVolumeMounts(source *v1alpha1.Source, authConfig *v1alpha1.AuthCo
 		nil,
 		source.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang),
-		source.Spec.Java, source.Spec.Python, source.Spec.Golang)
+		getRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang))
 }
 
 func makeSourceCommand(source *v1alpha1.Source) []string {

@@ -1571,9 +1571,7 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
 	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	logConfs map[int32]*v1alpha1.LogConfig, javaRuntime *v1alpha1.JavaRuntime,
-	pythonRuntime *v1alpha1.PythonRuntime,
-	goRuntime *v1alpha1.GoRuntime) []corev1.VolumeMount {
+	logConfs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
@@ -1583,9 +1581,6 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 		if authConfig.OAuth2Config != nil {
 			mounts = append(mounts, generateVolumeMountFromOAuth2Config(authConfig.OAuth2Config))
 		}
-	}
-	if utils.EnableInitContainers {
-		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(javaRuntime, pythonRuntime, goRuntime)...)
 	}
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)
