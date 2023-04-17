@@ -1,3 +1,12 @@
+# Function Mesh v0.13.0 Release Notes
+
+## v0.13.0 What's New
+
+* [Controller] Add GenericAuth to auth config ([#620](https://github.com/streamnative/function-mesh/pull/620))
+* [Makefile] rename IMG_DIGEST variable ([#621](https://github.com/streamnative/function-mesh/pull/621))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2023-04+is%3Aclosed+).
+
 # Function Mesh v0.12.0 Release Notes
 
 ## v0.12.0 What's New
