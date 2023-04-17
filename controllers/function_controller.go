@@ -63,7 +63,6 @@ type FunctionReconciler struct {
 
 func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("function", req.NamespacedName)
-	r.Log.Info("=========into reconcile")
 
 	// your logic here
 	function := &v1alpha1.Function{}
