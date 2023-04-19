@@ -39,7 +39,7 @@ RUN if [ -d "/pulsar/cpp-client" ]; then apt-get update \
 WORKDIR /pulsar
 
 RUN if [ -f "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh || true ; fi
-RUN if [ -f "/pulsar/bin/install-pulsar-client.sh" ]; then /pulsar/bin/install-pulsar-client.sh || pip3 install 'pulsar-client[all]' ; fi
+RUN if [ -f "/pulsar/bin/install-pulsar-client.sh" ]; then /pulsar/bin/install-pulsar-client.sh || pip3 install 'pulsar-client[all]==3.1.0' ; fi
 
 
 USER $USER
