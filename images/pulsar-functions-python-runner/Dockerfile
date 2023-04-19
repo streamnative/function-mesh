@@ -9,7 +9,7 @@ COPY --from=pulsar --chown=$UID:$GID /pulsar/instances/deps /pulsar/instances/de
 # But it required with Pulsar 2.10.X and below
 # to make this Dockerfile compalicate with different Pulsar versions
 # Below is a hacky way to copy /pulsar/pulsar-client if exist in pulsar image
-COPY --from=pulsar --chown=$UID:$GID /pulsar/README /pulsar/pulsar-client /pulsar/pulsar-client/
+COPY --from=pulsar --chown=$UID:$GID /pulsar/README /pulsar/pulsar-clien* /pulsar/pulsar-client/
 
 # Pulsar 2.8.0 removes /pulsar/cpp-client from docker image
 # But it required with Pulsar 2.7.X and below
@@ -38,8 +38,8 @@ RUN if [ -d "/pulsar/cpp-client" ]; then apt-get update \
 
 WORKDIR /pulsar
 
-RUN if [ -f "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh ; fi
-RUN if [ -f "/pulsar/bin/install-pulsar-client.sh" ]; then /pulsar/bin/install-pulsar-client.sh ; fi
+RUN if [ -f "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh || true ; fi
+RUN if [ -f "/pulsar/bin/install-pulsar-client.sh" ]; then /pulsar/bin/install-pulsar-client.sh || pip3 install 'pulsar-client[all]' ; fi
 
 
 USER $USER
