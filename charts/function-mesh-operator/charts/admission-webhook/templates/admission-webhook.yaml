@@ -1,7 +1,7 @@
 {{- if .Values.admissionWebhook.enabled }}
   {{- $caBundle := "" -}}
   {{- if eq .Values.admissionWebhook.certificate.provider "custom" }}
-    {{- $caSecret := (lookup "v1" "Secret" "default" (include "function-mesh-operator.certificate.caSecret" .)) -}}
+    {{- $caSecret := (lookup "v1" "Secret" .Values.admissionWebhook.secretsWebhookNamespace (include "function-mesh-operator.certificate.caSecret" .)) -}}
     {{- if $caSecret }}
       {{- $caCert := (b64dec (get $caSecret.data "tls.crt")) -}}
       {{- $caBundle = (printf (include "function-mesh-operator.caBundle" .) (b64enc $caCert)) -}}

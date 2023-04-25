@@ -4,6 +4,7 @@
 
 admissionWebhook:
   enabled: true
+  secretsWebhookNamespace: default
   failurePolicy: Fail
   certificate:
     ## The available providers are:
