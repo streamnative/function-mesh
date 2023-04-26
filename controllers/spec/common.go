@@ -484,9 +484,6 @@ func TriggerCleanup(ctx context.Context, k8sclient client.Client, restClient res
 			TTY:       false,
 		}, scheme.ParameterCodec)
 
-	fmt.Printf("query is %v", res.URL().Query())
-
-	fmt.Printf("pod is %s", pods.Items[0].Name)
 	executor, err := remotecommand.NewSPDYExecutor(config, "POST", res.URL())
 	if err != nil {
 		return err
