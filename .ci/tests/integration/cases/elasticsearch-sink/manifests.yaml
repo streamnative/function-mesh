@@ -4,11 +4,14 @@ metadata:
   name: sink-sample
 spec:
   className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
+  cleanupSubscription: true
   replicas: 1
   maxReplicas: 1
   input:
     topics:
       - persistent://public/default/input-sink-topic
+      - persistent://public/default/input-sink-topid
+      - persistent://public/default/input-sink-topie
     typeClassName: "org.apache.pulsar.client.api.schema.GenericObject"
   sinkConfig:
     elasticSearchUrl: "http://quickstart-es-http.default.svc.cluster.local:9200"
@@ -29,9 +32,9 @@ spec:
     requests:
       cpu: "0.1"
       memory: 1G
-  image: streamnative/pulsar-io-elastic-search:2.9.2.23
+  image: streamnative/pulsar-io-elastic-search:2.10.0.0-rc10
   java:
-    jar: connectors/pulsar-io-elastic-search-2.9.2.23.nar
+    jar: connectors/pulsar-io-elastic-search-2.10.0.0-rc10.nar
     jarLocation: "" # use pulsar provided connectors
   clusterName: test-pulsar
   autoAck: true

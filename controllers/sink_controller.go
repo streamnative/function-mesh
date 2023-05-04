@@ -20,6 +20,9 @@ package controllers
 import (
 	"context"
 
+	v1 "k8s.io/api/batch/v1"
+	"k8s.io/client-go/rest"
+
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
@@ -40,6 +43,8 @@ import (
 // SinkReconciler reconciles a Topic object
 type SinkReconciler struct {
 	client.Client
+	Config     *rest.Config
+	RestClient rest.Interface
 	Log        logr.Logger
 	Scheme     *runtime.Scheme
 	WatchFlags *utils.WatchFlags
@@ -47,7 +52,9 @@ type SinkReconciler struct {
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sinks,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sinks/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sinks/finalizers,verbs=get;update
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling.k8s.io,resources=verticalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
@@ -118,7 +125,15 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	err = r.ApplySinkCleanUpJob(ctx, sink)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
+	// don't need to update status since sink is deleting
+	if !sink.ObjectMeta.DeletionTimestamp.IsZero() {
+		return ctrl.Result{}, nil
+	}
 	sink.Status.ObservedGeneration = sink.Generation
 	err = r.Status().Update(ctx, sink)
 	if err != nil {
@@ -137,7 +152,8 @@ func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&v1alpha1.Sink{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
-		Owns(&autov2beta2.HorizontalPodAutoscaler{})
+		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
+		Owns(&v1.Job{})
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
 		manager.Owns(&vpav1.VerticalPodAutoscaler{})
 	}

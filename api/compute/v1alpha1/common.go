@@ -62,6 +62,8 @@ type PulsarMessaging struct {
 
 	// To replace the AuthSecret
 	AuthConfig *AuthConfig `json:"authConfig,omitempty"`
+
+	CleanupAuthConfig *AuthConfig `json:"cleanupAuthConfig,omitempty"`
 }
 
 type TLSConfig struct {

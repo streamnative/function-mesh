@@ -32,28 +32,26 @@ if [ ! "$KUBECONFIG" ]; then
   export KUBECONFIG=${E2E_KUBECONFIG}
 fi
 
-# TODO: for consumer using topic pattern, at least one topic should be created in advance, else consumer cannot
-# subscribe to new created topic, error is: "Topic does not have schema to check"
-ci::create_topic persistent://public/default/input-download-java-topic
+manifests_file="${BASE_DIR}"/.ci/tests/integration-oauth2/cases/batch-source/manifests.yaml
 
-kubectl apply -f "${BASE_DIR}"/.ci/tests/integration/cases/java-download-function/manifests.yaml > /dev/null 2>&1
+kubectl apply -f "${manifests_file}" > /dev/null 2>&1
 
-verify_fm_result=$(ci::verify_function_mesh function-download-sample 2>&1)
+verify_fm_result=$(ci::verify_function_mesh batch-source-sample 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_fm_result"
-  kubectl delete -f "${BASE_DIR}"/.ci/tests/integration/cases/java-download-function/manifests.yaml > /dev/null 2>&1 || true
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
-verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_download_java_function 2>&1)
+verify_source_result=$(ci::verify_batch_source 2>&1)
 if [ $? -ne 0 ]; then
-  echo "$verify_java_result"
-  kubectl delete -f "${BASE_DIR}"/.ci/tests/integration/cases/java-download-function/manifests.yaml > /dev/null 2>&1 || true
+  echo "$verify_source_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
+kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
 
-kubectl delete -f "${BASE_DIR}"/.ci/tests/integration/cases/java-download-function/manifests.yaml > /dev/null 2>&1 || true
-verify_cleanup_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_cleanup_subscription persistent://public/default/input-download-java-topic java-download-subscription 2>&1)
+verify_cleanup_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_cleanup_batch_source_with_auth persistent://public/default/batch-source-sample-intermediate BatchSourceExecutor-public/default/batch-source-sample 2>&1)
 if [ $? -eq 0 ]; then
   echo "e2e-test: ok" | yq eval -
 else

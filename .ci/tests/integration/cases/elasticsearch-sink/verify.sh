@@ -91,10 +91,29 @@ if [ $? -ne 0 ]; then
 fi
 
 verify_sink_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_sink 2>&1)
-if [ $? -eq 0 ]; then
-  echo "e2e-test: ok" | yq eval -
-else
+if [ $? -ne 0 ]; then
   echo "$verify_sink_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
 fi
 kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
 uninstall_elasticsearch_cluster > /dev/null 2>&1 || true
+
+verify_cleanup_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_cleanup_subscription persistent://public/default/input-sink-topic public/default/sink-sample 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_cleanup_result"
+  exit 1
+fi
+
+verify_cleanup_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_cleanup_subscription persistent://public/default/input-sink-topid public/default/sink-sample 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_cleanup_result"
+  exit 1
+fi
+
+verify_cleanup_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_cleanup_subscription persistent://public/default/input-sink-topie public/default/sink-sample 2>&1)
+if [ $? -eq 0 ]; then
+  echo "e2e-test: ok" | yq eval -
+else
+  echo "$verify_cleanup_result"
+fi

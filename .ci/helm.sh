@@ -319,6 +319,15 @@ function ci::verify_source() {
     ci::verify_mongodb_source 30
 }
 
+function ci::verify_batch_source() {
+    sleep 30
+    kubectl logs --all-containers=true --tail=-1 -l compute.functionmesh.io/name=batch-source-sample | grep "Setting up instance consumer for BatchSource intermediate topic"
+    while [[ $? -ne 0 ]]; do
+        sleep 5
+        kubectl logs --all-containers=true --tail=-1 -l compute.functionmesh.io/name=batch-source-sample | grep "Setting up instance consumer for BatchSource intermediate topic"
+    done
+}
+
 function ci::verify_crypto_function() {
     ci::verify_function_with_encryption "persistent://public/default/java-function-crypto-input-topic" "persistent://public/default/java-function-crypto-output-topic" "test-message" "test-message!" 10
 }
@@ -500,4 +509,58 @@ function ci::verify_function_with_multi_pvs() {
         sleep 5
         num=$(kubectl get pvc -n ${NAMESPACE} -l compute.functionmesh.io/name="${function_name}" --no-headers|wc -l)
     done
+}
+
+function ci::verify_cleanup_subscription() {
+    topic=$1
+    sub=$2
+    num=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics subscriptions ${topic} | grep ${sub} | wc -l)
+    retry=0
+    while [[ ${num} -ne 0 && $retry -lt 10 ]]; do
+        sleep 5
+        num=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics subscriptions ${topic} | grep ${sub} | wc -l)
+        retry=$((retry+1))
+    done
+
+    if [ $retry -eq 10 ]; then
+        exit 1
+    fi
+}
+
+function ci::verify_cleanup_subscription_with_auth() {
+    topic=$1
+    sub=$2
+    command="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters topics subscriptions $topic' | grep $sub | wc -l"
+    num=$(sh -c "$command")
+    retry=0
+    while [[ ${num} -ne 0 && $retry -lt 10 ]]; do
+        sleep 5
+        num=$(sh -c "$command")
+        retry=$((retry+1))
+    done
+
+    if [ $retry -eq 10 ]; then
+        exit 1
+    fi
+}
+
+function ci::verify_cleanup_batch_source_with_auth() {
+    topic=$1
+    sub=$2
+    num=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters topics list public/default' | grep ${topic} | wc -l)
+    ci::verify_cleanup_subscription_with_auth ${topic} ${sub}
+    retry=0
+    while [[ ${num} -ne 0 && $retry -lt 10 ]]; do
+        sleep 5
+        num=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters topics list public/default' | grep ${topic} | wc -l)
+        retry=$((retry+1))
+    done
+    if [ $retry -eq 10 ]; then
+        exit 1
+    fi
+}
+
+function ci::create_topic() {
+  topic=$1
+  kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics create ${topic}
 }

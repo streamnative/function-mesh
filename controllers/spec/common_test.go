@@ -860,72 +860,6 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 			},
 		},
 		{
-			name: "generate downloader volume mounts for file under root level of /pulsar/",
-			args: args{
-				javaRuntime: &v1alpha1.JavaRuntime{
-					Jar:         "/pulsar/test.jar",
-					JarLocation: "/test-jar-location",
-				},
-			},
-			want: []corev1.VolumeMount{
-				{
-					Name:      DownloaderVolume,
-					MountPath: "/pulsar/test.jar",
-					SubPath:   "test.jar",
-					ReadOnly:  false,
-				},
-			},
-		},
-		{
-			name: "generate downloader volume mounts for file under root /",
-			args: args{
-				javaRuntime: &v1alpha1.JavaRuntime{
-					Jar:         "/test.jar",
-					JarLocation: "/test-jar-location",
-				},
-			},
-			want: []corev1.VolumeMount{
-				{
-					Name:      DownloaderVolume,
-					MountPath: "/pulsar/test.jar",
-					SubPath:   "test.jar",
-					ReadOnly:  false,
-				},
-			},
-		},
-		{
-			name: "generate downloader volume mounts for file under root /tmp",
-			args: args{
-				javaRuntime: &v1alpha1.JavaRuntime{
-					Jar:         "/tmp/test.jar",
-					JarLocation: "/test-jar-location",
-				},
-			},
-			want: []corev1.VolumeMount{
-				{
-					Name:      DownloaderVolume,
-					MountPath: "/pulsar/tmp/",
-					ReadOnly:  false,
-				},
-			},
-		},
-		{
-			name: "generate downloader volume mounts for file under sub path of /pulsar/",
-			args: args{
-				javaRuntime: &v1alpha1.JavaRuntime{
-					Jar:         "/pulsar/download/test.jar",
-					JarLocation: "/test-jar-location",
-				},
-			},
-			want: []corev1.VolumeMount{
-				{
-					Name:      DownloaderVolume,
-					MountPath: "/pulsar/download/",
-					ReadOnly:  false,
-				},
-			},
-		},
-		{
 			name: "generate volume mounts from runtime config",
 			args: args{
 				producerConf: &v1alpha1.ProducerConfig{
@@ -966,12 +900,6 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 				{
 					Name:      "test-trust-secret-test-trust-key",
 					MountPath: "/etc/tls/pulsar-functions",
-				},
-				{
-					Name:      DownloaderVolume,
-					MountPath: "/pulsar/test.jar",
-					SubPath:   "test.jar",
-					ReadOnly:  false,
 				},
 				{
 					Name:      "test-producer-secret-test-producer-key",
@@ -1037,9 +965,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 					tt.args.consumerConfs,
 					tt.args.trustCert,
 					tt.args.authConfig,
-					tt.args.logConf,
-					tt.args.javaRuntime, nil, nil,
-				), "generateContainerVolumeMounts(%v, %v, %v, %v)", tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
+					tt.args.logConf), "generateContainerVolumeMounts(%v, %v, %v, %v)", tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
 		})
 	}
 }

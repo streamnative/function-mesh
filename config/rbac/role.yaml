@@ -42,6 +42,17 @@ rules:
   - update
   - watch
 - apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
   - compute.functionmesh.io
   resources:
   - functionmeshes
@@ -76,6 +87,13 @@ rules:
 - apiGroups:
   - compute.functionmesh.io
   resources:
+  - functions/finalizers
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - compute.functionmesh.io
+  resources:
   - functions/status
   verbs:
   - get
@@ -96,6 +114,13 @@ rules:
 - apiGroups:
   - compute.functionmesh.io
   resources:
+  - sinks/finalizers
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - compute.functionmesh.io
+  resources:
   - sinks/status
   verbs:
   - get
@@ -113,6 +138,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - compute.functionmesh.io
+  resources:
+  - sources/finalizers
+  verbs:
+  - get
+  - update
 - apiGroups:
   - compute.functionmesh.io
   resources:

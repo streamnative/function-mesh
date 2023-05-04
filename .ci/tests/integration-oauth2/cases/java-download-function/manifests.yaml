@@ -5,6 +5,8 @@ metadata:
   namespace: default
 spec:
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+  cleanupSubscription: true
+  subscriptionName: java-download-subscription
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1

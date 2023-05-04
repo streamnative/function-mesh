@@ -31,6 +31,8 @@ spec:
                 type: boolean
               className:
                 type: string
+              cleanupImage:
+                type: string
               cleanupSubscription:
                 type: boolean
               clusterName:
@@ -3160,6 +3162,37 @@ spec:
                     type: object
                   authSecret:
                     type: string
+                  cleanupAuthConfig:
+                    properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
                   pulsarConfig:
                     type: string
                   tlsConfig:

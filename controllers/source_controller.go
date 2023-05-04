@@ -26,10 +26,12 @@ import (
 	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,6 +42,8 @@ import (
 // SourceReconciler reconciles a Source object
 type SourceReconciler struct {
 	client.Client
+	Config     *rest.Config
+	RestClient rest.Interface
 	Log        logr.Logger
 	Scheme     *runtime.Scheme
 	WatchFlags *utils.WatchFlags
@@ -47,11 +51,14 @@ type SourceReconciler struct {
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sources,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sources/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sources/finalizers,verbs=get;update
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling.k8s.io,resources=verticalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;create;update;delete
 
 func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("source", req.NamespacedName)
@@ -118,7 +125,15 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	err = r.ApplySourceCleanUpJob(ctx, source)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
+	// don't need to update status since sink is deleting
+	if !source.ObjectMeta.DeletionTimestamp.IsZero() {
+		return ctrl.Result{}, nil
+	}
 	source.Status.ObservedGeneration = source.Generation
 	err = r.Status().Update(ctx, source)
 	if err != nil {
@@ -137,7 +152,8 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&v1alpha1.Source{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
-		Owns(&autov2beta2.HorizontalPodAutoscaler{})
+		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
+		Owns(&v1.Job{})
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
 		manager.Owns(&vpav1.VerticalPodAutoscaler{})
 	}

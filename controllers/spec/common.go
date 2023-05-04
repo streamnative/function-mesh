@@ -19,9 +19,12 @@ package spec
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
+	"os"
 	"reflect"
 	"sort"
 	"strconv"
@@ -29,14 +32,20 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
 	"github.com/streamnative/function-mesh/utils"
+	pctlutil "github.com/streamnative/pulsarctl/pkg/pulsar/utils"
 )
 
 const (
@@ -57,6 +66,8 @@ const (
 	DownloaderVolume        = "downloader-volume"
 	DownloaderImage         = DefaultRunnerPrefix + "pulsarctl:2.10.2.3"
 	DownloadDir             = "/pulsar/download"
+
+	CleanupContainerName = "cleanup"
 
 	WindowFunctionConfigKeyName = "__WINDOWCONFIGS__"
 	WindowFunctionExecutorClass = "org.apache.pulsar.functions.windowing.WindowFunctionExecutor"
@@ -79,6 +90,7 @@ const (
 	AnnotationPrometheusScrape = "prometheus.io/scrape"
 	AnnotationPrometheusPort   = "prometheus.io/port"
 	AnnotationManaged          = "compute.functionmesh.io/managed"
+	AnnotationNeedCleanup      = "compute.functionmesh.io/need-cleanup"
 
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
 
@@ -217,6 +229,11 @@ func IsManaged(object metav1.Object) bool {
 	return !exists || managed != "false"
 }
 
+func NeedCleanup(object metav1.Object) bool {
+	needCleanup, exists := object.GetAnnotations()[AnnotationNeedCleanup]
+	return !exists || needCleanup != "false"
+}
+
 func MakeService(objectMeta *metav1.ObjectMeta, labels map[string]string) *corev1.Service {
 	objectMeta.Name = MakeHeadlessServiceName(objectMeta.Name)
 	return &corev1.Service{
@@ -318,7 +335,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: labels,
 		},
-		Template:            *MakePodTemplate(container, volumes, labels, policy, downloaderContainer),
+		Template:            *makePodTemplate(container, volumes, labels, policy, downloaderContainer),
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
@@ -331,7 +348,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	return spec
 }
 
-func MakePodTemplate(container *corev1.Container, volumes []corev1.Volume,
+func makePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy,
 	downloaderContainer *corev1.Container) *corev1.PodTemplateSpec {
 	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, getEnvOrDefault("RUN_AS_NON_ROOT", "false"))
@@ -431,8 +448,58 @@ func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
 	}
 }
 
-func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+func makeCleanUpJob(objectMeta *metav1.ObjectMeta, container *corev1.Container, volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy) *v1.Job {
+	temp := makePodTemplate(container, volumes, labels, policy, nil)
+	temp.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
+	var ttlSecond int32
+	return &v1.Job{
+		ObjectMeta: *objectMeta,
+		Spec: v1.JobSpec{
+			Template:                *temp,
+			TTLSecondsAfterFinished: &ttlSecond,
+		},
+	}
+}
+
+func TriggerCleanup(ctx context.Context, k8sclient client.Client, restClient rest.Interface, config *rest.Config, job *v1.Job) error {
+	pods := &corev1.PodList{}
+	err := k8sclient.List(ctx, pods, client.InNamespace(job.Namespace), client.MatchingLabels{
+		"job-name": job.Name,
+	})
+	if err != nil || len(pods.Items) == 0 {
+		return errors.New("error list cleanup pod")
+	}
+	command := []string{"sh", "-c", "kill -s INT 1"}
+	res := restClient.Post().
+		Resource("pods").
+		Namespace(job.Namespace).
+		Name(pods.Items[0].Name).
+		SubResource("exec").
+		VersionedParams(&corev1.PodExecOptions{
+			Command:   command,
+			Container: CleanupContainerName,
+			Stdin:     false,
+			Stderr:    true,
+			Stdout:    true,
+			TTY:       false,
+		}, scheme.ParameterCodec)
+
+	executor, err := remotecommand.NewSPDYExecutor(config, "POST", res.URL())
+	if err != nil {
+		return err
+	}
+	err = executor.Stream(remotecommand.StreamOptions{
+		Stdin:  nil,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getPulsarAdminCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	args := []string{
 		PulsarAdminExecutableFile,
 		"--admin-url",
@@ -490,6 +557,57 @@ func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvide
 			}
 		}
 	}
+
+	return args
+}
+
+func getCleanUpCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, inputTopics []string, topicPattern, subscriptionName, tenant, namespace, name string, deleteTopic bool) []string {
+	adminArgs := getPulsarAdminCommand(authProvided, tlsProvided, tlsConfig, authConfig)
+
+	var cleanupArgs []string
+	if topicPattern != "" {
+		topicName, _ := pctlutil.GetTopicName(topicPattern)
+		cleanupArgs = append(adminArgs, []string{
+			"namespaces",
+			"unsubscribe",
+			"-s",
+			getSubscriptionNameOrDefault(subscriptionName, tenant, namespace, name),
+			topicName.GetTenant() + "/" + topicName.GetNamespace(),
+		}...)
+	} else {
+		for idx, topic := range inputTopics {
+			singleCleanupArg := append(adminArgs, []string{
+				"topics",
+				"unsubscribe",
+				"-s",
+				getSubscriptionNameOrDefault(subscriptionName, tenant, namespace, name),
+				topic,
+			}...)
+			cleanupArgs = append(cleanupArgs, singleCleanupArg...)
+			if idx < len(inputTopics)-1 {
+				cleanupArgs = append(cleanupArgs, "&& ")
+			}
+		}
+	}
+
+	if deleteTopic {
+		deleteTopicArgs := append(adminArgs, []string{
+			"topics",
+			"delete",
+			"-f",
+			inputTopics[0],
+		}...)
+		cleanupArgs = append(cleanupArgs, "&& ")
+		cleanupArgs = append(cleanupArgs, deleteTopicArgs...)
+	}
+
+	return []string{"sh", "-c", "sleep infinity & pid=$!; echo $pid; trap \"kill $pid\" INT; trap 'exit 0' TERM; echo 'waiting...'; wait; echo 'cleaning...'; " + strings.Join(cleanupArgs, " ")}
+}
+
+func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool,
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	args := getPulsarAdminCommand(authProvided, tlsProvided, tlsConfig, authConfig)
+
 	if hasPackageNamePrefix(downloadPath) {
 		args = append(args, []string{
 			"packages",
@@ -1450,9 +1568,7 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
 	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	logConfs map[int32]*v1alpha1.LogConfig, javaRuntime *v1alpha1.JavaRuntime,
-	pythonRuntime *v1alpha1.PythonRuntime,
-	goRuntime *v1alpha1.GoRuntime) []corev1.VolumeMount {
+	logConfs map[int32]*v1alpha1.LogConfig) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
@@ -1462,9 +1578,6 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 		if authConfig.OAuth2Config != nil {
 			mounts = append(mounts, generateVolumeMountFromOAuth2Config(authConfig.OAuth2Config))
 		}
-	}
-	if utils.EnableInitContainers {
-		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(javaRuntime, pythonRuntime, goRuntime)...)
 	}
 	mounts = append(mounts, generateContainerVolumeMountsFromProducerConf(producerConf)...)
 	mounts = append(mounts, generateContainerVolumeMountsFromConsumerConfigs(consumerConfs)...)
@@ -1772,4 +1885,11 @@ func getFilenameOfComponentPackage(componentPackage string) string {
 		return data[len(data)-1]
 	}
 	return componentPackage
+}
+
+func getSubscriptionNameOrDefault(subscription, tenant, namespace, name string) string {
+	if subscription == "" {
+		return fmt.Sprintf("%s/%s/%s", tenant, namespace, name)
+	}
+	return subscription
 }
