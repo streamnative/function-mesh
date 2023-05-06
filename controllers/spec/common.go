@@ -348,7 +348,9 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	if len(volumeClaimTemplates) > 0 {
 		spec.VolumeClaimTemplates = volumeClaimTemplates
 	}
-	spec.PersistentVolumeClaimRetentionPolicy = persistentVolumeClaimRetentionPolicy
+	if persistentVolumeClaimRetentionPolicy != nil {
+		spec.PersistentVolumeClaimRetentionPolicy = persistentVolumeClaimRetentionPolicy
+	}
 	return spec
 }
 
