@@ -260,7 +260,8 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, pulsar v1alpha1.PulsarMessaging,
 	javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
 	goRuntime *v1alpha1.GoRuntime, definedVolumeMounts []corev1.VolumeMount,
-	volumeClaimTemplates []corev1.PersistentVolumeClaim) *appsv1.StatefulSet {
+	volumeClaimTemplates []corev1.PersistentVolumeClaim,
+	persistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy) *appsv1.StatefulSet {
 
 	volumeMounts := generateDownloaderVolumeMountsForDownloader(javaRuntime, pythonRuntime, goRuntime)
 	var downloaderContainer *corev1.Container
@@ -323,13 +324,15 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 		},
 		ObjectMeta: *objectMeta,
 		Spec: *MakeStatefulSetSpec(replicas, container, podVolumes, labels, policy,
-			MakeHeadlessServiceName(objectMeta.Name), downloaderContainer, volumeClaimTemplates),
+			MakeHeadlessServiceName(objectMeta.Name), downloaderContainer, volumeClaimTemplates,
+			persistentVolumeClaimRetentionPolicy),
 	}
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy,
-	serviceName string, downloaderContainer *corev1.Container, volumeClaimTemplates []corev1.PersistentVolumeClaim) *appsv1.StatefulSetSpec {
+	serviceName string, downloaderContainer *corev1.Container, volumeClaimTemplates []corev1.PersistentVolumeClaim,
+	persistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy) *appsv1.StatefulSetSpec {
 	spec := &appsv1.StatefulSetSpec{
 		Replicas: replicas,
 		Selector: &metav1.LabelSelector{
@@ -345,6 +348,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	if len(volumeClaimTemplates) > 0 {
 		spec.VolumeClaimTemplates = volumeClaimTemplates
 	}
+	spec.PersistentVolumeClaimRetentionPolicy = persistentVolumeClaimRetentionPolicy
 	return spec
 }
 

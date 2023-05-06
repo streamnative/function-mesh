@@ -68,7 +68,7 @@ function crd::convert_webhook() {
     echo "clientConfig:" | sed  "s/^/$(crd::nindent 1)/"
     # webhook.clientConfig.caBundle
     echo "{{- if eq .Values.admissionWebhook.certificate.provider \"custom\" }}" | sed  "s/^/$(crd::nindent 2)/"
-    echo "{{- \$caSecret := (lookup \"v1\" \"Secret\" \"default\" (include \"function-mesh-operator.certificate.caSecret\" .)) -}}" | sed  "s/^/$(crd::nindent 3)/"
+    echo "{{- \$caSecret := (lookup \"v1\" \"Secret\" .Values.admissionWebhook.secretsWebhookNamespace (include \"function-mesh-operator.certificate.caSecret\" .)) -}}" | sed  "s/^/$(crd::nindent 3)/"
     echo "{{- if \$caSecret }}" | sed  "s/^/$(crd::nindent 3)/"
     echo "{{- \$caCert := (b64dec (get \$caSecret.data \"tls.crt\")) -}}" | sed  "s/^/$(crd::nindent 4)/"
     echo "{{ printf (include \"function-mesh-operator.caBundle\" .) (b64enc \$caCert) | nindent 8 }}" | sed  "s/^/$(crd::nindent 4)/"
