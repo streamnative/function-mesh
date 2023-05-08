@@ -301,8 +301,8 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 			Name:  DownloaderName,
 			Image: image,
 			Command: []string{"sh", "-c",
-				strings.Join(getDownloadCommand(downloadPath, componentPackage, true, true, pulsar.TLSSecret != "",
-					pulsar.AuthSecret != "", pulsar.TLSConfig, pulsar.AuthConfig), " ")},
+				strings.Join(getDownloadCommand(downloadPath, componentPackage, true, true,
+					pulsar.AuthSecret != "", pulsar.TLSSecret != "", pulsar.TLSConfig, pulsar.AuthConfig), " ")},
 			VolumeMounts:    volumeMounts,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Env: []corev1.EnvVar{{
@@ -390,7 +390,7 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget,
-			tlsProvided, authProvided, tlsConfig, authConfig), " ")
+			authProvided, tlsProvided, tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -417,8 +417,8 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath,
-			function.Spec.ImageHasPulsarctl, function.Spec.ImageHasWget, function.Spec.Pulsar.TLSSecret != "",
-			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
+			function.Spec.ImageHasPulsarctl, function.Spec.ImageHasWget, function.Spec.Pulsar.AuthSecret != "",
+			function.Spec.Pulsar.TLSSecret != "", function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -726,7 +726,7 @@ func getCleanUpCommand(hasPulsarctl, authProvided, tlsProvided bool, tlsConfig T
 	return []string{"sh", "-c", "sleep infinity & pid=$!; echo $pid; trap \"kill $pid\" INT; trap 'exit 0' TERM; echo 'waiting...'; wait; sleep 10s; echo 'cleaning...'; " + strings.Join(cleanupArgs, " ")}
 }
 
-func getDownloadCommand(downloadPath, componentPackage string, hasPulsarctl, hasWget, tlsProvided, authProvided bool, tlsConfig TLSConfig,
+func getDownloadCommand(downloadPath, componentPackage string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, tlsConfig TLSConfig,
 	authConfig *v1alpha1.AuthConfig) []string {
 	var args []string
 	if hasHTTPPrefix(downloadPath) && hasWget {
