@@ -109,5 +109,9 @@ verify:
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/py-download-function-legacy/verify.sh
       expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration-oauth2/cases/py-download-from-http-function/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration-oauth2/cases/py-download-from-http-under-second-level-path-function/verify.sh
+      expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/batch-source/verify.sh
       expected: expected.data.yaml

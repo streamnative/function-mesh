@@ -389,8 +389,8 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 			authConfig, maxPendingAsyncRequests), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget, authProvided,
-			tlsProvided, tlsConfig, authConfig), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget,
+			tlsProvided, authProvided, tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -417,8 +417,8 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath,
-			function.Spec.ImageHasPulsarctl, function.Spec.ImageHasWget, function.Spec.Pulsar.AuthSecret != "",
-			function.Spec.Pulsar.TLSSecret != "", function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
+			function.Spec.ImageHasPulsarctl, function.Spec.ImageHasWget, function.Spec.Pulsar.TLSSecret != "",
+			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
