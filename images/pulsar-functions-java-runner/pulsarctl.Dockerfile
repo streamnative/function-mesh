@@ -35,7 +35,7 @@ RUN echo "VERSION_TAG=${VERSION_TAG}" && \
          && apt-get -y --purge autoremove \
          && apt-get autoclean \
          && apt-get clean \
-         && rm -rf /var/lib/apt/lists/* \
+         && rm -rf /var/lib/apt/lists/*
 
 COPY --from=pulsar --chown=$UID:$GID /pulsar/conf /pulsar/conf
 COPY --from=pulsar --chown=$UID:$GID /pulsar/bin /pulsar/bin

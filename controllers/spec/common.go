@@ -60,7 +60,6 @@ const (
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 	WorkDir                    = "/pulsar/"
 
-	// for init container
 	PulsarctlExecutableFile = "/usr/local/bin/pulsarctl"
 	DownloaderName          = "downloader"
 	DownloaderVolume        = "downloader-volume"
@@ -380,7 +379,7 @@ func makePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 }
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
-	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
+	javaOpts []string, withPulsarctl, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	maxPendingAsyncRequests *int32) []string {
@@ -390,8 +389,14 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 			authConfig, maxPendingAsyncRequests), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
-			tlsConfig, authConfig), " ")
+		var downloadCommand string
+		if withPulsarctl {
+			downloadCommand = strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
+				tlsConfig, authConfig), " ")
+		} else {
+			downloadCommand = strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
+				tlsConfig, authConfig), " ")
+		}
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}

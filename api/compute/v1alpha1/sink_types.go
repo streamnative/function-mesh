@@ -92,6 +92,8 @@ type SinkSpec struct {
 	// Image pull policy, one of Always, Never, IfNotPresent, default to IfNotPresent.
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
+	ImageWithPulsarctl bool `json:"imageWithPulsarctl,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	StateConfig *Stateful `json:"statefulConfig,omitempty"`
 }

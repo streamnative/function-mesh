@@ -95,6 +95,8 @@ spec:
                         type: string
                       imagePullPolicy:
                         type: string
+                      imageWithPulsarctl:
+                        type: boolean
                       input:
                         properties:
                           customSchemaSources:
@@ -3601,6 +3603,8 @@ spec:
                         type: string
                       imagePullPolicy:
                         type: string
+                      imageWithPulsarctl:
+                        type: boolean
                       input:
                         properties:
                           customSchemaSources:
@@ -6869,6 +6873,8 @@ spec:
                         type: string
                       imagePullPolicy:
                         type: string
+                      imageWithPulsarctl:
+                        type: boolean
                       java:
                         properties:
                           extraDependenciesDir:

@@ -195,8 +195,8 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		parseJavaLogLevel(sink.Spec.Java),
 		generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),
-		spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
-		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil)
+		spec.Java.JavaOpts, spec.ImageWithPulsarctl, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
+		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil)
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {

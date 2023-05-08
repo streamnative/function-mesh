@@ -4,6 +4,8 @@ metadata:
   name: go-function-download-sample
   namespace: default
 spec:
+  image: streamnative/pulsar-functions-pulsarctl-go-runner:2.9.2.23
+  imageWithPulsarctl: true
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1

@@ -94,6 +94,8 @@ spec:
                 type: string
               imagePullPolicy:
                 type: string
+              imageWithPulsarctl:
+                type: boolean
               java:
                 properties:
                   extraDependenciesDir:

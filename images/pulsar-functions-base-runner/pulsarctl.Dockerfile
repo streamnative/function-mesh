@@ -30,6 +30,6 @@ RUN mkdir -p /pulsar/bin/ \
          && tar -xzf /pulsar/bin/pulsarctl-amd64-linux.tar.gz -C /pulsar/bin/ \
          && rm -rf /pulsar/bin/pulsarctl-amd64-linux.tar.gz \
          && chmod +x /pulsar/bin/pulsarctl-amd64-linux/pulsarctl \
-         && ln -s /pulsar/bin/pulsarctl-amd64-linux/pulsarctl /usr/bin/pulsarctl
+         && ln -s /pulsar/bin/pulsarctl-amd64-linux/pulsarctl /usr/local/bin/pulsarctl
 
 WORKDIR /pulsar
