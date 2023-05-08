@@ -43,6 +43,7 @@ docker tag ${PULSARCTL_RUNNER_BASE} "${DOCKER_REPO}"/${PULSARCTL_RUNNER_BASE}:"$
 echo "build java runner"
 docker build --platform linux/amd64 -t ${JAVA_RUNNER} images/pulsar-functions-java-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
 docker build --platform linux/amd64 -t ${PULSARCTL_JAVA_RUNNER} images/pulsar-functions-java-runner -f images/pulsar-functions-java-runner/pulsarctl.Dockerfile --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
+docker tag ${JAVA_RUNNER} "${DOCKER_REPO}"/${JAVA_RUNNER}:"${RUNNER_TAG}"
 docker tag ${PULSARCTL_JAVA_RUNNER} "${DOCKER_REPO}"/${PULSARCTL_JAVA_RUNNER}:"${RUNNER_TAG}"
 
 echo "build python runner"
