@@ -3,6 +3,7 @@ ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
 FROM pulsar-functions-pulsarctl-runner-base:latest
 
+COPY --from=pulsar --chown=$UID:$GID /pulsar/bin /pulsar/bin
 COPY --from=pulsar --chown=$UID:$GID /pulsar/instances/python-instance /pulsar/instances/python-instance
 # Pulsar 2.11.0 removes /pulsar/pulsar-client from docker image
 # But it required with Pulsar 2.10.X and below
@@ -27,8 +28,8 @@ RUN apt-get update \
      && python3 get-pip.py && pip3 install --upgrade pip
 
 RUN if [ -d "/pulsar/cpp-client" ]; then apt-get update \
-     && apt install -y /pulsar/cpp-client/*.deb \
-     && apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/apt/lists/* ; fi \
+     && apt install -y /pulsar/cpp-client/*.deb || true \
+     && apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/apt/lists/* ; fi
 
 RUN if [ -f "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh || pip3 install 'pulsar-client[all]==3.1.0' ; fi
 RUN if [ -f "/pulsar/bin/install-pulsar-client.sh" ]; then /pulsar/bin/install-pulsar-client.sh || pip3 install 'pulsar-client[all]==3.1.0' ; fi
