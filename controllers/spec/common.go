@@ -301,7 +301,7 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 			Name:  DownloaderName,
 			Image: image,
 			Command: []string{"sh", "-c",
-				strings.Join(getDownloadCommand(downloadPath, componentPackage, pulsar.TLSSecret != "",
+				strings.Join(getDownloadCommand(downloadPath, componentPackage, true, true, pulsar.TLSSecret != "",
 					pulsar.AuthSecret != "", pulsar.TLSConfig, pulsar.AuthConfig), " ")},
 			VolumeMounts:    volumeMounts,
 			ImagePullPolicy: corev1.PullIfNotPresent,
@@ -379,7 +379,7 @@ func makePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 }
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
-	javaOpts []string, withPulsarctl, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
+	javaOpts []string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	maxPendingAsyncRequests *int32) []string {
@@ -389,29 +389,23 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 			authConfig, maxPendingAsyncRequests), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
-		var downloadCommand string
-		if withPulsarctl {
-			downloadCommand = strings.Join(getDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
-				tlsConfig, authConfig), " ")
-		} else {
-			downloadCommand = strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
-				tlsConfig, authConfig), " ")
-		}
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget, authProvided,
+			tlsProvided, tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
 }
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
-	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
+	hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, packageFile, authProvided, tlsProvided,
-			tlsConfig, authConfig), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget, authProvided,
+			tlsProvided, tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -422,9 +416,9 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getLegacyDownloadCommand(downloadPath, goExecFilePath,
-			function.Spec.Pulsar.AuthSecret != "", function.Spec.Pulsar.TLSSecret != "",
-			function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath,
+			function.Spec.ImageHasPulsarctl, function.Spec.ImageHasWget, function.Spec.Pulsar.AuthSecret != "",
+			function.Spec.Pulsar.TLSSecret != "", function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -566,82 +560,8 @@ func getPulsarAdminCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig, 
 	return args
 }
 
-func getCleanUpCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, inputTopics []string, topicPattern, subscriptionName, tenant, namespace, name string, deleteTopic bool) []string {
-	adminArgs := getPulsarAdminCommand(authProvided, tlsProvided, tlsConfig, authConfig)
-
-	var cleanupArgs []string
-	if topicPattern != "" {
-		topicName, _ := pctlutil.GetTopicName(topicPattern)
-		cleanupArgs = append(adminArgs, []string{
-			"namespaces",
-			"unsubscribe",
-			"-s",
-			getSubscriptionNameOrDefault(subscriptionName, tenant, namespace, name),
-			topicName.GetTenant() + "/" + topicName.GetNamespace(),
-		}...)
-	} else {
-		for idx, topic := range inputTopics {
-			singleCleanupArg := append(adminArgs, []string{
-				"topics",
-				"unsubscribe",
-				"-s",
-				getSubscriptionNameOrDefault(subscriptionName, tenant, namespace, name),
-				topic,
-			}...)
-			cleanupArgs = append(cleanupArgs, singleCleanupArg...)
-			if idx < len(inputTopics)-1 {
-				cleanupArgs = append(cleanupArgs, "&& ")
-			}
-		}
-	}
-
-	if deleteTopic {
-		deleteTopicArgs := append(adminArgs, []string{
-			"topics",
-			"delete",
-			"-f",
-			inputTopics[0],
-		}...)
-		cleanupArgs = append(cleanupArgs, "&& ")
-		cleanupArgs = append(cleanupArgs, deleteTopicArgs...)
-	}
-
-	return []string{"sh", "-c", "sleep infinity & pid=$!; echo $pid; trap \"kill $pid\" INT; trap 'exit 0' TERM; echo 'waiting...'; wait; echo 'cleaning...'; " + strings.Join(cleanupArgs, " ")}
-}
-
-func getLegacyDownloadCommand(downloadPath, componentPackage string, authProvided, tlsProvided bool,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
-	args := getPulsarAdminCommand(authProvided, tlsProvided, tlsConfig, authConfig)
-
-	if hasPackageNamePrefix(downloadPath) {
-		args = append(args, []string{
-			"packages",
-			"download",
-			downloadPath,
-			"--path",
-			componentPackage,
-		}...)
-		return args
-	}
-	args = append(args, []string{
-		"functions",
-		"download",
-		"--path",
-		downloadPath,
-		"--destination-file",
-		componentPackage,
-	}...)
-	return args
-}
-
-func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, authProvided bool, tlsConfig TLSConfig,
-	authConfig *v1alpha1.AuthConfig) []string {
-	var args []string
-	if hasHTTPPrefix(downloadPath) {
-		args = append(args, "wget", downloadPath, "-O", componentPackage)
-		return args
-	}
-	args = []string{
+func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	args := []string{
 		PulsarctlExecutableFile,
 		"--admin-service-url",
 		"$webServiceURL",
@@ -734,6 +654,89 @@ func getDownloadCommand(downloadPath, componentPackage string, tlsProvided, auth
 				}...)
 			}
 		}
+	}
+
+	return args
+}
+
+func getCleanUpCommand(hasPulsarctl, authProvided, tlsProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, inputTopics []string, topicPattern, subscriptionName, tenant, namespace, name string, deleteTopic bool) []string {
+	var adminArgs []string
+	if hasPulsarctl {
+		adminArgs = getPulsarctlCommand(authProvided, tlsProvided, tlsConfig, authConfig)
+	} else {
+		adminArgs = getPulsarAdminCommand(authProvided, tlsProvided, tlsConfig, authConfig)
+	}
+
+	var cleanupArgs []string
+	if topicPattern != "" {
+		topicName, _ := pctlutil.GetTopicName(topicPattern)
+		if hasPulsarctl {
+			cleanupArgs = append(adminArgs, []string{
+				"namespaces",
+				"unsubscribe",
+				topicName.GetTenant() + "/" + topicName.GetNamespace(),
+				getSubscriptionNameOrDefault(subscriptionName, tenant, namespace, name),
+			}...)
+		} else {
+			cleanupArgs = append(adminArgs, []string{
+				"namespaces",
+				"unsubscribe",
+				"-s",
+				getSubscriptionNameOrDefault(subscriptionName, tenant, namespace, name),
+				topicName.GetTenant() + "/" + topicName.GetNamespace(),
+			}...)
+		}
+	} else {
+		for idx, topic := range inputTopics {
+			var singleCleanupArg []string
+			if hasPulsarctl {
+				singleCleanupArg = append(adminArgs, []string{
+					"subscriptions",
+					"delete",
+					topic,
+					getSubscriptionNameOrDefault(subscriptionName, tenant, namespace, name),
+				}...)
+			} else {
+				singleCleanupArg = append(adminArgs, []string{
+					"topics",
+					"unsubscribe",
+					"-s",
+					getSubscriptionNameOrDefault(subscriptionName, tenant, namespace, name),
+					topic,
+				}...)
+			}
+			cleanupArgs = append(cleanupArgs, singleCleanupArg...)
+			if idx < len(inputTopics)-1 {
+				cleanupArgs = append(cleanupArgs, "&& ")
+			}
+		}
+	}
+
+	if deleteTopic {
+		deleteTopicArgs := append(adminArgs, []string{
+			"topics",
+			"delete",
+			"-f",
+			inputTopics[0],
+		}...)
+		cleanupArgs = append(cleanupArgs, "&& ")
+		cleanupArgs = append(cleanupArgs, deleteTopicArgs...)
+	}
+
+	return []string{"sh", "-c", "sleep infinity & pid=$!; echo $pid; trap \"kill $pid\" INT; trap 'exit 0' TERM; echo 'waiting...'; wait; sleep 10s; echo 'cleaning...'; " + strings.Join(cleanupArgs, " ")}
+}
+
+func getDownloadCommand(downloadPath, componentPackage string, hasPulsarctl, hasWget, tlsProvided, authProvided bool, tlsConfig TLSConfig,
+	authConfig *v1alpha1.AuthConfig) []string {
+	var args []string
+	if hasHTTPPrefix(downloadPath) && hasWget {
+		args = append(args, "wget", downloadPath, "-O", componentPackage)
+		return args
+	}
+	if hasPulsarctl {
+		args = getPulsarctlCommand(authProvided, tlsProvided, tlsConfig, authConfig)
+	} else {
+		args = getPulsarAdminCommand(authProvided, tlsProvided, tlsConfig, authConfig)
 	}
 	if hasPackageNamePrefix(downloadPath) {
 		args = append(args, []string{

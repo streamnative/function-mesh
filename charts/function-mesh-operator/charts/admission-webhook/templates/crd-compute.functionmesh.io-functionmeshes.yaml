@@ -93,10 +93,12 @@ spec:
                         type: object
                       image:
                         type: string
+                      imageHasGet:
+                        type: boolean
+                      imageHasPulsarctl:
+                        type: boolean
                       imagePullPolicy:
                         type: string
-                      imageWithPulsarctl:
-                        type: boolean
                       input:
                         properties:
                           customSchemaSources:
@@ -3601,10 +3603,12 @@ spec:
                         type: object
                       image:
                         type: string
+                      imageHasGet:
+                        type: boolean
+                      imageHasPulsarctl:
+                        type: boolean
                       imagePullPolicy:
                         type: string
-                      imageWithPulsarctl:
-                        type: boolean
                       input:
                         properties:
                           customSchemaSources:
@@ -6871,10 +6875,12 @@ spec:
                         type: object
                       image:
                         type: string
+                      imageHasGet:
+                        type: boolean
+                      imageHasPulsarctl:
+                        type: boolean
                       imagePullPolicy:
                         type: string
-                      imageWithPulsarctl:
-                        type: boolean
                       java:
                         properties:
                           extraDependenciesDir:

@@ -153,7 +153,8 @@ func MakeSinkCleanUpJob(sink *v1alpha1.Sink) *v1.Job {
 			inputTopics = append(inputTopics, topic)
 		}
 	}
-	command := getCleanUpCommand(sink.Spec.Pulsar.AuthSecret != "",
+	command := getCleanUpCommand(sink.Spec.ImageHasPulsarctl,
+		sink.Spec.Pulsar.AuthSecret != "",
 		sink.Spec.Pulsar.TLSSecret != "",
 		sink.Spec.Pulsar.TLSConfig,
 		authConfig,
@@ -195,7 +196,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		parseJavaLogLevel(sink.Spec.Java),
 		generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),
-		spec.Java.JavaOpts, spec.ImageWithPulsarctl, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
+		spec.Java.JavaOpts, spec.ImageHasPulsarctl, spec.ImageHasPulsarctl, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil)
 }
 

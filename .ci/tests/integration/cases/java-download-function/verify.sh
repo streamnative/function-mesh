@@ -34,7 +34,7 @@ fi
 
 # TODO: for consumer using topic pattern, at least one topic should be created in advance, else consumer cannot
 # subscribe to new created topic, error is: "Topic does not have schema to check"
-ci::create_topic persistent://public/default/input-download-java-topic
+ci::create_topic persistent://public/default/input-download-java-topic || true
 
 kubectl apply -f "${BASE_DIR}"/.ci/tests/integration/cases/java-download-function/manifests.yaml > /dev/null 2>&1
 
