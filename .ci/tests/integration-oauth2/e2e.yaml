@@ -72,6 +72,20 @@ setup:
         bash .ci/upload_function_with_oauth.sh java
         bash .ci/upload_function_with_oauth.sh py
 
+    # testing download packages from http
+    - name: start nginx http server
+      command: |
+        kubectl apply -f .ci/clusters/nginx.yaml
+      wait:
+        - namespace: default
+          resource: pod
+          label-selector: app=nginx
+          for: condition=Ready
+
+    - name: upload pyzip package
+      command: |
+        kubectl cp .ci/examples/py-examples/exclamation.zip nginx-0:/tmp
+
     - name: install function-mesh operator
       command: |
         make generate
@@ -108,6 +122,8 @@ verify:
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/py-download-function/verify.sh
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/py-download-function-legacy/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration-oauth2/cases/py-download-from-http-function/verify.sh
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/batch-source/verify.sh
       expected: expected.data.yaml

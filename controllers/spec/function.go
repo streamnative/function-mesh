@@ -104,7 +104,8 @@ func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
 			inputTopics = append(inputTopics, topic)
 		}
 	}
-	command := getCleanUpCommand(function.Spec.Pulsar.AuthSecret != "",
+	command := getCleanUpCommand(function.Spec.ImageHasPulsarctl,
+		function.Spec.Pulsar.AuthSecret != "",
 		function.Spec.Pulsar.TLSSecret != "",
 		function.Spec.Pulsar.TLSConfig,
 		authConfig,
@@ -199,17 +200,18 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generateFunctionDetailsInJSON(function),
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir,
 				string(function.UID),
-				spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig,
-				function.Spec.MaxPendingAsyncRequests)
+				spec.Java.JavaOpts, spec.ImageHasPulsarctl, spec.ImageHasWget,
+				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
+				function.Spec.SecretsMap, function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig,
+				function.Spec.Pulsar.AuthConfig, function.Spec.MaxPendingAsyncRequests)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
 				spec.Name, spec.ClusterName,
 				generatePythonLogConfigCommand(function.Name, function.Spec.Python),
-				generateFunctionDetailsInJSON(function), string(function.UID),
-				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
+				generateFunctionDetailsInJSON(function), string(function.UID), spec.ImageHasPulsarctl,
+				spec.ImageHasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
 				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
 		}
 	} else if spec.Golang != nil {

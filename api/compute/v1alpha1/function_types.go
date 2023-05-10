@@ -97,6 +97,11 @@ type FunctionSpec struct {
 	// Image pull policy, one of Always, Never, IfNotPresent, default to IfNotPresent.
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
+	// Image which has pulsarctl will use pulsarctl to download package and do cleanup
+	ImageHasPulsarctl bool `json:"imageHasPulsarctl,omitempty"`
+	// Image which has wget will use wget to download http package
+	ImageHasWget bool `json:"imageHasGet,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	StateConfig *Stateful `json:"statefulConfig,omitempty"`
 

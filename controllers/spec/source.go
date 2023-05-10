@@ -148,8 +148,8 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		parseJavaLogLevel(source.Spec.Java),
 		generateSourceDetailsInJSON(source),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(source.UID),
-		spec.Java.JavaOpts, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
-		spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil)
+		spec.Java.JavaOpts, spec.ImageHasPulsarctl, spec.ImageHasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
+		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil)
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {
@@ -187,7 +187,8 @@ func MakeSourceCleanUpJob(source *v1alpha1.Source) *v1.Job {
 		container.Image = source.Spec.CleanupImage
 	}
 
-	command := getCleanUpCommand(source.Spec.Pulsar.AuthSecret != "",
+	command := getCleanUpCommand(source.Spec.ImageHasPulsarctl,
+		source.Spec.Pulsar.AuthSecret != "",
 		source.Spec.Pulsar.TLSSecret != "",
 		source.Spec.Pulsar.TLSConfig,
 		source.Spec.Pulsar.AuthConfig,

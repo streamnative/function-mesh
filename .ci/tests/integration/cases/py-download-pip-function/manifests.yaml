@@ -4,6 +4,8 @@ metadata:
   name: py-function-download-pip-sample
   namespace: default
 spec:
+  image: streamnative/pulsar-functions-pulsarctl-python-runner:2.9.2.23
+  imageHasPulsarctl: true
   className: pulsarfunction.exclamation.ExclamationFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000

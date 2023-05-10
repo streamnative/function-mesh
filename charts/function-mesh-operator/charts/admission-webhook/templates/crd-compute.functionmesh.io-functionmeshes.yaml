@@ -93,6 +93,10 @@ spec:
                         type: object
                       image:
                         type: string
+                      imageHasGet:
+                        type: boolean
+                      imageHasPulsarctl:
+                        type: boolean
                       imagePullPolicy:
                         type: string
                       input:
@@ -3606,6 +3610,10 @@ spec:
                         type: object
                       image:
                         type: string
+                      imageHasGet:
+                        type: boolean
+                      imageHasPulsarctl:
+                        type: boolean
                       imagePullPolicy:
                         type: string
                       input:
@@ -6874,6 +6882,10 @@ spec:
                         type: object
                       image:
                         type: string
+                      imageHasGet:
+                        type: boolean
+                      imageHasPulsarctl:
+                        type: boolean
                       imagePullPolicy:
                         type: string
                       java:

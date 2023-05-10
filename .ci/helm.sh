@@ -522,7 +522,7 @@ function ci::verify_cleanup_subscription() {
         retry=$((retry+1))
     done
 
-    if [ $retry -eq 10 ]; then
+    if [ $retry -eq 11 ]; then
         exit 1
     fi
 }
@@ -539,7 +539,7 @@ function ci::verify_cleanup_subscription_with_auth() {
         retry=$((retry+1))
     done
 
-    if [ $retry -eq 10 ]; then
+    if [ $retry -eq 11 ]; then
         exit 1
     fi
 }
@@ -555,7 +555,7 @@ function ci::verify_cleanup_batch_source_with_auth() {
         num=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-admin --auth-plugin $brokerClientAuthenticationPlugin --auth-params $brokerClientAuthenticationParameters topics list public/default' | grep ${topic} | wc -l)
         retry=$((retry+1))
     done
-    if [ $retry -eq 10 ]; then
+    if [ $retry -eq 11 ]; then
         exit 1
     fi
 }
