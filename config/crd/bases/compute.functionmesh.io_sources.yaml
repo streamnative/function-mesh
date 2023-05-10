@@ -165,6 +165,14 @@ spec:
                     properties:
                       batchBuilder:
                         type: string
+                      compressionType:
+                        enum:
+                        - NONE
+                        - LZ4
+                        - ZLIB
+                        - ZSTD
+                        - SNAPPY
+                        type: string
                       cryptoConfig:
                         properties:
                           consumerCryptoFailureAction:
@@ -3047,6 +3055,7 @@ spec:
                 - atleast_once
                 - atmost_once
                 - effectively_once
+                - manual
                 type: string
               pulsar:
                 properties:

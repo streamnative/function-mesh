@@ -3081,6 +3081,7 @@ spec:
                     - atleast_once
                     - atmost_once
                     - effectively_once
+                    - manual
                   type: string
                 pulsar:
                   properties:
