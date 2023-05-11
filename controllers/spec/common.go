@@ -91,6 +91,10 @@ const (
 	AnnotationManaged          = "compute.functionmesh.io/managed"
 	AnnotationNeedCleanup      = "compute.functionmesh.io/need-cleanup"
 
+	// if labels contains below, we think it comes from function-mesh-worker-service
+	LabelPulsarCluster           = "compute.functionmesh.io/pulsar-cluster"
+	LabelPulsarClusterDeprecated = "pulsar-cluster"
+
 	EnvGoFunctionConfigs = "GO_FUNCTION_CONF"
 
 	DefaultRunnerUserID  int64 = 10000
@@ -229,6 +233,16 @@ func IsManaged(object metav1.Object) bool {
 }
 
 func NeedCleanup(object metav1.Object) bool {
+	// don't cleanup if it's managed by function-mesh-worker-service
+	_, exists := object.GetLabels()[LabelPulsarCluster]
+	if exists {
+		return false
+	}
+	_, exists = object.GetLabels()[LabelPulsarClusterDeprecated]
+	if exists {
+		return false
+	}
+
 	needCleanup, exists := object.GetAnnotations()[AnnotationNeedCleanup]
 	return !exists || needCleanup != "false"
 }
