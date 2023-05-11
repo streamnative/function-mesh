@@ -92,6 +92,7 @@ func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, funct
 		return nil
 	}
 	desiredStatefulSet := spec.MakeFunctionStatefulSet(function)
+	keepStatefulSetUnchangeableFields(ctx, r, r.Log, desiredStatefulSet)
 	desiredStatefulSetSpec := desiredStatefulSet.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
 		// function statefulSet mutate logic

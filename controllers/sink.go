@@ -92,6 +92,7 @@ func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha
 		return nil
 	}
 	desiredStatefulSet := spec.MakeSinkStatefulSet(sink)
+	keepStatefulSetUnchangeableFields(ctx, r, r.Log, desiredStatefulSet)
 	desiredStatefulSetSpec := desiredStatefulSet.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
 		// sink statefulSet mutate logic
