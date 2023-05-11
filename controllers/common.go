@@ -159,7 +159,7 @@ func removeCleanupFinalizer(arr []string) []string {
 }
 
 func keepStatefulSetUnchangeableFields(ctx context.Context, reader client.Reader, logger logr.Logger, desiredStatefulSet *appsv1.StatefulSet) {
-	var existingStatefulSet *appsv1.StatefulSet = nil
+	existingStatefulSet := &appsv1.StatefulSet{}
 	err := reader.Get(ctx, types.NamespacedName{
 		Namespace: desiredStatefulSet.Namespace,
 		Name:      desiredStatefulSet.Name,
@@ -170,11 +170,16 @@ func keepStatefulSetUnchangeableFields(ctx context.Context, reader client.Reader
 			logger.Error(err, "error get statefulSet workload",
 				"namespace", desiredStatefulSet.Namespace, "name", desiredStatefulSet.Name)
 		}
+		existingStatefulSet = nil
 	}
 
 	// below fields are not modifiable, so keep same with the original statefulSet if existing
 	if existingStatefulSet != nil {
 		desiredStatefulSet.Spec.Selector = existingStatefulSet.Spec.Selector
+		// ensure the labels in template match with selector
+		for key, val := range desiredStatefulSet.Spec.Selector.MatchLabels {
+			desiredStatefulSet.Spec.Template.Labels[key] = val
+		}
 		desiredStatefulSet.Spec.PodManagementPolicy = existingStatefulSet.Spec.PodManagementPolicy
 		desiredStatefulSet.Spec.ServiceName = existingStatefulSet.Spec.ServiceName
 		desiredStatefulSet.Spec.VolumeClaimTemplates = existingStatefulSet.Spec.VolumeClaimTemplates
