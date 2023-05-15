@@ -302,11 +302,12 @@ type OutputConf struct {
 }
 
 type ProducerConfig struct {
-	MaxPendingMessages                 int32         `json:"maxPendingMessages,omitempty"`
-	MaxPendingMessagesAcrossPartitions int32         `json:"maxPendingMessagesAcrossPartitions,omitempty"`
-	UseThreadLocalProducers            bool          `json:"useThreadLocalProducers,omitempty"`
-	CryptoConfig                       *CryptoConfig `json:"cryptoConfig,omitempty"`
-	BatchBuilder                       string        `json:"batchBuilder,omitempty"`
+	MaxPendingMessages                 int32           `json:"maxPendingMessages,omitempty"`
+	MaxPendingMessagesAcrossPartitions int32           `json:"maxPendingMessagesAcrossPartitions,omitempty"`
+	UseThreadLocalProducers            bool            `json:"useThreadLocalProducers,omitempty"`
+	CryptoConfig                       *CryptoConfig   `json:"cryptoConfig,omitempty"`
+	BatchBuilder                       string          `json:"batchBuilder,omitempty"`
+	CompressionType                    CompressionType `json:"compressionType,omitempty"`
 }
 
 type CryptoConfig struct {
@@ -332,6 +333,18 @@ type SubscribePosition string
 const (
 	Latest   SubscribePosition = "latest"
 	Earliest SubscribePosition = "earliest"
+)
+
+// CompressionType enum type
+// +kubebuilder:validation:Enum=NONE;LZ4;ZLIB;ZSTD;SNAPPY
+type CompressionType string
+
+const (
+	LZ4    CompressionType = "LZ4"
+	NONE   CompressionType = "NONE"
+	ZLIB   CompressionType = "ZLIB"
+	ZSTD   CompressionType = "ZSTD"
+	SNAPPY CompressionType = "SNAPPY"
 )
 
 type Component string
@@ -377,13 +390,14 @@ const (
 )
 
 // ProcessGuarantee enum type
-// +kubebuilder:validation:Enum=atleast_once;atmost_once;effectively_once
+// +kubebuilder:validation:Enum=atleast_once;atmost_once;effectively_once;manual
 type ProcessGuarantee string
 
 const (
 	AtleastOnce     ProcessGuarantee = "atleast_once"
 	AtmostOnce      ProcessGuarantee = "atmost_once"
 	EffectivelyOnce ProcessGuarantee = "effectively_once"
+	Manual          ProcessGuarantee = "manual"
 )
 
 const (

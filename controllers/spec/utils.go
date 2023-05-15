@@ -24,7 +24,7 @@ import (
 	"regexp"
 	"strings"
 
-	v1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -197,6 +197,7 @@ func generateFunctionInputSpec(function *v1alpha1.Function) *proto.SourceSpec {
 		CleanupSubscription:          function.Spec.CleanupSubscription,
 		SubscriptionPosition:         convertSubPosition(function.Spec.SubscriptionPosition),
 		NegativeAckRedeliveryDelayMs: uint64(function.Spec.Timeout),
+		SkipToLatest:                 function.Spec.SkipToLatest,
 	}
 }
 
@@ -229,6 +230,7 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 			UseThreadLocalProducers:            function.Spec.Output.ProducerConf.UseThreadLocalProducers,
 			CryptoSpec:                         generateCryptoSpec(function.Spec.Output.ProducerConf.CryptoConfig),
 			BatchBuilder:                       function.Spec.Output.ProducerConf.BatchBuilder,
+			CompressionType:                    convertCompressionType(function.Spec.Output.ProducerConf.CompressionType),
 		}
 
 		sinkSpec.ProducerSpec = producerConfig
@@ -292,6 +294,7 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 			UseThreadLocalProducers:            source.Spec.Output.ProducerConf.UseThreadLocalProducers,
 			CryptoSpec:                         cryptoSpec,
 			BatchBuilder:                       source.Spec.Output.ProducerConf.BatchBuilder,
+			CompressionType:                    convertCompressionType(source.Spec.Output.ProducerConf.CompressionType),
 		}
 	}
 	var forward = true

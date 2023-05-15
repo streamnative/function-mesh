@@ -79,6 +79,7 @@ type FunctionSpec struct {
 	SubscriptionName     string            `json:"subscriptionName,omitempty"`
 	CleanupSubscription  bool              `json:"cleanupSubscription,omitempty"`
 	SubscriptionPosition SubscribePosition `json:"subscriptionPosition,omitempty"`
+	SkipToLatest         bool              `json:"skipToLatest,omitempty"`
 
 	Pod PodPolicy `json:"pod,omitempty"`
 

@@ -1230,6 +1230,8 @@ func convertProcessingGuarantee(input v1alpha1.ProcessGuarantee) proto.Processin
 		return proto.ProcessingGuarantees_ATLEAST_ONCE
 	case v1alpha1.EffectivelyOnce:
 		return proto.ProcessingGuarantees_EFFECTIVELY_ONCE
+	case v1alpha1.Manual:
+		return proto.ProcessingGuarantees_MANUAL
 	default:
 		// should never reach here
 		return proto.ProcessingGuarantees_ATLEAST_ONCE
@@ -1244,6 +1246,23 @@ func convertSubPosition(pos v1alpha1.SubscribePosition) proto.SubscriptionPositi
 		return proto.SubscriptionPosition_LATEST
 	default:
 		return proto.SubscriptionPosition_EARLIEST
+	}
+}
+
+func convertCompressionType(compressionType v1alpha1.CompressionType) proto.CompressionType {
+	switch compressionType {
+	case v1alpha1.LZ4:
+		return proto.CompressionType_LZ4
+	case v1alpha1.ZLIB:
+		return proto.CompressionType_ZLIB
+	case v1alpha1.ZSTD:
+		return proto.CompressionType_ZSTD
+	case v1alpha1.NONE:
+		return proto.CompressionType_NONE
+	case v1alpha1.SNAPPY:
+		return proto.CompressionType_SNAPPY
+	default:
+		return proto.CompressionType_LZ4
 	}
 }
 
