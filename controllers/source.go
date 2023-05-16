@@ -92,6 +92,7 @@ func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v
 		return nil
 	}
 	desiredStatefulSet := spec.MakeSourceStatefulSet(source)
+	keepStatefulSetUnchangeableFields(ctx, r, r.Log, desiredStatefulSet)
 	desiredStatefulSetSpec := desiredStatefulSet.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
 		// source statefulSet mutate logic

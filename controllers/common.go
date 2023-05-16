@@ -25,6 +25,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
+	appsv1 "k8s.io/api/apps/v1"
 	autoscaling "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -155,4 +156,32 @@ func removeCleanupFinalizer(arr []string) []string {
 		}
 	}
 	return result
+}
+
+func keepStatefulSetUnchangeableFields(ctx context.Context, reader client.Reader, logger logr.Logger, desiredStatefulSet *appsv1.StatefulSet) {
+	existingStatefulSet := &appsv1.StatefulSet{}
+	err := reader.Get(ctx, types.NamespacedName{
+		Namespace: desiredStatefulSet.Namespace,
+		Name:      desiredStatefulSet.Name,
+	}, existingStatefulSet)
+	// ignore get error
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			logger.Error(err, "error get statefulSet workload",
+				"namespace", desiredStatefulSet.Namespace, "name", desiredStatefulSet.Name)
+		}
+		existingStatefulSet = nil
+	}
+
+	// below fields are not modifiable, so keep same with the original statefulSet if existing
+	if existingStatefulSet != nil {
+		desiredStatefulSet.Spec.Selector = existingStatefulSet.Spec.Selector
+		// ensure the labels in template match with selector
+		for key, val := range desiredStatefulSet.Spec.Selector.MatchLabels {
+			desiredStatefulSet.Spec.Template.Labels[key] = val
+		}
+		desiredStatefulSet.Spec.PodManagementPolicy = existingStatefulSet.Spec.PodManagementPolicy
+		desiredStatefulSet.Spec.ServiceName = existingStatefulSet.Spec.ServiceName
+		desiredStatefulSet.Spec.VolumeClaimTemplates = existingStatefulSet.Spec.VolumeClaimTemplates
+	}
 }
