@@ -259,6 +259,16 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 
 func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, function *v1alpha1.Function) error {
 	if !spec.NeedCleanup(function) {
+		desiredJob := spec.MakeFunctionCleanUpJob(function)
+		if err := r.Delete(ctx, desiredJob); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
+			r.Log.Error(err, "error delete cleanup job for function",
+				"namespace", function.Namespace, "name", function.Name,
+				"job name", desiredJob.Name)
+			return err
+		}
 		return nil
 	}
 	hasCleanupFinalizer := containsCleanupFinalizer(function.ObjectMeta.Finalizers)

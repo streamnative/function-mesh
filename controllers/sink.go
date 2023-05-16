@@ -259,6 +259,16 @@ func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink) 
 
 func (r *SinkReconciler) ApplySinkCleanUpJob(ctx context.Context, sink *v1alpha1.Sink) error {
 	if !spec.NeedCleanup(sink) {
+		desiredJob := spec.MakeSinkCleanUpJob(sink)
+		if err := r.Delete(ctx, desiredJob); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
+			r.Log.Error(err, "error delete cleanup job for sink",
+				"namespace", sink.Namespace, "name", sink.Name,
+				"job name", desiredJob.Name)
+			return err
+		}
 		return nil
 	}
 	hasCleanupFinalizer := containsCleanupFinalizer(sink.ObjectMeta.Finalizers)

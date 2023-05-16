@@ -259,6 +259,16 @@ func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.
 
 func (r *SourceReconciler) ApplySourceCleanUpJob(ctx context.Context, source *v1alpha1.Source) error {
 	if !spec.NeedCleanup(source) {
+		desiredJob := spec.MakeSourceCleanUpJob(source)
+		if err := r.Delete(ctx, desiredJob); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
+			r.Log.Error(err, "error delete cleanup job for source",
+				"namespace", source.Namespace, "name", source.Name,
+				"job name", desiredJob.Name)
+			return err
+		}
 		return nil
 	}
 	hasCleanupFinalizer := containsCleanupFinalizer(source.ObjectMeta.Finalizers)
