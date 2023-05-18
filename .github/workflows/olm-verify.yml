@@ -27,10 +27,10 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: Set up GO 1.18
+      - name: Set up GO 1.20.4
         uses: actions/setup-go@v1
         with:
-          go-version: 1.18
+          go-version: 1.20.4
         id: go
 
       - name: InstallKubebuilder
