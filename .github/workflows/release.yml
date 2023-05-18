@@ -291,11 +291,11 @@ jobs:
           VERSION: ${{ github.event.release.tag_name }}
           CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID: ${{ secrets.CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID }}
           PFLT_PYXIS_API_TOKEN: ${{ secrets.PFLT_PYXIS_API_TOKEN }}
-          REDHAT_CEERTITICATED_CONTAINER_AUTHFILE: ${{ secrets.REDHAT_CEERTITICATED_CONTAINER_AUTHFILE }}
+          REDHAT_CERTITICATED_CONTAINER_AUTHFILE: ${{ secrets.REDHAT_CERTITICATED_CONTAINER_AUTHFILE }}
         run: |
           echo $VERSION
           mkdir ./artifacts
-          echo $REDHAT_CEERTITICATED_CONTAINER_AUTHFILE > ./authfile.json
+          echo $REDHAT_CERTITICATED_CONTAINER_AUTHFILE > ./authfile.json
           docker run -it --rm --security-opt=label=disable --env PFLT_LOGLEVEL=trace  --env PFLT_ARTIFACTS=/artifacts --env PFLT_LOGFILE=/artifacts/preflight.log --env PFLT_CERTIFICATION_PROJECT_ID=$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID --env PFLT_PYXIS_API_TOKEN=$PFLT_PYXIS_API_TOKEN --env PFLT_DOCKERCONFIG=/temp-authfile.json -v ./artifacts:/artifacts -v ./authfile.json:/temp-authfile.json:ro quay.io/opdev/preflight:stable check container quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION --submit
 
       - name: Label the image as latest
