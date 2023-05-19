@@ -1,12 +1,11 @@
 module github.com/streamnative/function-mesh
 
-go 1.18
+go 1.20
 
 require (
 	github.com/go-logr/logr v1.2.0
 	github.com/golang/protobuf v1.5.2
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/ginkgo/v2 v2.0.0
 	github.com/onsi/gomega v1.18.1
 	github.com/streamnative/pulsarctl v0.4.3-0.20220702165443-e4c26e2c39cf
 	github.com/stretchr/testify v1.7.0
@@ -16,7 +15,6 @@ require (
 	k8s.io/apimachinery v0.24.2
 	k8s.io/autoscaler/vertical-pod-autoscaler v0.11.0
 	k8s.io/client-go v0.24.2
-	k8s.io/code-generator v0.24.2
 	sigs.k8s.io/controller-runtime v0.12.3
 	sigs.k8s.io/yaml v1.3.0
 )

@@ -76,11 +76,11 @@ jobs:
         run: hack/kind-cluster-build.sh --name chart-testing -c 1 -v 10 --k8sVersion v1.22.15
         if: steps.list-changed.outputs.changed == 'true'
 
-      - name: Set up GO 1.18
+      - name: Set up GO 1.20.4
         if: steps.list-changed.outputs.changed == 'true'
         uses: actions/setup-go@v1
         with:
-          go-version: 1.18
+          go-version: 1.20.4
         id: go
 
       - name: setup kubebuilder 3.6.0

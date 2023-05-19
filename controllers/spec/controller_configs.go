@@ -18,7 +18,7 @@
 package spec
 
 import (
-	"io/ioutil"
+	"os"
 
 	"sigs.k8s.io/yaml"
 )
@@ -48,7 +48,7 @@ func DefaultConfigs() *ControllerConfigs {
 }
 
 func ParseControllerConfigs(configFilePath string) error {
-	yamlFile, err := ioutil.ReadFile(configFilePath)
+	yamlFile, err := os.ReadFile(configFilePath)
 	if err != nil {
 		return err
 	}
