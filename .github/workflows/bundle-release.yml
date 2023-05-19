@@ -1,4 +1,4 @@
-name: Function-Mesh Release
+name: Function-Mesh Bundle Release (Manually)
 
 on:
   workflow_dispatch:
@@ -196,10 +196,11 @@ jobs:
           CATALOG_BRANCH_TAG: latest
           CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID: ${{ secrets.CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID }}
         run: |
+          VERSION=$(echo $VERSION|cut -c 2-)
           echo $VERSION
           make redhat-certificated-image-build
-          docker tag $IMAGE_TAG_BASE:$VERSION quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION
-          docker push quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION
+          docker tag $IMAGE_TAG_BASE:v$VERSION quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:v$VERSION
+          docker push quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:v$VERSION
 
       - name: Trigger openshift preflight test
         env:
@@ -220,14 +221,13 @@ jobs:
           IMAGE_TAG_BASE: registry.connect.redhat.com/streamnative/function-mesh
           CATALOG_BRANCH_TAG: latest
           CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID: ${{ secrets.CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID }}
+          PFLT_PYXIS_API_TOKEN: ${{ secrets.PFLT_PYXIS_API_TOKEN }}
         run: |
           echo $VERSION
-          docker tag $IMAGE_TAG_BASE:$VERSION quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:latest
-          docker push quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:latest
-          docker rmi quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:latest
+          curl -H "X-API-KEY: $PFLT_PYXIS_API_TOKEN" -s "https://catalog.redhat.com/api/containers/v1/projects/certification/id/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID/images?filter=repositories.tags.name==$VERSION" | jq --exit-status '.data[0]' >/dev/null
           docker rmi quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION
-          docker pull quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION
-          docker inspect quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION
+          docker pull registry.connect.redhat.com/streamnative/function-mesh:$VERSION
+          docker inspect registry.connect.redhat.com/streamnative/function-mesh:$VERSION
 
       - name: Build the openshift bundle
         env:
@@ -237,6 +237,7 @@ jobs:
           CATALOG_BRANCH_TAG: latest
           CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID: ${{ secrets.CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID }}
         run: |
+          VERSION=$(echo $VERSION|cut -c 2-)
           echo $VERSION
           make redhat-certificated-bundle redhat-certificated-bundle-build
 
@@ -252,14 +253,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.SNBOT_GITHUB_TOKEN }}
           VERSION: ${{ inputs.tag }}
         run: |
-          # install operator-manifest-tools
-          wget -q https://github.com/operator-framework/operator-manifest-tools/releases/download/v0.2.2/operator-manifest-tools_0.2.2_linux_amd64 -O operator-manifest-tools
-          chmod +x operator-manifest-tools
-          mv operator-manifest-tools /usr/local/bin
-
-          # install skopeo
-          sudo apt-get -y install skopeo
-
           pushd certified-operators
           echo $VERSION
           export BRANCH=function-mesh-operator-$VERSION
@@ -267,15 +260,10 @@ jobs:
           git push -d origin $BRANCH || echo 'Skip branch deletion'
           git checkout -b $BRANCH
 
-          export TARGET_DIR=operators/function-mesh/${{ inputs.channel-tag }}
+          export TARGET_DIR=operators/function-mesh/$VERSION
           mkdir -p $TARGET_DIR
           cp -rf ../bundle.Dockerfile $TARGET_DIR
           cp -rf ../bundle/* $TARGET_DIR
-#
-#          export MANIFEST_DIR=$TARGET_DIR/manifests
-#          operator-manifest-tools pinning pin $MANIFEST_DIR
-#          operator-manifest-tools pinning replace $MANIFEST_DIR replacements.json
-#          rm references.json replacements.json
 
           git add .
           git commit -s -m "operator function-mesh ($VERSION)"
