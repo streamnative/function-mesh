@@ -224,6 +224,7 @@ jobs:
           PFLT_PYXIS_API_TOKEN: ${{ secrets.PFLT_PYXIS_API_TOKEN }}
         run: |
           echo $VERSION
+          curl -H "X-API-KEY: $PFLT_PYXIS_API_TOKEN" -s "https://catalog.redhat.com/api/containers/v1/projects/certification/id/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID/images?filter=repositories.tags.name==$VERSION"
           curl -H "X-API-KEY: $PFLT_PYXIS_API_TOKEN" -s "https://catalog.redhat.com/api/containers/v1/projects/certification/id/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID/images?filter=repositories.tags.name==$VERSION" | jq --exit-status '.data[0]' >/dev/null
           docker rmi quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION
           docker pull registry.connect.redhat.com/streamnative/function-mesh:$VERSION
