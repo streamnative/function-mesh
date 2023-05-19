@@ -32,3 +32,4 @@ index.Dockerfile*
 index_build_*/
 
 *.bak
+.DS_Store
