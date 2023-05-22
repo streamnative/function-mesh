@@ -102,6 +102,8 @@ jobs:
           VERSION: ${{ inputs.tag }}
         run: |
           pushd community-operators
+          git config --global user.email "streamnativebot@streamnative.io"
+          git config --global user.name "streamnativebot"
           export VERSION=$(echo $VERSION|cut -c 2-)
           echo $VERSION
           export BRANCH=function-mesh-operator-$VERSION
@@ -212,7 +214,8 @@ jobs:
           echo $VERSION
           mkdir ./artifacts
           echo $REDHAT_CERTIFICATED_CONTAINER_AUTHFILE > ./authfile.json
-          docker run -it --rm --security-opt=label=disable --env PFLT_LOGLEVEL=trace  --env PFLT_ARTIFACTS=/artifacts --env PFLT_LOGFILE=/artifacts/preflight.log --env PFLT_CERTIFICATION_PROJECT_ID=$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID --env PFLT_PYXIS_API_TOKEN=$PFLT_PYXIS_API_TOKEN --env PFLT_DOCKERCONFIG=/temp-authfile.json -v ./artifacts:/artifacts -v ./authfile.json:/temp-authfile.json:ro quay.io/opdev/preflight:stable check container quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION --submit
+          docker run -i --rm --security-opt=label=disable --env PFLT_LOGLEVEL=trace --env PFLT_ARTIFACTS=/artifacts --env PFLT_LOGFILE=/artifacts/preflight.log --env PFLT_CERTIFICATION_PROJECT_ID=$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID --env PFLT_PYXIS_API_TOKEN=$PFLT_PYXIS_API_TOKEN --env PFLT_DOCKERCONFIG=/temp-authfile.json -v ./artifacts:/artifacts -v ./authfile.json:/temp-authfile.json:ro quay.io/opdev/preflight:stable check container quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION --submit
+          sleep 60s
 
       - name: Label the image as latest
         env:
@@ -255,6 +258,8 @@ jobs:
           VERSION: ${{ inputs.tag }}
         run: |
           pushd certified-operators
+          git config --global user.email "streamnativebot@streamnative.io"
+          git config --global user.name "streamnativebot"
           echo $VERSION
           export BRANCH=function-mesh-operator-$VERSION
           echo $BRANCH
