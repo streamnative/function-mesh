@@ -217,7 +217,7 @@ jobs:
           # set TARGET_DIR to `artifacts` as the absolut path
           export TARGET_DIR=$(pwd)/artifacts
           export AUTHFILE=$(pwd)/authfile.json
-          mkdir 
+          mkdir $TARGET_DIR 
           echo $REDHAT_CERTIFICATED_CONTAINER_AUTHFILE > AUTHFILE
           docker run -i --rm --security-opt=label=disable --env PFLT_LOGLEVEL=trace --env PFLT_ARTIFACTS=/artifacts --env PFLT_LOGFILE=/artifacts/preflight.log --env PFLT_CERTIFICATION_PROJECT_ID=$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID --env PFLT_PYXIS_API_TOKEN=$PFLT_PYXIS_API_TOKEN --env PFLT_DOCKERCONFIG=/temp-authfile.json -v $TARGET_DIR:/artifacts -v $AUTHFILE:/temp-authfile.json:ro quay.io/opdev/preflight:stable check container quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION --submit
           sleep 60s
