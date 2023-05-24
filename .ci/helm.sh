@@ -89,7 +89,9 @@ function ci::install_pulsar_charts() {
     cp ${values} pulsar-charts/charts/pulsar/mini_values.yaml
     cd pulsar-charts
     ./scripts/pulsar/prepare_helm_release.sh -n default -k sn-platform -c
-    helm repo add loki https://grafana.github.io/loki/charts
+    helm repo add grafana https://grafana.github.io/helm-charts
+    helm repo update
+    yq -i '.dependencies[0].repository = "https://grafana.github.io/helm-charts"' charts/pulsar/requirements.yaml
     helm dependency update charts/pulsar
     ${HELM} install sn-platform --set initialize=true --values charts/pulsar/mini_values.yaml charts/pulsar --debug
 
