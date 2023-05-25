@@ -36,7 +36,9 @@ setup:
         git clone https://github.com/streamnative/charts.git pulsar-charts
         cd pulsar-charts/
         ./scripts/pulsar/prepare_helm_release.sh -n default -k ${PULSAR_RELEASE_NAME} -c
-        helm repo add loki https://grafana.github.io/loki/charts
+        helm repo add grafana https://grafana.github.io/helm-charts
+        helm repo update
+        yq -i '.dependencies[0].repository = "https://grafana.github.io/helm-charts"' charts/pulsar/requirements.yaml
         helm dependency update charts/pulsar
         helm install ${PULSAR_RELEASE_NAME} --set initialize=true --values ../.ci/clusters/values_skywalking_e2e_cluster_with_oauth.yaml charts/pulsar
 
