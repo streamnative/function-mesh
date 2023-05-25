@@ -256,7 +256,7 @@ jobs:
         run: |
           VERSION=$(echo $VERSION|cut -c 2-)
           echo $VERSION
-          make redhat-certificated-bundle redhat-certificated-bundle-build
+          make redhat-certificated-bundle
 
       - name: Checkout streamnative certified-operators
         uses: actions/checkout@v3
