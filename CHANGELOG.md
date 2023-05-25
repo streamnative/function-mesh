@@ -1,3 +1,21 @@
+# Function Mesh v0.14.0 Release Notes
+
+## v0.14.0 What's New
+
+* [Runner Image] Support Pulsar 3.0 ([#625](https://github.com/streamnative/function-mesh/pull/625))
+* [Helm Charts] Allows the `function-mesh-secrets-webhook` helm chart to be deployed into non-default kubernetes namespaces ([#628](https://github.com/streamnative/function-mesh/pull/628))
+* [Controller] Support `CleanupSubscription` ([#622](https://github.com/streamnative/function-mesh/pull/622))
+* [CI] Trigger release action when tag with `v` prefix is pushed ([#631](https://github.com/streamnative/function-mesh/pull/631))
+* [CRD] Support `PersistentVolumeClaimRetentionPolicy` ([#633](https://github.com/streamnative/function-mesh/pull/633))
+* [Runner Image] Release runner images with `pulsarctl` ([#630](https://github.com/streamnative/function-mesh/pull/630))
+* [Controller] Sync to the latest Pulsar Function Proto files ([#637](https://github.com/streamnative/function-mesh/pull/637))
+* [Controller] Upgrade to Golang 1.20.4 ([#641](https://github.com/streamnative/function-mesh/pull/641))
+* [Controller] Prevent cleanup resources if managed by the function-mesh-worker-service ([#640](https://github.com/streamnative/function-mesh/pull/640))
+* [Controller] Prevent updating unmodifiable fields of StatefulSet when reconciling ([#639](https://github.com/streamnative/function-mesh/pull/639))
+* [CI] Allow release the bundle to operatorhub and openshift catalog via Github Actions ([#642](https://github.com/streamnative/function-mesh/pull/642))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2023-05+is%3Aclosed+).
+
 # Function Mesh v0.13.0 Release Notes
 
 ## v0.13.0 What's New
