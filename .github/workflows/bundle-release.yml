@@ -221,9 +221,8 @@ jobs:
           REDHAT_CERTIFICATED_CONTAINER_AUTHFILE: ${{ secrets.REDHAT_CERTIFICATED_CONTAINER_AUTHFILE }}
         run: |
           echo $VERSION
-          # set TARGET_DIR to `artifacts` as the absolut path
-          export TARGET_DIR=$(pwd)/artifacts
-          export AUTHFILE=$(pwd)/authfile.json
+          export TARGET_DIR=/tmp/artifacts
+          export AUTHFILE=/tmp/authfile.json
           mkdir $TARGET_DIR 
           echo $REDHAT_CERTIFICATED_CONTAINER_AUTHFILE > $AUTHFILE
           cat $AUTHFILE 
