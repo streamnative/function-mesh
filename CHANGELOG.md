@@ -6,7 +6,7 @@
 * [Helm Charts] Allow the `function-mesh-secrets-webhook` Helm chart to be deployed into non-default Kubernetes namespaces ([#628](https://github.com/streamnative/function-mesh/pull/628))
 * [Controller] Support the `CleanupSubscription` configuration ([#622](https://github.com/streamnative/function-mesh/pull/622))
 * [CI] Trigger the release action when the tag with the prefix `v` is pushed ([#631](https://github.com/streamnative/function-mesh/pull/631))
-* [CRD] Support `PersistentVolumeClaimRetentionPolicy` ([#633](https://github.com/streamnative/function-mesh/pull/633))
+* [CRD] Support the `PersistentVolumeClaimRetentionPolicy` configuration ([#633](https://github.com/streamnative/function-mesh/pull/633))
 * [Runner Image] Release runner images with `pulsarctl` ([#630](https://github.com/streamnative/function-mesh/pull/630))
 * [Controller] Sync to the latest Pulsar Function Proto files ([#637](https://github.com/streamnative/function-mesh/pull/637))
 * [Controller] Upgrade to Golang 1.20.4 ([#641](https://github.com/streamnative/function-mesh/pull/641))
