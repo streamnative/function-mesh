@@ -10,7 +10,7 @@
 * [Runner Image] Release runner images with `pulsarctl` ([#630](https://github.com/streamnative/function-mesh/pull/630))
 * [Controller] Sync to the latest Pulsar Function Proto files ([#637](https://github.com/streamnative/function-mesh/pull/637))
 * [Controller] Upgrade to Golang 1.20.4 ([#641](https://github.com/streamnative/function-mesh/pull/641))
-* [Controller] Prevent cleanup resources if managed by the function-mesh-worker-service ([#640](https://github.com/streamnative/function-mesh/pull/640))
+* [Controller] Prevent cleaning up resources that are managed by the Function Mesh Worker service ([#640](https://github.com/streamnative/function-mesh/pull/640))
 * [Controller] Prevent updating unmodifiable fields of StatefulSet when reconciling ([#639](https://github.com/streamnative/function-mesh/pull/639))
 * [CI] Allow release the bundle to operatorhub and openshift catalog via Github Actions ([#642](https://github.com/streamnative/function-mesh/pull/642))
 
