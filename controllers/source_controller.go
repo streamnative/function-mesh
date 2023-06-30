@@ -25,7 +25,7 @@ import (
 	"github.com/streamnative/function-mesh/controllers/spec"
 	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
-	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autov2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -152,7 +152,7 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&v1alpha1.Source{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
-		Owns(&autov2beta2.HorizontalPodAutoscaler{}).
+		Owns(&autov2.HorizontalPodAutoscaler{}).
 		Owns(&v1.Job{})
 	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
 		manager.Owns(&vpav1.VerticalPodAutoscaler{})

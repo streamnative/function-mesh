@@ -24,7 +24,7 @@ import (
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscaling "k8s.io/api/autoscaling/v1"
-	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autov2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -177,7 +177,7 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, sink *v1alpha1.Sink
 		return nil
 	}
 
-	hpa := &autov2beta2.HorizontalPodAutoscaler{}
+	hpa := &autov2.HorizontalPodAutoscaler{}
 	err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace,
 		Name: spec.MakeSinkObjectMeta(sink).Name}, hpa)
 	if err != nil {
@@ -333,6 +333,6 @@ func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.Statef
 	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeSinkStatefulSet(sink).Spec)
 }
 
-func (r *SinkReconciler) checkIfHPANeedUpdate(hpa *autov2beta2.HorizontalPodAutoscaler, sink *v1alpha1.Sink) bool {
+func (r *SinkReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler, sink *v1alpha1.Sink) bool {
 	return !spec.CheckIfHPASpecIsEqual(&hpa.Spec, &spec.MakeSinkHPA(sink).Spec)
 }

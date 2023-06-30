@@ -24,7 +24,7 @@ import (
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscaling "k8s.io/api/autoscaling/v1"
-	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autov2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -177,7 +177,7 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, source *v1alpha
 		return nil
 	}
 
-	hpa := &autov2beta2.HorizontalPodAutoscaler{}
+	hpa := &autov2.HorizontalPodAutoscaler{}
 	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
 		Name: spec.MakeSourceObjectMeta(source).Name}, hpa)
 	if err != nil {
@@ -333,6 +333,6 @@ func (r *SourceReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.Stat
 	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeSourceStatefulSet(source).Spec)
 }
 
-func (r *SourceReconciler) checkIfHPANeedUpdate(hpa *autov2beta2.HorizontalPodAutoscaler, source *v1alpha1.Source) bool {
+func (r *SourceReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler, source *v1alpha1.Source) bool {
 	return !spec.CheckIfHPASpecIsEqual(&hpa.Spec, &spec.MakeSourceHPA(source).Spec)
 }

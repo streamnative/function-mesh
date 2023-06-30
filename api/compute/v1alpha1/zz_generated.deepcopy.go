@@ -24,7 +24,7 @@ package v1alpha1
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/autoscaling/v2beta2"
+	"k8s.io/api/autoscaling/v2"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	autoscaling_k8s_iov1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
@@ -892,14 +892,14 @@ func (in *PodPolicy) DeepCopyInto(out *PodPolicy) {
 	}
 	if in.AutoScalingMetrics != nil {
 		in, out := &in.AutoScalingMetrics, &out.AutoScalingMetrics
-		*out = make([]v2beta2.MetricSpec, len(*in))
+		*out = make([]v2.MetricSpec, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.AutoScalingBehavior != nil {
 		in, out := &in.AutoScalingBehavior, &out.AutoScalingBehavior
-		*out = new(v2beta2.HorizontalPodAutoscalerBehavior)
+		*out = new(v2.HorizontalPodAutoscalerBehavior)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.VPA != nil {

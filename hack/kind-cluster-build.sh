@@ -119,7 +119,7 @@ cat <<EOF > ${configFile}
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 runtimeConfig:
-  "autoscaling/v2beta2": "true"
+  "autoscaling/v2": "true"
 nodes:
 - role: control-plane
   extraPortMappings:

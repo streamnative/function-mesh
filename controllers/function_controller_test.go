@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autov2 "k8s.io/api/autoscaling/v2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -130,23 +130,23 @@ var _ = Describe("Function Controller (HPA)", func() {
 	Context("Simple Function Item with HPA", func() {
 		function := makeFunctionSample(TestFunctionHPAName)
 		cpuPercentage := int32(20)
-		function.Spec.Pod.AutoScalingMetrics = []autov2beta2.MetricSpec{
+		function.Spec.Pod.AutoScalingMetrics = []autov2.MetricSpec{
 			{
-				Type: autov2beta2.ResourceMetricSourceType,
-				Resource: &autov2beta2.ResourceMetricSource{
+				Type: autov2.ResourceMetricSourceType,
+				Resource: &autov2.ResourceMetricSource{
 					Name: v1.ResourceCPU,
-					Target: autov2beta2.MetricTarget{
-						Type:               autov2beta2.UtilizationMetricType,
+					Target: autov2.MetricTarget{
+						Type:               autov2.UtilizationMetricType,
 						AverageUtilization: &cpuPercentage,
 					},
 				},
 			},
 			{
-				Type: autov2beta2.ResourceMetricSourceType,
-				Resource: &autov2beta2.ResourceMetricSource{
+				Type: autov2.ResourceMetricSourceType,
+				Resource: &autov2.ResourceMetricSource{
 					Name: v1.ResourceMemory,
-					Target: autov2beta2.MetricTarget{
-						Type:               autov2beta2.UtilizationMetricType,
+					Target: autov2.MetricTarget{
+						Type:               autov2.UtilizationMetricType,
 						AverageUtilization: &cpuPercentage,
 					},
 				},
@@ -267,7 +267,7 @@ func createFunction(function *v1alpha1.Function) {
 
 	It("HPA should be created", func() {
 		if function.Spec.MaxReplicas != nil {
-			hpa := &autov2beta2.HorizontalPodAutoscaler{}
+			hpa := &autov2.HorizontalPodAutoscaler{}
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), types.NamespacedName{Namespace: function.Namespace,
 					Name: spec.MakeFunctionObjectMeta(function).Name}, hpa)
@@ -341,7 +341,7 @@ func createFunction(function *v1alpha1.Function) {
 		log.Info("StatefulSet resource deleted", "namespace", key.Namespace, "name", key.Name, "test",
 			CurrentGinkgoTestDescription().FullTestText)
 
-		hpa := new(autov2beta2.HorizontalPodAutoscaler)
+		hpa := new(autov2.HorizontalPodAutoscaler)
 		hpaKey := key
 		hpaKey.Name = spec.MakeFunctionObjectMeta(function).Name
 		err = k8sClient.Get(context.Background(), hpaKey, hpa)

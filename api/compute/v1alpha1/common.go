@@ -24,7 +24,7 @@ import (
 
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 
-	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autov2 "k8s.io/api/autoscaling/v2"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -214,15 +214,15 @@ type PodPolicy struct {
 	// AutoScalingMetrics contains the specifications for which to use to calculate the
 	// desired replica count (the maximum replica count across all metrics will
 	// be used).
-	// More info: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#metricspec-v2beta2-autoscaling
+	// More info: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#metricspec-v2-autoscaling
 	// +optional
-	AutoScalingMetrics []autov2beta2.MetricSpec `json:"autoScalingMetrics,omitempty"`
+	AutoScalingMetrics []autov2.MetricSpec `json:"autoScalingMetrics,omitempty"`
 
 	// AutoScalingBehavior configures the scaling behavior of the target
 	// in both Up and Down directions (scaleUp and scaleDown fields respectively).
 	// If not set, the default HPAScalingRules for scale up and scale down are used.
 	// +optional
-	AutoScalingBehavior *autov2beta2.HorizontalPodAutoscalerBehavior `json:"autoScalingBehavior,omitempty"`
+	AutoScalingBehavior *autov2.HorizontalPodAutoscalerBehavior `json:"autoScalingBehavior,omitempty"`
 
 	// VPA indicates whether to enable the VerticalPodAutoscaler, it should not be used with HPA
 	VPA *VPASpec `json:"vpa,omitempty"`
