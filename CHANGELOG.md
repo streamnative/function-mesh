@@ -268,7 +268,7 @@ Action required: We have moved the Function Mesh Worker service into a separate 
 - [Controller] Enable source connector to set `ForwardMessageProperty` ([#250](https://github.com/streamnative/function-mesh/pull/250))
 - [Runner image] Find the issue that the Python runner image cannot be built based on the latest Pulsar image ([#253](https://github.com/streamnative/function-mesh/pull/253)) ([#254](https://github.com/streamnative/function-mesh/pull/254))
 - [controller] fix package download path not same as the executing command path ([#256](https://github.com/streamnative/function-mesh/pull/256))
-- [controller] support metrics based HPA by upgrade apis to k8s.io/api/autoscaling/v2 ([#245](https://github.com/streamnative/function-mesh/pull/245))
+- [controller] support metrics based HPA by upgrade apis to k8s.io/api/autoscaling/v2beta2 ([#245](https://github.com/streamnative/function-mesh/pull/245))
 - [Controller] Fix misuse of Kubernetes namespace in Controller ([#259](https://github.com/streamnative/function-mesh/pull/259))
 - [Controller] Support downloading the package with authentication or TLS ([#257](https://github.com/streamnative/function-mesh/pull/257))
 - [Function Mesh Worker service] Support creating a function with the package URL ([#261](https://github.com/streamnative/function-mesh/pull/261))
