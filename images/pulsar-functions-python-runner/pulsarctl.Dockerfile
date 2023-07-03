@@ -34,6 +34,11 @@ RUN if [ -d "/pulsar/cpp-client" ]; then apt-get update \
 RUN if [ -f "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh || pip3 install 'pulsar-client[all]==3.1.0' ; fi
 RUN if [ -f "/pulsar/bin/install-pulsar-client.sh" ]; then /pulsar/bin/install-pulsar-client.sh || pip3 install 'pulsar-client[all]==3.1.0' ; fi
 
+# this dir is duplicate with the installed pulsar-client pip package, and maybe not compatible with the `_pulsar`(the .so library package)
+RUN rm -rf /pulsar/instances/python-instance/pulsar/ \
+     && sed -i "s/serde.IdentitySerDe/pulsar.functions.serde.IdentitySerDe/g" /pulsar/instances/python-instance/python_instance.py \
+     && sed -i "s/serde.IdentitySerDe/pulsar.functions.serde.IdentitySerDe/g" /pulsar/instances/python-instance/contextimpl.py
+
 WORKDIR /pulsar
 
 USER $USER

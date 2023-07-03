@@ -72,6 +72,15 @@ if [ "$KIND_PUSH" = true ] ; then
     kind load docker-image "${DOCKER_REPO}"/${PULSARCTL_GO_RUNNER}:"${RUNNER_TAG}" --name $cluster
   done
 fi
+
+if [ "$DOCKER_REPO" = "localhost:5000" ]; then
+  docker push "${DOCKER_REPO}"/${JAVA_RUNNER}:"${RUNNER_TAG}"
+  docker push "${DOCKER_REPO}"/${PULSARCTL_JAVA_RUNNER}:"${RUNNER_TAG}"
+  docker push "${DOCKER_REPO}"/${PYTHON_RUNNER}:"${RUNNER_TAG}"
+  docker push "${DOCKER_REPO}"/${PULSARCTL_PYTHON_RUNNER}:"${RUNNER_TAG}"
+  docker push "${DOCKER_REPO}"/${GO_RUNNER}:"${RUNNER_TAG}"
+  docker push "${DOCKER_REPO}"/${PULSARCTL_GO_RUNNER}:"${RUNNER_TAG}"
+fi
 #
 #if [ "$CI_TEST" = true ] ; then
 #  echo "apply images to function mesh ci yaml"
