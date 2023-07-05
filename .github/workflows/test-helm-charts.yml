@@ -73,7 +73,7 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
 
       - name: Create kind cluster
-        run: hack/kind-cluster-build.sh --name chart-testing -c 1 -v 10 --k8sVersion v1.22.15
+        run: hack/kind-cluster-build.sh --name chart-testing -c 1 -v 10 --k8sVersion v1.26.6
         if: steps.list-changed.outputs.changed == 'true'
 
       - name: Set up GO 1.20.4
