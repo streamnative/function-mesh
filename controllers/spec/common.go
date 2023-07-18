@@ -20,6 +20,8 @@ package spec
 import (
 	"bytes"
 	"context"
+
+	// used for template
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -1768,7 +1770,7 @@ const (
 func getRuntimeLogConfigNames(java *v1alpha1.JavaRuntime, python *v1alpha1.PythonRuntime,
 	golang *v1alpha1.GoRuntime) map[int32]*v1alpha1.RuntimeLogConfig {
 
-	var configs map[int32]*v1alpha1.RuntimeLogConfig
+	var configs = map[int32]*v1alpha1.RuntimeLogConfig{}
 
 	if java != nil && java.Log != nil && java.Log.LogConfig != nil {
 		configs[javaRuntimeLog] = java.Log
