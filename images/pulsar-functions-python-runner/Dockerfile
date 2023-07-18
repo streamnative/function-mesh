@@ -50,3 +50,5 @@ RUN rm -rf /pulsar/instances/python-instance/pulsar/ \
 USER $USER
 # a temp solution from https://github.com/apache/pulsar/pull/15846 to fix python protobuf version error
 RUN pip3 install protobuf==3.20.1 --user
+# to make the python runner could print json logs
+RUN pip3 install python-json-logger --user

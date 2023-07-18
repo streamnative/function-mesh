@@ -76,6 +76,17 @@ spec:
                       type: string
                     log:
                       properties:
+                        format:
+                          enum:
+                            - json
+                            - text
+                          type: string
+                        javaLog4JConfigFileType:
+                          enum:
+                            - yaml
+                            - xml
+                            - ini
+                          type: string
                         level:
                           enum:
                             - "off"
@@ -133,6 +144,17 @@ spec:
                       type: array
                     log:
                       properties:
+                        format:
+                          enum:
+                            - json
+                            - text
+                          type: string
+                        javaLog4JConfigFileType:
+                          enum:
+                            - yaml
+                            - xml
+                            - ini
+                          type: string
                         level:
                           enum:
                             - "off"
@@ -3170,6 +3192,17 @@ spec:
                   properties:
                     log:
                       properties:
+                        format:
+                          enum:
+                            - json
+                            - text
+                          type: string
+                        javaLog4JConfigFileType:
+                          enum:
+                            - yaml
+                            - xml
+                            - ini
+                          type: string
                         level:
                           enum:
                             - "off"

@@ -172,6 +172,8 @@ spec:
                       type: boolean
                     className:
                       type: string
+                    cleanupImage:
+                      type: string
                     cleanupSubscription:
                       type: boolean
                     clusterName:
@@ -193,6 +195,17 @@ spec:
                           type: string
                         log:
                           properties:
+                            format:
+                              enum:
+                              - json
+                              - text
+                              type: string
+                            javaLog4JConfigFileType:
+                              enum:
+                              - yaml
+                              - xml
+                              - ini
+                              type: string
                             level:
                               enum:
                               - "off"
@@ -230,6 +243,10 @@ spec:
                       type: object
                     image:
                       type: string
+                    imageHasGet:
+                      type: boolean
+                    imageHasPulsarctl:
+                      type: boolean
                     imagePullPolicy:
                       type: string
                     input:
@@ -318,6 +335,17 @@ spec:
                           type: array
                         log:
                           properties:
+                            format:
+                              enum:
+                              - json
+                              - text
+                              type: string
+                            javaLog4JConfigFileType:
+                              enum:
+                              - yaml
+                              - xml
+                              - ini
+                              type: string
                             level:
                               enum:
                               - "off"
@@ -383,6 +411,14 @@ spec:
                           properties:
                             batchBuilder:
                               type: string
+                            compressionType:
+                              enum:
+                              - NONE
+                              - LZ4
+                              - ZLIB
+                              - ZSTD
+                              - SNAPPY
+                              type: string
                             cryptoConfig:
                               properties:
                                 consumerCryptoFailureAction:
@@ -430,6 +466,13 @@ spec:
                         topic:
                           type: string
                         typeClassName:
+                          type: string
+                      type: object
+                    persistentVolumeClaimRetentionPolicy:
+                      properties:
+                        whenDeleted:
+                          type: string
+                        whenScaled:
                           type: string
                       type: object
                     pod:
@@ -3265,11 +3308,22 @@ spec:
                       - atleast_once
                       - atmost_once
                       - effectively_once
+                      - manual
                       type: string
                     pulsar:
                       properties:
                         authConfig:
                           properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
                             oauth2Config:
                               properties:
                                 audience:
@@ -3291,6 +3345,37 @@ spec:
                           type: object
                         authSecret:
                           type: string
+                        cleanupAuthConfig:
+                          properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
                         pulsarConfig:
                           type: string
                         tlsConfig:
@@ -3313,6 +3398,17 @@ spec:
                       properties:
                         log:
                           properties:
+                            format:
+                              enum:
+                              - json
+                              - text
+                              type: string
+                            javaLog4JConfigFileType:
+                              enum:
+                              - yaml
+                              - xml
+                              - ini
+                              type: string
                             level:
                               enum:
                               - "off"
@@ -3390,6 +3486,10 @@ spec:
                             type: string
                         type: object
                       type: object
+                    showPreciseParallelism:
+                      type: boolean
+                    skipToLatest:
+                      type: boolean
                     statefulConfig:
                       properties:
                         pulsar:
@@ -3638,6 +3738,8 @@ spec:
                       type: boolean
                     className:
                       type: string
+                    cleanupImage:
+                      type: string
                     cleanupSubscription:
                       type: boolean
                     clusterName:
@@ -3654,6 +3756,17 @@ spec:
                           type: string
                         log:
                           properties:
+                            format:
+                              enum:
+                              - json
+                              - text
+                              type: string
+                            javaLog4JConfigFileType:
+                              enum:
+                              - yaml
+                              - xml
+                              - ini
+                              type: string
                             level:
                               enum:
                               - "off"
@@ -3691,6 +3804,10 @@ spec:
                       type: object
                     image:
                       type: string
+                    imageHasGet:
+                      type: boolean
+                    imageHasPulsarctl:
+                      type: boolean
                     imagePullPolicy:
                       type: string
                     input:
@@ -3779,6 +3896,17 @@ spec:
                           type: array
                         log:
                           properties:
+                            format:
+                              enum:
+                              - json
+                              - text
+                              type: string
+                            javaLog4JConfigFileType:
+                              enum:
+                              - yaml
+                              - xml
+                              - ini
+                              type: string
                             level:
                               enum:
                               - "off"
@@ -6665,11 +6793,22 @@ spec:
                       - atleast_once
                       - atmost_once
                       - effectively_once
+                      - manual
                       type: string
                     pulsar:
                       properties:
                         authConfig:
                           properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
                             oauth2Config:
                               properties:
                                 audience:
@@ -6691,6 +6830,37 @@ spec:
                           type: object
                         authSecret:
                           type: string
+                        cleanupAuthConfig:
+                          properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
                         pulsarConfig:
                           type: string
                         tlsConfig:
@@ -6713,6 +6883,17 @@ spec:
                       properties:
                         log:
                           properties:
+                            format:
+                              enum:
+                              - json
+                              - text
+                              type: string
+                            javaLog4JConfigFileType:
+                              enum:
+                              - yaml
+                              - xml
+                              - ini
+                              type: string
                             level:
                               enum:
                               - "off"
@@ -6790,6 +6971,8 @@ spec:
                             type: string
                         type: object
                       type: object
+                    showPreciseParallelism:
+                      type: boolean
                     sinkConfig:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
@@ -6863,6 +7046,8 @@ spec:
                       type: object
                     className:
                       type: string
+                    cleanupImage:
+                      type: string
                     clusterName:
                       type: string
                     downloaderImage:
@@ -6877,6 +7062,17 @@ spec:
                           type: string
                         log:
                           properties:
+                            format:
+                              enum:
+                              - json
+                              - text
+                              type: string
+                            javaLog4JConfigFileType:
+                              enum:
+                              - yaml
+                              - xml
+                              - ini
+                              type: string
                             level:
                               enum:
                               - "off"
@@ -6914,6 +7110,10 @@ spec:
                       type: object
                     image:
                       type: string
+                    imageHasGet:
+                      type: boolean
+                    imageHasPulsarctl:
+                      type: boolean
                     imagePullPolicy:
                       type: string
                     java:
@@ -6930,6 +7130,17 @@ spec:
                           type: array
                         log:
                           properties:
+                            format:
+                              enum:
+                              - json
+                              - text
+                              type: string
+                            javaLog4JConfigFileType:
+                              enum:
+                              - yaml
+                              - xml
+                              - ini
+                              type: string
                             level:
                               enum:
                               - "off"
@@ -6986,6 +7197,14 @@ spec:
                         producerConf:
                           properties:
                             batchBuilder:
+                              type: string
+                            compressionType:
+                              enum:
+                              - NONE
+                              - LZ4
+                              - ZLIB
+                              - ZSTD
+                              - SNAPPY
                               type: string
                             cryptoConfig:
                               properties:
@@ -9869,11 +10088,22 @@ spec:
                       - atleast_once
                       - atmost_once
                       - effectively_once
+                      - manual
                       type: string
                     pulsar:
                       properties:
                         authConfig:
                           properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
                             oauth2Config:
                               properties:
                                 audience:
@@ -9895,6 +10125,37 @@ spec:
                           type: object
                         authSecret:
                           type: string
+                        cleanupAuthConfig:
+                          properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
                         pulsarConfig:
                           type: string
                         tlsConfig:
@@ -9917,6 +10178,17 @@ spec:
                       properties:
                         log:
                           properties:
+                            format:
+                              enum:
+                              - json
+                              - text
+                              type: string
+                            javaLog4JConfigFileType:
+                              enum:
+                              - yaml
+                              - xml
+                              - ini
+                              type: string
                             level:
                               enum:
                               - "off"
@@ -9990,6 +10262,8 @@ spec:
                             type: string
                         type: object
                       type: object
+                    showPreciseParallelism:
+                      type: boolean
                     sourceConfig:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
@@ -10137,6 +10411,8 @@ spec:
                 type: boolean
               className:
                 type: string
+              cleanupImage:
+                type: string
               cleanupSubscription:
                 type: boolean
               clusterName:
@@ -10158,6 +10434,17 @@ spec:
                     type: string
                   log:
                     properties:
+                      format:
+                        enum:
+                        - json
+                        - text
+                        type: string
+                      javaLog4JConfigFileType:
+                        enum:
+                        - yaml
+                        - xml
+                        - ini
+                        type: string
                       level:
                         enum:
                         - "off"
@@ -10195,6 +10482,10 @@ spec:
                 type: object
               image:
                 type: string
+              imageHasGet:
+                type: boolean
+              imageHasPulsarctl:
+                type: boolean
               imagePullPolicy:
                 type: string
               input:
@@ -10283,6 +10574,17 @@ spec:
                     type: array
                   log:
                     properties:
+                      format:
+                        enum:
+                        - json
+                        - text
+                        type: string
+                      javaLog4JConfigFileType:
+                        enum:
+                        - yaml
+                        - xml
+                        - ini
+                        type: string
                       level:
                         enum:
                         - "off"
@@ -10348,6 +10650,14 @@ spec:
                     properties:
                       batchBuilder:
                         type: string
+                      compressionType:
+                        enum:
+                        - NONE
+                        - LZ4
+                        - ZLIB
+                        - ZSTD
+                        - SNAPPY
+                        type: string
                       cryptoConfig:
                         properties:
                           consumerCryptoFailureAction:
@@ -10395,6 +10705,13 @@ spec:
                   topic:
                     type: string
                   typeClassName:
+                    type: string
+                type: object
+              persistentVolumeClaimRetentionPolicy:
+                properties:
+                  whenDeleted:
+                    type: string
+                  whenScaled:
                     type: string
                 type: object
               pod:
@@ -13230,11 +13547,22 @@ spec:
                 - atleast_once
                 - atmost_once
                 - effectively_once
+                - manual
                 type: string
               pulsar:
                 properties:
                   authConfig:
                     properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
                       oauth2Config:
                         properties:
                           audience:
@@ -13256,6 +13584,37 @@ spec:
                     type: object
                   authSecret:
                     type: string
+                  cleanupAuthConfig:
+                    properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
                   pulsarConfig:
                     type: string
                   tlsConfig:
@@ -13278,6 +13637,17 @@ spec:
                 properties:
                   log:
                     properties:
+                      format:
+                        enum:
+                        - json
+                        - text
+                        type: string
+                      javaLog4JConfigFileType:
+                        enum:
+                        - yaml
+                        - xml
+                        - ini
+                        type: string
                       level:
                         enum:
                         - "off"
@@ -13355,6 +13725,10 @@ spec:
                       type: string
                   type: object
                 type: object
+              showPreciseParallelism:
+                type: boolean
+              skipToLatest:
+                type: boolean
               statefulConfig:
                 properties:
                   pulsar:
@@ -13676,6 +14050,8 @@ spec:
                 type: boolean
               className:
                 type: string
+              cleanupImage:
+                type: string
               cleanupSubscription:
                 type: boolean
               clusterName:
@@ -13692,6 +14068,17 @@ spec:
                     type: string
                   log:
                     properties:
+                      format:
+                        enum:
+                        - json
+                        - text
+                        type: string
+                      javaLog4JConfigFileType:
+                        enum:
+                        - yaml
+                        - xml
+                        - ini
+                        type: string
                       level:
                         enum:
                         - "off"
@@ -13729,6 +14116,10 @@ spec:
                 type: object
               image:
                 type: string
+              imageHasGet:
+                type: boolean
+              imageHasPulsarctl:
+                type: boolean
               imagePullPolicy:
                 type: string
               input:
@@ -13817,6 +14208,17 @@ spec:
                     type: array
                   log:
                     properties:
+                      format:
+                        enum:
+                        - json
+                        - text
+                        type: string
+                      javaLog4JConfigFileType:
+                        enum:
+                        - yaml
+                        - xml
+                        - ini
+                        type: string
                       level:
                         enum:
                         - "off"
@@ -16703,11 +17105,22 @@ spec:
                 - atleast_once
                 - atmost_once
                 - effectively_once
+                - manual
                 type: string
               pulsar:
                 properties:
                   authConfig:
                     properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
                       oauth2Config:
                         properties:
                           audience:
@@ -16729,6 +17142,37 @@ spec:
                     type: object
                   authSecret:
                     type: string
+                  cleanupAuthConfig:
+                    properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
                   pulsarConfig:
                     type: string
                   tlsConfig:
@@ -16751,6 +17195,17 @@ spec:
                 properties:
                   log:
                     properties:
+                      format:
+                        enum:
+                        - json
+                        - text
+                        type: string
+                      javaLog4JConfigFileType:
+                        enum:
+                        - yaml
+                        - xml
+                        - ini
+                        type: string
                       level:
                         enum:
                         - "off"
@@ -16828,6 +17283,8 @@ spec:
                       type: string
                   type: object
                 type: object
+              showPreciseParallelism:
+                type: boolean
               sinkConfig:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
@@ -16974,6 +17431,8 @@ spec:
                 type: object
               className:
                 type: string
+              cleanupImage:
+                type: string
               clusterName:
                 type: string
               downloaderImage:
@@ -16988,6 +17447,17 @@ spec:
                     type: string
                   log:
                     properties:
+                      format:
+                        enum:
+                        - json
+                        - text
+                        type: string
+                      javaLog4JConfigFileType:
+                        enum:
+                        - yaml
+                        - xml
+                        - ini
+                        type: string
                       level:
                         enum:
                         - "off"
@@ -17025,6 +17495,10 @@ spec:
                 type: object
               image:
                 type: string
+              imageHasGet:
+                type: boolean
+              imageHasPulsarctl:
+                type: boolean
               imagePullPolicy:
                 type: string
               java:
@@ -17041,6 +17515,17 @@ spec:
                     type: array
                   log:
                     properties:
+                      format:
+                        enum:
+                        - json
+                        - text
+                        type: string
+                      javaLog4JConfigFileType:
+                        enum:
+                        - yaml
+                        - xml
+                        - ini
+                        type: string
                       level:
                         enum:
                         - "off"
@@ -17097,6 +17582,14 @@ spec:
                   producerConf:
                     properties:
                       batchBuilder:
+                        type: string
+                      compressionType:
+                        enum:
+                        - NONE
+                        - LZ4
+                        - ZLIB
+                        - ZSTD
+                        - SNAPPY
                         type: string
                       cryptoConfig:
                         properties:
@@ -19980,11 +20473,22 @@ spec:
                 - atleast_once
                 - atmost_once
                 - effectively_once
+                - manual
                 type: string
               pulsar:
                 properties:
                   authConfig:
                     properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
                       oauth2Config:
                         properties:
                           audience:
@@ -20006,6 +20510,37 @@ spec:
                     type: object
                   authSecret:
                     type: string
+                  cleanupAuthConfig:
+                    properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
                   pulsarConfig:
                     type: string
                   tlsConfig:
@@ -20028,6 +20563,17 @@ spec:
                 properties:
                   log:
                     properties:
+                      format:
+                        enum:
+                        - json
+                        - text
+                        type: string
+                      javaLog4JConfigFileType:
+                        enum:
+                        - yaml
+                        - xml
+                        - ini
+                        type: string
                       level:
                         enum:
                         - "off"
@@ -20101,6 +20647,8 @@ spec:
                       type: string
                   type: object
                 type: object
+              showPreciseParallelism:
+                type: boolean
               sourceConfig:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
