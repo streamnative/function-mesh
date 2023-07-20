@@ -22,7 +22,7 @@ kubeadmConfigPatchesJSON6902:
 nodes:
   # the control plane node (worker) config
   - role: control-plane
-    image: kindest/node:v1.22.15
+    image: kindest/node:v1.23.17
     extraPortMappings:
       - containerPort: 31234
         hostPort: 31234
