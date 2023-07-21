@@ -19,6 +19,7 @@ package spec
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -142,13 +143,19 @@ func makeSourceVolumeMounts(source *v1alpha1.Source, authConfig *v1alpha1.AuthCo
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
 	spec := source.Spec
+	hasPulsarctl := source.Spec.ImageHasPulsarctl
+	hasWget := source.Spec.ImageHasWget
+	if strings.Contains(spec.Image, JavaRunnerImageHasPulsarctl) {
+		hasPulsarctl = true
+		hasWget = true
+	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
 		generateJavaLogConfigCommand(source.Spec.Java),
 		parseJavaLogLevel(source.Spec.Java),
 		generateSourceDetailsInJSON(source),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(source.UID),
-		spec.Java.JavaOpts, spec.ImageHasPulsarctl, spec.ImageHasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
+		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
 		generateJavaLogConfigFileName(source.Spec.Java))
 }
@@ -188,7 +195,11 @@ func MakeSourceCleanUpJob(source *v1alpha1.Source) *v1.Job {
 		container.Image = source.Spec.CleanupImage
 	}
 
-	command := getCleanUpCommand(source.Spec.ImageHasPulsarctl,
+	hasPulsarctl := source.Spec.ImageHasPulsarctl
+	if strings.Contains(source.Spec.Image, JavaRunnerImageHasPulsarctl) {
+		hasPulsarctl = true
+	}
+	command := getCleanUpCommand(hasPulsarctl,
 		source.Spec.Pulsar.AuthSecret != "",
 		source.Spec.Pulsar.TLSSecret != "",
 		source.Spec.Pulsar.TLSConfig,
