@@ -28,6 +28,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var yamlVal = string(v1alpha1.YAML)
+
 func TestGetDownloadCommand(t *testing.T) {
 	testOauth2 := &v1alpha1.OAuth2Config{
 		Audience:      "test-audience",
@@ -506,7 +508,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 		consumerConfs map[string]v1alpha1.ConsumerConfig
 		trustCert     *v1alpha1.PulsarTLSConfig
 		authConfig    *v1alpha1.AuthConfig
-		logConf       map[int32]*v1alpha1.LogConfig
+		logConf       map[int32]*v1alpha1.RuntimeLogConfig
 	}
 	tests := []struct {
 		name string
@@ -714,14 +716,18 @@ func TestGeneratePodVolumes(t *testing.T) {
 		{
 			name: "generate pod volumes from runtime log configs",
 			args: args{
-				logConf: map[int32]*v1alpha1.LogConfig{
+				logConf: map[int32]*v1alpha1.RuntimeLogConfig{
 					javaRuntimeLog: {
-						Name: "test-log-config",
-						Key:  "java-xml",
+						LogConfig: &v1alpha1.LogConfig{
+							Name: "test-log-config",
+							Key:  "java-xml",
+						},
 					},
 					pythonRuntimeLog: {
-						Name: "test-log-config",
-						Key:  "python-ini",
+						LogConfig: &v1alpha1.LogConfig{
+							Name: "test-log-config",
+							Key:  "python-ini",
+						},
 					},
 				},
 			},
@@ -737,6 +743,60 @@ func TestGeneratePodVolumes(t *testing.T) {
 								{
 									Key:  "java-xml",
 									Path: "java_instance_log4j.xml",
+								},
+							},
+						},
+					},
+				},
+				{
+					Name: "test-log-config-python-log-conf",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "test-log-config",
+							},
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "python-ini",
+									Path: "python_instance_logging.ini",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "generate pod volumes from runtime log configs with log4j type",
+			args: args{
+				logConf: map[int32]*v1alpha1.RuntimeLogConfig{
+					javaRuntimeLog: {
+						JavaLog4JConfigFileType: (*v1alpha1.JavaLog4JConfigFileType)(&yamlVal),
+						LogConfig: &v1alpha1.LogConfig{
+							Name: "test-log-config",
+							Key:  "java-yaml",
+						},
+					},
+					pythonRuntimeLog: {
+						LogConfig: &v1alpha1.LogConfig{
+							Name: "test-log-config",
+							Key:  "python-ini",
+						},
+					},
+				},
+			},
+			want: []corev1.Volume{
+				{
+					Name: "test-log-config-java-log-conf",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "test-log-config",
+							},
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "java-yaml",
+									Path: "java_instance_log4j.yaml",
 								},
 							},
 						},
@@ -784,7 +844,7 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		consumerConfs map[string]v1alpha1.ConsumerConfig
 		trustCert     *v1alpha1.PulsarTLSConfig
 		authConfig    *v1alpha1.AuthConfig
-		logConf       map[int32]*v1alpha1.LogConfig
+		logConf       map[int32]*v1alpha1.RuntimeLogConfig
 		javaRuntime   *v1alpha1.JavaRuntime
 	}
 	tests := []struct {
@@ -983,14 +1043,48 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		{
 			name: "generate volume mounts from runtime log config",
 			args: args{
-				logConf: map[int32]*v1alpha1.LogConfig{
+				logConf: map[int32]*v1alpha1.RuntimeLogConfig{
 					javaRuntimeLog: {
-						Name: "test-log-config",
-						Key:  "java-xml",
+						LogConfig: &v1alpha1.LogConfig{
+							Name: "test-log-config",
+							Key:  "java-xml",
+						},
 					},
 					pythonRuntimeLog: {
-						Name: "test-log-config",
-						Key:  "python-ini",
+						LogConfig: &v1alpha1.LogConfig{
+							Name: "test-log-config",
+							Key:  "python-ini",
+						},
+					},
+				},
+			},
+			want: []corev1.VolumeMount{
+				{
+					Name:      "test-log-config-java-log-conf",
+					MountPath: "/pulsar/conf/java-log/",
+				},
+				{
+					Name:      "test-log-config-python-log-conf",
+					MountPath: "/pulsar/conf/python-log/",
+				},
+			},
+		},
+		{
+			name: "generate volume mounts from runtime log config with logj4 types",
+			args: args{
+				logConf: map[int32]*v1alpha1.RuntimeLogConfig{
+					javaRuntimeLog: {
+						JavaLog4JConfigFileType: (*v1alpha1.JavaLog4JConfigFileType)(&yamlVal),
+						LogConfig: &v1alpha1.LogConfig{
+							Name: "test-log-config",
+							Key:  "java-yaml",
+						},
+					},
+					pythonRuntimeLog: {
+						LogConfig: &v1alpha1.LogConfig{
+							Name: "test-log-config",
+							Key:  "python-ini",
+						},
 					},
 				},
 			},

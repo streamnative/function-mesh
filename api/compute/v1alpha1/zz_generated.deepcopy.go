@@ -1109,9 +1109,19 @@ func (in *RuntimeLogConfig) DeepCopyInto(out *RuntimeLogConfig) {
 		*out = new(TriggeringPolicy)
 		**out = **in
 	}
+	if in.Format != nil {
+		in, out := &in.Format, &out.Format
+		*out = new(FormatType)
+		**out = **in
+	}
 	if in.LogConfig != nil {
 		in, out := &in.LogConfig, &out.LogConfig
 		*out = new(LogConfig)
+		**out = **in
+	}
+	if in.JavaLog4JConfigFileType != nil {
+		in, out := &in.JavaLog4JConfigFileType, &out.JavaLog4JConfigFileType
+		*out = new(JavaLog4JConfigFileType)
 		**out = **in
 	}
 }

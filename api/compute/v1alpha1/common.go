@@ -487,10 +487,28 @@ const (
 // +kubebuilder:validation:Enum=TimedPolicyWithDaily;TimedPolicyWithWeekly;TimedPolicyWithMonthly;SizedPolicyWith10MB;SizedPolicyWith50MB;SizedPolicyWith100MB
 type TriggeringPolicy string
 
+// +kubebuilder:validation:Enum=json;text
+type FormatType string
+
+const (
+	JSON FormatType = "json"
+	TEXT FormatType = "text"
+)
+
+// +kubebuilder:validation:Enum=yaml;xml;ini
+type JavaLog4JConfigFileType string
+
+const (
+	XML  JavaLog4JConfigFileType = "xml"
+	YAML JavaLog4JConfigFileType = "yaml"
+)
+
 type RuntimeLogConfig struct {
-	Level        LogLevel          `json:"level,omitempty"`
-	RotatePolicy *TriggeringPolicy `json:"rotatePolicy,omitempty"`
-	LogConfig    *LogConfig        `json:"logConfig,omitempty"`
+	Level                   LogLevel                 `json:"level,omitempty"`
+	RotatePolicy            *TriggeringPolicy        `json:"rotatePolicy,omitempty"`
+	Format                  *FormatType              `json:"format,omitempty"`
+	LogConfig               *LogConfig               `json:"logConfig,omitempty"`
+	JavaLog4JConfigFileType *JavaLog4JConfigFileType `json:"javaLog4JConfigFileType,omitempty"`
 }
 
 type LogConfig struct {

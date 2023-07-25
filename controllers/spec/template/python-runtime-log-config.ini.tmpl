@@ -1,0 +1,36 @@
+[loggers]
+keys=root
+
+[handlers]
+keys={{ .Handlers }}
+
+[formatters]
+{{ if .Format | eq "json" }}
+keys=json
+{{ else }}
+keys=formatter
+{{ end }}
+
+[logger_root]
+level={{ .Level }}
+handlers={{ .Handlers }}
+
+{{- if .RollingEnabled }}
+{{ .Policy }}
+{{- end }}
+
+[handler_stream_handler]
+class=StreamHandler
+level={{ .Level }}
+formatter=formatter
+args=(sys.stdout,)
+
+{{ if .Format | eq "json" }}
+[formatter_json]
+format = %(message)s
+class = pythonjsonlogger.jsonlogger.JsonFormatter
+{{ else }}
+[formatter_formatter]
+format=[%(asctime)s] [%(levelname)s] %(filename)s: %(message)s
+datefmt=%Y-%m-%d %H:%M:%S %z
+{{ end }}
