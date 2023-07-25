@@ -23,7 +23,7 @@ import (
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
-	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autov2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,9 +31,9 @@ import (
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 )
 
-func MakeSourceHPA(source *v1alpha1.Source) *autov2beta2.HorizontalPodAutoscaler {
+func MakeSourceHPA(source *v1alpha1.Source) *autov2.HorizontalPodAutoscaler {
 	objectMeta := MakeSourceObjectMeta(source)
-	targetRef := autov2beta2.CrossVersionObjectReference{
+	targetRef := autov2.CrossVersionObjectReference{
 		Kind:       source.Kind,
 		Name:       source.Name,
 		APIVersion: source.APIVersion,

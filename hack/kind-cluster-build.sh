@@ -118,8 +118,6 @@ configFile=${workDir}/kind-config.yaml
 cat <<EOF > ${configFile}
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-runtimeConfig:
-  "autoscaling/v2beta2": "true"
 nodes:
 - role: control-plane
   extraPortMappings:
@@ -236,9 +234,9 @@ $KUBECTL_BIN apply -f ${registryFile}
 echo "init pulsar env"
 $KUBECTL_BIN apply -f ${PULSAR_CHART_HOME}/manifests/local-dind/local-volume-provisioner.yaml
 
-docker pull gcr.io/google-containers/kube-scheduler:${k8sVersion}
-docker tag gcr.io/google-containers/kube-scheduler:${k8sVersion} mirantis/hypokube:final
-kind load docker-image --name=${clusterName} mirantis/hypokube:final
+#docker pull gcr.io/google-containers/kube-scheduler:${k8sVersion}
+#docker tag gcr.io/google-containers/kube-scheduler:${k8sVersion} mirantis/hypokube:final
+#kind load docker-image --name=${clusterName} mirantis/hypokube:final
 
 echo "############# success create cluster:[${clusterName}] #############"
 

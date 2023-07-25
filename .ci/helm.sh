@@ -147,17 +147,17 @@ function ci::verify_hpa() {
     FUNCTION_NAME=$1
     kubectl get function
     kubectl get function ${FUNCTION_NAME} -o yaml
-    kubectl get hpa.v2beta2.autoscaling
-    kubectl get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o yaml
-    kubectl describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
-    WC=$(kubectl get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}' | grep False | wc -l)
+    kubectl get hpa.v2.autoscaling
+    kubectl get hpa.v2.autoscaling ${FUNCTION_NAME}-function -o yaml
+    kubectl describe hpa.v2.autoscaling ${FUNCTION_NAME}-function
+    WC=$(kubectl get hpa.v2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}' | grep False | wc -l)
     while [[ ${WC} -lt 0 ]]; do
         echo ${WC};
         sleep 20
-        kubectl get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o yaml
-        kubectl describe hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function
-        kubectl get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}'
-        WC=$(kubectl get hpa.v2beta2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}' | grep False | wc -l)
+        kubectl get hpa.v2.autoscaling ${FUNCTION_NAME}-function -o yaml
+        kubectl describe hpa.v2.autoscaling ${FUNCTION_NAME}-function
+        kubectl get hpa.v2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}'
+        WC=$(kubectl get hpa.v2.autoscaling ${FUNCTION_NAME}-function -o jsonpath='{.status.conditions[?(@.type=="AbleToScale")].status}' | grep False | wc -l)
     done
 }
 

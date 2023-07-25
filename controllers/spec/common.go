@@ -34,7 +34,7 @@ import (
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
-	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autov2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -1856,8 +1856,8 @@ func CheckIfStatefulSetSpecIsEqual(spec *appsv1.StatefulSetSpec, desiredSpec *ap
 	return true
 }
 
-func CheckIfHPASpecIsEqual(spec *autov2beta2.HorizontalPodAutoscalerSpec,
-	desiredSpec *autov2beta2.HorizontalPodAutoscalerSpec) bool {
+func CheckIfHPASpecIsEqual(spec *autov2.HorizontalPodAutoscalerSpec,
+	desiredSpec *autov2.HorizontalPodAutoscalerSpec) bool {
 	if spec.MaxReplicas != desiredSpec.MaxReplicas || *spec.MinReplicas != *desiredSpec.MinReplicas {
 		return false
 	}

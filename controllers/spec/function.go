@@ -21,7 +21,7 @@ import (
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
-	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autov2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,9 +33,9 @@ import (
 // log is for logging in this package.
 var log = logf.Log.WithName("function-resource")
 
-func MakeFunctionHPA(function *v1alpha1.Function) *autov2beta2.HorizontalPodAutoscaler {
+func MakeFunctionHPA(function *v1alpha1.Function) *autov2.HorizontalPodAutoscaler {
 	objectMeta := MakeFunctionObjectMeta(function)
-	targetRef := autov2beta2.CrossVersionObjectReference{
+	targetRef := autov2.CrossVersionObjectReference{
 		Kind:       function.Kind,
 		Name:       function.Name,
 		APIVersion: function.APIVersion,

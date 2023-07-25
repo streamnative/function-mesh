@@ -21,11 +21,13 @@ package spec
 import (
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	autoscaling "k8s.io/api/autoscaling/v1"
+	autov2 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 )
 
-func MakeVPA(objectMeta *metav1.ObjectMeta, targetRef *autoscaling.CrossVersionObjectReference, vpa *v1alpha1.VPASpec) *vpav1.VerticalPodAutoscaler {
+func MakeVPA(objectMeta *metav1.ObjectMeta, targetRef *autov2.CrossVersionObjectReference, vpa *v1alpha1.VPASpec) *vpav1.VerticalPodAutoscaler {
+
 	return &vpav1.VerticalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "autoscaling.k8s.io/v1",
@@ -33,7 +35,11 @@ func MakeVPA(objectMeta *metav1.ObjectMeta, targetRef *autoscaling.CrossVersionO
 		},
 		ObjectMeta: *objectMeta,
 		Spec: vpav1.VerticalPodAutoscalerSpec{
-			TargetRef:      targetRef,
+			TargetRef: &autoscaling.CrossVersionObjectReference{
+				Kind:       targetRef.Kind,
+				Name:       targetRef.Name,
+				APIVersion: targetRef.APIVersion,
+			},
 			UpdatePolicy:   vpa.UpdatePolicy,
 			ResourcePolicy: vpa.ResourcePolicy,
 		},

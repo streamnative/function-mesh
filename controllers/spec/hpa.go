@@ -19,13 +19,13 @@ package spec
 
 import (
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
-	autov2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autov2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type BuiltinAutoScaler interface {
-	Metrics() []autov2beta2.MetricSpec
+	Metrics() []autov2.MetricSpec
 }
 
 func isDefaultHPAEnabled(minReplicas, maxReplicas *int32, podPolicy v1alpha1.PodPolicy) bool {
@@ -44,14 +44,14 @@ type HPARuleAverageUtilizationResourceMemoryPercent struct {
 	memoryPercentage int32
 }
 
-func (H *HPARuleAverageUtilizationResourceMemoryPercent) Metrics() []autov2beta2.MetricSpec {
-	return []autov2beta2.MetricSpec{
+func (H *HPARuleAverageUtilizationResourceMemoryPercent) Metrics() []autov2.MetricSpec {
+	return []autov2.MetricSpec{
 		{
-			Type: autov2beta2.ResourceMetricSourceType,
-			Resource: &autov2beta2.ResourceMetricSource{
+			Type: autov2.ResourceMetricSourceType,
+			Resource: &autov2.ResourceMetricSource{
 				Name: corev1.ResourceMemory,
-				Target: autov2beta2.MetricTarget{
-					Type:               autov2beta2.UtilizationMetricType,
+				Target: autov2.MetricTarget{
+					Type:               autov2.UtilizationMetricType,
 					AverageUtilization: &H.memoryPercentage,
 				},
 			},
@@ -59,14 +59,14 @@ func (H *HPARuleAverageUtilizationResourceMemoryPercent) Metrics() []autov2beta2
 	}
 }
 
-func (H *HPARuleAverageUtilizationCPUPercent) Metrics() []autov2beta2.MetricSpec {
-	return []autov2beta2.MetricSpec{
+func (H *HPARuleAverageUtilizationCPUPercent) Metrics() []autov2.MetricSpec {
+	return []autov2.MetricSpec{
 		{
-			Type: autov2beta2.ResourceMetricSourceType,
-			Resource: &autov2beta2.ResourceMetricSource{
+			Type: autov2.ResourceMetricSourceType,
+			Resource: &autov2.ResourceMetricSource{
 				Name: corev1.ResourceCPU,
-				Target: autov2beta2.MetricTarget{
-					Type:               autov2beta2.UtilizationMetricType,
+				Target: autov2.MetricTarget{
+					Type:               autov2.UtilizationMetricType,
 					AverageUtilization: &H.cpuPercentage,
 				},
 			},
@@ -106,18 +106,18 @@ func GetBuiltinAutoScaler(builtinRule v1alpha1.BuiltinHPARule) (BuiltinAutoScale
 }
 
 // defaultHPAMetrics generates a default HPA Metrics settings based on CPU usage and utilized on 80%.
-func defaultHPAMetrics() []autov2beta2.MetricSpec {
+func defaultHPAMetrics() []autov2.MetricSpec {
 	return NewHPARuleAverageUtilizationCPUPercent(80).Metrics()
 }
 
-func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2beta2.CrossVersionObjectReference) *autov2beta2.HorizontalPodAutoscaler {
-	return &autov2beta2.HorizontalPodAutoscaler{
+func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2.CrossVersionObjectReference) *autov2.HorizontalPodAutoscaler {
+	return &autov2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "autoscaling/v2beta2",
+			APIVersion: "autoscaling/v2",
 			Kind:       "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: *objectMeta,
-		Spec: autov2beta2.HorizontalPodAutoscalerSpec{
+		Spec: autov2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: targetRef,
 			MinReplicas:    &minReplicas,
 			MaxReplicas:    maxReplicas,
@@ -131,9 +131,9 @@ const (
 	memoryRuleIdx
 )
 
-func MakeMetricsFromBuiltinHPARules(builtinRules []v1alpha1.BuiltinHPARule) []autov2beta2.MetricSpec {
+func MakeMetricsFromBuiltinHPARules(builtinRules []v1alpha1.BuiltinHPARule) []autov2.MetricSpec {
 	isRuleExists := map[int]bool{}
-	metrics := []autov2beta2.MetricSpec{}
+	metrics := []autov2.MetricSpec{}
 	for _, r := range builtinRules {
 		s, idx := GetBuiltinAutoScaler(r)
 		if s != nil {
@@ -147,15 +147,15 @@ func MakeMetricsFromBuiltinHPARules(builtinRules []v1alpha1.BuiltinHPARule) []au
 	return metrics
 }
 
-func makeBuiltinHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2beta2.CrossVersionObjectReference, builtinRules []v1alpha1.BuiltinHPARule) *autov2beta2.HorizontalPodAutoscaler {
+func makeBuiltinHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2.CrossVersionObjectReference, builtinRules []v1alpha1.BuiltinHPARule) *autov2.HorizontalPodAutoscaler {
 	metrics := MakeMetricsFromBuiltinHPARules(builtinRules)
-	return &autov2beta2.HorizontalPodAutoscaler{
+	return &autov2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "autoscaling/v2beta2",
+			APIVersion: "autoscaling/v2",
 			Kind:       "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: *objectMeta,
-		Spec: autov2beta2.HorizontalPodAutoscalerSpec{
+		Spec: autov2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: targetRef,
 			MinReplicas:    &minReplicas,
 			MaxReplicas:    maxReplicas,
@@ -164,17 +164,17 @@ func makeBuiltinHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int3
 	}
 }
 
-func makeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, podPolicy v1alpha1.PodPolicy, targetRef autov2beta2.CrossVersionObjectReference) *autov2beta2.HorizontalPodAutoscaler {
-	spec := autov2beta2.HorizontalPodAutoscalerSpec{
+func makeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, podPolicy v1alpha1.PodPolicy, targetRef autov2.CrossVersionObjectReference) *autov2.HorizontalPodAutoscaler {
+	spec := autov2.HorizontalPodAutoscalerSpec{
 		ScaleTargetRef: targetRef,
 		MinReplicas:    &minReplicas,
 		MaxReplicas:    maxReplicas,
 		Metrics:        podPolicy.AutoScalingMetrics,
 		Behavior:       podPolicy.AutoScalingBehavior,
 	}
-	return &autov2beta2.HorizontalPodAutoscaler{
+	return &autov2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "autoscaling/v2beta2",
+			APIVersion: "autoscaling/v2",
 			Kind:       "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: *objectMeta,

@@ -4,7 +4,7 @@ VERSION ?= 0.14.0
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:v$(VERSION)
 OPERATOR_IMG_LATEST ?= ${DOCKER_REPO}/function-mesh:latest
-ENVTEST_K8S_VERSION = 1.22.1
+ENVTEST_K8S_VERSION = 1.24.2
 
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
