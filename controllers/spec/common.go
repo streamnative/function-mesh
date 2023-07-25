@@ -291,7 +291,8 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 func makePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy,
 	downloaderContainer *corev1.Container) *corev1.PodTemplateSpec {
-	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID, getEnvOrDefault("RUN_AS_NON_ROOT", "false"))
+	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID,
+		getEnvOrDefault("RUN_AS_NON_ROOT", "false"))
 	if policy.SecurityContext != nil {
 		podSecurityContext = policy.SecurityContext
 	}
@@ -338,14 +339,16 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 }
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
-	hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful,
+	hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
+	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessPythonRuntimeArgs(name, packageFile, clusterName,
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget, authProvided,
+		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget,
+			authProvided,
 			tlsProvided, tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
@@ -388,7 +391,8 @@ func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
 	}
 }
 
-func makeCleanUpJob(objectMeta *metav1.ObjectMeta, container *corev1.Container, volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy) *v1.Job {
+func makeCleanUpJob(objectMeta *metav1.ObjectMeta, container *corev1.Container, volumes []corev1.Volume,
+	labels map[string]string, policy v1alpha1.PodPolicy) *v1.Job {
 	temp := makePodTemplate(container, volumes, labels, policy, nil)
 	temp.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 	var ttlSecond int32
@@ -401,7 +405,8 @@ func makeCleanUpJob(objectMeta *metav1.ObjectMeta, container *corev1.Container, 
 	}
 }
 
-func TriggerCleanup(ctx context.Context, k8sclient client.Client, restClient rest.Interface, config *rest.Config, job *v1.Job) error {
+func TriggerCleanup(ctx context.Context, k8sclient client.Client, restClient rest.Interface, config *rest.Config,
+	job *v1.Job) error {
 	pods := &corev1.PodList{}
 	err := k8sclient.List(ctx, pods, client.InNamespace(job.Namespace), client.MatchingLabels{
 		"job-name": job.Name,
@@ -439,7 +444,8 @@ func TriggerCleanup(ctx context.Context, k8sclient client.Client, restClient res
 	return nil
 }
 
-func getPulsarAdminCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+func getPulsarAdminCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
+	authConfig *v1alpha1.AuthConfig) []string {
 	args := []string{
 		PulsarAdminExecutableFile,
 		"--admin-url",
@@ -501,7 +507,8 @@ func getPulsarAdminCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig, 
 	return args
 }
 
-func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
+	authConfig *v1alpha1.AuthConfig) []string {
 	args := []string{
 		PulsarctlExecutableFile,
 		"--admin-service-url",
@@ -600,7 +607,9 @@ func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig, au
 	return args
 }
 
-func getCleanUpCommand(hasPulsarctl, authProvided, tlsProvided bool, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, inputTopics []string, topicPattern, subscriptionName, tenant, namespace, name string, deleteTopic bool) []string {
+func getCleanUpCommand(hasPulsarctl, authProvided, tlsProvided bool, tlsConfig TLSConfig,
+	authConfig *v1alpha1.AuthConfig, inputTopics []string,
+	topicPattern, subscriptionName, tenant, namespace, name string, deleteTopic bool) []string {
 	var adminArgs []string
 	if hasPulsarctl {
 		adminArgs = getPulsarctlCommand(authProvided, tlsProvided, tlsConfig, authConfig)
@@ -664,10 +673,13 @@ func getCleanUpCommand(hasPulsarctl, authProvided, tlsProvided bool, tlsConfig T
 		cleanupArgs = append(cleanupArgs, deleteTopicArgs...)
 	}
 
-	return []string{"sh", "-c", "sleep infinity & pid=$!; echo $pid; trap \"kill $pid\" INT; trap 'exit 0' TERM; echo 'waiting...'; wait; sleep 10s; echo 'cleaning...'; " + strings.Join(cleanupArgs, " ")}
+	return []string{"sh", "-c",
+		"sleep infinity & pid=$!; echo $pid; trap \"kill $pid\" INT; trap 'exit 0' TERM; echo 'waiting...'; wait; sleep 10s; echo 'cleaning...'; " + strings.Join(cleanupArgs,
+			" ")}
 }
 
-func getDownloadCommand(downloadPath, componentPackage string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, tlsConfig TLSConfig,
+func getDownloadCommand(downloadPath, componentPackage string, hasPulsarctl, hasWget, authProvided, tlsProvided bool,
+	tlsConfig TLSConfig,
 	authConfig *v1alpha1.AuthConfig) []string {
 	var args []string
 	if hasHTTPPrefix(downloadPath) && hasWget {
@@ -704,8 +716,12 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return ""
 	}
-	if runtime != nil && runtime.Log != nil && runtime.Log.JavaLog4JConfigFileType != nil {
-		switch *(runtime.Log.JavaLog4JConfigFileType) {
+	if runtime != nil && runtime.Log != nil {
+		configFileType := v1alpha1.XML
+		if runtime.Log.JavaLog4JConfigFileType != nil {
+			configFileType = *runtime.Log.JavaLog4JConfigFileType
+		}
+		switch configFileType {
 		case v1alpha1.XML:
 			{
 				if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime); err == nil {
