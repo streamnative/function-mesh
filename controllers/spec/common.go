@@ -716,33 +716,31 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return ""
 	}
-	if runtime != nil && runtime.Log != nil {
-		configFileType := v1alpha1.XML
-		if runtime.Log.JavaLog4JConfigFileType != nil {
-			configFileType = *runtime.Log.JavaLog4JConfigFileType
-		}
-		switch configFileType {
-		case v1alpha1.XML:
-			{
-				if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime); err == nil {
-					generateConfigFileCommand := []string{
-						"mkdir", "-p", JavaLogConfigDirectory, "&&",
-						"echo", fmt.Sprintf("\"%s\"", log4jXML), ">", DefaultJavaLogConfigPath,
-						"&& ",
-					}
-					return strings.Join(generateConfigFileCommand, " ")
+	configFileType := v1alpha1.XML
+	if runtime != nil && runtime.Log != nil && runtime.Log.JavaLog4JConfigFileType != nil {
+		configFileType = *runtime.Log.JavaLog4JConfigFileType
+	}
+	switch configFileType {
+	case v1alpha1.XML:
+		{
+			if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime); err == nil {
+				generateConfigFileCommand := []string{
+					"mkdir", "-p", JavaLogConfigDirectory, "&&",
+					"echo", fmt.Sprintf("\"%s\"", log4jXML), ">", DefaultJavaLogConfigPath,
+					"&& ",
 				}
+				return strings.Join(generateConfigFileCommand, " ")
 			}
-		case v1alpha1.YAML:
-			{
-				if log4jYAML, err := renderJavaInstanceLog4jYAMLTemplate(runtime); err == nil {
-					generateConfigFileCommand := []string{
-						"mkdir", "-p", JavaLogConfigDirectory, "&&",
-						"echo", fmt.Sprintf("\"%s\"", log4jYAML), ">", DefaultJavaLogConfigPathYAML,
-						"&& ",
-					}
-					return strings.Join(generateConfigFileCommand, " ")
+		}
+	case v1alpha1.YAML:
+		{
+			if log4jYAML, err := renderJavaInstanceLog4jYAMLTemplate(runtime); err == nil {
+				generateConfigFileCommand := []string{
+					"mkdir", "-p", JavaLogConfigDirectory, "&&",
+					"echo", fmt.Sprintf("\"%s\"", log4jYAML), ">", DefaultJavaLogConfigPathYAML,
+					"&& ",
 				}
+				return strings.Join(generateConfigFileCommand, " ")
 			}
 		}
 	}
