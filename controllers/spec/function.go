@@ -120,7 +120,6 @@ func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
 }
 
 func makeFunctionVolumes(function *v1alpha1.Function, authConfig *v1alpha1.AuthConfig) []corev1.Volume {
-
 	return generatePodVolumes(function.Spec.Pod.Volumes,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
