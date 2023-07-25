@@ -26,7 +26,7 @@ import (
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
-	autoscaling "k8s.io/api/autoscaling/v1"
+	autov2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -92,7 +92,7 @@ func observeVPA(ctx context.Context, r client.Reader, name types.NamespacedName,
 }
 
 func applyVPA(ctx context.Context, r client.Client, logger logr.Logger, condition v1alpha1.ResourceCondition, meta *metav1.ObjectMeta,
-	targetRef *autoscaling.CrossVersionObjectReference, vpaSpec *v1alpha1.VPASpec, component string, namespace string, name string) error {
+	targetRef *autov2.CrossVersionObjectReference, vpaSpec *v1alpha1.VPASpec, component string, namespace string, name string) error {
 	switch condition.Action {
 	case v1alpha1.Create:
 		vpa := spec.MakeVPA(meta, targetRef, vpaSpec)

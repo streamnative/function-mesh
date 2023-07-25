@@ -23,6 +23,7 @@ import (
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	autoscaling "k8s.io/api/autoscaling/v1"
+	autov2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +35,7 @@ func TestMakeVPA(t *testing.T) {
 	controlledValues := vpav1.ContainerControlledValuesRequestsAndLimits
 	type args struct {
 		objectMeta *metav1.ObjectMeta
-		targetRef  *autoscaling.CrossVersionObjectReference
+		targetRef  *autov2.CrossVersionObjectReference
 		vpa        *v1alpha1.VPASpec
 	}
 	tests := []struct {
@@ -48,7 +49,7 @@ func TestMakeVPA(t *testing.T) {
 				objectMeta: &metav1.ObjectMeta{
 					Name: "test-vpa",
 				},
-				targetRef: &autoscaling.CrossVersionObjectReference{
+				targetRef: &autov2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
 					Kind:       "Deployment",
 					Name:       "test-deployment",
@@ -121,7 +122,7 @@ func TestMakeVPA(t *testing.T) {
 				objectMeta: &metav1.ObjectMeta{
 					Name: "test-vpa",
 				},
-				targetRef: &autoscaling.CrossVersionObjectReference{
+				targetRef: &autov2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
 					Kind:       "Deployment",
 					Name:       "test-deployment",
@@ -159,7 +160,7 @@ func TestMakeVPA(t *testing.T) {
 				objectMeta: &metav1.ObjectMeta{
 					Name: "test-vpa",
 				},
-				targetRef: &autoscaling.CrossVersionObjectReference{
+				targetRef: &autov2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
 					Kind:       "Deployment",
 					Name:       "test-deployment",
@@ -228,7 +229,7 @@ func TestMakeVPA(t *testing.T) {
 				objectMeta: &metav1.ObjectMeta{
 					Name: "test-vpa",
 				},
-				targetRef: &autoscaling.CrossVersionObjectReference{
+				targetRef: &autov2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
 					Kind:       "Deployment",
 					Name:       "test-deployment",

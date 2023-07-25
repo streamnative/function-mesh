@@ -118,7 +118,7 @@ configFile=${workDir}/kind-config.yaml
 cat <<EOF > ${configFile}
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-runtimeConfig:
+  "autoscaling/v1": "true"
   "autoscaling/v2": "true"
 nodes:
 - role: control-plane

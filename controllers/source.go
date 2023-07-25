@@ -23,7 +23,6 @@ import (
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
-	autoscaling "k8s.io/api/autoscaling/v1"
 	autov2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -244,7 +243,7 @@ func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.
 	}
 
 	objectMeta := spec.MakeSourceObjectMeta(source)
-	targetRef := &autoscaling.CrossVersionObjectReference{
+	targetRef := &autov2.CrossVersionObjectReference{
 		Kind:       source.Kind,
 		Name:       source.Name,
 		APIVersion: source.APIVersion,

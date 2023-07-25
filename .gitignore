@@ -33,3 +33,5 @@ index_build_*/
 
 *.bak
 .DS_Store
+config/crd/bases/vpa-v1-crd.yaml
+Listeners
