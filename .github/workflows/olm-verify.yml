@@ -53,7 +53,7 @@ jobs:
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v1
         with:
-          node_image: kindest/node:v1.26.6
+          node_image: kindest/node:v1.23.17
 
       - name: Build RedHat certificated bundle And Publish to Quay
         env:
