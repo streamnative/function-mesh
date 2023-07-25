@@ -172,9 +172,9 @@ functions:
     disk: 1048576000
   functionRuntimeFactoryConfigs:
     functionDockerImages:
-      JAVA: "streamnative/pulsar-functions-java-runner:2.9.2.23"
-      PYTHON: "streamnative/pulsar-functions-python-runner:2.9.2.23"
-      GO: "streamnative/pulsar-functions-go-runner:2.9.2.23"
+      JAVA: "localhost:5000/pulsar-functions-java-runner:2.9.2.23"
+      PYTHON: "localhost:5000/pulsar-functions-python-runner:2.9.2.23"
+      GO: "localhost:5000/pulsar-functions-go-runner:2.9.2.23"
     functionInstanceMinResources:
       cpu: 0.1
       ram: 10485760

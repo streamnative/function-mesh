@@ -47,7 +47,7 @@ OPTIONS:
     -c  --crd                The path of the crd files.
         --kind-version       Version of the Kind tool, default value: v0.7.0
         --node-num           The count of the cluster nodes, default value: 2
-        --k8s-version        Version of the Kubernetes cluster, default value: v1.26.6
+        --k8s-version        Version of the Kubernetes cluster, default value: v1.23.17
         --volume-num         The volumes number of each kubernetes node, default value: 2
         --release-name       Release name of function-mesh, default value: function-mesh
         --namespace          Namespace of function-mesh, default value: default
@@ -60,7 +60,7 @@ main() {
   local kind_name="kind"
   local kind_version="v0.7.0"
   local node_num=2
-  local k8s_version="v1.26.6"
+  local k8s_version="v1.23.17"
   local volume_num=2
   local release_name="function-mesh"
   local namespace="default"

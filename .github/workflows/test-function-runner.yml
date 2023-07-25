@@ -41,8 +41,10 @@ jobs:
             .ci/cleanup.sh
 
       - name: Build runner images
+        env:
+          DOCKER_REPO: localhost:5000
         run: |
-          PULSAR_IMAGE_TAG=2.9.2.23 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=true images/build.sh
+          PULSAR_IMAGE_TAG=2.9.2.23 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=false images/build.sh
 
       - name: Verify function runner
         run: |
