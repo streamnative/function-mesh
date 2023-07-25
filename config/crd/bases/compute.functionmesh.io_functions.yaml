@@ -704,6 +704,7 @@ spec:
                               - value
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           selectPolicy:
                             type: string
                           stabilizationWindowSeconds:
@@ -729,6 +730,7 @@ spec:
                               - value
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           selectPolicy:
                             type: string
                           stabilizationWindowSeconds:
