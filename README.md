@@ -37,7 +37,7 @@ This table outlines the supported Kubernetes versions. We have tested these vers
 | [`v0.9.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.9.0)   | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
 | [`v0.8.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.8.0)   | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
 | [`v0.7.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.7.0)   | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
-| [`Master`](https://github.com/streamnative/function-mesh/tree/master)           | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               | ✔               |
+| [`Master`](https://github.com/streamnative/function-mesh/tree/master)           | ❌              | ❌              | ❌              |❌               | ✔               | ✔               | ✔               |
 
 ## Development
 
