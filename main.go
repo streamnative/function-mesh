@@ -27,13 +27,11 @@ import (
 	computev1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers"
 	"github.com/streamnative/function-mesh/controllers/spec"
-	"github.com/streamnative/function-mesh/pkg/webhook"
 	"github.com/streamnative/function-mesh/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -65,6 +63,7 @@ func main() {
 	var configFile string
 	var watchedNamespace string
 	var enableInitContainers bool
+	var grpcurlPersistentVolumeClaim string
 	flag.StringVar(&metricsAddr, "metrics-addr", lookupEnvOrString("METRICS_ADDR", ":8080"), "The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id", lookupEnvOrString("LEADER_ELECTION_ID", "a3f45fce.functionmesh.io"),
 		"the name of the configmap that leader election will use for holding the leader lock.")
@@ -83,10 +82,12 @@ func main() {
 	flag.BoolVar(&enablePprof, "enable-pprof", lookupEnvOrBool("ENABLE_PPROF", false), "Enable pprof for controller manager.")
 	flag.StringVar(&pprofAddr, "pprof-addr", lookupEnvOrString("PPROF_ADDR", ":8090"), "The address the pprof binds to.")
 	flag.BoolVar(&enableInitContainers, "enable-init-containers", lookupEnvOrBool("ENABLE_INIT_CONTAINERS", false), "Whether to use an init container to download package")
+	flag.StringVar(&grpcurlPersistentVolumeClaim, "grpcurl-persistent-volume-claim", lookupEnvOrString("GRPCURL_PERSISTENT_VOLUME_CLAIM", ""), "The pvc name which contains grpcurl and InstanceCommunication.proto.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	utils.EnableInitContainers = enableInitContainers
+	utils.GrpcurlPersistentVolumeClaim = grpcurlPersistentVolumeClaim
 
 	// enable pprof
 	if enablePprof {
@@ -138,15 +139,8 @@ func main() {
 		setupLog.Error(err, "failed to check group versions")
 		os.Exit(1)
 	}
-	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
-	if err != nil {
-		setupLog.Error(err, "failed to get rest client")
-		os.Exit(1)
-	}
 	if err = (&controllers.FunctionReconciler{
 		Client:     mgr.GetClient(),
-		Config:     mgr.GetConfig(),
-		RestClient: clientset.CoreV1().RESTClient(),
 		Log:        ctrl.Log.WithName("controllers").WithName("Function"),
 		Scheme:     mgr.GetScheme(),
 		WatchFlags: &watchFlags,
@@ -156,8 +150,6 @@ func main() {
 	}
 	if err = (&controllers.SourceReconciler{
 		Client:     mgr.GetClient(),
-		Config:     mgr.GetConfig(),
-		RestClient: clientset.CoreV1().RESTClient(),
 		Log:        ctrl.Log.WithName("controllers").WithName("Source"),
 		Scheme:     mgr.GetScheme(),
 		WatchFlags: &watchFlags,
@@ -167,8 +159,6 @@ func main() {
 	}
 	if err = (&controllers.SinkReconciler{
 		Client:     mgr.GetClient(),
-		Config:     mgr.GetConfig(),
-		RestClient: clientset.CoreV1().RESTClient(),
 		Log:        ctrl.Log.WithName("controllers").WithName("Sink"),
 		Scheme:     mgr.GetScheme(),
 		WatchFlags: &watchFlags,
@@ -180,20 +170,16 @@ func main() {
 	// enable the webhook service by default
 	// Disable function-mesh webhook with `ENABLE_WEBHOOKS=false` when we run locally.
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&webhook.FunctionWebhook{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&computev1alpha1.Function{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Function")
 			os.Exit(1)
 		}
-		if err = (&webhook.SourceWebhook{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&computev1alpha1.Source{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Source")
 			os.Exit(1)
 		}
-		if err = (&webhook.SinkWebhook{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&computev1alpha1.Sink{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Sink")
-			os.Exit(1)
-		}
-		if err = (&webhook.ConnectorWebhook{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "ConnectorCatalog")
 			os.Exit(1)
 		}
 	}

@@ -19,8 +19,6 @@
 
 package v1alpha1
 
-type ConnectorCatalogExpansion interface{}
-
 type FunctionExpansion interface{}
 
 type FunctionMeshExpansion interface{}
