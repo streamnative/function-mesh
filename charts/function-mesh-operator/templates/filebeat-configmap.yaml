@@ -16,9 +16,9 @@ data:
       paths:
       - /pulsar/logs/functions/*.log
     output.pulsar:
-      url: "pulsar://localhost:6650"
-      topic: log-topic
-      name: filebeat
+      url: ${brokerServiceURL}
+      topic: ${logTopic}
+      name: ${logName}
       token: ""
       oauth2:
         enabled: false

@@ -2025,13 +2025,20 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 		}
 	}
 
+	envs := append(envVar, corev1.EnvVar{
+		Name:  "logTopic",
+		Value: logTopic,
+	}, corev1.EnvVar{
+		Name:  "logName",
+		Value: name,
+	})
+
 	return &corev1.Container{
-		Name:    "filebeat",
-		Image:   "streamnative/filebeat:v0.6.0-rc7",
-		Command: []string{"/bin/sh", "-c", "--"},
-		Args: append([]string{"/usr/share/filebeat/filebeat", "-e", "-c", "/usr/share/filebeat/run/config/filebeat.yml",
-			"-E", "output.pulsar.url=$brokerServiceURL", "-E", "output.pulsar.topic=" + logTopic, "-E", "output.pulsar.name=" + name}, authCommands...),
-		Env:             envVar,
+		Name:            "filebeat",
+		Image:           "streamnative/filebeat:v0.6.0-rc7",
+		Command:         []string{"/bin/sh", "-c", "--"},
+		Args:            append([]string{"/usr/share/filebeat/filebeat -e -c /usr/share/filebeat/run/config/filebeat.yaml " + strings.Join(authCommands, " ")}),
+		Env:             envs,
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(pulsarConfig, authSecret, tlsSecret),
 		VolumeMounts:    mounts,
