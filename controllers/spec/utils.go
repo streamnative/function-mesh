@@ -42,12 +42,16 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 		runtime = proto.FunctionDetails_PYTHON
 	}
 	deadLetterTopic := getDeadLetterTopicOrDefault(function.Spec.DeadLetterTopic, function.Spec.SubscriptionName, function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name, function.Spec.MaxMessageRetry)
+	logTopic := function.Spec.LogTopic
+	if function.Spec.LogTopicAgent == v1alpha1.SIDECAR {
+		logTopic = ""
+	}
 	fd := &proto.FunctionDetails{
 		Tenant:               function.Spec.Tenant,
 		Namespace:            function.Spec.Namespace,
 		Name:                 function.Spec.Name,
 		ClassName:            fetchClassName(function),
-		LogTopic:             function.Spec.LogTopic,
+		LogTopic:             logTopic,
 		ProcessingGuarantees: convertProcessingGuarantee(function.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(generateFunctionConfig(function)),
 		Runtime:              runtime,
@@ -95,6 +99,10 @@ func fetchClassName(function *v1alpha1.Function) string {
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 	deadLetterTopic := getDeadLetterTopicOrDefault(function.Spec.DeadLetterTopic, function.Spec.SubscriptionName, function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name, function.Spec.MaxMessageRetry)
+	logTopic := function.Spec.LogTopic
+	if function.Spec.LogTopicAgent == v1alpha1.SIDECAR {
+		logTopic = ""
+	}
 	return &GoFunctionConf{
 		FuncID:               fmt.Sprintf("${%s}-%s", EnvShardID, string(function.UID)),
 		PulsarServiceURL:     "${brokerServiceURL}",
@@ -105,7 +113,7 @@ func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 		Tenant:               function.Spec.Tenant,
 		NameSpace:            function.Spec.Namespace,
 		Name:                 function.Spec.Name,
-		LogTopic:             function.Spec.LogTopic,
+		LogTopic:             logTopic,
 		ProcessingGuarantees: int32(convertProcessingGuarantee(function.Spec.ProcessingGuarantee)),
 		//SecretsMap:                  marshalSecretsMap(function.Spec.SecretsMap),
 		Runtime:                     int32(proto.FunctionDetails_GO),
