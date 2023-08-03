@@ -14,6 +14,8 @@ spec:
     topic: persistent://public/default/output-source-topic
     typeClassName: org.apache.pulsar.io.batchdatagenerator.Person
   forwardSourceMessageProperty: true
+  logTopic: persistent://public/default/batch-source-logs
+  logTopicAgent: sidecar
   resources:
     limits:
       cpu: "0.2"

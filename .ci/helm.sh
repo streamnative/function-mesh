@@ -566,3 +566,32 @@ function ci::create_topic() {
   topic=$1
   kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics create ${topic}
 }
+
+function ci::verify_log_topic() {
+  logTopic=$1
+  message=$2
+  timesleep=$3
+
+  sleep "$timesleep"
+  MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${logTopic}")
+  echo "$MESSAGE"
+  if [[ "$MESSAGE" == *"$message"* ]]; then
+    return 0
+  fi
+  return 1
+}
+
+function ci::verify_log_topic_with_auth() {
+  logTopic=$1
+  message=$2
+  timesleep=$3
+
+  sleep "$timesleep"
+  consumeCommand="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-client --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters consume -n 1 -s "sub" --subscription-position Earliest \"${logTopic}\"'"
+  MESSAGE=$(sh -c "$consumeCommand")
+  echo "$MESSAGE"
+  if [[ "$MESSAGE" == *"$message"* ]]; then
+    return 0
+  fi
+  return 1
+}

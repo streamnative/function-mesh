@@ -96,6 +96,14 @@ if [ $? -ne 0 ]; then
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
+
+verify_log_topic=$(ci::verify_log_topic persistent://public/default/es-sink-logs "org.apache.pulsar.functions.runtime.JavaInstanceStarter" 10 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_log_topic"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
 kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
 uninstall_elasticsearch_cluster > /dev/null 2>&1 || true
 

@@ -49,6 +49,14 @@ if [ $? -ne 0 ]; then
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
+
+verify_log_topic=$(ci::verify_log_topic_with_auth persistent://public/default/batch-source-logs "org.apache.pulsar.functions.runtime.JavaInstanceStarter" 10 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_log_topic"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
 kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
 
 verify_cleanup_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_cleanup_batch_source_with_auth persistent://public/default/batch-source-sample-intermediate BatchSourceExecutor-public/default/batch-source-sample 2>&1)

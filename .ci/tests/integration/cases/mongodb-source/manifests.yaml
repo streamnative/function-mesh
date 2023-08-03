@@ -13,6 +13,8 @@ spec:
       useThreadLocalProducers: true
     topic: persistent://public/default/output-source-topic
     typeClassName: org.apache.pulsar.common.schema.KeyValue
+  logTopic: persistent://public/default/mongo-source-logs
+  logTopicAgent: sidecar
   forwardSourceMessageProperty: true
   resources:
     limits:
