@@ -14,7 +14,7 @@ spec:
     webhook:
       clientConfig:
         {{- if eq .Values.admissionWebhook.certificate.provider "custom" }}
-          {{- $caSecret := (lookup "v1" "Secret" .Values.admissionWebhook.secretsWebhookNamespace (include "function-mesh-operator.certificate.caSecret" .)) -}}
+          {{- $caSecret := (lookup "v1" "Secret" "default" (include "function-mesh-operator.certificate.caSecret" .)) -}}
           {{- if $caSecret }}
             {{- $caCert := (b64dec (get $caSecret.data "tls.crt")) -}}
             {{ printf (include "function-mesh-operator.caBundle" .) (b64enc $caCert) | nindent 8 }}
@@ -51,6 +51,22 @@ spec:
                 connectorDefinitions:
                   items:
                     properties:
+                      configFieldDefinitions:
+                        items:
+                          properties:
+                            attributes:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            fieldName:
+                              type: string
+                            typeName:
+                              type: string
+                          required:
+                            - fieldName
+                            - typeName
+                          type: object
+                        type: array
                       defaultSchemaType:
                         type: string
                       defaultSerdeClassName:
@@ -73,44 +89,12 @@ spec:
                         type: string
                       sinkConfigClass:
                         type: string
-                      sinkConfigFieldDefinitions:
-                        items:
-                          properties:
-                            attributes:
-                              additionalProperties:
-                                type: string
-                              type: object
-                            fieldName:
-                              type: string
-                            typeName:
-                              type: string
-                          required:
-                            - fieldName
-                            - typeName
-                          type: object
-                        type: array
                       sinkTypeClassName:
                         type: string
                       sourceClass:
                         type: string
                       sourceConfigClass:
                         type: string
-                      sourceConfigFieldDefinitions:
-                        items:
-                          properties:
-                            attributes:
-                              additionalProperties:
-                                type: string
-                              type: object
-                            fieldName:
-                              type: string
-                            typeName:
-                              type: string
-                          required:
-                            - fieldName
-                            - typeName
-                          type: object
-                        type: array
                       sourceTypeClassName:
                         type: string
                       typeClassName:
