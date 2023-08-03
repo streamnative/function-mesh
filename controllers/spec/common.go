@@ -1649,7 +1649,7 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 	if agent == v1alpha1.SIDECAR {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      "filebeat-logs",
-			MountPath: "/usr/share/filebeat/logs/function",
+			MountPath: "/pulsar/logs/functions",
 		})
 	}
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {

@@ -14,7 +14,7 @@ data:
     filebeat.inputs:
     - type: log
       paths:
-      - /usr/share/filebeat/logs/function/*.log
+      - /pulsar/logs/functions/*.log
     output.pulsar:
       url: "pulsar://localhost:6650"
       topic: log-topic
