@@ -717,7 +717,7 @@ func getDownloadCommand(downloadPath, componentPackage string, hasPulsarctl, has
 	return args
 }
 
-func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
+func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime, agent v1alpha1.LogTopicAgent) string {
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return ""
 	}
@@ -728,7 +728,7 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 	switch configFileType {
 	case v1alpha1.XML:
 		{
-			if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime); err == nil {
+			if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime, agent); err == nil {
 				generateConfigFileCommand := []string{
 					"mkdir", "-p", JavaLogConfigDirectory, "&&",
 					"echo", fmt.Sprintf("\"%s\"", log4jXML), ">", DefaultJavaLogConfigPath,
@@ -739,7 +739,7 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 		}
 	case v1alpha1.YAML:
 		{
-			if log4jYAML, err := renderJavaInstanceLog4jYAMLTemplate(runtime); err == nil {
+			if log4jYAML, err := renderJavaInstanceLog4jYAMLTemplate(runtime, agent); err == nil {
 				generateConfigFileCommand := []string{
 					"mkdir", "-p", JavaLogConfigDirectory, "&&",
 					"echo", fmt.Sprintf("\"%s\"", log4jYAML), ">", DefaultJavaLogConfigPathYAML,
@@ -752,7 +752,7 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 	return ""
 }
 
-func renderJavaInstanceLog4jYAMLTemplate(runtime *v1alpha1.JavaRuntime) (string, error) {
+func renderJavaInstanceLog4jYAMLTemplate(runtime *v1alpha1.JavaRuntime, agent v1alpha1.LogTopicAgent) (string, error) {
 	tmpl := template.Must(template.New("log4j-yaml-template").Parse(javaLog4jYAMLTemplate))
 	var tpl bytes.Buffer
 	type logConfig struct {
@@ -772,6 +772,9 @@ func renderJavaInstanceLog4jYAMLTemplate(runtime *v1alpha1.JavaRuntime) (string,
 	if runtime.Log != nil && runtime.Log.RotatePolicy != nil {
 		lc.RollingEnabled = true
 		lc.Policy = string(*runtime.Log.RotatePolicy)
+	} else if agent == v1alpha1.SIDECAR {
+		lc.RollingEnabled = true
+		lc.Policy = string(v1alpha1.SizedPolicyWith10MB)
 	}
 	if runtime.Log != nil && runtime.Log.Format != nil {
 		lc.Format = string(*runtime.Log.Format)
@@ -783,7 +786,7 @@ func renderJavaInstanceLog4jYAMLTemplate(runtime *v1alpha1.JavaRuntime) (string,
 	return tpl.String(), nil
 }
 
-func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, error) {
+func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime, agent v1alpha1.LogTopicAgent) (string, error) {
 	tmpl := template.Must(template.New("spec").Parse(javaLog4jXMLTemplate))
 	var tpl bytes.Buffer
 	type logConfig struct {
@@ -828,6 +831,11 @@ func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, 
                     <size>100MB</size>
                 </SizeBasedTriggeringPolicy>`)
 		}
+	} else if agent == v1alpha1.SIDECAR {
+		lc.RollingEnabled = true
+		lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
+                    <size>10MB</size>
+                </SizeBasedTriggeringPolicy>`)
 	}
 	if runtime.Log != nil && runtime.Log.Format != nil {
 		lc.Format = string(*runtime.Log.Format)
@@ -839,12 +847,12 @@ func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, 
 	return tpl.String(), nil
 }
 
-func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime) string {
+func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime, agent v1alpha1.LogTopicAgent) string {
 	commands := "sed -i.bak 's/^  Log.setLevel/#&/' /pulsar/instances/python-instance/log.py && "
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return commands
 	}
-	if loggingINI, err := renderPythonInstanceLoggingINITemplate(name, runtime); err == nil {
+	if loggingINI, err := renderPythonInstanceLoggingINITemplate(name, runtime, agent); err == nil {
 		generateConfigFileCommand := []string{
 			"mkdir", "-p", PythonLogConifgDirectory, "logs/functions", "&&",
 			"echo", fmt.Sprintf("\"%s\"", loggingINI), ">", DefaultPythonLogConfigPath,
@@ -860,7 +868,7 @@ func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime
 	return ""
 }
 
-func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.PythonRuntime) (string, error) {
+func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.PythonRuntime, agent v1alpha1.LogTopicAgent) (string, error) {
 	tmpl := template.Must(template.New("spec").Parse(pythonLoggingINITemplate))
 	var tpl bytes.Buffer
 	type logConfig struct {
@@ -884,7 +892,7 @@ func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.Pytho
 	}
 	if runtime.Log != nil && runtime.Log.RotatePolicy != nil {
 		lc.RollingEnabled = true
-		logFile := fmt.Sprintf("logs/functions/%s-${%s}", name, EnvShardID)
+		logFile := fmt.Sprintf("logs/functions/%s-${%s}.log", name, EnvShardID)
 		switch *runtime.Log.RotatePolicy {
 		case v1alpha1.TimedPolicyWithDaily:
 			lc.Handlers = "stream_handler,timed_rotating_file_handler"
@@ -929,6 +937,15 @@ class=handlers.RotatingFileHandler
 level=%s
 formatter=formatter`, logFile, lc.Level))
 		}
+	} else if agent == v1alpha1.SIDECAR { // sidecar mode needs the rotated log file
+		lc.RollingEnabled = true
+		logFile := fmt.Sprintf("logs/functions/%s-${%s}.log", name, EnvShardID)
+		lc.Handlers = "stream_handler,rotating_file_handler"
+		lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(\"%s\", 'a', 10485760, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
 	}
 	if err := tmpl.Execute(&tpl, lc); err != nil {
 		log.Error(err, "failed to render python instance logging template")
@@ -1082,7 +1099,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 		"--logging_directory",
 		"logs/functions",
 		"--logging_file",
-		fmt.Sprintf("%s-${%s}", name, EnvShardID),
+		fmt.Sprintf("%s-${%s}.log", name, EnvShardID),
 		"--logging_config_file",
 		DefaultPythonLogConfigPath,
 		"--install_usercode_dependencies",
@@ -1984,7 +2001,7 @@ func getSubscriptionNameOrDefault(subscription, tenant, namespace, name string) 
 func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.EnvVar, name string, logTopic string,
 	agent v1alpha1.LogTopicAgent, tlsConfig *v1alpha1.PulsarTLSConfig, authConfig *v1alpha1.AuthConfig,
 	pulsarConfig string, authSecret string, tlsSecret string) *corev1.Container {
-	if agent == v1alpha1.RUNTIME {
+	if agent != v1alpha1.SIDECAR {
 		return nil
 	}
 	imagePullPolicy := corev1.PullIfNotPresent

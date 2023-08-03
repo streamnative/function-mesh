@@ -32,9 +32,17 @@
             <name>RollingRandomAccessFile</name>
             <fileName>\${sys:pulsar.function.log.dir}/\${sys:pulsar.function.log.file}.log</fileName>
             <filePattern>\${sys:pulsar.function.log.dir}/\${sys:pulsar.function.log.file}.%d{yyyy-MM-dd-hh-mm}-%i.log.gz</filePattern>
+            {{ if .Format | eq "json" }}
+            <JSONLayout>
+                <complete>true</complete>
+                <compact>true</compact>
+                <eventEol>true</eventEol>
+            </JSONLayout>
+            {{ else }}
             <PatternLayout>
                 <Pattern>%d{yyyy-MMM-dd HH:mm:ss a} [%t] %-5level %logger{36} - %msg%n</Pattern>
             </PatternLayout>
+            {{ end }}
             <Policies>
                 {{ .Policy }}
             </Policies>

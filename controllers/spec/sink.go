@@ -197,7 +197,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
-		generateJavaLogConfigCommand(sink.Spec.Java),
+		generateJavaLogConfigCommand(sink.Spec.Java, sink.Spec.LogTopicAgent),
 		parseJavaLogLevel(sink.Spec.Java),
 		generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),

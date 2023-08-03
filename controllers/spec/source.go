@@ -149,7 +149,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 	spec := source.Spec
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
-		generateJavaLogConfigCommand(source.Spec.Java),
+		generateJavaLogConfigCommand(source.Spec.Java, source.Spec.LogTopicAgent),
 		parseJavaLogLevel(source.Spec.Java),
 		generateSourceDetailsInJSON(source),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(source.UID),

@@ -26,8 +26,15 @@ Configuration:
       name: RollingRandomAccessFile
       fileName: "${sys:pulsar.function.log.dir}/${sys:pulsar.function.log.file}.log"
       filePattern: "${sys:pulsar.function.log.dir}/${sys:pulsar.function.log.file}.%d{yyyy-MM-dd-hh-mm}-%i.log.gz"
+      {{ if .Format | eq "json" }}
+      JSONLayout:
+        complete: true
+        compact: true
+        eventEol: true
+      {{ else }}
       PatternLayout:
         Pattern: "%d{yyyy-MMM-dd HH:mm:ss a} [%t] %-5level %logger{36} - %msg%n"
+      {{ end }}
       Policies:
         {{ if .Policy | eq "TimedPolicyWithDaily" }}
         CronTriggeringPolicy:

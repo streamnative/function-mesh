@@ -201,7 +201,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		if spec.Java.Jar != "" {
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 				spec.Name, spec.ClusterName,
-				generateJavaLogConfigCommand(function.Spec.Java),
+				generateJavaLogConfigCommand(function.Spec.Java, function.Spec.LogTopicAgent),
 				parseJavaLogLevel(function.Spec.Java),
 				generateFunctionDetailsInJSON(function),
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir,
@@ -215,7 +215,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		if spec.Python.Py != "" {
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
 				spec.Name, spec.ClusterName,
-				generatePythonLogConfigCommand(function.Name, function.Spec.Python),
+				generatePythonLogConfigCommand(function.Name, function.Spec.Python, function.Spec.LogTopicAgent),
 				generateFunctionDetailsInJSON(function), string(function.UID), spec.ImageHasPulsarctl,
 				spec.ImageHasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
 				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
