@@ -104,6 +104,7 @@ const (
 	DefaultRunnerGroupID int64 = 10001
 
 	OAuth2AuthenticationPlugin = "org.apache.pulsar.client.impl.auth.oauth2.AuthenticationOAuth2"
+	TokenAuthenticationPlugin  = "org.apache.pulsar.client.impl.auth.AuthenticationToken"
 
 	JavaLogConfigDirectory       = "/pulsar/conf/java-log/"
 	JavaLogConfigFileXML         = "java_instance_log4j.xml"
@@ -1996,35 +1997,6 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 
 	var uid int64 = 1000
 
-	authCommands := []string{}
-	if authConfig != nil {
-		if authConfig.GenericAuth != nil {
-			// it only supports jwt token authentication and oauth2 authentication
-			if authConfig.GenericAuth.ClientAuthenticationPlugin == "org.apache.pulsar.client.impl.auth.AuthenticationToken" {
-				authCommands = append(authCommands, "-E output.pulsar.token="+authConfig.GenericAuth.ClientAuthenticationParameters)
-			} else if authConfig.GenericAuth.ClientAuthenticationPlugin == "org.apache.pulsar.client.impl.auth.oauth2.AuthenticationOAuth2" {
-				// we should unmarshal auth params to an OAuth2 object to get issuerUrl, audience, privateKey and scope
-				var oauth2Params map[string]string
-				err := json.Unmarshal([]byte(authConfig.GenericAuth.ClientAuthenticationParameters), &oauth2Params)
-				if err != nil {
-					log.Error(err, "failed to unmarshal auth params to an OAuth2 object")
-					return nil
-				}
-				authCommands = append(authCommands, "-E output.pulsar.oauth2.enabled=true", "-E output.pulsar.oauth2.issuerUrl="+oauth2Params["issuerUrl"],
-					"-E output.pulsar.oauth2.audience="+oauth2Params["audience"], "-E output.pulsar.oauth2.privateKey="+oauth2Params["privateKey"])
-				if oauth2Params["scope"] != "" {
-					authCommands = append(authCommands, "-E output.pulsar.oauth2.scope="+oauth2Params["scope"])
-				}
-			}
-		} else if authConfig.OAuth2Config != nil {
-			authCommands = append(authCommands, "-E output.pulsar.oauth2.enabled=true", "-E output.pulsar.oauth2.issuerUrl="+authConfig.OAuth2Config.IssuerURL,
-				"-E output.pulsar.oauth2.audience="+authConfig.OAuth2Config.Audience, "-E output.pulsar.oauth2.privateKey="+authConfig.OAuth2Config.GetMountFile())
-			if authConfig.OAuth2Config.Scope != "" {
-				authCommands = append(authCommands, "-E output.pulsar.oauth2.scope="+authConfig.OAuth2Config.Scope)
-			}
-		}
-	}
-
 	envs := append(envVar, corev1.EnvVar{
 		Name:  "logTopic",
 		Value: logTopic,
@@ -2033,11 +2005,70 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 		Value: name,
 	})
 
+	if authConfig != nil {
+		if authConfig.GenericAuth != nil {
+			// it only supports jwt token authentication and oauth2 authentication
+			if authConfig.GenericAuth.ClientAuthenticationPlugin == TokenAuthenticationPlugin {
+				envs = append(envs, corev1.EnvVar{
+					Name:  "clientAuthenticationParameters",
+					Value: authConfig.GenericAuth.ClientAuthenticationParameters,
+				})
+			} else if authConfig.GenericAuth.ClientAuthenticationPlugin == OAuth2AuthenticationPlugin {
+				// we should unmarshal auth params to an OAuth2 object to get issuerUrl, audience, privateKey and scope
+				var oauth2Params map[string]string
+				err := json.Unmarshal([]byte(authConfig.GenericAuth.ClientAuthenticationParameters), &oauth2Params)
+				if err != nil {
+					log.Error(err, "failed to unmarshal auth params to an OAuth2 object")
+					return nil
+				}
+				envs = append(envs, corev1.EnvVar{
+					Name:  "oauth2Enabled",
+					Value: "true",
+				}, corev1.EnvVar{
+					Name:  "oauth2IssuerUrl",
+					Value: oauth2Params["issuerUrl"],
+				}, corev1.EnvVar{
+					Name:  "oauth2Audience",
+					Value: oauth2Params["audience"],
+				}, corev1.EnvVar{
+					Name:  "oauth2PrivateKey",
+					Value: oauth2Params["privateKey"],
+				})
+				if oauth2Params["scope"] != "" {
+					envs = append(envs, corev1.EnvVar{
+						Name:  "oauth2Scope",
+						Value: oauth2Params["scope"],
+					})
+				}
+			}
+		} else if authConfig.OAuth2Config != nil {
+			envs = append(envs, corev1.EnvVar{
+				Name:  "oauth2Enabled",
+				Value: "true",
+			}, corev1.EnvVar{
+				Name:  "oauth2IssuerUrl",
+				Value: authConfig.OAuth2Config.IssuerURL,
+			}, corev1.EnvVar{
+				Name:  "oauth2Audience",
+				Value: authConfig.OAuth2Config.Audience,
+			}, corev1.EnvVar{
+				Name:  "oauth2PrivateKey",
+				Value: authConfig.OAuth2Config.GetMountFile(),
+			})
+			if authConfig.OAuth2Config.Scope != "" {
+				envs = append(envs, corev1.EnvVar{
+					Name:  "oauth2Scope",
+					Value: authConfig.OAuth2Config.Scope,
+				})
+			}
+		}
+	}
+
 	return &corev1.Container{
 		Name:            "filebeat",
 		Image:           "streamnative/filebeat:v0.6.0-rc7",
 		Command:         []string{"/bin/sh", "-c", "--"},
-		Args:            append([]string{"/usr/share/filebeat/filebeat -e -c /usr/share/filebeat/run/config/filebeat.yaml " + strings.Join(authCommands, " ")}),
+		Args:            append([]string{"/usr/share/filebeat/filebeat -e -c /usr/share/filebeat/run/config/filebeat.yaml"}),
 		Env:             envs,
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(pulsarConfig, authSecret, tlsSecret),
