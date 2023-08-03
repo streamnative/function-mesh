@@ -58,7 +58,11 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
 	return MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
-		makeFunctionContainer(function), makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), makeFunctionLabels(function), function.Spec.Pod,
+		makeFunctionContainer(function), makeFilebeatContainer(function.Spec.VolumeMounts, function.Spec.Pod.Env,
+			function.Name, function.Spec.LogTopic, function.Spec.LogTopicAgent, function.Spec.Pulsar.TLSConfig,
+			function.Spec.Pulsar.AuthConfig, function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.TLSSecret,
+			function.Spec.Pulsar.AuthSecret),
+		makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), makeFunctionLabels(function), function.Spec.Pod,
 		*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang,
 		function.Spec.VolumeMounts, function.Spec.VolumeClaimTemplates, function.Spec.PersistentVolumeClaimRetentionPolicy)
 }
@@ -125,7 +129,8 @@ func makeFunctionVolumes(function *v1alpha1.Function, authConfig *v1alpha1.AuthC
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang))
+		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
+		function.Spec.LogTopicAgent)
 }
 
 func makeFunctionVolumeMounts(function *v1alpha1.Function, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {
@@ -134,7 +139,8 @@ func makeFunctionVolumeMounts(function *v1alpha1.Function, authConfig *v1alpha1.
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang))
+		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
+		function.Spec.LogTopicAgent)
 }
 
 func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {

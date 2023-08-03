@@ -169,6 +169,13 @@ spec:
                 required:
                 - jar
                 type: object
+              logTopic:
+                type: string
+              logTopicAgent:
+                enum:
+                - runtime
+                - sidecar
+                type: string
               maxReplicas:
                 format: int32
                 type: integer

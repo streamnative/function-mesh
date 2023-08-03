@@ -65,6 +65,7 @@ func main() {
 	var configFile string
 	var watchedNamespace string
 	var enableInitContainers bool
+	var filebeatConfigMap string
 	flag.StringVar(&metricsAddr, "metrics-addr", lookupEnvOrString("METRICS_ADDR", ":8080"), "The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id", lookupEnvOrString("LEADER_ELECTION_ID", "a3f45fce.functionmesh.io"),
 		"the name of the configmap that leader election will use for holding the leader lock.")
@@ -83,10 +84,12 @@ func main() {
 	flag.BoolVar(&enablePprof, "enable-pprof", lookupEnvOrBool("ENABLE_PPROF", false), "Enable pprof for controller manager.")
 	flag.StringVar(&pprofAddr, "pprof-addr", lookupEnvOrString("PPROF_ADDR", ":8090"), "The address the pprof binds to.")
 	flag.BoolVar(&enableInitContainers, "enable-init-containers", lookupEnvOrBool("ENABLE_INIT_CONTAINERS", false), "Whether to use an init container to download package")
+	flag.StringVar(&filebeatConfigMap, "filebeat-configmap", lookupEnvOrString("FILEBEAT_CONFIGMAP", "filebeat-config"), "The config map name for filebeat.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	utils.EnableInitContainers = enableInitContainers
+	utils.FilebeatConfigMap = filebeatConfigMap
 
 	// enable pprof
 	if enablePprof {

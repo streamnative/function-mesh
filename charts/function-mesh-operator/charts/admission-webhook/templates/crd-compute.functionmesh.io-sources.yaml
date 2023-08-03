@@ -190,6 +190,13 @@ spec:
                   required:
                     - jar
                   type: object
+                logTopic:
+                  type: string
+                logTopicAgent:
+                  enum:
+                    - runtime
+                    - sidecar
+                  type: string
                 maxReplicas:
                   format: int32
                   type: integer
@@ -661,6 +668,7 @@ spec:
                                   - value
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             selectPolicy:
                               type: string
                             stabilizationWindowSeconds:
@@ -686,6 +694,7 @@ spec:
                                   - value
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             selectPolicy:
                               type: string
                             stabilizationWindowSeconds:

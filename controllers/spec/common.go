@@ -190,7 +190,7 @@ func MakeHeadlessServiceName(serviceName string) string {
 }
 
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderImage string,
-	container *corev1.Container,
+	container *corev1.Container, filebeatContainer *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, pulsar v1alpha1.PulsarMessaging,
 	javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
 	goRuntime *v1alpha1.GoRuntime, definedVolumeMounts []corev1.VolumeMount,
@@ -257,13 +257,13 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: *objectMeta,
-		Spec: *MakeStatefulSetSpec(replicas, container, podVolumes, labels, policy,
+		Spec: *MakeStatefulSetSpec(replicas, container, filebeatContainer, podVolumes, labels, policy,
 			MakeHeadlessServiceName(objectMeta.Name), downloaderContainer, volumeClaimTemplates,
 			persistentVolumeClaimRetentionPolicy),
 	}
 }
 
-func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
+func MakeStatefulSetSpec(replicas *int32, container *corev1.Container, filebeatContainer *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy,
 	serviceName string, downloaderContainer *corev1.Container, volumeClaimTemplates []corev1.PersistentVolumeClaim,
 	persistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy) *appsv1.StatefulSetSpec {
@@ -272,7 +272,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: labels,
 		},
-		Template:            *makePodTemplate(container, volumes, labels, policy, downloaderContainer),
+		Template:            *makePodTemplate(container, filebeatContainer, volumes, labels, policy, downloaderContainer),
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
@@ -288,7 +288,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	return spec
 }
 
-func makePodTemplate(container *corev1.Container, volumes []corev1.Volume,
+func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy,
 	downloaderContainer *corev1.Container) *corev1.PodTemplateSpec {
 	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID,
@@ -300,6 +300,10 @@ func makePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	if downloaderContainer != nil {
 		initContainers = append(initContainers, *downloaderContainer)
 	}
+	containers := append(policy.Sidecars, *container)
+	if filebeatContainer != nil {
+		containers = append(containers, *filebeatContainer)
+	}
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      mergeLabels(labels, Configs.ResourceLabels, policy.Labels),
@@ -307,7 +311,7 @@ func makePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 		},
 		Spec: corev1.PodSpec{
 			InitContainers:                initContainers,
-			Containers:                    append(policy.Sidecars, *container),
+			Containers:                    containers,
 			TerminationGracePeriodSeconds: &policy.TerminationGracePeriodSeconds,
 			Volumes:                       volumes,
 			NodeSelector:                  policy.NodeSelector,
@@ -393,7 +397,7 @@ func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
 
 func makeCleanUpJob(objectMeta *metav1.ObjectMeta, container *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy) *v1.Job {
-	temp := makePodTemplate(container, volumes, labels, policy, nil)
+	temp := makePodTemplate(container, nil, volumes, labels, policy, nil)
 	temp.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 	var ttlSecond int32
 	return &v1.Job{
@@ -1419,6 +1423,25 @@ func generateContainerVolumesFromLogConfigs(confs map[int32]*v1alpha1.RuntimeLog
 	return volumes
 }
 
+func generateFilebeatVolumes() []corev1.Volume {
+	filebeatConfigVolume := &corev1.Volume{
+		Name: "filebeat-config",
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: utils.FilebeatConfigMap,
+				},
+			},
+		},
+	}
+	return []corev1.Volume{*filebeatConfigVolume, corev1.Volume{
+		Name: "filebeat-logs",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}}
+}
+
 func generateContainerVolumesFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	if len(confs) > 0 {
@@ -1620,9 +1643,15 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
 	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	logConfigs map[int32]*v1alpha1.RuntimeLogConfig) []corev1.VolumeMount {
+	logConfigs map[int32]*v1alpha1.RuntimeLogConfig, agent v1alpha1.LogTopicAgent) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
+	if agent == v1alpha1.SIDECAR {
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      "filebeat-logs",
+			MountPath: "/usr/share/filebeat/logs/function",
+		})
+	}
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
 		mounts = append(mounts, generateVolumeMountFromTLSConfig(tlsConfig))
 	}
@@ -1639,9 +1668,13 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 
 func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.ProducerConfig,
 	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	logConfigs map[int32]*v1alpha1.RuntimeLogConfig) []corev1.Volume {
+	logConfigs map[int32]*v1alpha1.RuntimeLogConfig,
+	agent v1alpha1.LogTopicAgent) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	volumes = append(volumes, podVolumes...)
+	if agent == v1alpha1.SIDECAR {
+		volumes = append(volumes, generateFilebeatVolumes()...)
+	}
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
 		volumes = append(volumes, generateVolumeFromTLSConfig(tlsConfig))
 	}
@@ -1945,4 +1978,69 @@ func getSubscriptionNameOrDefault(subscription, tenant, namespace, name string) 
 		return fmt.Sprintf("%s/%s/%s", tenant, namespace, name)
 	}
 	return subscription
+}
+
+func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.EnvVar, name string, logTopic string,
+	agent v1alpha1.LogTopicAgent, tlsConfig *v1alpha1.PulsarTLSConfig, authConfig *v1alpha1.AuthConfig,
+	pulsarConfig string, authSecret string, tlsSecret string) *corev1.Container {
+	if agent == v1alpha1.RUNTIME {
+		return nil
+	}
+	imagePullPolicy := corev1.PullIfNotPresent
+	allowPrivilegeEscalation := false
+	mounts := generateContainerVolumeMounts(volumeMounts, nil, nil, tlsConfig, authConfig, nil, agent)
+	mounts = append(mounts, corev1.VolumeMount{
+		Name:      "filebeat-config",
+		MountPath: "/usr/share/filebeat/run/config",
+	})
+
+	var uid int64 = 1000
+
+	authCommands := []string{}
+	if authConfig != nil {
+		if authConfig.GenericAuth != nil {
+			// it only supports jwt token authentication and oauth2 authentication
+			if authConfig.GenericAuth.ClientAuthenticationPlugin == "org.apache.pulsar.client.impl.auth.AuthenticationToken" {
+				authCommands = append(authCommands, "-E output.pulsar.token="+authConfig.GenericAuth.ClientAuthenticationParameters)
+			} else if authConfig.GenericAuth.ClientAuthenticationPlugin == "org.apache.pulsar.client.impl.auth.oauth2.AuthenticationOAuth2" {
+				// we should unmarshal auth params to an OAuth2 object to get issuerUrl, audience, privateKey and scope
+				var oauth2Params map[string]string
+				err := json.Unmarshal([]byte(authConfig.GenericAuth.ClientAuthenticationParameters), &oauth2Params)
+				if err != nil {
+					log.Error(err, "failed to unmarshal auth params to an OAuth2 object")
+					return nil
+				}
+				authCommands = append(authCommands, "-E output.pulsar.oauth2.enabled=true", "-E output.pulsar.oauth2.issuerUrl="+oauth2Params["issuerUrl"],
+					"-E output.pulsar.oauth2.audience="+oauth2Params["audience"], "-E output.pulsar.oauth2.privateKey="+oauth2Params["privateKey"])
+				if oauth2Params["scope"] != "" {
+					authCommands = append(authCommands, "-E output.pulsar.oauth2.scope="+oauth2Params["scope"])
+				}
+			}
+		} else if authConfig.OAuth2Config != nil {
+			authCommands = append(authCommands, "-E output.pulsar.oauth2.enabled=true", "-E output.pulsar.oauth2.issuerUrl="+authConfig.OAuth2Config.IssuerURL,
+				"-E output.pulsar.oauth2.audience="+authConfig.OAuth2Config.Audience, "-E output.pulsar.oauth2.privateKey="+authConfig.OAuth2Config.GetMountFile())
+			if authConfig.OAuth2Config.Scope != "" {
+				authCommands = append(authCommands, "-E output.pulsar.oauth2.scope="+authConfig.OAuth2Config.Scope)
+			}
+		}
+	}
+
+	return &corev1.Container{
+		Name:    "filebeat",
+		Image:   "streamnative/filebeat:v0.6.0-rc7",
+		Command: []string{"/bin/sh", "-c", "--"},
+		Args: append([]string{"/usr/share/filebeat/filebeat", "-e", "-c", "/usr/share/filebeat/run/config/filebeat.yml",
+			"-E", "output.pulsar.url=$brokerServiceURL", "-E", "output.pulsar.topic=" + logTopic, "-E", "output.pulsar.name=" + name}, authCommands...),
+		Env:             envVar,
+		ImagePullPolicy: imagePullPolicy,
+		EnvFrom:         generateContainerEnvFrom(pulsarConfig, authSecret, tlsSecret),
+		VolumeMounts:    mounts,
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{"ALL"},
+			},
+			AllowPrivilegeEscalation: &allowPrivilegeEscalation,
+			RunAsUser:                &uid,
+		},
+	}
 }
