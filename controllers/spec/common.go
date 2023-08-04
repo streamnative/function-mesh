@@ -1994,14 +1994,14 @@ func getSubscriptionNameOrDefault(subscription, tenant, namespace, name string) 
 }
 
 func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.EnvVar, name string, logTopic string,
-	agent v1alpha1.LogTopicAgent, TLSConfig *v1alpha1.PulsarTLSConfig, authConfig *v1alpha1.AuthConfig,
+	agent v1alpha1.LogTopicAgent, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	pulsarConfig string, authSecret string, tlsSecret string) *corev1.Container {
 	if agent != v1alpha1.SIDECAR {
 		return nil
 	}
 	imagePullPolicy := corev1.PullIfNotPresent
 	allowPrivilegeEscalation := false
-	mounts := generateContainerVolumeMounts(volumeMounts, nil, nil, TLSConfig, authConfig, nil, agent)
+	mounts := generateContainerVolumeMounts(volumeMounts, nil, nil, tlsConfig, authConfig, nil, agent)
 
 	var uid int64 = 1000
 
