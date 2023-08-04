@@ -19,19 +19,33 @@
 package utils
 
 import (
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
+)
+
+const (
+	GroupVersionV2      = "v2"
+	GroupVersionV2Beta2 = "v2beta2"
 )
 
 var (
 	// GroupVersionsVPA is a list of group versions for vertical pod autoscaler
 	// It should be updated when the watched crd use a new version
 	GroupVersionsVPA = []string{"autoscaling.k8s.io/v1"}
+
+	GroupVersionAutoscalingV2 = []string{autoscalingv2.SchemeGroupVersion.String()}
+
+	GroupVersionAutoscalingV2Beta2 = []string{autoscalingv2beta2.SchemeGroupVersion.String()}
 )
 
 type WatchFlags struct {
 	// the controller should not watch VPA CRDs if WatchVPACRDs is false
 	WatchVPACRDs bool
+
+	// the controller should provide the HPA group version via APIAutoscalingGroupVersion
+	APIAutoscalingGroupVersion string
 }
 
 // GroupVersions is a set of Kubernetes API group versions.

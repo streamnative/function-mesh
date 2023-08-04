@@ -1,6 +1,6 @@
 setup:
   env: kind
-  file: ../kind.yaml
+  file: ${KIND_CONFIG_FILE}
   init-system-environment: ../env
   steps:
     - name: build images

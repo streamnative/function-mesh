@@ -25,7 +25,6 @@ import (
 	"github.com/streamnative/function-mesh/controllers/spec"
 	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
-	autov2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -42,11 +41,11 @@ import (
 // SourceReconciler reconciles a Source object
 type SourceReconciler struct {
 	client.Client
-	Config     *rest.Config
-	RestClient rest.Interface
-	Log        logr.Logger
-	Scheme     *runtime.Scheme
-	WatchFlags *utils.WatchFlags
+	Config            *rest.Config
+	RestClient        rest.Interface
+	Log               logr.Logger
+	Scheme            *runtime.Scheme
+	GroupVersionFlags *utils.WatchFlags
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sources,verbs=get;list;watch;create;update;patch;delete
@@ -91,11 +90,18 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveSourceHPA(ctx, source)
-	if err != nil {
-		return reconcile.Result{}, err
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2Beta2 {
+		err = r.ObserveSourceHPAV2Beta2(ctx, source)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2 {
+		err = r.ObserveSourceHPA(ctx, source)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
-	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
 		err = r.ObserveSourceVPA(ctx, source)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -117,9 +123,16 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySourceHPA(ctx, source, isNewGeneration)
-	if err != nil {
-		return reconcile.Result{}, err
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2Beta2 {
+		err = r.ApplySourceHPAV2Beta2(ctx, source, isNewGeneration)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2 {
+		err = r.ApplySourceHPA(ctx, source, isNewGeneration)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 	err = r.ApplySourceVPA(ctx, source)
 	if err != nil {
@@ -152,10 +165,12 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&v1alpha1.Source{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
-		Owns(&autov2.HorizontalPodAutoscaler{}).
 		Owns(&v1.Job{})
-	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
 		manager.Owns(&vpav1.VerticalPodAutoscaler{})
+	}
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion != "" {
+		AddControllerBuilderOwn(manager, r.GroupVersionFlags.APIAutoscalingGroupVersion)
 	}
 	return manager.Complete(r)
 }

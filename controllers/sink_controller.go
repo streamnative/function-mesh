@@ -28,7 +28,6 @@ import (
 	"github.com/streamnative/function-mesh/controllers/spec"
 	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
-	autov2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,11 +42,11 @@ import (
 // SinkReconciler reconciles a Topic object
 type SinkReconciler struct {
 	client.Client
-	Config     *rest.Config
-	RestClient rest.Interface
-	Log        logr.Logger
-	Scheme     *runtime.Scheme
-	WatchFlags *utils.WatchFlags
+	Config            *rest.Config
+	RestClient        rest.Interface
+	Log               logr.Logger
+	Scheme            *runtime.Scheme
+	GroupVersionFlags *utils.WatchFlags
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sinks,verbs=get;list;watch;create;update;patch;delete
@@ -91,11 +90,18 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ObserveSinkHPA(ctx, sink)
-	if err != nil {
-		return reconcile.Result{}, err
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2Beta2 {
+		err = r.ObserveSinkHPAV2Beta2(ctx, sink)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2 {
+		err = r.ObserveSinkHPA(ctx, sink)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
-	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
 		err = r.ObserveSinkVPA(ctx, sink)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -117,9 +123,16 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.ApplySinkHPA(ctx, sink, isNewGeneration)
-	if err != nil {
-		return reconcile.Result{}, err
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2Beta2 {
+		err = r.ApplySinkHPAV2Beta2(ctx, sink, isNewGeneration)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2 {
+		err = r.ApplySinkHPA(ctx, sink, isNewGeneration)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 	err = r.ApplySinkVPA(ctx, sink)
 	if err != nil {
@@ -152,10 +165,13 @@ func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&v1alpha1.Sink{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Service{}).
-		Owns(&autov2.HorizontalPodAutoscaler{}).
 		Owns(&v1.Job{})
-	if r.WatchFlags != nil && r.WatchFlags.WatchVPACRDs {
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
 		manager.Owns(&vpav1.VerticalPodAutoscaler{})
+	}
+
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion != "" {
+		AddControllerBuilderOwn(manager, r.GroupVersionFlags.APIAutoscalingGroupVersion)
 	}
 
 	return manager.Complete(r)

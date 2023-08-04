@@ -24,12 +24,19 @@ jobs:
         case:
           - name: integration test
             e2e: ".ci/tests/integration/e2e.yaml"
+            kind_config: "../kind.yaml"
           - name: integration test with tls
             e2e: ".ci/tests/integration/e2e_with_tls.yaml"
+            kind_config: "../kind.yaml"
           - name: integration test with oauth2
             e2e: ".ci/tests/integration-oauth2/e2e.yaml"
+            kind_config: "../kind.yaml"
           - name: integration test with downloader
             e2e: ".ci/tests/integration-oauth2/e2e_with_downloader.yaml"
+            kind_config: "../kind.yaml"
+          - name: integration test on k8s 1.22
+            e2e: ".ci/tests/integration/e2e.yaml"
+            kind_config: "../kind-122.yaml"
     steps:
       - name: clean disk
         run: |
@@ -45,6 +52,11 @@ jobs:
           fetch-depth: 0
           repository: ${{github.event.pull_request.head.repo.full_name}}
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set the e2e kind config file
+        id: e2e-kind-config
+        run: |
+          echo "KIND_CONFIG_FILE=${{matrix.case.kind_config}}" >> "$GITHUB_ENV"
 
       - uses: apache/skywalking-infra-e2e@v1.2.0
         with:
