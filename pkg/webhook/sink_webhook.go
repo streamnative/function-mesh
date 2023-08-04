@@ -124,6 +124,11 @@ func (webhook *SinkWebhook) Default(ctx context.Context, obj runtime.Object) err
 	if r.Spec.Input.TypeClassName == "" {
 		r.Spec.Input.TypeClassName = "[B"
 	}
+
+	if r.Spec.LogTopicAgent == "" {
+		r.Spec.LogTopicAgent = v1alpha1.RUNTIME
+	}
+
 	return nil
 }
 

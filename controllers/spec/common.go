@@ -115,6 +115,8 @@ const (
 	PythonLogConfigFile          = "python_instance_logging.ini"
 	DefaultPythonLogConfigPath   = PythonLogConifgDirectory + PythonLogConfigFile
 
+	DefaultFilebeatConfig = "/usr/share/filebeat/config/filebeat.yaml"
+
 	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
 )
 
@@ -126,6 +128,9 @@ var javaLog4jYAMLTemplate string
 
 //go:embed template/python-runtime-log-config.ini.tmpl
 var pythonLoggingINITemplate string
+
+//go:embed template/filebeat-config.yaml.tmpl
+var filebeatYAMLTemplate string
 
 var GRPCPort = corev1.ContainerPort{
 	Name:          "tcp-grpc",
@@ -1442,17 +1447,7 @@ func generateContainerVolumesFromLogConfigs(confs map[int32]*v1alpha1.RuntimeLog
 }
 
 func generateFilebeatVolumes() []corev1.Volume {
-	filebeatConfigVolume := &corev1.Volume{
-		Name: "filebeat-config",
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: utils.FilebeatConfigMap,
-				},
-			},
-		},
-	}
-	return []corev1.Volume{*filebeatConfigVolume, corev1.Volume{
+	return []corev1.Volume{{
 		Name: "filebeat-logs",
 		VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
@@ -1999,18 +1994,14 @@ func getSubscriptionNameOrDefault(subscription, tenant, namespace, name string) 
 }
 
 func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.EnvVar, name string, logTopic string,
-	agent v1alpha1.LogTopicAgent, tlsConfig *v1alpha1.PulsarTLSConfig, authConfig *v1alpha1.AuthConfig,
+	agent v1alpha1.LogTopicAgent, TLSConfig *v1alpha1.PulsarTLSConfig, authConfig *v1alpha1.AuthConfig,
 	pulsarConfig string, authSecret string, tlsSecret string) *corev1.Container {
 	if agent != v1alpha1.SIDECAR {
 		return nil
 	}
 	imagePullPolicy := corev1.PullIfNotPresent
 	allowPrivilegeEscalation := false
-	mounts := generateContainerVolumeMounts(volumeMounts, nil, nil, tlsConfig, authConfig, nil, agent)
-	mounts = append(mounts, corev1.VolumeMount{
-		Name:      "filebeat-config",
-		MountPath: "/usr/share/filebeat/run/config",
-	})
+	mounts := generateContainerVolumeMounts(volumeMounts, nil, nil, TLSConfig, authConfig, nil, agent)
 
 	var uid int64 = 1000
 
@@ -2081,11 +2072,17 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 		}
 	}
 
+	tmpl := template.Must(template.New("filebeat-yaml-template").Parse(filebeatYAMLTemplate))
+	var tpl bytes.Buffer
+	if err := tmpl.Execute(&tpl, nil); err != nil {
+		log.Error(err, "failed to render filebeat instance log4j yaml template")
+	}
+
 	return &corev1.Container{
 		Name:            "filebeat",
 		Image:           "streamnative/filebeat:v0.6.0-rc7",
-		Command:         []string{"/bin/sh", "-c", "--"},
-		Args:            append([]string{"/usr/share/filebeat/filebeat -e -c /usr/share/filebeat/run/config/filebeat.yaml"}),
+		Command:         []string{"echo " + tpl.String() + " > " + DefaultFilebeatConfig + "&& /bin/sh", "-c", "--"},
+		Args:            []string{"/usr/share/filebeat/filebeat -e -c " + DefaultFilebeatConfig},
 		Env:             envs,
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(pulsarConfig, authSecret, tlsSecret),
