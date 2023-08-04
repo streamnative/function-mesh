@@ -2081,8 +2081,7 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 	return &corev1.Container{
 		Name:            "filebeat",
 		Image:           "streamnative/filebeat:v0.6.0-rc7",
-		Command:         []string{"echo " + tpl.String() + " > " + DefaultFilebeatConfig + "&& /bin/sh", "-c", "--"},
-		Args:            []string{"/usr/share/filebeat/filebeat -e -c " + DefaultFilebeatConfig},
+		Command:         []string{"/bin/sh", "-c", "--", "echo " + fmt.Sprintf("\"%s\"", tpl.String()) + " > " + DefaultFilebeatConfig + " && /usr/share/filebeat/filebeat -e -c " + DefaultFilebeatConfig},
 		Env:             envs,
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         generateContainerEnvFrom(pulsarConfig, authSecret, tlsSecret),
