@@ -95,14 +95,15 @@ var _ = BeforeSuite(func(done Done) {
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	watchFlags := &utils.WatchFlags{
-		WatchVPACRDs: true,
+	gvFlags := &utils.GroupVersionFlags{
+		WatchVPACRDs:               true,
+		APIAutoscalingGroupVersion: utils.GroupVersionV2,
 	}
 	funcReconciler = &FunctionReconciler{
 		Client:            k8sManager.GetClient(),
 		Log:               ctrl.Log.WithName("controllers").WithName("Function"),
 		Scheme:            k8sManager.GetScheme(),
-		GroupVersionFlags: watchFlags,
+		GroupVersionFlags: gvFlags,
 	}
 	err = funcReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
@@ -111,7 +112,7 @@ var _ = BeforeSuite(func(done Done) {
 		Client:            k8sManager.GetClient(),
 		Log:               ctrl.Log.WithName("controllers").WithName("Source"),
 		Scheme:            k8sManager.GetScheme(),
-		GroupVersionFlags: watchFlags,
+		GroupVersionFlags: gvFlags,
 	}
 	err = sourceReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
@@ -120,7 +121,7 @@ var _ = BeforeSuite(func(done Done) {
 		Client:            k8sManager.GetClient(),
 		Log:               ctrl.Log.WithName("controllers").WithName("Sink"),
 		Scheme:            k8sManager.GetScheme(),
-		GroupVersionFlags: watchFlags,
+		GroupVersionFlags: gvFlags,
 	}
 	err = sinkReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())

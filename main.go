@@ -216,8 +216,8 @@ func main() {
 
 // checkGroupVersions will only enable the watch crd params if the related group version
 // exists in the cluster
-func checkGroupVersions(log logr.Logger) (utils.WatchFlags, error) {
-	watchFlags := utils.WatchFlags{}
+func checkGroupVersions(log logr.Logger) (utils.GroupVersionFlags, error) {
+	watchFlags := utils.GroupVersionFlags{}
 	client, err := discovery.NewDiscoveryClientForConfig(config.GetConfigOrDie())
 	if err != nil {
 		return watchFlags, err

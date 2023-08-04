@@ -46,7 +46,7 @@ type SinkReconciler struct {
 	RestClient        rest.Interface
 	Log               logr.Logger
 	Scheme            *runtime.Scheme
-	GroupVersionFlags *utils.WatchFlags
+	GroupVersionFlags *utils.GroupVersionFlags
 }
 
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sinks,verbs=get;list;watch;create;update;patch;delete

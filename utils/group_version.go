@@ -40,7 +40,7 @@ var (
 	GroupVersionAutoscalingV2Beta2 = []string{autoscalingv2beta2.SchemeGroupVersion.String()}
 )
 
-type WatchFlags struct {
+type GroupVersionFlags struct {
 	// the controller should not watch VPA CRDs if WatchVPACRDs is false
 	WatchVPACRDs bool
 
