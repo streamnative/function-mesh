@@ -138,8 +138,8 @@ function ci::verify_function_mesh() {
     while [[ ${num} -lt 1 ]]; do
         sleep 5
         kubectl get pods -l compute.functionmesh.io/name="${FUNCTION_NAME}"
-        kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --all-containers=true --tail=50 || true
-        num=$(kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --all-containers=true --tail=-1 | grep "Created producer\|Created consumer\|Subscribed to topic" | wc -l)
+        kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --tail=50 || true
+        num=$(kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --tail=-1 | grep "Created producer\|Created consumer\|Subscribed to topic" | wc -l)
     done
 }
 
@@ -323,10 +323,10 @@ function ci::verify_source() {
 
 function ci::verify_batch_source() {
     sleep 30
-    kubectl logs --all-containers=true --tail=-1 -l compute.functionmesh.io/name=batch-source-sample | grep "Setting up instance consumer for BatchSource intermediate topic"
+    kubectl logs  --tail=-1 -l compute.functionmesh.io/name=batch-source-sample | grep "Setting up instance consumer for BatchSource intermediate topic"
     while [[ $? -ne 0 ]]; do
         sleep 5
-        kubectl logs --all-containers=true --tail=-1 -l compute.functionmesh.io/name=batch-source-sample | grep "Setting up instance consumer for BatchSource intermediate topic"
+        kubectl logs --tail=-1 -l compute.functionmesh.io/name=batch-source-sample | grep "Setting up instance consumer for BatchSource intermediate topic"
     done
 }
 
@@ -444,7 +444,7 @@ function ci::verify_elasticsearch_sink() {
     timesleep=$3
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
     sleep "$timesleep"
-    kubectl logs --all-containers=true --tail=-1 quickstart-es-default-0 | grep "creating index"
+    kubectl logs --tail=-1 quickstart-es-default-0 | grep "creating index"
     if [ $? -eq 0 ]; then
         return 0
     fi
@@ -455,7 +455,7 @@ function ci::verify_mongodb_source() {
     timesleep=$1
     kubectl exec mongo-dbz-0 -c mongo -- mongo -u debezium -p dbz --authenticationDatabase admin localhost:27017/inventory --eval 'db.products.update({"_id":NumberLong(104)},{$set:{weight:1.25}})'
     sleep "$timesleep"
-    kubectl logs --all-containers=true --tail=-1 -l compute.functionmesh.io/name=source-sample | grep "records sent"
+    kubectl logs --tail=-1 -l compute.functionmesh.io/name=source-sample | grep "records sent"
     if [ $? -eq 0 ]; then
         return 0
     fi
@@ -477,7 +477,7 @@ function ci::verify_function_with_encryption() {
     # incorrect pubkey test
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -ekn "myapp1" -ekv "data:application/x-pem-file;base64,${incorrect_pubkey}" -m "${inputmessage}" -n 1 "${inputtopic}"
     sleep "$timesleep"
-    kubectl logs --all-containers=true --tail=-1 -l compute.functionmesh.io/name=java-function-crypto-sample | grep "Message delivery failed since unable to decrypt incoming message"
+    kubectl logs --tail=-1 -l compute.functionmesh.io/name=java-function-crypto-sample | grep "Message delivery failed since unable to decrypt incoming message"
     if [ $? -ne 0 ]; then
         return 1
     fi

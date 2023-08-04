@@ -74,6 +74,7 @@ setup:
 
     - name: update manifests to use tls endpoints
       command: |
+        sed -i "s/logTopicAgent: sidecar/logTopicAgent: runtime/" .ci/tests/integration/cases/*/*.yaml
         sed -i "s/enabled: false/enabled: true/" .ci/tests/integration/cases/*/*.yaml
         sed -i "s/certSecretKey: \"\"/certSecretKey: ca.crt/" .ci/tests/integration/cases/*/*.yaml
         sed -i "s/http:\/\/sn-platform-pulsar-broker.default.svc.cluster.local:8080/https:\/\/sn-platform-pulsar-broker.default.svc.cluster.local:8443/" .ci/tests/integration/cases/*/*.yaml
