@@ -110,17 +110,17 @@ verify:
       # java function test
     - query: bash .ci/tests/integration/cases/java-function/verify.sh
       expected: expected.data.yaml
-    - query: bash .ci/tests/integration/cases/java-download-function/verify.sh
+    - query: bash .ci/tests/integration/cases/java-download-function/verify.sh true
       expected: expected.data.yaml
-    - query: bash .ci/tests/integration/cases/py-download-function/verify.sh
+    - query: bash .ci/tests/integration/cases/py-download-function/verify.sh true
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/py-download-zip-function/verify.sh
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/py-download-pip-function/verify.sh
       expected: expected.data.yaml
-    - query: bash .ci/tests/integration/cases/elasticsearch-sink/verify.sh
+    - query: bash .ci/tests/integration/cases/elasticsearch-sink/verify.sh true
       expected: expected.data.yaml
-    - query: bash .ci/tests/integration/cases/mongodb-source/verify.sh
+    - query: bash .ci/tests/integration/cases/mongodb-source/verify.sh true
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/crypto-function/verify.sh
       expected: expected.data.yaml

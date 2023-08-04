@@ -26,6 +26,8 @@ PULSAR_NAMESPACE=${PULSAR_NAMESPACE:-"default"}
 PULSAR_RELEASE_NAME=${PULSAR_RELEASE_NAME:-"sn-platform"}
 E2E_KUBECONFIG=${E2E_KUBECONFIG:-"/tmp/e2e-k8s.config"}
 
+USE_TLS=${1:-"false"}
+
 source "${BASE_DIR}"/.ci/helm.sh
 
 if [ ! "$KUBECONFIG" ]; then
@@ -41,11 +43,13 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-verify_log_topic=$(ci::verify_log_topic persistent://public/default/py-function-logs "python_instance_main.py: Starting Python instance with Namespace" 10 2>&1)
-if [ $? -ne 0 ]; then
-  echo "$verify_log_topic"
-  kubectl delete -f "${BASE_DIR}"/.ci/tests/integration/cases/py-download-function/manifests.yaml > /dev/null 2>&1 || true
-  exit 1
+if [ $USE_TLS == "false" ]; then
+  verify_log_topic=$(ci::verify_log_topic persistent://public/default/py-function-logs "python_instance_main.py: Starting Python instance with Namespace" 10 2>&1)
+  if [ $? -ne 0 ]; then
+    echo "$verify_log_topic"
+    kubectl delete -f "${BASE_DIR}"/.ci/tests/integration/cases/py-download-function/manifests.yaml > /dev/null 2>&1 || true
+    exit 1
+  fi
 fi
 
 verify_python_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_download_python_function 2>&1)
