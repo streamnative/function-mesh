@@ -95,32 +95,33 @@ var _ = BeforeSuite(func(done Done) {
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	watchFlags := &utils.WatchFlags{
-		WatchVPACRDs: true,
+	gvFlags := &utils.GroupVersionFlags{
+		WatchVPACRDs:               true,
+		APIAutoscalingGroupVersion: utils.GroupVersionV2,
 	}
 	funcReconciler = &FunctionReconciler{
-		Client:     k8sManager.GetClient(),
-		Log:        ctrl.Log.WithName("controllers").WithName("Function"),
-		Scheme:     k8sManager.GetScheme(),
-		WatchFlags: watchFlags,
+		Client:            k8sManager.GetClient(),
+		Log:               ctrl.Log.WithName("controllers").WithName("Function"),
+		Scheme:            k8sManager.GetScheme(),
+		GroupVersionFlags: gvFlags,
 	}
 	err = funcReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	sourceReconciler = &SourceReconciler{
-		Client:     k8sManager.GetClient(),
-		Log:        ctrl.Log.WithName("controllers").WithName("Source"),
-		Scheme:     k8sManager.GetScheme(),
-		WatchFlags: watchFlags,
+		Client:            k8sManager.GetClient(),
+		Log:               ctrl.Log.WithName("controllers").WithName("Source"),
+		Scheme:            k8sManager.GetScheme(),
+		GroupVersionFlags: gvFlags,
 	}
 	err = sourceReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	sinkReconciler = &SinkReconciler{
-		Client:     k8sManager.GetClient(),
-		Log:        ctrl.Log.WithName("controllers").WithName("Sink"),
-		Scheme:     k8sManager.GetScheme(),
-		WatchFlags: watchFlags,
+		Client:            k8sManager.GetClient(),
+		Log:               ctrl.Log.WithName("controllers").WithName("Sink"),
+		Scheme:            k8sManager.GetScheme(),
+		GroupVersionFlags: gvFlags,
 	}
 	err = sinkReconciler.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())

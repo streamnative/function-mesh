@@ -1,0 +1,34 @@
+# this config file contains all config fields with comments
+# NOTE: this is not a particularly useful config file
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+# patch the generated kubeadm config with some extra settings
+kubeadmConfigPatches:
+  - |
+    apiVersion: kubelet.config.k8s.io/v1beta1
+    kind: KubeletConfiguration
+    evictionHard:
+      nodefs.available: "0%"
+# patch it further using a JSON 6902 patch
+kubeadmConfigPatchesJSON6902:
+  - group: kubeadm.k8s.io
+    version: v1beta2
+    kind: ClusterConfiguration
+    patch: |
+      - op: add
+        path: /apiServer/certSANs/-
+        value: my-hostname
+# 1 control plane node (worker)
+nodes:
+  # the control plane node (worker) config
+  - role: control-plane
+    image: kindest/node:v1.22.15
+    extraPortMappings:
+      - containerPort: 31234
+        hostPort: 31234
+        # optional: set the bind address on the host
+        # 0.0.0.0 is the current default
+        listenAddress: "127.0.0.1"
+        # optional: set the protocol to one of TCP, UDP, SCTP.
+        # TCP is the default
+        protocol: TCP

@@ -20,6 +20,8 @@ package controllers
 import (
 	"context"
 
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
@@ -85,7 +87,8 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, fun
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
+func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, function *v1alpha1.Function,
+	newGeneration bool) error {
 	condition := function.Status.Conditions[v1alpha1.StatefulSet]
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
@@ -140,7 +143,8 @@ func (r *FunctionReconciler) ObserveFunctionService(ctx context.Context, functio
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
+func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function *v1alpha1.Function,
+	newGeneration bool) error {
 	condition := function.Status.Conditions[v1alpha1.Service]
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
@@ -205,7 +209,8 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *v
 	return nil
 }
 
-func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1alpha1.Function, newGeneration bool) error {
+func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1alpha1.Function,
+	newGeneration bool) error {
 	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
 		return nil
@@ -215,6 +220,76 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1a
 		return nil
 	}
 	desiredHPA := spec.MakeFunctionHPA(function)
+	desiredHPASpec := desiredHPA.Spec
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredHPA, func() error {
+		// function hpa mutate logic
+		desiredHPA.Spec = desiredHPASpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error create or update hpa for function",
+			"namespace", function.Namespace, "name", function.Name,
+			"hpa name", desiredHPA.Name)
+		return err
+	}
+	return nil
+}
+
+func (r *FunctionReconciler) ObserveFunctionHPAV2Beta2(ctx context.Context, function *v1alpha1.Function) error {
+	if function.Spec.MaxReplicas == nil {
+		// HPA not enabled, skip further action
+		return nil
+	}
+
+	condition, ok := function.Status.Conditions[v1alpha1.HPA]
+	if !ok {
+		function.Status.Conditions[v1alpha1.HPA] = v1alpha1.ResourceCondition{
+			Condition: v1alpha1.HPAReady,
+			Status:    metav1.ConditionFalse,
+			Action:    v1alpha1.Create,
+		}
+		return nil
+	}
+
+	hpa := &autoscalingv2beta2.HorizontalPodAutoscaler{}
+	err := r.Get(ctx, types.NamespacedName{Namespace: function.Namespace,
+		Name: spec.MakeFunctionObjectMeta(function).Name}, hpa)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			condition.Status = metav1.ConditionFalse
+			condition.Action = v1alpha1.Create
+			function.Status.Conditions[v1alpha1.HPA] = condition
+			r.Log.Info("hpa is not created for function...",
+				"namespace", function.Namespace, "name", function.Name,
+				"hpa name", hpa.Name)
+			return nil
+		}
+		return err
+	}
+
+	if r.checkIfHPAV2Beta2NeedUpdate(hpa, function) {
+		condition.Status = metav1.ConditionFalse
+		condition.Action = v1alpha1.Update
+		function.Status.Conditions[v1alpha1.HPA] = condition
+		return nil
+	}
+
+	condition.Action = v1alpha1.NoAction
+	condition.Status = metav1.ConditionTrue
+	function.Status.Conditions[v1alpha1.HPA] = condition
+	return nil
+}
+
+func (r *FunctionReconciler) ApplyFunctionHPAV2Beta2(ctx context.Context, function *v1alpha1.Function,
+	newGeneration bool) error {
+	if function.Spec.MaxReplicas == nil {
+		// HPA not enabled, skip further action
+		return nil
+	}
+	condition := function.Status.Conditions[v1alpha1.HPA]
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
+		return nil
+	}
+	desiredHPA := ConvertHPAV2ToV2beta2(spec.MakeFunctionHPA(function))
 	desiredHPASpec := desiredHPA.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredHPA, func() error {
 		// function hpa mutate logic
@@ -249,7 +324,8 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 		APIVersion: function.APIVersion,
 	}
 
-	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, function.Spec.Pod.VPA, "function", function.Namespace, function.Name)
+	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, function.Spec.Pod.VPA, "function",
+		function.Namespace, function.Name)
 	if err != nil {
 		return err
 	}
@@ -328,10 +404,17 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 	return nil
 }
 
-func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet, function *v1alpha1.Function) bool {
+func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet,
+	function *v1alpha1.Function) bool {
 	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeFunctionStatefulSet(function).Spec)
 }
 
-func (r *FunctionReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler, function *v1alpha1.Function) bool {
+func (r *FunctionReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler,
+	function *v1alpha1.Function) bool {
 	return !spec.CheckIfHPASpecIsEqual(&hpa.Spec, &spec.MakeFunctionHPA(function).Spec)
+}
+
+func (r *FunctionReconciler) checkIfHPAV2Beta2NeedUpdate(hpa *autoscalingv2beta2.HorizontalPodAutoscaler,
+	function *v1alpha1.Function) bool {
+	return !spec.CheckIfHPAV2Beta2SpecIsEqual(&hpa.Spec, &ConvertHPAV2ToV2beta2(spec.MakeFunctionHPA(function)).Spec)
 }

@@ -20,6 +20,8 @@ package controllers
 import (
 	"context"
 
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
@@ -85,7 +87,8 @@ func (r *SourceReconciler) ObserveSourceStatefulSet(ctx context.Context, source 
 	return nil
 }
 
-func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
+func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v1alpha1.Source,
+	newGeneration bool) error {
 	condition := source.Status.Conditions[v1alpha1.StatefulSet]
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
@@ -229,6 +232,76 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.
 	return nil
 }
 
+func (r *SourceReconciler) ObserveSourceHPAV2Beta2(ctx context.Context, source *v1alpha1.Source) error {
+	if source.Spec.MaxReplicas == nil {
+		// HPA not enabled, skip further action
+		return nil
+	}
+
+	condition, ok := source.Status.Conditions[v1alpha1.HPA]
+	if !ok {
+		source.Status.Conditions[v1alpha1.HPA] = v1alpha1.ResourceCondition{
+			Condition: v1alpha1.HPAReady,
+			Status:    metav1.ConditionFalse,
+			Action:    v1alpha1.Create,
+		}
+		return nil
+	}
+
+	hpa := &autoscalingv2beta2.HorizontalPodAutoscaler{}
+	err := r.Get(ctx, types.NamespacedName{Namespace: source.Namespace,
+		Name: spec.MakeSourceObjectMeta(source).Name}, hpa)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			condition.Status = metav1.ConditionFalse
+			condition.Action = v1alpha1.Create
+			source.Status.Conditions[v1alpha1.HPA] = condition
+			r.Log.Info("hpa is not created for source...",
+				"namespace", source.Namespace, "name", source.Name,
+				"hpa name", hpa.Name)
+			return nil
+		}
+		return err
+	}
+
+	if r.checkIfHPAV2Beta2NeedUpdate(hpa, source) {
+		condition.Status = metav1.ConditionFalse
+		condition.Action = v1alpha1.Update
+		source.Status.Conditions[v1alpha1.HPA] = condition
+		return nil
+	}
+
+	condition.Action = v1alpha1.NoAction
+	condition.Status = metav1.ConditionTrue
+	source.Status.Conditions[v1alpha1.HPA] = condition
+	return nil
+}
+
+func (r *SourceReconciler) ApplySourceHPAV2Beta2(ctx context.Context, source *v1alpha1.Source,
+	newGeneration bool) error {
+	if source.Spec.MaxReplicas == nil {
+		// HPA not enabled, skip further action
+		return nil
+	}
+	condition := source.Status.Conditions[v1alpha1.HPA]
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
+		return nil
+	}
+	desiredHPA := ConvertHPAV2ToV2beta2(spec.MakeSourceHPA(source))
+	desiredHPASpec := desiredHPA.Spec
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredHPA, func() error {
+		// source hpa mutate logic
+		desiredHPA.Spec = desiredHPASpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error create or update hpa for source",
+			"namespace", source.Namespace, "name", source.Name,
+			"hpa name", desiredHPA.Name)
+		return err
+	}
+	return nil
+}
+
 func (r *SourceReconciler) ObserveSourceVPA(ctx context.Context, source *v1alpha1.Source) error {
 	return observeVPA(ctx, r, types.NamespacedName{Namespace: source.Namespace,
 		Name: spec.MakeSourceObjectMeta(source).Name}, source.Spec.Pod.VPA, source.Status.Conditions)
@@ -249,7 +322,8 @@ func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.
 		APIVersion: source.APIVersion,
 	}
 
-	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, source.Spec.Pod.VPA, "source", source.Namespace, source.Name)
+	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, source.Spec.Pod.VPA, "source",
+		source.Namespace, source.Name)
 	if err != nil {
 		return err
 	}
@@ -334,4 +408,9 @@ func (r *SourceReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.Stat
 
 func (r *SourceReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler, source *v1alpha1.Source) bool {
 	return !spec.CheckIfHPASpecIsEqual(&hpa.Spec, &spec.MakeSourceHPA(source).Spec)
+}
+
+func (r *SourceReconciler) checkIfHPAV2Beta2NeedUpdate(hpa *autoscalingv2beta2.HorizontalPodAutoscaler,
+	source *v1alpha1.Source) bool {
+	return !spec.CheckIfHPAV2Beta2SpecIsEqual(&hpa.Spec, &ConvertHPAV2ToV2beta2(spec.MakeSourceHPA(source)).Spec)
 }
