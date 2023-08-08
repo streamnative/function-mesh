@@ -59,6 +59,7 @@ type SinkSpec struct {
 
 	LogTopic      string        `json:"logTopic,omitempty"`
 	LogTopicAgent LogTopicAgent `json:"logTopicAgent,omitempty"`
+	FilebeatImage string        `json:"filebeatImage,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields

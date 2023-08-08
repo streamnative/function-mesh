@@ -116,6 +116,7 @@ const (
 	DefaultPythonLogConfigPath   = PythonLogConifgDirectory + PythonLogConfigFile
 
 	DefaultFilebeatConfig = "/usr/share/filebeat/config/filebeat.yaml"
+	DefaultFilebeatImage  = "streamnative/filebeat:v0.6.0-rc7"
 
 	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
 )
@@ -1995,9 +1996,13 @@ func getSubscriptionNameOrDefault(subscription, tenant, namespace, name string) 
 
 func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.EnvVar, name string, logTopic string,
 	agent v1alpha1.LogTopicAgent, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	pulsarConfig string, authSecret string, tlsSecret string) *corev1.Container {
+	pulsarConfig string, authSecret string, tlsSecret string, image string) *corev1.Container {
 	if agent != v1alpha1.SIDECAR {
 		return nil
+	}
+	filebeatImage := image
+	if filebeatImage == "" {
+		filebeatImage = DefaultFilebeatImage
 	}
 	imagePullPolicy := corev1.PullIfNotPresent
 	allowPrivilegeEscalation := false
@@ -2080,7 +2085,7 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 
 	return &corev1.Container{
 		Name:            "filebeat",
-		Image:           "streamnative/filebeat:v0.6.0-rc7",
+		Image:           filebeatImage,
 		Command:         []string{"/bin/sh", "-c", "--", "echo " + fmt.Sprintf("\"%s\"", tpl.String()) + " > " + DefaultFilebeatConfig + " && /usr/share/filebeat/filebeat -e -c " + DefaultFilebeatConfig},
 		Env:             envs,
 		ImagePullPolicy: imagePullPolicy,

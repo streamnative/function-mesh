@@ -62,6 +62,8 @@ spec:
                   type: string
                 downloaderImage:
                   type: string
+                filebeatImage:
+                  type: string
                 golang:
                   properties:
                     go:

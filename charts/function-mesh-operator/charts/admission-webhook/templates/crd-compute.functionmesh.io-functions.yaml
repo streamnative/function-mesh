@@ -62,6 +62,8 @@ spec:
                   type: string
                 downloaderImage:
                   type: string
+                filebeatImage:
+                  type: string
                 forwardSourceMessageProperty:
                   type: boolean
                 funcConfig:

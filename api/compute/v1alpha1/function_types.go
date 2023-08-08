@@ -59,6 +59,7 @@ type FunctionSpec struct {
 	Output        OutputConf    `json:"output,omitempty"`
 	LogTopic      string        `json:"logTopic,omitempty"`
 	LogTopicAgent LogTopicAgent `json:"logTopicAgent,omitempty"`
+	FilebeatImage string        `json:"filebeatImage,omitempty"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	FuncConfig   *Config                     `json:"funcConfig,omitempty"`

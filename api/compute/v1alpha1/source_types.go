@@ -66,6 +66,7 @@ type SourceSpec struct {
 
 	LogTopic      string        `json:"logTopic,omitempty"`
 	LogTopicAgent LogTopicAgent `json:"logTopicAgent,omitempty"`
+	FilebeatImage string        `json:"filebeatImage,omitempty"`
 
 	BatchSourceConfig *BatchSourceConfig `json:"batchSourceConfig,omitempty"`
 	// +kubebuilder:validation:Optional

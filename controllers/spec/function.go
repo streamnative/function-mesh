@@ -61,7 +61,7 @@ func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 		makeFunctionContainer(function), makeFilebeatContainer(function.Spec.VolumeMounts, function.Spec.Pod.Env,
 			function.Name, function.Spec.LogTopic, function.Spec.LogTopicAgent, function.Spec.Pulsar.TLSConfig,
 			function.Spec.Pulsar.AuthConfig, function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.TLSSecret,
-			function.Spec.Pulsar.AuthSecret),
+			function.Spec.Pulsar.AuthSecret, function.Spec.FilebeatImage),
 		makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), makeFunctionLabels(function), function.Spec.Pod,
 		*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang,
 		function.Spec.VolumeMounts, function.Spec.VolumeClaimTemplates, function.Spec.PersistentVolumeClaimRetentionPolicy)

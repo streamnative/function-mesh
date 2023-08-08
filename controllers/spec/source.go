@@ -58,7 +58,7 @@ func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
 	return MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, makeSourceContainer(source),
 		makeFilebeatContainer(source.Spec.VolumeMounts, source.Spec.Pod.Env, source.Name, source.Spec.LogTopic, source.Spec.LogTopicAgent,
 			source.Spec.Pulsar.TLSConfig, source.Spec.Pulsar.AuthConfig, source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.TLSSecret,
-			source.Spec.Pulsar.AuthSecret),
+			source.Spec.Pulsar.AuthSecret, source.Spec.FilebeatImage),
 		makeSourceVolumes(source, source.Spec.Pulsar.AuthConfig), makeSourceLabels(source), source.Spec.Pod, *source.Spec.Pulsar,
 		source.Spec.Java, source.Spec.Python, source.Spec.Golang, source.Spec.VolumeMounts, nil, nil)
 }
