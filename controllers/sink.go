@@ -20,6 +20,8 @@ package controllers
 import (
 	"context"
 
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
 	appsv1 "k8s.io/api/apps/v1"
@@ -229,6 +231,75 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, 
 	return nil
 }
 
+func (r *SinkReconciler) ObserveSinkHPAV2Beta2(ctx context.Context, sink *v1alpha1.Sink) error {
+	if sink.Spec.MaxReplicas == nil {
+		// HPA not enabled, skip further action
+		return nil
+	}
+
+	condition, ok := sink.Status.Conditions[v1alpha1.HPA]
+	if !ok {
+		sink.Status.Conditions[v1alpha1.HPA] = v1alpha1.ResourceCondition{
+			Condition: v1alpha1.HPAReady,
+			Status:    metav1.ConditionFalse,
+			Action:    v1alpha1.Create,
+		}
+		return nil
+	}
+
+	hpa := &autoscalingv2beta2.HorizontalPodAutoscaler{}
+	err := r.Get(ctx, types.NamespacedName{Namespace: sink.Namespace,
+		Name: spec.MakeSinkObjectMeta(sink).Name}, hpa)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			condition.Status = metav1.ConditionFalse
+			condition.Action = v1alpha1.Create
+			sink.Status.Conditions[v1alpha1.HPA] = condition
+			r.Log.Info("sink hpa is not created for sink...",
+				"namespace", sink.Namespace, "name", sink.Name,
+				"hpa name", hpa.Name)
+			return nil
+		}
+		return err
+	}
+
+	if r.checkIfHPAV2Beta2NeedUpdate(hpa, sink) {
+		condition.Status = metav1.ConditionFalse
+		condition.Action = v1alpha1.Update
+		sink.Status.Conditions[v1alpha1.HPA] = condition
+		return nil
+	}
+
+	condition.Action = v1alpha1.NoAction
+	condition.Status = metav1.ConditionTrue
+	sink.Status.Conditions[v1alpha1.HPA] = condition
+	return nil
+}
+
+func (r *SinkReconciler) ApplySinkHPAV2Beta2(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
+	if sink.Spec.MaxReplicas == nil {
+		// HPA not enabled, skip further action
+		return nil
+	}
+	condition := sink.Status.Conditions[v1alpha1.HPA]
+	if condition.Status == metav1.ConditionTrue && !newGeneration {
+		return nil
+	}
+	desiredHPA := ConvertHPAV2ToV2beta2(spec.MakeSinkHPA(sink))
+	desiredHPASpec := desiredHPA.Spec
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredHPA, func() error {
+		// sink hpa mutate logic
+		desiredHPA.Spec = desiredHPASpec
+		return nil
+	}); err != nil {
+		r.Log.Error(err, "error create or update hpa for sink",
+			"namespace", sink.Namespace, "name", sink.Name,
+			"hpa name", desiredHPA.Name)
+		return err
+	}
+	return nil
+}
+
 func (r *SinkReconciler) ObserveSinkVPA(ctx context.Context, sink *v1alpha1.Sink) error {
 	return observeVPA(ctx, r, types.NamespacedName{Namespace: sink.Namespace,
 		Name: spec.MakeSinkObjectMeta(sink).Name}, sink.Spec.Pod.VPA, sink.Status.Conditions)
@@ -249,7 +320,8 @@ func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink) 
 		APIVersion: sink.APIVersion,
 	}
 
-	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, sink.Spec.Pod.VPA, "sink", sink.Namespace, sink.Name)
+	err := applyVPA(ctx, r.Client, r.Log, condition, objectMeta, targetRef, sink.Spec.Pod.VPA, "sink", sink.Namespace,
+		sink.Name)
 	if err != nil {
 		return err
 	}
@@ -334,4 +406,9 @@ func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.Statef
 
 func (r *SinkReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler, sink *v1alpha1.Sink) bool {
 	return !spec.CheckIfHPASpecIsEqual(&hpa.Spec, &spec.MakeSinkHPA(sink).Spec)
+}
+
+func (r *SinkReconciler) checkIfHPAV2Beta2NeedUpdate(hpa *autoscalingv2beta2.HorizontalPodAutoscaler,
+	sink *v1alpha1.Sink) bool {
+	return !spec.CheckIfHPAV2Beta2SpecIsEqual(&hpa.Spec, &ConvertHPAV2ToV2beta2(spec.MakeSinkHPA(sink)).Spec)
 }

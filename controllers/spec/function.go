@@ -64,7 +64,8 @@ func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 			function.Spec.Pulsar.AuthSecret, function.Spec.FilebeatImage),
 		makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), makeFunctionLabels(function), function.Spec.Pod,
 		*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang,
-		function.Spec.VolumeMounts, function.Spec.VolumeClaimTemplates, function.Spec.PersistentVolumeClaimRetentionPolicy)
+		function.Spec.VolumeMounts, function.Spec.VolumeClaimTemplates,
+		function.Spec.PersistentVolumeClaimRetentionPolicy)
 }
 
 func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
@@ -120,7 +121,8 @@ func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
 		function.Spec.Namespace,
 		function.Spec.Name, false)
 	container.Command = command
-	return makeCleanUpJob(objectMeta, container, makeFunctionVolumes(function, authConfig), makeFunctionLabels(function), function.Spec.Pod)
+	return makeCleanUpJob(objectMeta, container, makeFunctionVolumes(function, authConfig),
+		makeFunctionLabels(function), function.Spec.Pod)
 }
 
 func makeFunctionVolumes(function *v1alpha1.Function, authConfig *v1alpha1.AuthConfig) []corev1.Volume {
@@ -152,7 +154,8 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	allowPrivilegeEscalation := false
 	mounts := makeFunctionVolumeMounts(function, function.Spec.Pulsar.AuthConfig)
 	if utils.EnableInitContainers {
-		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(function.Spec.Java, function.Spec.Python, function.Spec.Golang)...)
+		mounts = append(mounts,
+			generateDownloaderVolumeMountsForRuntime(function.Spec.Java, function.Spec.Python, function.Spec.Golang)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -209,7 +212,8 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				spec.Java.JavaOpts, spec.ImageHasPulsarctl, spec.ImageHasWget,
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 				function.Spec.SecretsMap, function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig,
-				function.Spec.Pulsar.AuthConfig, function.Spec.MaxPendingAsyncRequests)
+				function.Spec.Pulsar.AuthConfig, function.Spec.MaxPendingAsyncRequests,
+				generateJavaLogConfigFileName(function.Spec.Java))
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {

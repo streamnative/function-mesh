@@ -18,6 +18,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"net/http"
 	"os"
@@ -65,24 +66,31 @@ func main() {
 	var configFile string
 	var watchedNamespace string
 	var enableInitContainers bool
-	flag.StringVar(&metricsAddr, "metrics-addr", lookupEnvOrString("METRICS_ADDR", ":8080"), "The address the metric endpoint binds to.")
-	flag.StringVar(&leaderElectionID, "leader-election-id", lookupEnvOrString("LEADER_ELECTION_ID", "a3f45fce.functionmesh.io"),
+	flag.StringVar(&metricsAddr, "metrics-addr", lookupEnvOrString("METRICS_ADDR", ":8080"),
+		"The address the metric endpoint binds to.")
+	flag.StringVar(&leaderElectionID, "leader-election-id",
+		lookupEnvOrString("LEADER_ELECTION_ID", "a3f45fce.functionmesh.io"),
 		"the name of the configmap that leader election will use for holding the leader lock.")
-	flag.StringVar(&leaderElectionNamespace, "leader-election-namespace", lookupEnvOrString("LEADER_ELECTION_NAMESPACE", ""),
+	flag.StringVar(&leaderElectionNamespace, "leader-election-namespace",
+		lookupEnvOrString("LEADER_ELECTION_NAMESPACE", ""),
 		"the namespace in which the leader election configmap will be created")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", lookupEnvOrBool("ENABLE_LEADER_ELECTION", false),
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&healthProbeAddr, "health-probe-addr", lookupEnvOrString("HEALTH_PROBE_ADDR", ":8000"), "The address the healthz/readyz endpoint binds to.")
+	flag.StringVar(&healthProbeAddr, "health-probe-addr", lookupEnvOrString("HEALTH_PROBE_ADDR", ":8000"),
+		"The address the healthz/readyz endpoint binds to.")
 	flag.StringVar(&certDir, "cert-dir", lookupEnvOrString("CERT_DIR", ""),
 		"CertDir is the directory that contains the server key and certificate.\n\tif not set, webhook server would look up the server key and certificate in\n\t{TempDir}/k8s-webhook-server/serving-certs. The server key and certificate\n\tmust be named tls.key and tls.crt, respectively.")
 	flag.StringVar(&configFile, "config-file", lookupEnvOrString("CONFIG_FILE", ""),
 		"config file path for controller manager")
 	flag.StringVar(&watchedNamespace, "watched-namespace", lookupEnvOrString("WATCHED_NAMESPACE", ""),
 		"Namespace if specified restricts the manager's cache to watch objects in the desired namespace. Defaults to all namespaces.")
-	flag.BoolVar(&enablePprof, "enable-pprof", lookupEnvOrBool("ENABLE_PPROF", false), "Enable pprof for controller manager.")
-	flag.StringVar(&pprofAddr, "pprof-addr", lookupEnvOrString("PPROF_ADDR", ":8090"), "The address the pprof binds to.")
-	flag.BoolVar(&enableInitContainers, "enable-init-containers", lookupEnvOrBool("ENABLE_INIT_CONTAINERS", false), "Whether to use an init container to download package")
+	flag.BoolVar(&enablePprof, "enable-pprof", lookupEnvOrBool("ENABLE_PPROF", false),
+		"Enable pprof for controller manager.")
+	flag.StringVar(&pprofAddr, "pprof-addr", lookupEnvOrString("PPROF_ADDR", ":8090"),
+		"The address the pprof binds to.")
+	flag.BoolVar(&enableInitContainers, "enable-init-containers", lookupEnvOrBool("ENABLE_INIT_CONTAINERS", false),
+		"Whether to use an init container to download package")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
@@ -144,34 +152,34 @@ func main() {
 		os.Exit(1)
 	}
 	if err = (&controllers.FunctionReconciler{
-		Client:     mgr.GetClient(),
-		Config:     mgr.GetConfig(),
-		RestClient: clientset.CoreV1().RESTClient(),
-		Log:        ctrl.Log.WithName("controllers").WithName("Function"),
-		Scheme:     mgr.GetScheme(),
-		WatchFlags: &watchFlags,
+		Client:            mgr.GetClient(),
+		Config:            mgr.GetConfig(),
+		RestClient:        clientset.CoreV1().RESTClient(),
+		Log:               ctrl.Log.WithName("controllers").WithName("Function"),
+		Scheme:            mgr.GetScheme(),
+		GroupVersionFlags: &watchFlags,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Function")
 		os.Exit(1)
 	}
 	if err = (&controllers.SourceReconciler{
-		Client:     mgr.GetClient(),
-		Config:     mgr.GetConfig(),
-		RestClient: clientset.CoreV1().RESTClient(),
-		Log:        ctrl.Log.WithName("controllers").WithName("Source"),
-		Scheme:     mgr.GetScheme(),
-		WatchFlags: &watchFlags,
+		Client:            mgr.GetClient(),
+		Config:            mgr.GetConfig(),
+		RestClient:        clientset.CoreV1().RESTClient(),
+		Log:               ctrl.Log.WithName("controllers").WithName("Source"),
+		Scheme:            mgr.GetScheme(),
+		GroupVersionFlags: &watchFlags,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Source")
 		os.Exit(1)
 	}
 	if err = (&controllers.SinkReconciler{
-		Client:     mgr.GetClient(),
-		Config:     mgr.GetConfig(),
-		RestClient: clientset.CoreV1().RESTClient(),
-		Log:        ctrl.Log.WithName("controllers").WithName("Sink"),
-		Scheme:     mgr.GetScheme(),
-		WatchFlags: &watchFlags,
+		Client:            mgr.GetClient(),
+		Config:            mgr.GetConfig(),
+		RestClient:        clientset.CoreV1().RESTClient(),
+		Log:               ctrl.Log.WithName("controllers").WithName("Sink"),
+		Scheme:            mgr.GetScheme(),
+		GroupVersionFlags: &watchFlags,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Sink")
 		os.Exit(1)
@@ -192,10 +200,6 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Sink")
 			os.Exit(1)
 		}
-		if err = (&webhook.ConnectorWebhook{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "ConnectorCatalog")
-			os.Exit(1)
-		}
 	}
 	// +kubebuilder:scaffold:builder
 
@@ -208,8 +212,8 @@ func main() {
 
 // checkGroupVersions will only enable the watch crd params if the related group version
 // exists in the cluster
-func checkGroupVersions(log logr.Logger) (utils.WatchFlags, error) {
-	watchFlags := utils.WatchFlags{}
+func checkGroupVersions(log logr.Logger) (utils.GroupVersionFlags, error) {
+	watchFlags := utils.GroupVersionFlags{}
 	client, err := discovery.NewDiscoveryClientForConfig(config.GetConfigOrDie())
 	if err != nil {
 		return watchFlags, err
@@ -225,6 +229,16 @@ func checkGroupVersions(log logr.Logger) (utils.WatchFlags, error) {
 			utils.GroupVersionsVPA)
 		watchFlags.WatchVPACRDs = true
 	}
+
+	if groupVersions.HasGroupVersions(utils.GroupVersionAutoscalingV2) {
+		watchFlags.APIAutoscalingGroupVersion = utils.GroupVersionV2
+	} else if groupVersions.HasGroupVersions(utils.GroupVersionAutoscalingV2Beta2) {
+		watchFlags.APIAutoscalingGroupVersion = utils.GroupVersionV2Beta2
+	} else {
+		return watchFlags, errors.New("autoscaling/v2beta2 or autoscaling/v2beta1 api group versions not found")
+	}
+	log.Info("API group versions exists ", "autoscaling group versions",
+		watchFlags.APIAutoscalingGroupVersion)
 	return watchFlags, nil
 }
 

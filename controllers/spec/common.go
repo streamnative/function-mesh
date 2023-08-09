@@ -21,6 +21,8 @@ import (
 	"bytes"
 	"context"
 
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -335,11 +337,11 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 	javaOpts []string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	maxPendingAsyncRequests *int32) []string {
+	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
-			authConfig, maxPendingAsyncRequests), " ")
+			authConfig, maxPendingAsyncRequests, logConfigFileName), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget,
@@ -758,6 +760,27 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime, agent v1alpha1.
 	return ""
 }
 
+func generateJavaLogConfigFileName(runtime *v1alpha1.JavaRuntime) string {
+	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
+		return DefaultJavaLogConfigPath
+	}
+	configFileType := v1alpha1.XML
+	if runtime != nil && runtime.Log != nil && runtime.Log.JavaLog4JConfigFileType != nil {
+		configFileType = *runtime.Log.JavaLog4JConfigFileType
+	}
+	switch configFileType {
+	case v1alpha1.XML:
+		{
+			return DefaultJavaLogConfigPath
+		}
+	case v1alpha1.YAML:
+		{
+			return DefaultJavaLogConfigPathYAML
+		}
+	}
+	return DefaultJavaLogConfigPath
+}
+
 func renderJavaInstanceLog4jYAMLTemplate(runtime *v1alpha1.JavaRuntime, agent v1alpha1.LogTopicAgent) (string, error) {
 	tmpl := template.Must(template.New("log4j-yaml-template").Parse(javaLog4jYAMLTemplate))
 	var tpl bytes.Buffer
@@ -1038,8 +1061,13 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	maxPendingAsyncRequests *int32) []string {
+	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
+	javaLogConfigPath := logConfigFileName
+	if javaLogConfigPath == "" {
+		javaLogConfigPath = DefaultJavaLogConfigPath
+	}
+
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
 	}
@@ -1058,7 +1086,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"-cp",
 		classPath,
 		fmt.Sprintf("-D%s=%s", FunctionsInstanceClasspath, "/pulsar/lib/*"),
-		fmt.Sprintf("-Dlog4j.configurationFile=%s", DefaultJavaLogConfigPath),
+		fmt.Sprintf("-Dlog4j.configurationFile=%s", javaLogConfigPath),
 		"-Dpulsar.function.log.dir=logs/functions",
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		setLogLevel,
@@ -1314,9 +1342,9 @@ func generateRetryDetails(maxMessageRetry int32, deadLetterTopic string) *proto.
 
 func generateResource(resources corev1.ResourceList) *proto.Resources {
 	return &proto.Resources{
-		Cpu:  float64(resources.Cpu().Value()),
-		Ram:  resources.Memory().Value(),
-		Disk: resources.Storage().Value(),
+		Cpu:  resources.Cpu().AsApproximateFloat64(),
+		Ram:  int64(resources.Memory().AsApproximateFloat64()),
+		Disk: int64(resources.Storage().AsApproximateFloat64()),
 	}
 }
 
@@ -1905,6 +1933,78 @@ func CheckIfStatefulSetSpecIsEqual(spec *appsv1.StatefulSetSpec, desiredSpec *ap
 
 func CheckIfHPASpecIsEqual(spec *autov2.HorizontalPodAutoscalerSpec,
 	desiredSpec *autov2.HorizontalPodAutoscalerSpec) bool {
+	if spec.MaxReplicas != desiredSpec.MaxReplicas || *spec.MinReplicas != *desiredSpec.MinReplicas {
+		return false
+	}
+	if !reflect.DeepEqual(spec.Metrics, desiredSpec.Metrics) {
+		return false
+	}
+	if objectXOROperator(spec.Behavior, desiredSpec.Behavior) {
+		return false
+	}
+	if desiredSpec.Behavior != nil {
+		if objectXOROperator(spec.Behavior.ScaleUp, desiredSpec.Behavior.ScaleUp) ||
+			objectXOROperator(spec.Behavior.ScaleDown, desiredSpec.Behavior.ScaleDown) {
+			return false
+		}
+		if desiredSpec.Behavior.ScaleUp != nil {
+			if objectXOROperator(spec.Behavior.ScaleUp.StabilizationWindowSeconds,
+				desiredSpec.Behavior.ScaleUp.StabilizationWindowSeconds) ||
+				objectXOROperator(spec.Behavior.ScaleUp.SelectPolicy, desiredSpec.Behavior.ScaleUp.SelectPolicy) ||
+				objectXOROperator(spec.Behavior.ScaleUp.Policies, desiredSpec.Behavior.ScaleUp.Policies) {
+				return false
+			}
+			if desiredSpec.Behavior.ScaleUp.StabilizationWindowSeconds != nil && *desiredSpec.Behavior.ScaleUp.StabilizationWindowSeconds != *spec.Behavior.ScaleUp.StabilizationWindowSeconds {
+				return false
+			}
+			if desiredSpec.Behavior.ScaleUp.SelectPolicy != nil && *desiredSpec.Behavior.ScaleUp.SelectPolicy != *spec.Behavior.ScaleUp.SelectPolicy {
+				return false
+			}
+			// sort policies
+			desiredPolicies := desiredSpec.Behavior.ScaleUp.Policies
+			specPolicies := spec.Behavior.ScaleUp.Policies
+			sort.Slice(desiredPolicies, func(i, j int) bool {
+				return desiredPolicies[i].Type < desiredPolicies[j].Type
+			})
+			sort.Slice(specPolicies, func(i, j int) bool {
+				return specPolicies[i].Type < specPolicies[j].Type
+			})
+			if !reflect.DeepEqual(desiredPolicies, specPolicies) {
+				return false
+			}
+		}
+		if desiredSpec.Behavior.ScaleDown != nil {
+			if objectXOROperator(spec.Behavior.ScaleDown.StabilizationWindowSeconds,
+				desiredSpec.Behavior.ScaleDown.StabilizationWindowSeconds) ||
+				objectXOROperator(spec.Behavior.ScaleDown.SelectPolicy, desiredSpec.Behavior.ScaleDown.SelectPolicy) ||
+				objectXOROperator(spec.Behavior.ScaleDown.Policies, desiredSpec.Behavior.ScaleDown.Policies) {
+				return false
+			}
+			if desiredSpec.Behavior.ScaleDown.StabilizationWindowSeconds != nil && *desiredSpec.Behavior.ScaleDown.StabilizationWindowSeconds != *spec.Behavior.ScaleDown.StabilizationWindowSeconds {
+				return false
+			}
+			if desiredSpec.Behavior.ScaleDown.SelectPolicy != nil && *desiredSpec.Behavior.ScaleDown.SelectPolicy != *spec.Behavior.ScaleDown.SelectPolicy {
+				return false
+			}
+			// sort policies
+			desiredPolicies := desiredSpec.Behavior.ScaleDown.Policies
+			specPolicies := spec.Behavior.ScaleDown.Policies
+			sort.Slice(desiredPolicies, func(i, j int) bool {
+				return desiredPolicies[i].Type < desiredPolicies[j].Type
+			})
+			sort.Slice(specPolicies, func(i, j int) bool {
+				return specPolicies[i].Type < specPolicies[j].Type
+			})
+			if !reflect.DeepEqual(desiredPolicies, specPolicies) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func CheckIfHPAV2Beta2SpecIsEqual(spec *autoscalingv2beta2.HorizontalPodAutoscalerSpec,
+	desiredSpec *autoscalingv2beta2.HorizontalPodAutoscalerSpec) bool {
 	if spec.MaxReplicas != desiredSpec.MaxReplicas || *spec.MinReplicas != *desiredSpec.MinReplicas {
 		return false
 	}

@@ -29,7 +29,6 @@ import (
 
 type ComputeV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	ConnectorCatalogsGetter
 	FunctionsGetter
 	FunctionMeshesGetter
 	SinksGetter
@@ -39,10 +38,6 @@ type ComputeV1alpha1Interface interface {
 // ComputeV1alpha1Client is used to interact with features provided by the compute group.
 type ComputeV1alpha1Client struct {
 	restClient rest.Interface
-}
-
-func (c *ComputeV1alpha1Client) ConnectorCatalogs(namespace string) ConnectorCatalogInterface {
-	return newConnectorCatalogs(c, namespace)
 }
 
 func (c *ComputeV1alpha1Client) Functions(namespace string) FunctionInterface {

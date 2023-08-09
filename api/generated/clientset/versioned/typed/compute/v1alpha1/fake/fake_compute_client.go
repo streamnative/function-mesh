@@ -29,10 +29,6 @@ type FakeComputeV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeComputeV1alpha1) ConnectorCatalogs(namespace string) v1alpha1.ConnectorCatalogInterface {
-	return &FakeConnectorCatalogs{c, namespace}
-}
-
 func (c *FakeComputeV1alpha1) Functions(namespace string) v1alpha1.FunctionInterface {
 	return &FakeFunctions{c, namespace}
 }
