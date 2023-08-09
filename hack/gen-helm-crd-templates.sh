@@ -142,13 +142,6 @@ function crd::main() {
     "$KUSTOMIZE" build config/crd | "$YQ" eval '. | select(.metadata.name == "sources.compute.functionmesh.io")' > "$source_file"
     crd::generate_template "$source_file" "$target_file" true
 
-    # crd-connectorcatalogs
-    file="crd-compute.functionmesh.io-connectorcatalogs.yaml"
-    target_file="charts/function-mesh-operator/charts/admission-webhook/templates/$file"
-     source_file="$tmp/$file"
-    "$KUSTOMIZE" build config/crd | "$YQ" eval '. | select(.metadata.name == "connectorcatalogs.compute.functionmesh.io")' > "$source_file"
-    crd::generate_template "$source_file" "$target_file" true
-
     # crd-functionmeshes
     file="crd-compute.functionmesh.io-functionmeshes.yaml"
     target_file="charts/function-mesh-operator/charts/admission-webhook/templates/$file"

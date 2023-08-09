@@ -30,10 +30,9 @@ import (
 )
 
 const (
-	functionKind         = "Function"
-	sinkKind             = "Sink"
-	sourceKind           = "Source"
-	connectorCatalogKind = "ConnectorCatalog"
+	functionKind = "Function"
+	sinkKind     = "Sink"
+	sourceKind   = "Source"
 
 	maxNameLength = 43
 

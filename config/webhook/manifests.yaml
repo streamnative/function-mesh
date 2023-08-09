@@ -6,26 +6,6 @@ metadata:
   name: mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /mutate-compute-functionmesh-io-v1alpha1-connectorcatalog
-  failurePolicy: Fail
-  name: mconnectorcatalog.kb.io
-  rules:
-  - apiGroups:
-    - compute.functionmesh.io
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - connectorcatalogs
-  sideEffects: None
-- admissionReviewVersions:
   - v1beta1
   - v1
   clientConfig:
@@ -95,26 +75,6 @@ metadata:
   creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-compute-functionmesh-io-v1alpha1-connectorcatalog
-  failurePolicy: Fail
-  name: vconnectorcatalog.kb.io
-  rules:
-  - apiGroups:
-    - compute.functionmesh.io
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - connectorcatalogs
-  sideEffects: None
 - admissionReviewVersions:
   - v1beta1
   - v1

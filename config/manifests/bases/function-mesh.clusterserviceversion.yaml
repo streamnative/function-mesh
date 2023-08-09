@@ -37,11 +37,6 @@ spec:
       kind: Source
       name: sources.compute.functionmesh.io
       version: v1alpha1
-    - description: ConnectorCatalog is the Schema for the connectorcatalogs API
-      displayName: ConnectorCatalog
-      kind: ConnectorCatalog
-      name: connectorcatalogs.compute.functionmesh.io
-      version: v1alpha1
   description: |
     [Function Mesh](https://functionmesh.io/) is a serverless framework purpose-built for stream processing applications. It brings powerful event-streaming capabilities to your applications by orchestrating multiple [Pulsar Functions](http://pulsar.apache.org/docs/en/next/functions-overview/) and [Pulsar IO connectors](http://pulsar.apache.org/docs/en/next/io-overview/) for complex stream processing jobs on Kubernetes.
     Prerequisites:
