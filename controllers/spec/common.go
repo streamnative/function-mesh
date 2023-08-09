@@ -326,11 +326,11 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 	javaOpts []string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	maxPendingAsyncRequests *int32) []string {
+	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			memory, extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
-			authConfig, maxPendingAsyncRequests), " ")
+			authConfig, maxPendingAsyncRequests, logConfigFileName), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget,
@@ -749,6 +749,27 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 	return ""
 }
 
+func generateJavaLogConfigFileName(runtime *v1alpha1.JavaRuntime) string {
+	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
+		return DefaultJavaLogConfigPath
+	}
+	configFileType := v1alpha1.XML
+	if runtime != nil && runtime.Log != nil && runtime.Log.JavaLog4JConfigFileType != nil {
+		configFileType = *runtime.Log.JavaLog4JConfigFileType
+	}
+	switch configFileType {
+	case v1alpha1.XML:
+		{
+			return DefaultJavaLogConfigPath
+		}
+	case v1alpha1.YAML:
+		{
+			return DefaultJavaLogConfigPathYAML
+		}
+	}
+	return DefaultJavaLogConfigPath
+}
+
 func renderJavaInstanceLog4jYAMLTemplate(runtime *v1alpha1.JavaRuntime) (string, error) {
 	tmpl := template.Must(template.New("log4j-yaml-template").Parse(javaLog4jYAMLTemplate))
 	var tpl bytes.Buffer
@@ -1012,8 +1033,13 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	maxPendingAsyncRequests *int32) []string {
+	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
 	classPath := "/pulsar/instances/java-instance.jar"
+	javaLogConfigPath := logConfigFileName
+	if javaLogConfigPath == "" {
+		javaLogConfigPath = DefaultJavaLogConfigPath
+	}
+
 	if extraDependenciesDir != "" {
 		classPath = fmt.Sprintf("%s:%s/*", classPath, extraDependenciesDir)
 	}
@@ -1032,7 +1058,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"-cp",
 		classPath,
 		fmt.Sprintf("-D%s=%s", FunctionsInstanceClasspath, "/pulsar/lib/*"),
-		fmt.Sprintf("-Dlog4j.configurationFile=%s", DefaultJavaLogConfigPath),
+		fmt.Sprintf("-Dlog4j.configurationFile=%s", javaLogConfigPath),
 		"-Dpulsar.function.log.dir=logs/functions",
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		setLogLevel,
