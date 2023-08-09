@@ -1288,9 +1288,9 @@ func generateRetryDetails(maxMessageRetry int32, deadLetterTopic string) *proto.
 
 func generateResource(resources corev1.ResourceList) *proto.Resources {
 	return &proto.Resources{
-		Cpu:  float64(resources.Cpu().Value()),
-		Ram:  resources.Memory().Value(),
-		Disk: resources.Storage().Value(),
+		Cpu:  resources.Cpu().AsApproximateFloat64(),
+		Ram:  int64(resources.Memory().AsApproximateFloat64()),
+		Disk: int64(resources.Storage().AsApproximateFloat64()),
 	}
 }
 
