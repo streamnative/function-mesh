@@ -18,6 +18,8 @@
 package spec
 
 import (
+	"strings"
+
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
@@ -106,7 +108,13 @@ func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
 			inputTopics = append(inputTopics, topic)
 		}
 	}
-	command := getCleanUpCommand(function.Spec.ImageHasPulsarctl,
+	hasPulsarctl := function.Spec.ImageHasPulsarctl
+	if strings.Contains(function.Spec.Image, JavaRunnerImageHasPulsarctl) ||
+		strings.Contains(function.Spec.Image, PythonRunnerImageHasPulsarctl) ||
+		strings.Contains(function.Spec.Image, GolangRunnerImageHasPulsarctl) {
+		hasPulsarctl = true
+	}
+	command := getCleanUpCommand(hasPulsarctl,
 		function.Spec.Pulsar.AuthSecret != "",
 		function.Spec.Pulsar.TLSSecret != "",
 		function.Spec.Pulsar.TLSConfig,
@@ -195,8 +203,14 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	spec := function.Spec
 
+	hasPulsarctl := function.Spec.ImageHasPulsarctl
+	hasWget := function.Spec.ImageHasWget
 	if spec.Java != nil {
 		if spec.Java.Jar != "" {
+			if strings.Contains(function.Spec.Image, JavaRunnerImageHasPulsarctl) {
+				hasPulsarctl = true
+				hasWget = true
+			}
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 				spec.Name, spec.ClusterName,
 				generateJavaLogConfigCommand(function.Spec.Java),
@@ -204,7 +218,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generateFunctionDetailsInJSON(function),
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir,
 				string(function.UID),
-				spec.Java.JavaOpts, spec.ImageHasPulsarctl, spec.ImageHasWget,
+				spec.Java.JavaOpts, hasPulsarctl, hasWget,
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 				function.Spec.SecretsMap, function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig,
 				function.Spec.Pulsar.AuthConfig, function.Spec.MaxPendingAsyncRequests,
@@ -212,11 +226,15 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
+			if strings.Contains(function.Spec.Image, PythonRunnerImageHasPulsarctl) {
+				hasPulsarctl = true
+				hasWget = true
+			}
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
 				spec.Name, spec.ClusterName,
 				generatePythonLogConfigCommand(function.Name, function.Spec.Python),
-				generateFunctionDetailsInJSON(function), string(function.UID), spec.ImageHasPulsarctl,
-				spec.ImageHasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
+				generateFunctionDetailsInJSON(function), string(function.UID), hasPulsarctl, hasWget,
+				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
 				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
 		}
 	} else if spec.Golang != nil {

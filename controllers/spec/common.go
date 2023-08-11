@@ -65,6 +65,10 @@ const (
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 	WorkDir                    = "/pulsar/"
 
+	JavaRunnerImageHasPulsarctl   = "pulsar-functions-pulsarctl-java-runner"
+	PythonRunnerImageHasPulsarctl = "pulsar-functions-pulsarctl-python-runner"
+	GolangRunnerImageHasPulsarctl = "pulsar-functions-pulsarctl-go-runner"
+
 	PulsarctlExecutableFile = "/usr/local/bin/pulsarctl"
 	DownloaderName          = "downloader"
 	DownloaderVolume        = "downloader-volume"
@@ -362,8 +366,14 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
+		hasPulsarctl := function.Spec.ImageHasPulsarctl
+		hasWget := function.Spec.ImageHasWget
+		if strings.Contains(function.Spec.Image, GolangRunnerImageHasPulsarctl) {
+			hasPulsarctl = true
+			hasWget = true
+		}
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, goExecFilePath,
-			function.Spec.ImageHasPulsarctl, function.Spec.ImageHasWget, function.Spec.Pulsar.AuthSecret != "",
+			hasPulsarctl, hasWget, function.Spec.Pulsar.AuthSecret != "",
 			function.Spec.Pulsar.TLSSecret != "", function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}

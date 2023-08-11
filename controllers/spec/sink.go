@@ -18,6 +18,8 @@
 package spec
 
 import (
+	"strings"
+
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
@@ -153,7 +155,11 @@ func MakeSinkCleanUpJob(sink *v1alpha1.Sink) *v1.Job {
 			inputTopics = append(inputTopics, topic)
 		}
 	}
-	command := getCleanUpCommand(sink.Spec.ImageHasPulsarctl,
+	imageHasPulsarctl := sink.Spec.ImageHasPulsarctl
+	if strings.Contains(sink.Spec.Image, JavaRunnerImageHasPulsarctl) {
+		imageHasPulsarctl = true
+	}
+	command := getCleanUpCommand(imageHasPulsarctl,
 		sink.Spec.Pulsar.AuthSecret != "",
 		sink.Spec.Pulsar.TLSSecret != "",
 		sink.Spec.Pulsar.TLSConfig,
@@ -190,13 +196,19 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) 
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
+	hasPulsarctl := sink.Spec.ImageHasPulsarctl
+	hasWget := sink.Spec.ImageHasWget
+	if strings.Contains(spec.Image, JavaRunnerImageHasPulsarctl) {
+		hasPulsarctl = true
+		hasWget = true
+	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
 		generateJavaLogConfigCommand(sink.Spec.Java),
 		parseJavaLogLevel(sink.Spec.Java),
 		generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),
-		spec.Java.JavaOpts, spec.ImageHasPulsarctl, spec.ImageHasPulsarctl, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
+		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
 		generateJavaLogConfigFileName(sink.Spec.Java))
 }

@@ -5,7 +5,6 @@ metadata:
   namespace: default
 spec:
   image: streamnative/pulsar-functions-pulsarctl-java-runner:2.9.2.23
-  imageHasPulsarctl: true
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   cleanupSubscription: true
   subscriptionName: java-download-subscription

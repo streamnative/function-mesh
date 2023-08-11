@@ -5,7 +5,6 @@ metadata:
   namespace: default
 spec:
   image: streamnative/pulsar-functions-pulsarctl-go-runner:2.9.2.23
-  imageHasPulsarctl: true
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1
