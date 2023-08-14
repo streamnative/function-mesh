@@ -110,6 +110,7 @@ const (
 	DefaultRunnerGroupID int64 = 10001
 
 	OAuth2AuthenticationPlugin = "org.apache.pulsar.client.impl.auth.oauth2.AuthenticationOAuth2"
+	TokenAuthenticationPlugin  = "org.apache.pulsar.client.impl.auth.AuthenticationToken"
 
 	JavaLogConfigDirectory       = "/pulsar/conf/java-log/"
 	JavaLogConfigFileXML         = "java_instance_log4j.xml"
@@ -119,6 +120,9 @@ const (
 	PythonLogConifgDirectory     = "/pulsar/conf/python-log/"
 	PythonLogConfigFile          = "python_instance_logging.ini"
 	DefaultPythonLogConfigPath   = PythonLogConifgDirectory + PythonLogConfigFile
+
+	DefaultFilebeatConfig = "/usr/share/filebeat/config/filebeat.yaml"
+	DefaultFilebeatImage  = "streamnative/filebeat:v0.6.0-rc7"
 
 	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
 )
@@ -131,6 +135,9 @@ var javaLog4jYAMLTemplate string
 
 //go:embed template/python-runtime-log-config.ini.tmpl
 var pythonLoggingINITemplate string
+
+//go:embed template/filebeat-config.yaml.tmpl
+var filebeatYAMLTemplate string
 
 var GRPCPort = corev1.ContainerPort{
 	Name:          "tcp-grpc",
@@ -196,7 +203,7 @@ func MakeHeadlessServiceName(serviceName string) string {
 }
 
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderImage string,
-	container *corev1.Container,
+	container *corev1.Container, filebeatContainer *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, pulsar v1alpha1.PulsarMessaging,
 	javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
 	goRuntime *v1alpha1.GoRuntime, definedVolumeMounts []corev1.VolumeMount,
@@ -263,13 +270,13 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: *objectMeta,
-		Spec: *MakeStatefulSetSpec(replicas, container, podVolumes, labels, policy,
+		Spec: *MakeStatefulSetSpec(replicas, container, filebeatContainer, podVolumes, labels, policy,
 			MakeHeadlessServiceName(objectMeta.Name), downloaderContainer, volumeClaimTemplates,
 			persistentVolumeClaimRetentionPolicy),
 	}
 }
 
-func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
+func MakeStatefulSetSpec(replicas *int32, container *corev1.Container, filebeatContainer *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy,
 	serviceName string, downloaderContainer *corev1.Container, volumeClaimTemplates []corev1.PersistentVolumeClaim,
 	persistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy) *appsv1.StatefulSetSpec {
@@ -278,7 +285,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: labels,
 		},
-		Template:            *makePodTemplate(container, volumes, labels, policy, downloaderContainer),
+		Template:            *makePodTemplate(container, filebeatContainer, volumes, labels, policy, downloaderContainer),
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
@@ -294,7 +301,7 @@ func MakeStatefulSetSpec(replicas *int32, container *corev1.Container,
 	return spec
 }
 
-func makePodTemplate(container *corev1.Container, volumes []corev1.Volume,
+func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy,
 	downloaderContainer *corev1.Container) *corev1.PodTemplateSpec {
 	podSecurityContext := getDefaultRunnerPodSecurityContext(DefaultRunnerUserID, DefaultRunnerGroupID,
@@ -306,6 +313,10 @@ func makePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 	if downloaderContainer != nil {
 		initContainers = append(initContainers, *downloaderContainer)
 	}
+	containers := append(policy.Sidecars, *container)
+	if filebeatContainer != nil {
+		containers = append(containers, *filebeatContainer)
+	}
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      mergeLabels(labels, Configs.ResourceLabels, policy.Labels),
@@ -313,7 +324,7 @@ func makePodTemplate(container *corev1.Container, volumes []corev1.Volume,
 		},
 		Spec: corev1.PodSpec{
 			InitContainers:                initContainers,
-			Containers:                    append(policy.Sidecars, *container),
+			Containers:                    containers,
 			TerminationGracePeriodSeconds: &policy.TerminationGracePeriodSeconds,
 			Volumes:                       volumes,
 			NodeSelector:                  policy.NodeSelector,
@@ -405,7 +416,7 @@ func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
 
 func makeCleanUpJob(objectMeta *metav1.ObjectMeta, container *corev1.Container, volumes []corev1.Volume,
 	labels map[string]string, policy v1alpha1.PodPolicy) *v1.Job {
-	temp := makePodTemplate(container, volumes, labels, policy, nil)
+	temp := makePodTemplate(container, nil, volumes, labels, policy, nil)
 	temp.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 	var ttlSecond int32
 	return &v1.Job{
@@ -724,7 +735,7 @@ func getDownloadCommand(downloadPath, componentPackage string, hasPulsarctl, has
 	return args
 }
 
-func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
+func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime, agent v1alpha1.LogTopicAgent) string {
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return ""
 	}
@@ -735,7 +746,7 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 	switch configFileType {
 	case v1alpha1.XML:
 		{
-			if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime); err == nil {
+			if log4jXML, err := renderJavaInstanceLog4jXMLTemplate(runtime, agent); err == nil {
 				generateConfigFileCommand := []string{
 					"mkdir", "-p", JavaLogConfigDirectory, "&&",
 					"echo", fmt.Sprintf("\"%s\"", log4jXML), ">", DefaultJavaLogConfigPath,
@@ -746,7 +757,7 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime) string {
 		}
 	case v1alpha1.YAML:
 		{
-			if log4jYAML, err := renderJavaInstanceLog4jYAMLTemplate(runtime); err == nil {
+			if log4jYAML, err := renderJavaInstanceLog4jYAMLTemplate(runtime, agent); err == nil {
 				generateConfigFileCommand := []string{
 					"mkdir", "-p", JavaLogConfigDirectory, "&&",
 					"echo", fmt.Sprintf("\"%s\"", log4jYAML), ">", DefaultJavaLogConfigPathYAML,
@@ -780,7 +791,7 @@ func generateJavaLogConfigFileName(runtime *v1alpha1.JavaRuntime) string {
 	return DefaultJavaLogConfigPath
 }
 
-func renderJavaInstanceLog4jYAMLTemplate(runtime *v1alpha1.JavaRuntime) (string, error) {
+func renderJavaInstanceLog4jYAMLTemplate(runtime *v1alpha1.JavaRuntime, agent v1alpha1.LogTopicAgent) (string, error) {
 	tmpl := template.Must(template.New("log4j-yaml-template").Parse(javaLog4jYAMLTemplate))
 	var tpl bytes.Buffer
 	type logConfig struct {
@@ -800,6 +811,9 @@ func renderJavaInstanceLog4jYAMLTemplate(runtime *v1alpha1.JavaRuntime) (string,
 	if runtime.Log != nil && runtime.Log.RotatePolicy != nil {
 		lc.RollingEnabled = true
 		lc.Policy = string(*runtime.Log.RotatePolicy)
+	} else if agent == v1alpha1.SIDECAR {
+		lc.RollingEnabled = true
+		lc.Policy = string(v1alpha1.SizedPolicyWith10MB)
 	}
 	if runtime.Log != nil && runtime.Log.Format != nil {
 		lc.Format = string(*runtime.Log.Format)
@@ -811,7 +825,7 @@ func renderJavaInstanceLog4jYAMLTemplate(runtime *v1alpha1.JavaRuntime) (string,
 	return tpl.String(), nil
 }
 
-func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, error) {
+func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime, agent v1alpha1.LogTopicAgent) (string, error) {
 	tmpl := template.Must(template.New("spec").Parse(javaLog4jXMLTemplate))
 	var tpl bytes.Buffer
 	type logConfig struct {
@@ -856,6 +870,11 @@ func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, 
                     <size>100MB</size>
                 </SizeBasedTriggeringPolicy>`)
 		}
+	} else if agent == v1alpha1.SIDECAR {
+		lc.RollingEnabled = true
+		lc.Policy = template.HTML(`<SizeBasedTriggeringPolicy>
+                    <size>10MB</size>
+                </SizeBasedTriggeringPolicy>`)
 	}
 	if runtime.Log != nil && runtime.Log.Format != nil {
 		lc.Format = string(*runtime.Log.Format)
@@ -867,12 +886,12 @@ func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime) (string, 
 	return tpl.String(), nil
 }
 
-func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime) string {
+func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime, agent v1alpha1.LogTopicAgent) string {
 	commands := "sed -i.bak 's/^  Log.setLevel/#&/' /pulsar/instances/python-instance/log.py && "
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return commands
 	}
-	if loggingINI, err := renderPythonInstanceLoggingINITemplate(name, runtime); err == nil {
+	if loggingINI, err := renderPythonInstanceLoggingINITemplate(name, runtime, agent); err == nil {
 		generateConfigFileCommand := []string{
 			"mkdir", "-p", PythonLogConifgDirectory, "logs/functions", "&&",
 			"echo", fmt.Sprintf("\"%s\"", loggingINI), ">", DefaultPythonLogConfigPath,
@@ -888,7 +907,7 @@ func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime
 	return ""
 }
 
-func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.PythonRuntime) (string, error) {
+func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.PythonRuntime, agent v1alpha1.LogTopicAgent) (string, error) {
 	tmpl := template.Must(template.New("spec").Parse(pythonLoggingINITemplate))
 	var tpl bytes.Buffer
 	type logConfig struct {
@@ -912,7 +931,7 @@ func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.Pytho
 	}
 	if runtime.Log != nil && runtime.Log.RotatePolicy != nil {
 		lc.RollingEnabled = true
-		logFile := fmt.Sprintf("logs/functions/%s-${%s}", name, EnvShardID)
+		logFile := fmt.Sprintf("logs/functions/%s-${%s}.log", name, EnvShardID)
 		switch *runtime.Log.RotatePolicy {
 		case v1alpha1.TimedPolicyWithDaily:
 			lc.Handlers = "stream_handler,timed_rotating_file_handler"
@@ -957,6 +976,15 @@ class=handlers.RotatingFileHandler
 level=%s
 formatter=formatter`, logFile, lc.Level))
 		}
+	} else if agent == v1alpha1.SIDECAR { // sidecar mode needs the rotated log file
+		lc.RollingEnabled = true
+		logFile := fmt.Sprintf("logs/functions/%s-${%s}.log", name, EnvShardID)
+		lc.Handlers = "stream_handler,rotating_file_handler"
+		lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(\"%s\", 'a', 10485760, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
 	}
 	if err := tmpl.Execute(&tpl, lc); err != nil {
 		log.Error(err, "failed to render python instance logging template")
@@ -1115,7 +1143,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 		"--logging_directory",
 		"logs/functions",
 		"--logging_file",
-		fmt.Sprintf("%s-${%s}", name, EnvShardID),
+		fmt.Sprintf("%s-${%s}.log", name, EnvShardID),
 		"--logging_config_file",
 		DefaultPythonLogConfigPath,
 		"--install_usercode_dependencies",
@@ -1457,6 +1485,15 @@ func generateContainerVolumesFromLogConfigs(confs map[int32]*v1alpha1.RuntimeLog
 	return volumes
 }
 
+func generateFilebeatVolumes() []corev1.Volume {
+	return []corev1.Volume{{
+		Name: "filebeat-logs",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}}
+}
+
 func generateContainerVolumesFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	if len(confs) > 0 {
@@ -1658,9 +1695,15 @@ func generateContainerVolumeMountsFromProducerConf(conf *v1alpha1.ProducerConfig
 
 func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerConf *v1alpha1.ProducerConfig,
 	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	logConfigs map[int32]*v1alpha1.RuntimeLogConfig) []corev1.VolumeMount {
+	logConfigs map[int32]*v1alpha1.RuntimeLogConfig, agent v1alpha1.LogTopicAgent) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 	mounts = append(mounts, volumeMounts...)
+	if agent == v1alpha1.SIDECAR {
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      "filebeat-logs",
+			MountPath: "/pulsar/logs/functions",
+		})
+	}
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
 		mounts = append(mounts, generateVolumeMountFromTLSConfig(tlsConfig))
 	}
@@ -1677,9 +1720,13 @@ func generateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 
 func generatePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.ProducerConfig,
 	consumerConfs map[string]v1alpha1.ConsumerConfig, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	logConfigs map[int32]*v1alpha1.RuntimeLogConfig) []corev1.Volume {
+	logConfigs map[int32]*v1alpha1.RuntimeLogConfig,
+	agent v1alpha1.LogTopicAgent) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	volumes = append(volumes, podVolumes...)
+	if agent == v1alpha1.SIDECAR {
+		volumes = append(volumes, generateFilebeatVolumes()...)
+	}
 	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
 		volumes = append(volumes, generateVolumeFromTLSConfig(tlsConfig))
 	}
@@ -2055,4 +2102,111 @@ func getSubscriptionNameOrDefault(subscription, tenant, namespace, name string) 
 		return fmt.Sprintf("%s/%s/%s", tenant, namespace, name)
 	}
 	return subscription
+}
+
+func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.EnvVar, name string, logTopic string,
+	agent v1alpha1.LogTopicAgent, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
+	pulsarConfig string, authSecret string, tlsSecret string, image string) *corev1.Container {
+	if agent != v1alpha1.SIDECAR {
+		return nil
+	}
+	filebeatImage := image
+	if filebeatImage == "" {
+		filebeatImage = DefaultFilebeatImage
+	}
+	imagePullPolicy := corev1.PullIfNotPresent
+	allowPrivilegeEscalation := false
+	mounts := generateContainerVolumeMounts(volumeMounts, nil, nil, tlsConfig, authConfig, nil, agent)
+
+	var uid int64 = 1000
+
+	envs := append(envVar, corev1.EnvVar{
+		Name:  "logTopic",
+		Value: logTopic,
+	}, corev1.EnvVar{
+		Name:  "logName",
+		Value: name,
+	})
+
+	if authConfig != nil {
+		if authConfig.GenericAuth != nil {
+			// it only supports jwt token authentication and oauth2 authentication
+			if authConfig.GenericAuth.ClientAuthenticationPlugin == TokenAuthenticationPlugin {
+				envs = append(envs, corev1.EnvVar{
+					Name:  "clientAuthenticationParameters",
+					Value: authConfig.GenericAuth.ClientAuthenticationParameters,
+				})
+			} else if authConfig.GenericAuth.ClientAuthenticationPlugin == OAuth2AuthenticationPlugin {
+				// we should unmarshal auth params to an OAuth2 object to get issuerUrl, audience, privateKey and scope
+				var oauth2Params map[string]string
+				err := json.Unmarshal([]byte(authConfig.GenericAuth.ClientAuthenticationParameters), &oauth2Params)
+				if err != nil {
+					log.Error(err, "failed to unmarshal auth params to an OAuth2 object")
+					return nil
+				}
+				envs = append(envs, corev1.EnvVar{
+					Name:  "oauth2Enabled",
+					Value: "true",
+				}, corev1.EnvVar{
+					Name:  "oauth2IssuerUrl",
+					Value: oauth2Params["issuerUrl"],
+				}, corev1.EnvVar{
+					Name:  "oauth2Audience",
+					Value: oauth2Params["audience"],
+				}, corev1.EnvVar{
+					Name:  "oauth2PrivateKey",
+					Value: oauth2Params["privateKey"],
+				})
+				if oauth2Params["scope"] != "" {
+					envs = append(envs, corev1.EnvVar{
+						Name:  "oauth2Scope",
+						Value: oauth2Params["scope"],
+					})
+				}
+			}
+		} else if authConfig.OAuth2Config != nil {
+			envs = append(envs, corev1.EnvVar{
+				Name:  "oauth2Enabled",
+				Value: "true",
+			}, corev1.EnvVar{
+				Name:  "oauth2IssuerUrl",
+				Value: authConfig.OAuth2Config.IssuerURL,
+			}, corev1.EnvVar{
+				Name:  "oauth2Audience",
+				Value: authConfig.OAuth2Config.Audience,
+			}, corev1.EnvVar{
+				Name:  "oauth2PrivateKey",
+				Value: authConfig.OAuth2Config.GetMountFile(),
+			})
+			if authConfig.OAuth2Config.Scope != "" {
+				envs = append(envs, corev1.EnvVar{
+					Name:  "oauth2Scope",
+					Value: authConfig.OAuth2Config.Scope,
+				})
+			}
+		}
+	}
+
+	tmpl := template.Must(template.New("filebeat-yaml-template").Parse(filebeatYAMLTemplate))
+	var tpl bytes.Buffer
+	if err := tmpl.Execute(&tpl, nil); err != nil {
+		log.Error(err, "failed to render filebeat instance log4j yaml template")
+	}
+
+	return &corev1.Container{
+		Name:            "filebeat",
+		Image:           filebeatImage,
+		Command:         []string{"/bin/sh", "-c", "--", "echo " + fmt.Sprintf("\"%s\"", tpl.String()) + " > " + DefaultFilebeatConfig + " && /usr/share/filebeat/filebeat -e -c " + DefaultFilebeatConfig},
+		Env:             envs,
+		ImagePullPolicy: imagePullPolicy,
+		EnvFrom:         generateContainerEnvFrom(pulsarConfig, authSecret, tlsSecret),
+		VolumeMounts:    mounts,
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{"ALL"},
+			},
+			AllowPrivilegeEscalation: &allowPrivilegeEscalation,
+			RunAsUser:                &uid,
+		},
+	}
 }

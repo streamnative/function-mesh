@@ -13,6 +13,7 @@ spec:
       - persistent://public/default/input-sink-topid
       - persistent://public/default/input-sink-topie
     typeClassName: "org.apache.pulsar.client.api.schema.GenericObject"
+  logTopic: persistent://public/default/es-sink-logs
   sinkConfig:
     elasticSearchUrl: "http://quickstart-es-http.default.svc.cluster.local:9200"
     username: "elastic"

@@ -56,6 +56,9 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
 	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, makeSinkContainer(sink),
+		makeFilebeatContainer(sink.Spec.VolumeMounts, sink.Spec.Pod.Env, sink.Name, sink.Spec.LogTopic, sink.Spec.LogTopicAgent,
+			sink.Spec.Pulsar.TLSConfig, sink.Spec.Pulsar.AuthConfig, sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.TLSSecret,
+			sink.Spec.Pulsar.AuthSecret, sink.Spec.FilebeatImage),
 		makeSinkVolumes(sink, sink.Spec.Pulsar.AuthConfig), makeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
 		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.VolumeMounts, nil, nil)
 }
@@ -181,7 +184,8 @@ func makeSinkVolumes(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) []cor
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
+		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
+		sink.Spec.LogTopicAgent)
 }
 
 func makeSinkVolumeMounts(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {
@@ -191,7 +195,8 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) 
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang))
+		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
+		sink.Spec.LogTopicAgent)
 }
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
@@ -204,7 +209,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
-		generateJavaLogConfigCommand(sink.Spec.Java),
+		generateJavaLogConfigCommand(sink.Spec.Java, sink.Spec.LogTopicAgent),
 		parseJavaLogLevel(sink.Spec.Java),
 		generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),

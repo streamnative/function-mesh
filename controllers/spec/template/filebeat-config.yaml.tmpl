@@ -1,0 +1,16 @@
+filebeat.inputs:
+- type: log
+  paths:
+  - /pulsar/logs/functions/*.log
+output.pulsar:
+  url: \${brokerServiceURL}
+  topic: \${logTopic}
+  name: \${logName}
+  token: \${clientAuthenticationParameters:""}
+  oauth2:
+    enabled: \${oauth2Enabled:false}
+    issuerUrl: \${oauth2IssuerUrl:""}
+    privateKey: \${oauth2PrivateKey:""}
+    audience: \${oauth2Audience:""}
+    scope: \${oauth2Scope:""}
+log_level: info

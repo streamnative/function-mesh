@@ -831,6 +831,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 					tt.args.trustCert,
 					tt.args.authConfig,
 					tt.args.logConf,
+					v1alpha1.RUNTIME,
 				), "generatePodVolumes(%v, %v, %v, %v)", tt.args.podVolumes, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
 		})
 	}
@@ -1109,7 +1110,8 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 					tt.args.consumerConfs,
 					tt.args.trustCert,
 					tt.args.authConfig,
-					tt.args.logConf), "generateContainerVolumeMounts(%v, %v, %v, %v)", tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
+					tt.args.logConf,
+					v1alpha1.RUNTIME), "generateContainerVolumeMounts(%v, %v, %v, %v)", tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
 		})
 	}
 }

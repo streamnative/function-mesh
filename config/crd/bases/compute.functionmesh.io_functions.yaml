@@ -41,6 +41,8 @@ spec:
                 type: string
               downloaderImage:
                 type: string
+              filebeatImage:
+                type: string
               forwardSourceMessageProperty:
                 type: boolean
               funcConfig:
@@ -241,6 +243,11 @@ spec:
                 - jar
                 type: object
               logTopic:
+                type: string
+              logTopicAgent:
+                enum:
+                - runtime
+                - sidecar
                 type: string
               maxMessageRetry:
                 format: int32

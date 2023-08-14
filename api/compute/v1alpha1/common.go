@@ -400,6 +400,15 @@ const (
 	Manual          ProcessGuarantee = "manual"
 )
 
+// LogTopicAgent enum type
+// +kubebuilder:validation:Enum=runtime;sidecar
+type LogTopicAgent string
+
+const (
+	RUNTIME LogTopicAgent = "runtime"
+	SIDECAR LogTopicAgent = "sidecar"
+)
+
 const (
 	FunctionComponent string = "function"
 	SourceComponent   string = "source"

@@ -13,6 +13,7 @@ spec:
   replicas: 1
   maxReplicas: 5
   logTopic: persistent://public/default/logging-function-logs
+  logTopicAgent: sidecar
   input:
     topicPattern: "persistent://public/default/input-download-java-topi.*"
     typeClassName: java.lang.String

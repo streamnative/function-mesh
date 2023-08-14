@@ -57,6 +57,10 @@ type SinkSpec struct {
 	MaxReplicas *int32    `json:"maxReplicas,omitempty"` // if provided, turn on autoscaling
 	Input       InputConf `json:"input,omitempty"`
 
+	LogTopic      string        `json:"logTopic,omitempty"`
+	LogTopicAgent LogTopicAgent `json:"logTopicAgent,omitempty"`
+	FilebeatImage string        `json:"filebeatImage,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	SinkConfig   *Config                     `json:"sinkConfig,omitempty"`

@@ -26,6 +26,8 @@ PULSAR_NAMESPACE=${PULSAR_NAMESPACE:-"default"}
 PULSAR_RELEASE_NAME=${PULSAR_RELEASE_NAME:-"sn-platform"}
 E2E_KUBECONFIG=${E2E_KUBECONFIG:-"/tmp/e2e-k8s.config"}
 
+USE_TLS=${1:-"false"}
+
 source "${BASE_DIR}"/.ci/helm.sh
 
 if [ ! "$KUBECONFIG" ]; then
@@ -50,6 +52,15 @@ if [ $? -ne 0 ]; then
   echo "$verify_java_result"
   kubectl delete -f "${BASE_DIR}"/.ci/tests/integration/cases/java-download-function/manifests.yaml > /dev/null 2>&1 || true
   exit 1
+fi
+
+if [ $USE_TLS == "false" ]; then
+  verify_log_topic=$(ci::verify_log_topic persistent://public/default/logging-function-logs "org.apache.pulsar.functions.runtime.JavaInstanceStarter" 10 2>&1)
+  if [ $? -ne 0 ]; then
+    echo "$verify_log_topic"
+    kubectl delete -f "${BASE_DIR}"/.ci/tests/integration/cases/java-download-function/manifests.yaml > /dev/null 2>&1 || true
+    exit 1
+  fi
 fi
 
 kubectl delete -f "${BASE_DIR}"/.ci/tests/integration/cases/java-download-function/manifests.yaml > /dev/null 2>&1 || true

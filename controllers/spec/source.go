@@ -57,6 +57,9 @@ func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
 func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
 	objectMeta := MakeSourceObjectMeta(source)
 	return MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, makeSourceContainer(source),
+		makeFilebeatContainer(source.Spec.VolumeMounts, source.Spec.Pod.Env, source.Name, source.Spec.LogTopic, source.Spec.LogTopicAgent,
+			source.Spec.Pulsar.TLSConfig, source.Spec.Pulsar.AuthConfig, source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.TLSSecret,
+			source.Spec.Pulsar.AuthSecret, source.Spec.FilebeatImage),
 		makeSourceVolumes(source, source.Spec.Pulsar.AuthConfig), makeSourceLabels(source), source.Spec.Pod, *source.Spec.Pulsar,
 		source.Spec.Java, source.Spec.Python, source.Spec.Golang, source.Spec.VolumeMounts, nil, nil)
 }
@@ -128,7 +131,8 @@ func makeSourceVolumes(source *v1alpha1.Source, authConfig *v1alpha1.AuthConfig)
 		nil,
 		source.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang))
+		getRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang),
+		source.Spec.LogTopicAgent)
 }
 
 func makeSourceVolumeMounts(source *v1alpha1.Source, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {
@@ -138,7 +142,8 @@ func makeSourceVolumeMounts(source *v1alpha1.Source, authConfig *v1alpha1.AuthCo
 		nil,
 		source.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang))
+		getRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang),
+		source.Spec.LogTopicAgent)
 }
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
@@ -151,7 +156,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
-		generateJavaLogConfigCommand(source.Spec.Java),
+		generateJavaLogConfigCommand(source.Spec.Java, source.Spec.LogTopicAgent),
 		parseJavaLogLevel(source.Spec.Java),
 		generateSourceDetailsInJSON(source),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(source.UID),

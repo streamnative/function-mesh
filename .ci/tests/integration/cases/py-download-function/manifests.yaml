@@ -10,6 +10,7 @@ spec:
   replicas: 1
   maxReplicas: 1
   logTopic: persistent://public/default/py-function-logs
+  logTopicAgent: sidecar
   input:
     topics:
     - persistent://public/default/input-download-python-topic
