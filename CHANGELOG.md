@@ -1,3 +1,17 @@
+# Function Mesh v0.15.0 Release Notes
+
+## v0.15.0 What's New
+
+* [Controller] Add support for autoscaling/v2 ([#658](https://github.com/streamnative/function-mesh/pull/658))
+* [Runner Image] Fix python runner image with pulsar-client==3.2.0 ([#660](https://github.com/streamnative/function-mesh/pull/659))
+* [CRD][Controller] Support YAML format for log4j ([#667](https://github.com/streamnative/function-mesh/pull/667))
+* [CI] Upgrade to autoscaling/v2 for HPA ([#668](https://github.com/streamnative/function-mesh/pull/668))
+* [Controller] back support autoscaling/v2beta2 ([#675](https://github.com/streamnative/function-mesh/pull/675))
+* [Controller] Fix yaml log config filename ([#676](https://github.com/streamnative/function-mesh/pull/676))
+* [Controller] Use correct value for resources in FunctionDetails ([#677](https://github.com/streamnative/function-mesh/pull/677))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2023-07+is%3Aclosed+)
+
 # Function Mesh v0.14.0 Release Notes
 
 ## v0.14.0 What's New
