@@ -11,7 +11,7 @@ spec:
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1
-  logTopic: persistent://public/default/logging-function-logs
+  logTopic: persistent://public/default/logging-function-logs-sidecar
   logTopicAgent: sidecar
   input:
     topics:
