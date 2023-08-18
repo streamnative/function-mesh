@@ -19,13 +19,13 @@ Configuration:
         eventEol: true
       {{ else }}
       PatternLayout:
-        Pattern: "%d{ISO8601_OFFSET_DATE_TIME_HHMM} [%t] %-5level %logger{36} - %msg%n"
+        Pattern: \"%d{ISO8601_OFFSET_DATE_TIME_HHMM} [%t] %-5level %logger{36} - %msg%n\"
       {{ end }}
 
     RollingRandomAccessFile:
       name: RollingRandomAccessFile
-      fileName: "${sys:pulsar.function.log.dir}/${sys:pulsar.function.log.file}.log"
-      filePattern: "${sys:pulsar.function.log.dir}/${sys:pulsar.function.log.file}.%d{yyyy-MM-dd-hh-mm}-%i.log.gz"
+      fileName: \"\${sys:pulsar.function.log.dir}/\${sys:pulsar.function.log.file}.log\"
+      filePattern: \"\${sys:pulsar.function.log.dir}/\${sys:pulsar.function.log.file}.%d{yyyy-MM-dd-hh}-%i.log.gz\"
       {{ if .Format | eq "json" }}
       JSONLayout:
         complete: true
@@ -33,35 +33,33 @@ Configuration:
         eventEol: true
       {{ else }}
       PatternLayout:
-        Pattern: "%d{yyyy-MMM-dd HH:mm:ss a} [%t] %-5level %logger{36} - %msg%n"
+        Pattern: \"%d{yyyy-MMM-dd HH:mm:ss a} [%t] %-5level %logger{36} - %msg%n\"
       {{ end }}
       Policies:
         {{ if .Policy | eq "TimedPolicyWithDaily" }}
         CronTriggeringPolicy:
-          schedule: "0 0 0 * * ? *"
+          schedule: \"0 0 0 * * ? *\"
         {{ else if .Policy | eq "TimedPolicyWithWeekly"}}
         CronTriggeringPolicy:
-          schedule: "0 0 0 ? * 1 *"
+          schedule: \"0 0 0 ? * 1 *\"
         {{ else if .Policy | eq "TimedPolicyWithMonthly"}}
         CronTriggeringPolicy:
-          schedule: "0 0 0 1 * ? *"
+          schedule: \"0 0 0 1 * ? *\"
         {{ else if .Policy | eq "SizedPolicyWith10MB"}}
         SizeBasedTriggeringPolicy:
-          size: "10MB"
+          size: \"10MB\"
         {{ else if .Policy | eq "SizedPolicyWith50MB"}}
         SizeBasedTriggeringPolicy:
-          size: "50MB"
+          size: \"50MB\"
         {{ else if .Policy | eq "SizedPolicyWith100MB"}}
         SizeBasedTriggeringPolicy:
-          size: "100MB"
+          size: \"100MB\"
         {{ else }}
         TimeBasedTriggeringPolicy:
           interval: 1
           modulate: true
         SizeBasedTriggeringPolicy:
-          size: "10MB"
-        CronTriggeringPolicy:
-          schedule: "0 0 0 * * ?"
+          size: \"10MB\"
         {{ end }}
 
       DefaultRolloverStrategy:
@@ -69,14 +67,14 @@ Configuration:
 
   Loggers:
     Root:
-      level: "${sys:pulsar.log.level}"
+      level: \"\${sys:pulsar.log.level}\"
       AppenderRef:
         - ref: Console
-          level: "${sys:pulsar.log.level}"
+          level: \"\${sys:pulsar.log.level}\"
         - ref: RollingRandomAccessFile
     Logger:
       name: org.apache.pulsar.functions.runtime.shaded.org.apache.bookkeeper
-      level: "${sys:bk.log.level}"
+      level: \"\${sys:bk.log.level}\"
       additivity: false
       AppenderRef:
       - ref: Console
