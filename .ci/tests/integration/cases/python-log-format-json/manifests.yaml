@@ -1,7 +1,7 @@
 apiVersion: compute.functionmesh.io/v1alpha1
 kind: Function
 metadata:
-  name: python-log-level
+  name: python-log-format-json
   namespace: default
 spec:
   image: streamnative/pulsar-functions-python-sample:2.9.2.23

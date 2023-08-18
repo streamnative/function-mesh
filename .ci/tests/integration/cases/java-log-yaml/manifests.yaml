@@ -1,7 +1,7 @@
 apiVersion: compute.functionmesh.io/v1alpha1
 kind: Function
 metadata:
-  name: java-log-level
+  name: java-log-yaml
   namespace: default
 spec:
   image: streamnative/pulsar-functions-java-sample:2.9.2.23

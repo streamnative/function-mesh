@@ -25,7 +25,7 @@ Configuration:
     RollingRandomAccessFile:
       name: RollingRandomAccessFile
       fileName: \"\${sys:pulsar.function.log.dir}/\${sys:pulsar.function.log.file}.log\"
-      filePattern: \"\${sys:pulsar.function.log.dir}/\${sys:pulsar.function.log.file}.%d{yyyy-MM-dd-hh}-%i.log.gz\"
+      filePattern: \"\${sys:pulsar.function.log.dir}/\${sys:pulsar.function.log.file}.%d{yyyy-MM-dd}-%i.log.gz\"
       {{ if .Format | eq "json" }}
       JSONLayout:
         complete: true
