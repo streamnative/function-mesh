@@ -22,7 +22,11 @@ handlers={{ .Handlers }}
 [handler_stream_handler]
 class=StreamHandler
 level={{ .Level }}
+{{ if .Format | eq "json" }}
+formatter=json
+{{ else }}
 formatter=formatter
+{{ end }}
 args=(sys.stdout,)
 
 {{ if .Format | eq "json" }}
