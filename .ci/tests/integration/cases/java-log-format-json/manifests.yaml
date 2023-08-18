@@ -13,10 +13,10 @@ spec:
   logTopic: persistent://public/default/logging-function-logs
   input:
     topics:
-    - persistent://public/default/input-java-log-level-topic
+    - persistent://public/default/input-java-log-format-json-topic
     typeClassName: java.lang.String
   output:
-    topic: persistent://public/default/output-java-log-level-topic
+    topic: persistent://public/default/output-java-log-format-json-topic
     typeClassName: java.lang.String
   resources:
     requests:

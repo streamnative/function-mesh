@@ -13,9 +13,9 @@ spec:
   logTopic: persistent://public/default/py-function-logs
   input:
     topics:
-      - persistent://public/default/input-python-log-level-topic
+      - persistent://public/default/input-python-log-format-json-topic
   output:
-    topic: persistent://public/default/output-python-log-level-topic
+    topic: persistent://public/default/output-python-log-format-json-topic
   resources:
     requests:
       cpu: "0.1"
