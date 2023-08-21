@@ -578,6 +578,7 @@ function ci::verify_log_topic() {
   if [[ "$MESSAGE" == *"$message"* ]]; then
     return 0
   fi
+  echo "Failed to verify log topic $logTopic, expect $message, got $MESSAGE"
   return 1
 }
 

@@ -162,3 +162,9 @@ verify:
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/health-check/verify.sh
       expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/java-log-format-json/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/java-log-yaml/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/python-log-format-json/verify.sh
+      expected: expected.data.yaml

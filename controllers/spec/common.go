@@ -1072,7 +1072,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
-	classPath := "/pulsar/instances/java-instance.jar"
+	classPath := "/pulsar/instances/java-instance.jar:/pulsar/lib/*"
 	javaLogConfigPath := logConfigFileName
 	if javaLogConfigPath == "" {
 		javaLogConfigPath = DefaultJavaLogConfigPath
