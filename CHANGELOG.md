@@ -1,5 +1,16 @@
 # Function Mesh v0.15.0 Release Notes
 
+## v0.16.0 What's New
+
+* [Controller] Decide to whether use pulsarctl based on image name ([#669](https://github.com/streamnative/function-mesh/pull/669))
+* [CRD] Remove connector catalog CRD ([#672](https://github.com/streamnative/function-mesh/pull/672))
+* [Controller] Support using sidecar to routing pod logs to Pulsar topics ([#673](https://github.com/streamnative/function-mesh/pull/673))
+* [Controller] Fix yaml format log config ([#681](https://github.com/streamnative/function-mesh/pull/681))
+* [Controller] Use regex to check whether runner image has pulsarctl ([#682](https://github.com/streamnative/function-mesh/pull/682))
+* [Controller] Do not create filebeat container when log topic is not set ([#683](https://github.com/streamnative/function-mesh/pull/683))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2023-08+is%3Aclosed+)
+
 ## v0.15.0 What's New
 
 * [Controller] Add support for autoscaling/v2 ([#658](https://github.com/streamnative/function-mesh/pull/658))
