@@ -19,7 +19,7 @@ package spec
 
 import (
 	"fmt"
-	"strings"
+	"regexp"
 
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -150,7 +150,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 	spec := source.Spec
 	hasPulsarctl := source.Spec.ImageHasPulsarctl
 	hasWget := source.Spec.ImageHasWget
-	if strings.Contains(spec.Image, JavaRunnerImageHasPulsarctl) {
+	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, source.Spec.Image); match {
 		hasPulsarctl = true
 		hasWget = true
 	}
@@ -201,7 +201,7 @@ func MakeSourceCleanUpJob(source *v1alpha1.Source) *v1.Job {
 	}
 
 	hasPulsarctl := source.Spec.ImageHasPulsarctl
-	if strings.Contains(source.Spec.Image, JavaRunnerImageHasPulsarctl) {
+	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, source.Spec.Image); match {
 		hasPulsarctl = true
 	}
 	command := getCleanUpCommand(hasPulsarctl,

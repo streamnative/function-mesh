@@ -49,6 +49,7 @@ func TestGetDownloadCommand(t *testing.T) {
 		// test get the download command with package name
 		{"function://public/default/test@v1", "function-package.jar", nil, nil, nil,
 			[]string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
@@ -57,6 +58,7 @@ func TestGetDownloadCommand(t *testing.T) {
 		},
 		{"sink://public/default/test@v1", "sink-package.jar", nil, nil, nil,
 			[]string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"packages", "download", "sink://public/default/test@v1", "--path", "sink-package.jar",
@@ -65,6 +67,7 @@ func TestGetDownloadCommand(t *testing.T) {
 		},
 		{"source://public/default/test@v1", "source-package.jar", nil, nil, nil,
 			[]string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"packages", "download", "source://public/default/test@v1", "--path", "source-package.jar",
@@ -74,6 +77,7 @@ func TestGetDownloadCommand(t *testing.T) {
 		// test get the download command with normal name
 		{"/test", "test.jar", nil, nil, nil,
 			[]string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"functions", "download", "--path", "/test", "--destination-file", "test.jar",
@@ -83,6 +87,7 @@ func TestGetDownloadCommand(t *testing.T) {
 		// test get the download command with a wrong package name
 		{"source/public/default/test@v1", "source-package.jar", nil, nil, nil,
 			[]string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"functions", "download", "--path", "source/public/default/test@v1", "--destination-file", "source-package.jar",
@@ -91,6 +96,7 @@ func TestGetDownloadCommand(t *testing.T) {
 		},
 		{"source:/public/default/test@v1", "source-package.jar", nil, nil, nil,
 			[]string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"functions", "download", "--path", "source:/public/default/test@v1", "--destination-file", "source-package.jar",
@@ -106,6 +112,7 @@ func TestGetDownloadCommand(t *testing.T) {
 				KeySecretKey:  "auth.json",
 			}, nil,
 			[]string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				PulsarctlExecutableFile,
 				"context",
 				"set",
@@ -138,6 +145,7 @@ func TestGetDownloadCommand(t *testing.T) {
 				},
 			}, nil, nil,
 			[]string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"--tls-allow-insecure=false",
@@ -158,6 +166,7 @@ func TestGetDownloadCommand(t *testing.T) {
 				},
 			}, nil, nil,
 			[]string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
@@ -175,6 +184,7 @@ func TestGetDownloadCommand(t *testing.T) {
 				},
 			}, nil, nil,
 			[]string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				PulsarctlExecutableFile,
 				"--admin-service-url", "$webServiceURL",
 				"--tls-allow-insecure=true",
@@ -198,6 +208,7 @@ func TestGetDownloadCommand(t *testing.T) {
 				ClientAuthenticationPlugin:     "auth-plugin",
 			},
 			[]string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				"( " + PulsarctlExecutableFile,
 				"oauth2",
 				"activate",

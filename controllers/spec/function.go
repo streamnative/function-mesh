@@ -18,7 +18,7 @@
 package spec
 
 import (
-	"strings"
+	"regexp"
 
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -112,9 +112,7 @@ func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
 		}
 	}
 	hasPulsarctl := function.Spec.ImageHasPulsarctl
-	if strings.Contains(function.Spec.Image, JavaRunnerImageHasPulsarctl) ||
-		strings.Contains(function.Spec.Image, PythonRunnerImageHasPulsarctl) ||
-		strings.Contains(function.Spec.Image, GolangRunnerImageHasPulsarctl) {
+	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, function.Spec.Image); match {
 		hasPulsarctl = true
 	}
 	command := getCleanUpCommand(hasPulsarctl,
@@ -210,12 +208,12 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 
 	hasPulsarctl := function.Spec.ImageHasPulsarctl
 	hasWget := function.Spec.ImageHasWget
+	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, function.Spec.Image); match {
+		hasPulsarctl = true
+		hasWget = true
+	}
 	if spec.Java != nil {
 		if spec.Java.Jar != "" {
-			if strings.Contains(function.Spec.Image, JavaRunnerImageHasPulsarctl) {
-				hasPulsarctl = true
-				hasWget = true
-			}
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 				spec.Name, spec.ClusterName,
 				generateJavaLogConfigCommand(function.Spec.Java, function.Spec.LogTopicAgent),
@@ -231,13 +229,9 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
-			if strings.Contains(function.Spec.Image, PythonRunnerImageHasPulsarctl) {
-				hasPulsarctl = true
-				hasWget = true
-			}
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
 				spec.Name, spec.ClusterName,
-        generatePythonLogConfigCommand(function.Name, function.Spec.Python, function.Spec.LogTopicAgent),
+				generatePythonLogConfigCommand(function.Name, function.Spec.Python, function.Spec.LogTopicAgent),
 				generateFunctionDetailsInJSON(function), string(function.UID), hasPulsarctl, hasWget,
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
 				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)

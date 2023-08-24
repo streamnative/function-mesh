@@ -20,6 +20,7 @@ package spec
 import (
 	"bytes"
 	"context"
+	"regexp"
 
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 
@@ -65,11 +66,9 @@ const (
 	PulsarAdminExecutableFile  = "/pulsar/bin/pulsar-admin"
 	WorkDir                    = "/pulsar/"
 
-	JavaRunnerImageHasPulsarctl   = "pulsar-functions-pulsarctl-java-runner"
-	PythonRunnerImageHasPulsarctl = "pulsar-functions-pulsarctl-python-runner"
-	GolangRunnerImageHasPulsarctl = "pulsar-functions-pulsarctl-go-runner"
+	RunnerImageHasPulsarctl = "pulsar-functions-(pulsarctl|sn)-(java|python|go)-runner"
 
-	PulsarctlExecutableFile = "/usr/local/bin/pulsarctl"
+	PulsarctlExecutableFile = "pulsarctl"
 	DownloaderName          = "downloader"
 	DownloaderVolume        = "downloader-volume"
 	DownloaderImage         = DefaultRunnerPrefix + "pulsarctl:2.10.2.3"
@@ -379,7 +378,7 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		// prepend download command if the downPath is provided
 		hasPulsarctl := function.Spec.ImageHasPulsarctl
 		hasWget := function.Spec.ImageHasWget
-		if strings.Contains(function.Spec.Image, GolangRunnerImageHasPulsarctl) {
+		if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, function.Spec.Image); match {
 			hasPulsarctl = true
 			hasWget = true
 		}
@@ -533,6 +532,7 @@ func getPulsarAdminCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 	authConfig *v1alpha1.AuthConfig) []string {
 	args := []string{
+		"export PATH=$PATH:/pulsar/bin && ",
 		PulsarctlExecutableFile,
 		"--admin-service-url",
 		"$webServiceURL",
@@ -541,6 +541,7 @@ func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 	if authConfig != nil {
 		if authConfig.OAuth2Config != nil {
 			args = []string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				PulsarctlExecutableFile,
 				"context",
 				"set",
@@ -568,6 +569,7 @@ func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 			}...)
 		} else if authConfig.GenericAuth != nil {
 			args = []string{
+				"export PATH=$PATH:/pulsar/bin && ",
 				"( " + PulsarctlExecutableFile,
 				"oauth2",
 				"activate",
@@ -585,6 +587,7 @@ func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 		}
 	} else if authProvided {
 		args = []string{
+			"export PATH=$PATH:/pulsar/bin && ",
 			"( " + PulsarctlExecutableFile,
 			"oauth2",
 			"activate",
