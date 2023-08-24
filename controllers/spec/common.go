@@ -2110,7 +2110,7 @@ func getSubscriptionNameOrDefault(subscription, tenant, namespace, name string) 
 func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.EnvVar, name string, logTopic string,
 	agent v1alpha1.LogTopicAgent, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	pulsarConfig string, authSecret string, tlsSecret string, image string) *corev1.Container {
-	if agent != v1alpha1.SIDECAR {
+	if logTopic == "" || agent != v1alpha1.SIDECAR {
 		return nil
 	}
 	filebeatImage := image

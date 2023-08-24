@@ -125,7 +125,7 @@ func (webhook *SinkWebhook) Default(ctx context.Context, obj runtime.Object) err
 		r.Spec.Input.TypeClassName = "[B"
 	}
 
-	if r.Spec.LogTopicAgent == "" {
+	if r.Spec.LogTopic != "" && r.Spec.LogTopicAgent == "" {
 		r.Spec.LogTopicAgent = v1alpha1.SIDECAR
 	}
 
