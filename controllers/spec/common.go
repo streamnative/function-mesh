@@ -378,8 +378,7 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 		// prepend download command if the downPath is provided
 		hasPulsarctl := function.Spec.ImageHasPulsarctl
 		hasWget := function.Spec.ImageHasWget
-		match, _ := regexp.MatchString(RunnerImageHasPulsarctl, function.Spec.Image)
-		if match == true {
+		if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, function.Spec.Image); match {
 			hasPulsarctl = true
 			hasWget = true
 		}

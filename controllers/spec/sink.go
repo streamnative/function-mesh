@@ -159,8 +159,7 @@ func MakeSinkCleanUpJob(sink *v1alpha1.Sink) *v1.Job {
 		}
 	}
 	imageHasPulsarctl := sink.Spec.ImageHasPulsarctl
-	match, _ := regexp.MatchString(RunnerImageHasPulsarctl, sink.Spec.Image)
-	if match == true {
+	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, sink.Spec.Image); match {
 		imageHasPulsarctl = true
 	}
 	command := getCleanUpCommand(imageHasPulsarctl,
@@ -204,8 +203,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
 	hasPulsarctl := sink.Spec.ImageHasPulsarctl
 	hasWget := sink.Spec.ImageHasWget
-	match, _ := regexp.MatchString(RunnerImageHasPulsarctl, sink.Spec.Image)
-	if match == true {
+	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, sink.Spec.Image); match {
 		hasPulsarctl = true
 		hasWget = true
 	}

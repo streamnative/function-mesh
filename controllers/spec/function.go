@@ -112,8 +112,7 @@ func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
 		}
 	}
 	hasPulsarctl := function.Spec.ImageHasPulsarctl
-	match, _ := regexp.MatchString(RunnerImageHasPulsarctl, function.Spec.Image)
-	if match == true {
+	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, function.Spec.Image); match {
 		hasPulsarctl = true
 	}
 	command := getCleanUpCommand(hasPulsarctl,
@@ -209,8 +208,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 
 	hasPulsarctl := function.Spec.ImageHasPulsarctl
 	hasWget := function.Spec.ImageHasWget
-	match, _ := regexp.MatchString(RunnerImageHasPulsarctl, function.Spec.Image)
-	if match == true {
+	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, function.Spec.Image); match {
 		hasPulsarctl = true
 		hasWget = true
 	}
