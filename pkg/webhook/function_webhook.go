@@ -153,7 +153,7 @@ func (webhook *FunctionWebhook) Default(ctx context.Context, obj runtime.Object)
 		}
 	}
 
-	if r.Spec.LogTopicAgent == "" {
+	if r.Spec.LogTopic != "" && r.Spec.LogTopicAgent == "" {
 		r.Spec.LogTopicAgent = v1alpha1.RUNTIME
 	}
 

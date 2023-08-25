@@ -135,7 +135,7 @@ func (webhook *SourceWebhook) Default(ctx context.Context, obj runtime.Object) e
 		r.Spec.Output.TypeClassName = "[B"
 	}
 
-	if r.Spec.LogTopicAgent == "" {
+	if r.Spec.LogTopic != "" && r.Spec.LogTopicAgent == "" {
 		r.Spec.LogTopicAgent = v1alpha1.SIDECAR
 	}
 
