@@ -109,6 +109,13 @@ jobs:
           export BRANCH=function-mesh-operator-$VERSION
           echo $BRANCH
           git push -d origin $BRANCH || echo 'Skip branch deletion'
+
+          # sync with the upstream repo https://github.com/k8s-operatorhub/community-operators.git
+          git remote add upstream https://github.com/k8s-operatorhub/community-operators.git
+          git fetch upstream
+          git checkout -b upstream upstream/main
+          git pull
+
           git checkout -b $BRANCH
 
           export TARGET_DIR=operators/function-mesh/$VERSION
@@ -229,7 +236,7 @@ jobs:
           docker run -i --rm --security-opt=label=disable --env PFLT_LOGLEVEL=trace --env PFLT_ARTIFACTS=/artifacts --env PFLT_LOGFILE=/artifacts/preflight.log --env PFLT_CERTIFICATION_PROJECT_ID=$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID --env PFLT_PYXIS_API_TOKEN=$PFLT_PYXIS_API_TOKEN --env PFLT_DOCKERCONFIG=/temp-authfile.json -v $TARGET_DIR:/artifacts -v $AUTHFILE:/temp-authfile.json:ro quay.io/opdev/preflight:stable check container quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION --submit
           sleep 60s
 
-      - name: Label the image as latest
+      - name: Wait for Scan to Complete
         env:
           VERSION: ${{ inputs.tag }}
           DOCKER_REPO: registry.connect.redhat.com/streamnative
@@ -237,10 +244,29 @@ jobs:
           CATALOG_BRANCH_TAG: latest
           CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID: ${{ secrets.CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID }}
           PFLT_PYXIS_API_TOKEN: ${{ secrets.PFLT_PYXIS_API_TOKEN }}
+          TIMEOUT_IN_MINS: 10
         run: |
           echo $VERSION
-          curl -H "X-API-KEY: $PFLT_PYXIS_API_TOKEN" -s "https://catalog.redhat.com/api/containers/v1/projects/certification/id/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID/images?filter=repositories.tags.name==$VERSION"
-          curl -H "X-API-KEY: $PFLT_PYXIS_API_TOKEN" -s "https://catalog.redhat.com/api/containers/v1/projects/certification/id/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID/images?filter=repositories.tags.name==$VERSION" | jq --exit-status '.data[0]' >/dev/null
+          source hack/publish-rhel.sh
+
+          wait_for_container_scan "$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID" "$VERSION" "$PFLT_PYXIS_API_TOKEN" "$TIMEOUT_IN_MINS"
+
+      - name: Wait for image release
+        env:
+          VERSION: ${{ inputs.tag }}
+          DOCKER_REPO: registry.connect.redhat.com/streamnative
+          IMAGE_TAG_BASE: registry.connect.redhat.com/streamnative/function-mesh
+          CATALOG_BRANCH_TAG: latest
+          CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID: ${{ secrets.CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID }}
+          PFLT_PYXIS_API_TOKEN: ${{ secrets.PFLT_PYXIS_API_TOKEN }}
+          TIMEOUT_IN_MINS: 10
+        run: |
+          echo $VERSION
+          source hack/publish-rhel.sh
+          publish_the_image "$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID" "$VERSION" "$PFLT_PYXIS_API_TOKEN"
+          wait_for_container_publish "$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID" "$VERSION" "$PFLT_PYXIS_API_TOKEN" "$TIMEOUT_IN_MINS"
+          sync_tags "$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID" "$VERSION" "$PFLT_PYXIS_API_TOKEN"
+
           docker rmi quay.io/redhat-isv-containers/$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID:$VERSION
           docker pull registry.connect.redhat.com/streamnative/function-mesh:$VERSION
           docker inspect registry.connect.redhat.com/streamnative/function-mesh:$VERSION
@@ -276,6 +302,13 @@ jobs:
           export BRANCH=function-mesh-operator-$VERSION
           echo $BRANCH
           git push -d origin $BRANCH || echo 'Skip branch deletion'
+
+          # sync with the upstream repo https://github.com/redhat-openshift-ecosystem/certified-operators.git
+          git remote add upstream https://github.com/redhat-openshift-ecosystem/certified-operators.git
+          git fetch upstream
+          git checkout -b upstream upstream/main
+          git pull
+
           git checkout -b $BRANCH
 
           export TARGET_DIR=operators/function-mesh/$VERSION
