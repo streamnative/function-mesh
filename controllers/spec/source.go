@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/streamnative/function-mesh/pkg/webhook"
+
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
@@ -57,7 +59,7 @@ func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
 func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
 	objectMeta := MakeSourceObjectMeta(source)
 	return MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, makeSourceContainer(source),
-		makeFilebeatContainer(source.Spec.VolumeMounts, source.Spec.Pod.Env, source.Name, source.Spec.LogTopic, source.Spec.LogTopicAgent,
+		makeFilebeatContainer(source.Spec.VolumeMounts, source.Spec.Pod.Env, source.Spec.Name, source.Spec.LogTopic, source.Spec.LogTopicAgent,
 			source.Spec.Pulsar.TLSConfig, source.Spec.Pulsar.AuthConfig, source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.TLSSecret,
 			source.Spec.Pulsar.AuthSecret, source.Spec.FilebeatImage),
 		makeSourceVolumes(source, source.Spec.Pulsar.AuthConfig), makeSourceLabels(source), source.Spec.Pod, *source.Spec.Pulsar,
@@ -121,6 +123,11 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 		"name":      source.Name,
 		"namespace": source.Namespace,
 	}
+	if source.Labels != nil {
+		if v, ok := source.Labels[webhook.OriginalNameLabel]; ok {
+			labels[webhook.OriginalNameLabel] = v
+		}
+	}
 	return labels
 }
 
@@ -156,13 +163,13 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
-		generateJavaLogConfigCommand(source.Spec.Java, source.Spec.LogTopicAgent),
-		parseJavaLogLevel(source.Spec.Java),
+		generateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
+		parseJavaLogLevel(spec.Java),
 		generateSourceDetailsInJSON(source),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(source.UID),
 		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
-		generateJavaLogConfigFileName(source.Spec.Java))
+		generateJavaLogConfigFileName(spec.Java))
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {

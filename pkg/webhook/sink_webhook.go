@@ -129,6 +129,13 @@ func (webhook *SinkWebhook) Default(ctx context.Context, obj runtime.Object) err
 		r.Spec.LogTopicAgent = v1alpha1.SIDECAR
 	}
 
+	if len(r.Name) > maxNameLength {
+		// make the name shorter as a random generated string and save the original name in labels
+		r.Labels[OriginalNameLabel] = r.Name
+		r.Name = generateRandomName(r.Name, "sink")
+		sinklog.Info("sink name is too long, generate a random name", "original name", r.Labels[OriginalNameLabel], "new name", r.Name)
+	}
+
 	return nil
 }
 
