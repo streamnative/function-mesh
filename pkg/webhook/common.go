@@ -19,8 +19,6 @@
 package webhook
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -37,8 +35,6 @@ const (
 	sourceKind   = "Source"
 
 	maxNameLength = 43
-
-	OriginalNameLabel = "compute.functionmesh.io/original-name"
 
 	PackageURLHTTP     string = "http://"
 	PackageURLHTTPS    string = "https://"
@@ -172,15 +168,4 @@ func validateResourcePolicy(resourcePolicy *vpav1.PodResourcePolicy) field.Error
 		}
 	}
 	return errs
-}
-
-// generate a random name less than maxNameLength characters
-func generateRandomName(name string, prefix string) string {
-	if len(name) > maxNameLength {
-		// generate a 32 characters name from the original name by md5
-		hasher := md5.New()
-		hasher.Write([]byte(name))
-		name = fmt.Sprintf("%s-%s", prefix, hex.EncodeToString(hasher.Sum(nil)))
-	}
-	return name
 }
