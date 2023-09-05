@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/streamnative/function-mesh/pkg/webhook"
-
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
@@ -122,11 +120,6 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 		"component": ComponentSource,
 		"name":      source.Name,
 		"namespace": source.Namespace,
-	}
-	if source.Labels != nil {
-		if v, ok := source.Labels[webhook.OriginalNameLabel]; ok {
-			labels[webhook.OriginalNameLabel] = v
-		}
 	}
 	return labels
 }

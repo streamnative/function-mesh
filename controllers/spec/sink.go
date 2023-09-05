@@ -20,8 +20,6 @@ package spec
 import (
 	"regexp"
 
-	"github.com/streamnative/function-mesh/pkg/webhook"
-
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
@@ -126,11 +124,6 @@ func makeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 		"component": ComponentSink,
 		"name":      sink.Name,
 		"namespace": sink.Namespace,
-	}
-	if sink.Labels != nil {
-		if v, ok := sink.Labels[webhook.OriginalNameLabel]; ok {
-			labels[webhook.OriginalNameLabel] = v
-		}
 	}
 	return labels
 }

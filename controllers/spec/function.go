@@ -20,8 +20,6 @@ package spec
 import (
 	"regexp"
 
-	"github.com/streamnative/function-mesh/pkg/webhook"
-
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
@@ -201,11 +199,6 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 		"component": ComponentFunction,
 		"name":      function.Name,
 		"namespace": function.Namespace,
-	}
-	if function.Labels != nil {
-		if v, ok := function.Labels[webhook.OriginalNameLabel]; ok {
-			labels[webhook.OriginalNameLabel] = v
-		}
 	}
 	return labels
 }
