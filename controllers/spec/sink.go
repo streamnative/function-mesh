@@ -56,7 +56,7 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
 	objectMeta := MakeSinkObjectMeta(sink)
 	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, makeSinkContainer(sink),
-		makeFilebeatContainer(sink.Spec.VolumeMounts, sink.Spec.Pod.Env, sink.Name, sink.Spec.LogTopic, sink.Spec.LogTopicAgent,
+		makeFilebeatContainer(sink.Spec.VolumeMounts, sink.Spec.Pod.Env, sink.Spec.Name, sink.Spec.LogTopic, sink.Spec.LogTopicAgent,
 			sink.Spec.Pulsar.TLSConfig, sink.Spec.Pulsar.AuthConfig, sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.TLSSecret,
 			sink.Spec.Pulsar.AuthSecret, sink.Spec.FilebeatImage),
 		makeSinkVolumes(sink, sink.Spec.Pulsar.AuthConfig), makeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
@@ -209,13 +209,13 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
-		generateJavaLogConfigCommand(sink.Spec.Java, sink.Spec.LogTopicAgent),
-		parseJavaLogLevel(sink.Spec.Java),
+		generateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
+		parseJavaLogLevel(spec.Java),
 		generateSinkDetailsInJSON(sink),
 		getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir, string(sink.UID),
 		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
-		generateJavaLogConfigFileName(sink.Spec.Java))
+		generateJavaLogConfigFileName(spec.Java))
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {

@@ -61,7 +61,7 @@ func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
 	return MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		makeFunctionContainer(function), makeFilebeatContainer(function.Spec.VolumeMounts, function.Spec.Pod.Env,
-			function.Name, function.Spec.LogTopic, function.Spec.LogTopicAgent, function.Spec.Pulsar.TLSConfig,
+			function.Spec.Name, function.Spec.LogTopic, function.Spec.LogTopicAgent, function.Spec.Pulsar.TLSConfig,
 			function.Spec.Pulsar.AuthConfig, function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.TLSSecret,
 			function.Spec.Pulsar.AuthSecret, function.Spec.FilebeatImage),
 		makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), makeFunctionLabels(function), function.Spec.Pod,
@@ -216,25 +216,25 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		if spec.Java.Jar != "" {
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 				spec.Name, spec.ClusterName,
-				generateJavaLogConfigCommand(function.Spec.Java, function.Spec.LogTopicAgent),
-				parseJavaLogLevel(function.Spec.Java),
+				generateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
+				parseJavaLogLevel(spec.Java),
 				generateFunctionDetailsInJSON(function),
 				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir,
 				string(function.UID),
 				spec.Java.JavaOpts, hasPulsarctl, hasWget,
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
-				function.Spec.SecretsMap, function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig,
-				function.Spec.Pulsar.AuthConfig, function.Spec.MaxPendingAsyncRequests,
+				spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig,
+				spec.Pulsar.AuthConfig, spec.MaxPendingAsyncRequests,
 				generateJavaLogConfigFileName(function.Spec.Java))
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
 				spec.Name, spec.ClusterName,
-				generatePythonLogConfigCommand(function.Name, function.Spec.Python, function.Spec.LogTopicAgent),
+				generatePythonLogConfigCommand(spec.Name, spec.Python, spec.LogTopicAgent),
 				generateFunctionDetailsInJSON(function), string(function.UID), hasPulsarctl, hasWget,
-				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
+				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
+				spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {
