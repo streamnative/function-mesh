@@ -41,7 +41,8 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 	} else if function.Spec.Python != nil {
 		runtime = proto.FunctionDetails_PYTHON
 	}
-	deadLetterTopic := getDeadLetterTopicOrDefault(function.Spec.DeadLetterTopic, function.Spec.SubscriptionName, function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name, function.Spec.MaxMessageRetry)
+	deadLetterTopic := getDeadLetterTopicOrDefault(function.Spec.DeadLetterTopic, function.Spec.SubscriptionName,
+		function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name, function.Spec.MaxMessageRetry)
 	logTopic := function.Spec.LogTopic
 	if function.Spec.LogTopicAgent == v1alpha1.SIDECAR {
 		logTopic = ""
@@ -98,7 +99,8 @@ func fetchClassName(function *v1alpha1.Function) string {
 }
 
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
-	deadLetterTopic := getDeadLetterTopicOrDefault(function.Spec.DeadLetterTopic, function.Spec.SubscriptionName, function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name, function.Spec.MaxMessageRetry)
+	deadLetterTopic := getDeadLetterTopicOrDefault(function.Spec.DeadLetterTopic, function.Spec.SubscriptionName,
+		function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name, function.Spec.MaxMessageRetry)
 	logTopic := function.Spec.LogTopic
 	if function.Spec.LogTopicAgent == v1alpha1.SIDECAR {
 		logTopic = ""
@@ -194,10 +196,11 @@ func generateFunctionInputSpec(function *v1alpha1.Function) *proto.SourceSpec {
 	inputSpecs := generateInputSpec(function.Spec.Input)
 
 	return &proto.SourceSpec{
-		ClassName:                    "",
-		Configs:                      "",
-		TypeClassName:                function.Spec.Input.TypeClassName,
-		SubscriptionType:             getSubscriptionType(function.Spec.RetainOrdering, function.Spec.RetainKeyOrdering, function.Spec.ProcessingGuarantee),
+		ClassName:     "",
+		Configs:       "",
+		TypeClassName: function.Spec.Input.TypeClassName,
+		SubscriptionType: getSubscriptionType(function.Spec.RetainOrdering, function.Spec.RetainKeyOrdering,
+			function.Spec.ProcessingGuarantee),
 		InputSpecs:                   inputSpecs,
 		TimeoutMs:                    uint64(function.Spec.Timeout),
 		Builtin:                      "",
@@ -251,7 +254,7 @@ func convertSourceDetails(source *v1alpha1.Source) *proto.FunctionDetails {
 	fd := &proto.FunctionDetails{
 		Tenant:               source.Spec.Tenant,
 		Namespace:            source.Spec.Namespace,
-		Name:                 source.Name,
+		Name:                 source.Spec.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
 		ProcessingGuarantees: convertProcessingGuarantee(source.Spec.ProcessingGuarantee),
 		UserConfig:           getUserConfig(source.Spec.SourceConfig),
@@ -320,11 +323,12 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 }
 
 func convertSinkDetails(sink *v1alpha1.Sink) *proto.FunctionDetails {
-	deadLetterTopic := getDeadLetterTopicOrDefault(sink.Spec.DeadLetterTopic, sink.Spec.SubscriptionName, sink.Spec.Tenant, sink.Spec.Namespace, sink.Spec.Name, sink.Spec.MaxMessageRetry)
+	deadLetterTopic := getDeadLetterTopicOrDefault(sink.Spec.DeadLetterTopic, sink.Spec.SubscriptionName,
+		sink.Spec.Tenant, sink.Spec.Namespace, sink.Spec.Name, sink.Spec.MaxMessageRetry)
 	fd := &proto.FunctionDetails{
 		Tenant:               sink.Spec.Tenant,
 		Namespace:            sink.Spec.Namespace,
-		Name:                 sink.Name,
+		Name:                 sink.Spec.Name,
 		ClassName:            "org.apache.pulsar.functions.api.utils.IdentityFunction",
 		ProcessingGuarantees: convertProcessingGuarantee(sink.Spec.ProcessingGuarantee),
 		Runtime:              proto.FunctionDetails_JAVA,
@@ -351,8 +355,9 @@ func generateSinkInputSpec(sink *v1alpha1.Sink) *proto.SourceSpec {
 	inputSpecs := generateInputSpec(sink.Spec.Input)
 
 	return &proto.SourceSpec{
-		TypeClassName:                sink.Spec.Input.TypeClassName,
-		SubscriptionType:             getSubscriptionType(sink.Spec.RetainOrdering, sink.Spec.RetainKeyOrdering, sink.Spec.ProcessingGuarantee),
+		TypeClassName: sink.Spec.Input.TypeClassName,
+		SubscriptionType: getSubscriptionType(sink.Spec.RetainOrdering, sink.Spec.RetainKeyOrdering,
+			sink.Spec.ProcessingGuarantee),
 		InputSpecs:                   inputSpecs,
 		TimeoutMs:                    uint64(sink.Spec.Timeout),
 		SubscriptionName:             sink.Spec.SubscriptionName,
@@ -362,7 +367,8 @@ func generateSinkInputSpec(sink *v1alpha1.Sink) *proto.SourceSpec {
 	}
 }
 
-func getSubscriptionType(retainOrdering bool, retainKeyOrdering bool, processingGuarantee v1alpha1.ProcessGuarantee) proto.SubscriptionType {
+func getSubscriptionType(retainOrdering bool, retainKeyOrdering bool,
+	processingGuarantee v1alpha1.ProcessGuarantee) proto.SubscriptionType {
 	if retainOrdering || processingGuarantee == v1alpha1.EffectivelyOnce {
 		return proto.SubscriptionType_FAILOVER
 	}
@@ -503,8 +509,10 @@ func getParallelism(replicas *int32, showPreciseParallelism bool) int32 {
 	return 1
 }
 
-func getDeadLetterTopicOrDefault(deadLetterTopic, subscriptionName, tenant, namespace, name string, maxMessageRetry int32) string {
-	if deadLetterTopic == "" && maxMessageRetry > 0 && (subscriptionName == "" || strings.Contains(subscriptionName, "\\")) {
+func getDeadLetterTopicOrDefault(deadLetterTopic, subscriptionName, tenant, namespace, name string,
+	maxMessageRetry int32) string {
+	if deadLetterTopic == "" && maxMessageRetry > 0 && (subscriptionName == "" || strings.Contains(subscriptionName,
+		"\\")) {
 		// otherwise the auto generated DeadLetterTopic($TOPIC-$SUBNAME-DLQ) will be invalid
 		// like: persistent://public/default/input-public/default/test-function-DLQ
 		return fmt.Sprintf("%s-%s-%s-DLQ", tenant, namespace, name)
