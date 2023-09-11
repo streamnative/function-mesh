@@ -48,6 +48,18 @@ spec:
               funcConfig:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
+              genericRuntime:
+                properties:
+                  functionFile:
+                    type: string
+                  functionFileLocation:
+                    type: string
+                  language:
+                    type: string
+                required:
+                - functionFile
+                - language
+                type: object
               golang:
                 properties:
                   go:

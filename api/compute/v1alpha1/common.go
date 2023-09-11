@@ -234,9 +234,10 @@ type PodPolicy struct {
 }
 
 type Runtime struct {
-	Java   *JavaRuntime   `json:"java,omitempty"`
-	Python *PythonRuntime `json:"python,omitempty"`
-	Golang *GoRuntime     `json:"golang,omitempty"`
+	Java           *JavaRuntime    `json:"java,omitempty"`
+	Python         *PythonRuntime  `json:"python,omitempty"`
+	Golang         *GoRuntime      `json:"golang,omitempty"`
+	GenericRuntime *GenericRuntime `json:"genericRuntime,omitempty"`
 }
 
 // JavaRuntime contains the java runtime configs
@@ -266,6 +267,16 @@ type GoRuntime struct {
 	Go         string            `json:"go"`
 	GoLocation string            `json:"goLocation,omitempty"`
 	Log        *RuntimeLogConfig `json:"log,omitempty"`
+}
+
+// GenericRuntime contains the generic runtime configs
+// +kubebuilder:validation:Optional
+type GenericRuntime struct {
+	// +kubebuilder:validation:Required
+	FunctionFile string `json:"functionFile"`
+	// +kubebuilder:validation:Required
+	Language             string `json:"language"`
+	FunctionFileLocation string `json:"functionFileLocation,omitempty"`
 }
 
 type SecretRef struct {

@@ -24,9 +24,10 @@ import (
 )
 
 type RunnerImages struct {
-	Java   string `yaml:"java,omitempty"`
-	Python string `yaml:"python,omitempty"`
-	Go     string `yaml:"go,omitempty"`
+	Java           string            `yaml:"java,omitempty"`
+	Python         string            `yaml:"python,omitempty"`
+	Go             string            `yaml:"go,omitempty"`
+	GenericRuntime map[string]string `yaml:"genericRuntime,omitempty"`
 }
 
 type ControllerConfigs struct {
@@ -43,6 +44,11 @@ func DefaultConfigs() *ControllerConfigs {
 			Java:   DefaultJavaRunnerImage,
 			Python: DefaultPythonRunnerImage,
 			Go:     DefaultGoRunnerImage,
+			GenericRuntime: map[string]string{
+				"nodejs":     DefaultGenericNodejsRunnerImage,
+				"python":     DefaultGenericPythonRunnerImage,
+				"executable": DefaultGenericRunnerImage,
+			},
 		},
 	}
 }

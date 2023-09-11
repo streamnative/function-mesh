@@ -240,6 +240,14 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		if spec.Golang.Go != "" {
 			return MakeGoFunctionCommand(spec.Golang.GoLocation, spec.Golang.Go, function)
 		}
+	} else if spec.GenericRuntime != nil {
+		if spec.GenericRuntime.FunctionFile != "" {
+			return MakeGenericFunctionCommand(spec.GenericRuntime.FunctionFileLocation, spec.GenericRuntime.FunctionFile,
+				spec.GenericRuntime.Language, spec.ClusterName,
+				generateFunctionDetailsInJSON(function), string(function.UID),
+				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
+		}
 	}
 
 	return nil

@@ -64,6 +64,18 @@ spec:
                   type: string
                 filebeatImage:
                   type: string
+                genericRuntime:
+                  properties:
+                    functionFile:
+                      type: string
+                    functionFileLocation:
+                      type: string
+                    language:
+                      type: string
+                  required:
+                    - functionFile
+                    - language
+                  type: object
                 golang:
                   properties:
                     go:
