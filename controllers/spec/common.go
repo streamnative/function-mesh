@@ -63,13 +63,13 @@ const (
 	DefaultJavaRunnerImage          = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
 	DefaultPythonRunnerImage        = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
 	DefaultGoRunnerImage            = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
-	DefaultGenericNodejsRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-nodejs:" + DefaultRunnerTag
-	DefaultGenericPythonRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-python:" + DefaultRunnerTag
-	DefaultGenericRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-generic:" + DefaultRunnerTag
+	DefaultGenericNodejsRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-nodejs-runner:" + DefaultRunnerTag
+	DefaultGenericPythonRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-python-runner:" + DefaultRunnerTag
+	DefaultGenericRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-generic-base-runner:" + DefaultRunnerTag
 	PulsarAdminExecutableFile       = "/pulsar/bin/pulsar-admin"
 	WorkDir                         = "/pulsar/"
 
-	RunnerImageHasPulsarctl = "pulsar-functions-(pulsarctl|sn)-(java|python|go)-runner"
+	RunnerImageHasPulsarctl = "pulsar-functions-(pulsarctl|sn|generic)-(java|python|go|nodejs|base)-runner"
 
 	PulsarctlExecutableFile = "pulsarctl"
 	DownloaderName          = "downloader"
