@@ -70,7 +70,6 @@ var (
 // RegisterMetrics will register metrics with the global prometheus registry
 func RegisterMetrics() {
 	// use new go collector
-	metrics.Registry.Unregister(prometheus.NewGoCollector())
 	metrics.Registry.MustRegister(collectors.NewGoCollector(collectors.WithGoCollections(collectors.GoRuntimeMetricsCollection)))
 	metrics.Registry.MustRegister(FunctionMeshControllerReconcileCount)
 	metrics.Registry.MustRegister(FunctionMeshControllerReconcileLatency)
