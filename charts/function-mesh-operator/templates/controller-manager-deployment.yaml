@@ -22,6 +22,10 @@ spec:
         app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: controller-manager
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "{{ .Values.controllerManager.metrics.port }}"
     spec:
     {{- if .Values.controllerManager.serviceAccount }}
       serviceAccount: {{ .Values.controllerManager.serviceAccount }}
@@ -43,6 +47,8 @@ spec:
         - containerPort: 9443
           name: webhook-server
           protocol: TCP
+        - containerPort: {{ .Values.controllerManager.metrics.port }}
+          name: metrics
         {{- end}}
         command:
           - /manager
