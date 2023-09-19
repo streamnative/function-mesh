@@ -42,5 +42,17 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

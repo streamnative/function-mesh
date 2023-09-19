@@ -42,14 +42,15 @@ spec:
         resources:
 {{ toYaml .Values.controllerManager.resources | indent 12 }}
         {{- end }}
-        {{- if .Values.admissionWebhook.enabled }}
         ports:
+        {{- if .Values.admissionWebhook.enabled }}
         - containerPort: 9443
           name: webhook-server
           protocol: TCP
-        - containerPort: {{ .Values.controllerManager.metrics.port }}
-          name: metrics
         {{- end}}
+        - containerPort: {{ .Values.controllerManager.metrics.port }}
+          name: http-metrics
+          protocol: TCP
         command:
           - /manager
         args:
@@ -69,6 +70,18 @@ spec:
             value: {{ .Values.admissionWebhook.enabled | quote }}
         volumeMounts:
         {{- include "function-mesh-operator.volumeMounts" . | nindent 8 }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.controllerManager.healthProbe.port }}
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: {{ .Values.controllerManager.healthProbe.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
       {{- with .Values.controllerManager.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
@@ -86,3 +99,20 @@ spec:
       {{- end }}
       volumes:
       {{- include "function-mesh-operator.volumes" . | nindent 6 -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: function-mesh-controller-manager-metrics-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "function-mesh-operator.labels" . | nindent 4 }}
+spec:
+  ports:
+    - name: http-metrics
+      port: {{ .Values.controllerManager.metrics.port }}
+      protocol: TCP
+      targetPort: {{ .Values.controllerManager.metrics.port }}
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: controller-manager
