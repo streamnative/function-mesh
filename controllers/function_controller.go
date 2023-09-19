@@ -19,6 +19,9 @@ package controllers
 
 import (
 	"context"
+	"time"
+
+	"github.com/streamnative/function-mesh/pkg/monitoring"
 
 	v1 "k8s.io/api/batch/v1"
 	"k8s.io/client-go/rest"
@@ -62,6 +65,15 @@ type FunctionReconciler struct {
 
 func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("function", req.NamespacedName)
+
+	startTime := time.Now()
+
+	defer func() {
+		monitoring.FunctionMeshControllerReconcileCount.WithLabelValues("function", req.NamespacedName.Name,
+			req.NamespacedName.Namespace).Inc()
+		monitoring.FunctionMeshControllerReconcileLatency.WithLabelValues("function", req.NamespacedName.Name,
+			req.NamespacedName.Namespace).Observe(float64(time.Since(startTime).Milliseconds()))
+	}()
 
 	// your logic here
 	function := &v1alpha1.Function{}

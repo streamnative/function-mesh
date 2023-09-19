@@ -55,6 +55,8 @@ spec:
                       type: string
                     downloaderImage:
                       type: string
+                    filebeatImage:
+                      type: string
                     forwardSourceMessageProperty:
                       type: boolean
                     funcConfig:
@@ -255,6 +257,11 @@ spec:
                       - jar
                       type: object
                     logTopic:
+                      type: string
+                    logTopicAgent:
+                      enum:
+                      - runtime
+                      - sidecar
                       type: string
                     maxMessageRetry:
                       format: int32
@@ -3623,6 +3630,8 @@ spec:
                       type: string
                     downloaderImage:
                       type: string
+                    filebeatImage:
+                      type: string
                     golang:
                       properties:
                         go:
@@ -3817,6 +3826,13 @@ spec:
                       required:
                       - jar
                       type: object
+                    logTopic:
+                      type: string
+                    logTopicAgent:
+                      enum:
+                      - runtime
+                      - sidecar
+                      type: string
                     maxMessageRetry:
                       format: int32
                       type: integer
@@ -6929,6 +6945,8 @@ spec:
                       type: string
                     downloaderImage:
                       type: string
+                    filebeatImage:
+                      type: string
                     forwardSourceMessageProperty:
                       type: boolean
                     golang:
@@ -7053,6 +7071,13 @@ spec:
                       required:
                       - jar
                       type: object
+                    logTopic:
+                      type: string
+                    logTopicAgent:
+                      enum:
+                      - runtime
+                      - sidecar
+                      type: string
                     maxReplicas:
                       format: int32
                       type: integer
@@ -10300,6 +10325,8 @@ spec:
                 type: string
               downloaderImage:
                 type: string
+              filebeatImage:
+                type: string
               forwardSourceMessageProperty:
                 type: boolean
               funcConfig:
@@ -10500,6 +10527,11 @@ spec:
                 - jar
                 type: object
               logTopic:
+                type: string
+              logTopicAgent:
+                enum:
+                - runtime
+                - sidecar
                 type: string
               maxMessageRetry:
                 format: int32
@@ -13941,6 +13973,8 @@ spec:
                 type: string
               downloaderImage:
                 type: string
+              filebeatImage:
+                type: string
               golang:
                 properties:
                   go:
@@ -14135,6 +14169,13 @@ spec:
                 required:
                 - jar
                 type: object
+              logTopic:
+                type: string
+              logTopicAgent:
+                enum:
+                - runtime
+                - sidecar
+                type: string
               maxMessageRetry:
                 format: int32
                 type: integer
@@ -17320,6 +17361,8 @@ spec:
                 type: string
               downloaderImage:
                 type: string
+              filebeatImage:
+                type: string
               forwardSourceMessageProperty:
                 type: boolean
               golang:
@@ -17444,6 +17487,13 @@ spec:
                 required:
                 - jar
                 type: object
+              logTopic:
+                type: string
+              logTopicAgent:
+                enum:
+                - runtime
+                - sidecar
+                type: string
               maxReplicas:
                 format: int32
                 type: integer

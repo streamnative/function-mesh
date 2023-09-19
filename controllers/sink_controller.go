@@ -19,6 +19,9 @@ package controllers
 
 import (
 	"context"
+	"time"
+
+	"github.com/streamnative/function-mesh/pkg/monitoring"
 
 	v1 "k8s.io/api/batch/v1"
 	"k8s.io/client-go/rest"
@@ -61,6 +64,15 @@ type SinkReconciler struct {
 
 func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("sink", req.NamespacedName)
+
+	startTime := time.Now()
+
+	defer func() {
+		monitoring.FunctionMeshControllerReconcileCount.WithLabelValues("sink", req.NamespacedName.Name,
+			req.NamespacedName.Namespace).Inc()
+		monitoring.FunctionMeshControllerReconcileLatency.WithLabelValues("sink", req.NamespacedName.Name,
+			req.NamespacedName.Namespace).Observe(float64(time.Since(startTime).Milliseconds()))
+	}()
 
 	// your logic here
 	sink := &v1alpha1.Sink{}

@@ -24,6 +24,10 @@ import (
 	"os"
 	"strconv"
 
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+
+	"github.com/streamnative/function-mesh/pkg/monitoring"
+
 	"github.com/go-logr/logr"
 	computev1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers"
@@ -53,6 +57,8 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(computev1alpha1.AddToScheme(scheme))
+
+	monitoring.RegisterMetrics()
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -202,6 +208,15 @@ func main() {
 		}
 	}
 	// +kubebuilder:scaffold:builder
+
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up health check")
+		os.Exit(1)
+	}
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up ready check")
+		os.Exit(1)
+	}
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

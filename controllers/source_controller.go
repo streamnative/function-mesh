@@ -19,6 +19,9 @@ package controllers
 
 import (
 	"context"
+	"time"
+
+	"github.com/streamnative/function-mesh/pkg/monitoring"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -61,6 +64,15 @@ type SourceReconciler struct {
 
 func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("source", req.NamespacedName)
+
+	startTime := time.Now()
+
+	defer func() {
+		monitoring.FunctionMeshControllerReconcileCount.WithLabelValues("source", req.NamespacedName.Name,
+			req.NamespacedName.Namespace).Inc()
+		monitoring.FunctionMeshControllerReconcileLatency.WithLabelValues("source", req.NamespacedName.Name,
+			req.NamespacedName.Namespace).Observe(float64(time.Since(startTime).Milliseconds()))
+	}()
 
 	// your logic here
 	source := &v1alpha1.Source{}

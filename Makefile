@@ -297,3 +297,9 @@ redhat-certificated-image-build:
 redhat-certificated-image-push: ## Push the bundle image.
 	echo $(OPERATOR_IMG)
 	$(MAKE) image-push IMG=$(OPERATOR_IMG)
+
+##@ Generate the metrics documentation
+.PHONY: generate-metricsdocs
+generate-metricsdocs:
+	mkdir -p $(shell pwd)/docs/monitoring
+	go run -ldflags="${LDFLAGS}" ./pkg/monitoring/metricsdocs > docs/monitoring/metrics.md

@@ -22,6 +22,10 @@ spec:
         app.kubernetes.io/name: {{ template "function-mesh-operator.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: controller-manager
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "{{ .Values.controllerManager.metrics.port }}"
     spec:
     {{- if .Values.controllerManager.serviceAccount }}
       serviceAccount: {{ .Values.controllerManager.serviceAccount }}
@@ -38,12 +42,15 @@ spec:
         resources:
 {{ toYaml .Values.controllerManager.resources | indent 12 }}
         {{- end }}
-        {{- if .Values.admissionWebhook.enabled }}
         ports:
+        {{- if .Values.admissionWebhook.enabled }}
         - containerPort: 9443
           name: webhook-server
           protocol: TCP
         {{- end}}
+        - containerPort: {{ .Values.controllerManager.metrics.port }}
+          name: http-metrics
+          protocol: TCP
         command:
           - /manager
         args:
@@ -63,6 +70,18 @@ spec:
             value: {{ .Values.admissionWebhook.enabled | quote }}
         volumeMounts:
         {{- include "function-mesh-operator.volumeMounts" . | nindent 8 }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.controllerManager.healthProbe.port }}
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: {{ .Values.controllerManager.healthProbe.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
       {{- with .Values.controllerManager.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
