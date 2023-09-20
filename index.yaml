@@ -2,6 +2,28 @@ apiVersion: v1
 entries:
   function-mesh-operator:
   - apiVersion: v2
+    appVersion: 0.17.0
+    created: "2023-09-20T11:10:39.962461252Z"
+    dependencies:
+    - condition: admissionWebhook.enabled
+      name: admission-webhook
+      repository: ""
+      version: 0.2.23
+    description: function mesh operator Helm chart for Kubernetes
+    digest: 5ffde84d8fcbe7428a08289bfa080f895ab7628acfd2f16b4fb307966c3718a8
+    home: https://github.com/streamnative/function-mesh
+    maintainers:
+    - email: function-mesh@streamnative.io
+      name: Function Mesh Support
+      url: https://github.com/streamnative/function-mesh
+    name: function-mesh-operator
+    sources:
+    - https://github.com/streamnative/function-mesh
+    type: application
+    urls:
+    - https://github.com/streamnative/function-mesh/releases/download/function-mesh-operator-0.2.23/function-mesh-operator-0.2.23.tgz
+    version: 0.2.23
+  - apiVersion: v2
     appVersion: 0.16.0
     created: "2023-08-25T05:06:39.239709019Z"
     dependencies:
@@ -402,4 +424,4 @@ entries:
     urls:
     - https://github.com/streamnative/function-mesh/releases/download/function-mesh-operator-0.1.12/function-mesh-operator-0.1.12.tgz
     version: 0.1.12
-generated: "2023-08-25T05:06:39.240068718Z"
+generated: "2023-09-20T11:10:39.962821054Z"
