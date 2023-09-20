@@ -1851,6 +1851,15 @@ func getPythonSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []str
 	return ret
 }
 
+func calcInstanceMemoryResources(resources corev1.ResourceRequirements) string {
+	if resources.Requests.Memory() == resources.Limits.Memory() {
+		// if request and limit are the same, use the value * 0.9 as the instance (JVM) memory size, to prevent OOM
+		return getDecimalSIMemory(resource.NewQuantity(int64(float64(resources.Requests.Memory().Value())*0.9), resource.DecimalSI))
+	}
+	// if request and limit are different, use the request value as the instance (JVM) memory size
+	return getDecimalSIMemory(resources.Requests.Memory())
+}
+
 // Java command requires memory values in resource.DecimalSI format
 func getDecimalSIMemory(quantity *resource.Quantity) string {
 	if quantity.Format == resource.DecimalSI {
