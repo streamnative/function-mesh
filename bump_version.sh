@@ -77,3 +77,7 @@ sed -i.bak -E "s/(version\: )(.+)/\1$NEW_CAHRT_VERSION/" charts/function-mesh-op
 
 TEST_IMAGE=kind-registry:5000/streamnativeio/function-mesh-catalog:v${NEW_APP_VERSION} yq eval -i '.spec.image = strenv(TEST_IMAGE)' .ci/olm-tests/catalog.yml
 TEST_CSV=function-mesh.v${NEW_APP_VERSION} yq eval -i '.spec.startingCSV = strenv(TEST_CSV)' .ci/olm-tests/subs.yml
+
+pushd charts
+helm-docs
+popd
