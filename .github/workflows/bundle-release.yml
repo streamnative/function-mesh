@@ -6,11 +6,22 @@ on:
       tag:
         description: 'Version Tag'
         required: true
+      openshift:
+        description: 'Publish to openshift certificated'
+        required: true
+        default: true
+        type: boolean
+      operatorhub:
+        description: 'Publish to operatorhub.io'
+        required: true
+        default: true
+        type: boolean
 
 jobs:
   operatorhub:
     name: publish to operatorhub.io
     runs-on: ubuntu-latest
+    if: ${{ inputs.operatorhub }}
     steps:
       - name: clean disk
         run: |
@@ -134,6 +145,7 @@ jobs:
   openshift:
     name: publish to openshift certificated
     runs-on: ubuntu-latest
+    if: ${{ inputs.openshift }}
     steps:
       - name: clean disk
         run: |
@@ -181,6 +193,12 @@ jobs:
       - name: Get vertical-pod-autoscaler crd
         run: |
           wget https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml -O config/crd/bases/vpa-v1-crd.yaml
+
+      - name: Use the master hack scripts
+        uses: actions/checkout@v2
+        with:
+          path: master_fm
+          ref: master
 
       - name: build release
         id: build_release
@@ -247,7 +265,7 @@ jobs:
           TIMEOUT_IN_MINS: 10
         run: |
           echo $VERSION
-          source hack/publish-rhel.sh
+          source master_fm/hack/publish-rhel.sh
 
           wait_for_container_scan "$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID" "$VERSION" "$PFLT_PYXIS_API_TOKEN" "$TIMEOUT_IN_MINS"
 
@@ -262,7 +280,7 @@ jobs:
           TIMEOUT_IN_MINS: 10
         run: |
           echo $VERSION
-          source hack/publish-rhel.sh
+          source master_fm/hack/publish-rhel.sh
           publish_the_image "$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID" "$VERSION" "$PFLT_PYXIS_API_TOKEN"
           wait_for_container_publish "$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID" "$VERSION" "$PFLT_PYXIS_API_TOKEN" "$TIMEOUT_IN_MINS"
           sync_tags "$CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID" "$VERSION" "$PFLT_PYXIS_API_TOKEN"
