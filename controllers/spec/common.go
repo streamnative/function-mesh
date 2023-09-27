@@ -1104,6 +1104,8 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		setLogLevel,
 		"-Xmx" + memory,
+		"-Xms" + memory,
+		"-XX:+UseG1GC",
 		strings.Join(javaOpts, " "),
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
