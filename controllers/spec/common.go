@@ -58,14 +58,15 @@ const (
 	EnvShardID                      = "SHARD_ID"
 	FunctionsInstanceClasspath      = "pulsar.functions.instance.classpath"
 	DefaultRunnerTag                = "2.10.0.0-rc10"
+	DefaultGenericRunnerTag         = "0.1.0"
 	DefaultRunnerPrefix             = "streamnative/"
 	DefaultRunnerImage              = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
 	DefaultJavaRunnerImage          = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
 	DefaultPythonRunnerImage        = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
 	DefaultGoRunnerImage            = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
-	DefaultGenericNodejsRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-nodejs-runner:" + DefaultRunnerTag
-	DefaultGenericPythonRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-python-runner:" + DefaultRunnerTag
-	DefaultGenericRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-generic-base-runner:" + DefaultRunnerTag
+	DefaultGenericNodejsRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-nodejs-runner:" + DefaultGenericRunnerTag
+	DefaultGenericPythonRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-python-runner:" + DefaultGenericRunnerTag
+	DefaultGenericRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-generic-base-runner:" + DefaultGenericRunnerTag
 	PulsarAdminExecutableFile       = "/pulsar/bin/pulsar-admin"
 	WorkDir                         = "/pulsar/"
 
