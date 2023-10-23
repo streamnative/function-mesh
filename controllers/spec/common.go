@@ -1904,13 +1904,13 @@ func getPythonSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []str
 	return ret
 }
 
-func calcInstanceMemoryResources(resources corev1.ResourceRequirements) string {
+func calcInstanceMemoryResources(resources corev1.ResourceRequirements) *resource.Quantity {
 	if resources.Requests.Memory() == resources.Limits.Memory() {
 		// if request and limit are the same, use the value * 0.9 as the instance (JVM) memory size, to prevent OOM
-		return getDecimalSIMemory(resource.NewQuantity(int64(float64(resources.Requests.Memory().Value())*0.9), resource.DecimalSI))
+		return resource.NewQuantity(int64(float64(resources.Requests.Memory().Value())*0.9), resource.DecimalSI)
 	}
 	// if request and limit are different, use the request value as the instance (JVM) memory size
-	return getDecimalSIMemory(resources.Requests.Memory())
+	return resources.Requests.Memory()
 }
 
 func getGenericSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef, language string) []string {
