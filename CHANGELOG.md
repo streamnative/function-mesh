@@ -1,3 +1,13 @@
+# Function Mesh v0.18.0 Release Notes
+
+## v0.18.0 What's New
+
+* [Controller] Support generic runtime ([#688](https://github.com/streamnative/function-mesh/pull/688))
+* [Controller] Set -Xms and -XX:UseG1GC for java runtime ([#698](https://github.com/streamnative/function-mesh/pull/698))
+* [Controller] Allow memory requests to be equal as the memory limits ([#692](https://github.com/streamnative/function-mesh/pull/692))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2023-10+is%3Aclosed+)
+
 # Function Mesh v0.17.0 Release Notes
 
 ## v0.17.0 What's New
