@@ -159,7 +159,8 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		generateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
 		parseJavaLogLevel(spec.Java),
 		generateSourceDetailsInJSON(source),
-		calcInstanceMemoryResources(spec.Resources), spec.Java.ExtraDependenciesDir, string(source.UID),
+		spec.Java.ExtraDependenciesDir, string(source.UID),
+		calcInstanceMemoryResources(spec.Resources),
 		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
 		generateJavaLogConfigFileName(spec.Java))

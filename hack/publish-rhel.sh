@@ -100,6 +100,12 @@ publish_the_image()
             return 1
         fi
     else
+        local IMAGE_RELEASED=$(get_image published "${RHEL_PROJECT_ID}" "${VERSION}" "${RHEL_API_KEY}")
+        local IMAGE_RELEASED_EXISTS=$(echo $IMAGE_RELEASED | jq -r '.total')
+        if [[ $IMAGE_RELEASED_EXISTS != "0" ]]; then
+            echo "Image you are trying to publish is already published."
+            return 0
+        fi
         echo "Image you are trying to publish does not exist."
         return 1
     fi

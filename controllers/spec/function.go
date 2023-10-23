@@ -219,8 +219,9 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
 				parseJavaLogLevel(spec.Java),
 				generateFunctionDetailsInJSON(function),
-				calcInstanceMemoryResources(spec.Resources), spec.Java.ExtraDependenciesDir,
+				spec.Java.ExtraDependenciesDir,
 				string(function.UID),
+				calcInstanceMemoryResources(spec.Resources),
 				spec.Java.JavaOpts, hasPulsarctl, hasWget,
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 				spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig,
@@ -239,6 +240,14 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {
 			return MakeGoFunctionCommand(spec.Golang.GoLocation, spec.Golang.Go, function)
+		}
+	} else if spec.GenericRuntime != nil {
+		if spec.GenericRuntime.FunctionFile != "" {
+			return MakeGenericFunctionCommand(spec.GenericRuntime.FunctionFileLocation, spec.GenericRuntime.FunctionFile,
+				spec.GenericRuntime.Language, spec.ClusterName,
+				generateFunctionDetailsInJSON(function), string(function.UID),
+				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
 		}
 	}
 

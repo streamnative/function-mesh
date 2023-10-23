@@ -1,4 +1,13 @@
-# Function Mesh v0.15.0 Release Notes
+# Function Mesh v0.17.0 Release Notes
+
+## v0.17.0 What's New
+
+* [Controller] Provides the health and reconcile metrics ([#689](https://github.com/streamnative/function-mesh/pull/689))
+* [Controller] Support very long resource name ([#654](https://github.com/streamnative/function-mesh/issues/654))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2023-09+is%3Aclosed+)
+
+# Function Mesh v0.16.0 Release Notes
 
 ## v0.16.0 What's New
 
@@ -10,6 +19,8 @@
 * [Controller] Do not create filebeat container when log topic is not set ([#683](https://github.com/streamnative/function-mesh/pull/683))
 
 For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2023-08+is%3Aclosed+)
+
+# Function Mesh v0.15.0 Release Notes
 
 ## v0.15.0 What's New
 

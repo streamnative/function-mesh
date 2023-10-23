@@ -6,11 +6,22 @@ on:
       tag:
         description: 'Version Tag'
         required: true
+      openshift:
+        description: 'Publish to openshift certificated'
+        required: true
+        default: true
+        type: boolean
+      operatorhub:
+        description: 'Publish to operatorhub.io'
+        required: true
+        default: true
+        type: boolean
 
 jobs:
   operatorhub:
     name: publish to operatorhub.io
     runs-on: ubuntu-latest
+    if: ${{ inputs.operatorhub }}
     steps:
       - name: clean disk
         run: |
@@ -134,6 +145,7 @@ jobs:
   openshift:
     name: publish to openshift certificated
     runs-on: ubuntu-latest
+    if: ${{ inputs.openshift }}
     steps:
       - name: clean disk
         run: |
@@ -181,6 +193,10 @@ jobs:
       - name: Get vertical-pod-autoscaler crd
         run: |
           wget https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml -O config/crd/bases/vpa-v1-crd.yaml
+
+      - name: Use the master hack scripts
+        run: |
+          wget https://raw.githubusercontent.com/streamnative/function-mesh/master/hack/publish-rhel.sh -O hack/publish-rhel.sh
 
       - name: build release
         id: build_release

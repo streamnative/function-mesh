@@ -49,6 +49,18 @@ spec:
                 type: string
               forwardSourceMessageProperty:
                 type: boolean
+              genericRuntime:
+                properties:
+                  functionFile:
+                    type: string
+                  functionFileLocation:
+                    type: string
+                  language:
+                    type: string
+                required:
+                - functionFile
+                - language
+                type: object
               golang:
                 properties:
                   go:

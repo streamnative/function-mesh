@@ -189,12 +189,14 @@ func (webhook *FunctionWebhook) ValidateCreate(ctx context.Context, obj runtime.
 		allErrs = append(allErrs, field.Invalid(field.NewPath("name"), r.Name, "function name is not provided"))
 	}
 
-	if r.Spec.Runtime.Java == nil && r.Spec.Runtime.Python == nil && r.Spec.Runtime.Golang == nil {
+	if r.Spec.Runtime.Java == nil && r.Spec.Runtime.Python == nil && r.Spec.Runtime.Golang == nil && r.Spec.GenericRuntime == nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "java"), r.Spec.Runtime.Java,
 			"runtime cannot be empty"))
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "python"), r.Spec.Runtime.Python,
 			"runtime cannot be empty"))
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "golang"), r.Spec.Runtime.Golang,
+			"runtime cannot be empty"))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "genericRuntime"), r.Spec.Runtime.GenericRuntime,
 			"runtime cannot be empty"))
 	}
 
