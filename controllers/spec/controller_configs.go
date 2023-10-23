@@ -48,6 +48,7 @@ func DefaultConfigs() *ControllerConfigs {
 				"nodejs":     DefaultGenericNodejsRunnerImage,
 				"python":     DefaultGenericPythonRunnerImage,
 				"executable": DefaultGenericRunnerImage,
+				"wasm":       DefaultGenericRunnerImage,
 			},
 		},
 	}
