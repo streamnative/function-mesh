@@ -332,7 +332,7 @@ func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink) 
 func (r *SinkReconciler) ApplySinkCleanUpJob(ctx context.Context, sink *v1alpha1.Sink) error {
 	if !spec.NeedCleanup(sink) {
 		desiredJob := spec.MakeSinkCleanUpJob(sink)
-		if err := r.Delete(ctx, desiredJob); err != nil {
+		if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 			if errors.IsNotFound(err) {
 				return nil
 			}
@@ -376,7 +376,7 @@ func (r *SinkReconciler) ApplySinkCleanUpJob(ctx context.Context, sink *v1alpha1
 				}
 			} else {
 				// delete the cleanup job
-				if err := r.Delete(ctx, desiredJob); err != nil {
+				if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 					return err
 				}
 			}
@@ -391,7 +391,7 @@ func (r *SinkReconciler) ApplySinkCleanUpJob(ctx context.Context, sink *v1alpha1
 
 			desiredJob := spec.MakeSinkCleanUpJob(sink)
 			// delete the cleanup job
-			if err := r.Delete(ctx, desiredJob); err != nil {
+			if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 				return err
 			}
 

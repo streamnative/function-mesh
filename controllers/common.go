@@ -336,3 +336,11 @@ func ConvertHPAV2ToV2beta2(hpa *autov2.HorizontalPodAutoscaler) *autoscalingv2be
 
 	return result
 }
+
+func getBackgroundDeletionPolicy() client.DeleteOption {
+	backgroundDeletion := metav1.DeletePropagationBackground
+	var deleteOptions client.DeleteOption = &client.DeleteOptions{
+		PropagationPolicy: &backgroundDeletion,
+	}
+	return deleteOptions
+}

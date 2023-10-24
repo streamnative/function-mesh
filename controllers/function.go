@@ -336,7 +336,7 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, function *v1alpha1.Function) error {
 	if !spec.NeedCleanup(function) {
 		desiredJob := spec.MakeFunctionCleanUpJob(function)
-		if err := r.Delete(ctx, desiredJob); err != nil {
+		if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 			if errors.IsNotFound(err) {
 				return nil
 			}
@@ -380,7 +380,7 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 				}
 			} else {
 				// delete the cleanup job
-				if err := r.Delete(ctx, desiredJob); err != nil {
+				if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 					return err
 				}
 			}
@@ -395,10 +395,9 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 
 			desiredJob := spec.MakeFunctionCleanUpJob(function)
 			// delete the cleanup job
-			if err := r.Delete(ctx, desiredJob); err != nil {
+			if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 				return err
 			}
-
 		}
 	}
 	return nil
