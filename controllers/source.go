@@ -334,7 +334,7 @@ func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.
 func (r *SourceReconciler) ApplySourceCleanUpJob(ctx context.Context, source *v1alpha1.Source) error {
 	if !spec.NeedCleanup(source) {
 		desiredJob := spec.MakeSourceCleanUpJob(source)
-		if err := r.Delete(ctx, desiredJob); err != nil {
+		if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 			if errors.IsNotFound(err) {
 				return nil
 			}
@@ -378,7 +378,7 @@ func (r *SourceReconciler) ApplySourceCleanUpJob(ctx context.Context, source *v1
 				}
 			} else {
 				// delete the cleanup job
-				if err := r.Delete(ctx, desiredJob); err != nil {
+				if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 					return err
 				}
 			}
@@ -393,7 +393,7 @@ func (r *SourceReconciler) ApplySourceCleanUpJob(ctx context.Context, source *v1
 
 			desiredJob := spec.MakeSourceCleanUpJob(source)
 			// delete the cleanup job
-			if err := r.Delete(ctx, desiredJob); err != nil {
+			if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 				return err
 			}
 

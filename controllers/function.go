@@ -20,8 +20,6 @@ package controllers
 import (
 	"context"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -336,13 +334,9 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 }
 
 func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, function *v1alpha1.Function) error {
-	backgroundDeletion := metav1.DeletePropagationBackground
-	var deleteOptions client.DeleteOption = &client.DeleteOptions{
-		PropagationPolicy: &backgroundDeletion,
-	}
 	if !spec.NeedCleanup(function) {
 		desiredJob := spec.MakeFunctionCleanUpJob(function)
-		if err := r.Delete(ctx, desiredJob); err != nil {
+		if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 			if errors.IsNotFound(err) {
 				return nil
 			}
@@ -386,7 +380,7 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 				}
 			} else {
 				// delete the cleanup job
-				if err := r.Delete(ctx, desiredJob, deleteOptions); err != nil {
+				if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 					return err
 				}
 			}
@@ -401,7 +395,7 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 
 			desiredJob := spec.MakeFunctionCleanUpJob(function)
 			// delete the cleanup job
-			if err := r.Delete(ctx, desiredJob, deleteOptions); err != nil {
+			if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 				return err
 			}
 		}
