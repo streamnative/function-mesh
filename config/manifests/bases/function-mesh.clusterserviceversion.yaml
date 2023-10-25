@@ -72,7 +72,7 @@ spec:
   - email: function-mesh@streamnative.io
     name: Function Mesh
   maturity: alpha
-  minKubeVersion: v1.23.0
+  minKubeVersion: 1.23.0
   provider:
     name: StreamNative
     url: https://streamnative.io
