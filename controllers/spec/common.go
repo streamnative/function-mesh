@@ -1091,7 +1091,7 @@ func setShardIDEnvironmentVariableCommand() string {
 }
 
 func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, extraDependenciesDir, uid string,
-	memory *resource.Quantity, javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
+	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
@@ -1931,14 +1931,6 @@ func getGenericSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef, lang
 		}
 	}
 	return ret
-}
-
-// Java command requires memory values in resource.DecimalSI format
-func getDecimalSIMemory(quantity *resource.Quantity) string {
-	if quantity.Format == resource.DecimalSI {
-		return quantity.String()
-	}
-	return resource.NewQuantity(quantity.Value(), resource.DecimalSI).String()
 }
 
 func getTLSTrustCertPath(tlsVolume TLSConfig, path string) string {
