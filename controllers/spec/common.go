@@ -1113,7 +1113,6 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 			},
 			" ")
 	}
-	xmsMemory := resource.NewScaledQuantity(memory.Value()/2, 0)
 	args := []string{
 		"exec",
 		"java",
@@ -1124,9 +1123,12 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"-Dpulsar.function.log.dir=logs/functions",
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		setLogLevel,
-		"-Xmx" + getDecimalSIMemory(memory),
-		"-Xms" + getDecimalSIMemory(xmsMemory),
+		"-XX:InitialRAMPercentage=20",
+		"-XX:MaxRAMPercentage=40",
 		"-XX:+UseG1GC",
+		"-XX:+HeapDumpOnOutOfMemoryError",
+		"-XX:HeapDumpPath=/pulsar/tmp/heapdump-%p.hprof",
+		"-Xlog:gc*:file=/pulsar/logs/gc.log:time,level,tags:filecount=5,filesize=10M",
 		strings.Join(javaOpts, " "),
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
