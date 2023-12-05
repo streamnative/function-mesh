@@ -40,7 +40,6 @@ import (
 	autov2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -340,14 +339,14 @@ func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Cont
 	}
 }
 
-func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, extraDependenciesDir, uid string, memory *resource.Quantity,
+func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, extraDependenciesDir, uid string,
 	javaOpts []string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
-			extraDependenciesDir, uid, memory, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
+			extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
 			authConfig, maxPendingAsyncRequests, logConfigFileName), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
@@ -1904,15 +1903,6 @@ func getPythonSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []str
 		}
 	}
 	return ret
-}
-
-func calcInstanceMemoryResources(resources corev1.ResourceRequirements) *resource.Quantity {
-	if resources.Requests.Memory() == resources.Limits.Memory() {
-		// if request and limit are the same, use the value * 0.9 as the instance (JVM) memory size, to prevent OOM
-		return resource.NewQuantity(int64(float64(resources.Requests.Memory().Value())*0.9), resource.DecimalSI)
-	}
-	// if request and limit are different, use the request value as the instance (JVM) memory size
-	return resources.Requests.Memory()
 }
 
 func getGenericSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef, language string) []string {

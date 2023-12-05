@@ -213,7 +213,6 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		parseJavaLogLevel(spec.Java),
 		generateSinkDetailsInJSON(sink),
 		spec.Java.ExtraDependenciesDir, string(sink.UID),
-		calcInstanceMemoryResources(spec.Resources),
 		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
 		generateJavaLogConfigFileName(spec.Java))
