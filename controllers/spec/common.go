@@ -40,7 +40,6 @@ import (
 	autov2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -336,14 +335,14 @@ func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Cont
 	}
 }
 
-func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, memory, extraDependenciesDir, uid string,
+func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, extraDependenciesDir, uid string,
 	javaOpts []string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
-			memory, extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
+			extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
 			authConfig, maxPendingAsyncRequests, logConfigFileName), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
@@ -1070,7 +1069,7 @@ func setShardIDEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
-func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, memory, extraDependenciesDir, uid string,
+func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, extraDependenciesDir, uid string,
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
@@ -1103,7 +1102,12 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"-Dpulsar.function.log.dir=logs/functions",
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		setLogLevel,
-		"-Xmx" + memory,
+		"-XX:InitialRAMPercentage=20",
+		"-XX:MaxRAMPercentage=40",
+		"-XX:+UseG1GC",
+		"-XX:+HeapDumpOnOutOfMemoryError",
+		"-XX:HeapDumpPath=/pulsar/tmp/heapdump-%p.hprof",
+		"-Xlog:gc*:file=/pulsar/logs/gc.log:time,level,tags:filecount=5,filesize=10M",
 		strings.Join(javaOpts, " "),
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
 		"--jar",
@@ -1851,12 +1855,22 @@ func getPythonSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []str
 	return ret
 }
 
-// Java command requires memory values in resource.DecimalSI format
-func getDecimalSIMemory(quantity *resource.Quantity) string {
-	if quantity.Format == resource.DecimalSI {
-		return quantity.String()
+func getGenericSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef, language string) []string {
+	var ret []string
+	if len(secretMaps) > 0 {
+		if language == "python" {
+			ret = []string{
+				"--secrets_provider",
+				"secrets_provider.EnvironmentBasedSecretsProvider",
+			}
+		} else if language == "nodejs" {
+			ret = []string{
+				"--secrets_provider",
+				"EnvironmentBasedSecretsProvider",
+			}
+		}
 	}
-	return resource.NewQuantity(quantity.Value(), resource.DecimalSI).String()
+	return ret
 }
 
 func getTLSTrustCertPath(tlsVolume TLSConfig, path string) string {
