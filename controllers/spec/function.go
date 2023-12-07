@@ -219,7 +219,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
 				parseJavaLogLevel(spec.Java),
 				generateFunctionDetailsInJSON(function),
-				getDecimalSIMemory(spec.Resources.Requests.Memory()), spec.Java.ExtraDependenciesDir,
+				spec.Java.ExtraDependenciesDir,
 				string(function.UID),
 				spec.Java.JavaOpts, hasPulsarctl, hasWget,
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
