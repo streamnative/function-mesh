@@ -229,21 +229,35 @@ func ConvertHPAV2ToV2beta2(hpa *autov2.HorizontalPodAutoscaler) *autoscalingv2be
 			MinReplicas: hpa.Spec.MinReplicas,
 			MaxReplicas: hpa.Spec.MaxReplicas,
 			Metrics:     make([]autoscalingv2beta2.MetricSpec, len(hpa.Spec.Metrics)),
-			Behavior: &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
-				ScaleUp: &autoscalingv2beta2.HPAScalingRules{
-					StabilizationWindowSeconds: hpa.Spec.Behavior.ScaleUp.StabilizationWindowSeconds,
-					SelectPolicy:               (*autoscalingv2beta2.ScalingPolicySelect)(hpa.Spec.Behavior.ScaleUp.SelectPolicy),
-					Policies: make([]autoscalingv2beta2.HPAScalingPolicy,
-						len(hpa.Spec.Behavior.ScaleUp.Policies)),
-				},
-				ScaleDown: &autoscalingv2beta2.HPAScalingRules{
-					StabilizationWindowSeconds: hpa.Spec.Behavior.ScaleDown.StabilizationWindowSeconds,
-					SelectPolicy:               (*autoscalingv2beta2.ScalingPolicySelect)(hpa.Spec.Behavior.ScaleDown.SelectPolicy),
-					Policies: make([]autoscalingv2beta2.HPAScalingPolicy,
-						len(hpa.Spec.Behavior.ScaleDown.Policies)),
-				},
-			},
 		},
+	}
+
+	result.Spec.Behavior = &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{}
+	if hpa.Spec.Behavior != nil {
+		if hpa.Spec.Behavior.ScaleUp != nil {
+			result.Spec.Behavior.ScaleUp.StabilizationWindowSeconds = hpa.Spec.Behavior.ScaleUp.StabilizationWindowSeconds
+			result.Spec.Behavior.ScaleUp.SelectPolicy = (*autoscalingv2beta2.ScalingPolicySelect)(hpa.Spec.Behavior.ScaleUp.SelectPolicy)
+			result.Spec.Behavior.ScaleUp.Policies = make([]autoscalingv2beta2.HPAScalingPolicy, len(hpa.Spec.Behavior.ScaleUp.Policies))
+			for i, policy := range hpa.Spec.Behavior.ScaleUp.Policies {
+				result.Spec.Behavior.ScaleUp.Policies[i] = autoscalingv2beta2.HPAScalingPolicy{
+					Type:          autoscalingv2beta2.HPAScalingPolicyType(policy.Type),
+					Value:         policy.Value,
+					PeriodSeconds: policy.PeriodSeconds,
+				}
+			}
+		}
+		if hpa.Spec.Behavior.ScaleDown != nil {
+			result.Spec.Behavior.ScaleDown.StabilizationWindowSeconds = hpa.Spec.Behavior.ScaleDown.StabilizationWindowSeconds
+			result.Spec.Behavior.ScaleDown.SelectPolicy = (*autoscalingv2beta2.ScalingPolicySelect)(hpa.Spec.Behavior.ScaleDown.SelectPolicy)
+			result.Spec.Behavior.ScaleDown.Policies = make([]autoscalingv2beta2.HPAScalingPolicy, len(hpa.Spec.Behavior.ScaleDown.Policies))
+			for i, policy := range hpa.Spec.Behavior.ScaleDown.Policies {
+				result.Spec.Behavior.ScaleDown.Policies[i] = autoscalingv2beta2.HPAScalingPolicy{
+					Type:          autoscalingv2beta2.HPAScalingPolicyType(policy.Type),
+					Value:         policy.Value,
+					PeriodSeconds: policy.PeriodSeconds,
+				}
+			}
+		}
 	}
 
 	for i, metric := range hpa.Spec.Metrics {
@@ -316,22 +330,6 @@ func ConvertHPAV2ToV2beta2(hpa *autov2.HorizontalPodAutoscaler) *autoscalingv2be
 			}
 		}
 		result.Spec.Metrics[i] = ms
-	}
-
-	for i, policy := range hpa.Spec.Behavior.ScaleUp.Policies {
-		result.Spec.Behavior.ScaleUp.Policies[i] = autoscalingv2beta2.HPAScalingPolicy{
-			Type:          autoscalingv2beta2.HPAScalingPolicyType(policy.Type),
-			Value:         policy.Value,
-			PeriodSeconds: policy.PeriodSeconds,
-		}
-	}
-
-	for i, policy := range hpa.Spec.Behavior.ScaleDown.Policies {
-		result.Spec.Behavior.ScaleDown.Policies[i] = autoscalingv2beta2.HPAScalingPolicy{
-			Type:          autoscalingv2beta2.HPAScalingPolicyType(policy.Type),
-			Value:         policy.Value,
-			PeriodSeconds: policy.PeriodSeconds,
-		}
 	}
 
 	return result
