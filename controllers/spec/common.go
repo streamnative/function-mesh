@@ -20,10 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-	"regexp"
-
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
-
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -32,12 +28,14 @@ import (
 	"html/template"
 	"os"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	autov2 "k8s.io/api/autoscaling/v2"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -354,7 +352,7 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 			authProvided, tlsProvided, tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
-	return []string{"sh", "-c", processCommand}
+	return []string{"bash", "-c", processCommand}
 }
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
@@ -371,7 +369,7 @@ func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, gen
 			tlsProvided, tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
-	return []string{"sh", "-c", processCommand}
+	return []string{"bash", "-c", processCommand}
 }
 
 func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alpha1.Function) []string {
@@ -390,7 +388,7 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 			function.Spec.Pulsar.TLSSecret != "", function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
-	return []string{"sh", "-c", processCommand}
+	return []string{"bash", "-c", processCommand}
 }
 
 func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterName, details, uid string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
