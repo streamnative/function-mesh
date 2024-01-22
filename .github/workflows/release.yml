@@ -4,6 +4,9 @@ on:
   release:
     types: [created]
 
+permissions:
+  contents: write
+
 jobs:
   upload:
     if: startsWith(github.ref, 'refs/tags/v')
