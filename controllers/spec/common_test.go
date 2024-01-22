@@ -439,7 +439,7 @@ func TestGetSourceRunnerImage(t *testing.T) {
 func TestMakeGoFunctionCommand(t *testing.T) {
 	function := makeGoFunctionSample(TestFunctionName)
 	commands := MakeGoFunctionCommand("", "/pulsar/go-func", function)
-	assert.Equal(t, commands[0], "sh")
+	assert.Equal(t, commands[0], "bash")
 	assert.Equal(t, commands[1], "-c")
 	assert.True(t, strings.HasPrefix(commands[2], "SHARD_ID=${POD_NAME##*-} && echo shardId=${SHARD_ID}"))
 	innerCommands := strings.Split(commands[2], "&&")
