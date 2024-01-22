@@ -1,3 +1,13 @@
+# Function Mesh v0.19.0 Release Notes
+
+## v0.19.0 What's New
+
+* [Controller] Optimize jvm parameters ([#708](https://github.com/streamnative/function-mesh/pull/708))
+* [Controller] Avoid NPE error when convert HPA V2 to V2beta2 ([#713](https://github.com/streamnative/function-mesh/pull/713))
+* [Controller] Use `bash -c` instead of `sh -c` ([#714](https://github.com/streamnative/function-mesh/pull/714))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2024-01+is%3Aclosed+)
+
 # Function Mesh v0.18.0 Release Notes
 
 ## v0.18.0 What's New
