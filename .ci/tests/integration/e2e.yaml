@@ -91,6 +91,7 @@ setup:
 
     - name: apply global env config map
       command: |
+        kubectl create ns ${FUNCTION_MESH_NAMESPACE}
         kubectl create configmap mesh-global-env -n ${FUNCTION_MESH_NAMESPACE} --from-file=.ci/tests/global.env
 
     - name: install function-mesh operator
