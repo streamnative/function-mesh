@@ -345,16 +345,14 @@ func getBackgroundDeletionPolicy() client.DeleteOption {
 }
 
 func mergeGlobalEnv(globalConfigMap *corev1.ConfigMap, statefulSet *appsv1.StatefulSet) {
-	if utils.GlobalConfigMap != "" {
-		var globalEnvs []corev1.EnvVar
-		for key, val := range globalConfigMap.Data {
-			globalEnvs = append(globalEnvs, corev1.EnvVar{
-				Name:  key,
-				Value: val,
-			})
-		}
-		for _, container := range statefulSet.Spec.Template.Spec.Containers {
-			container.Env = append(container.Env, globalEnvs...)
-		}
+	var globalEnvs []corev1.EnvVar
+	for key, val := range globalConfigMap.Data {
+		globalEnvs = append(globalEnvs, corev1.EnvVar{
+			Name:  key,
+			Value: val,
+		})
+	}
+	for i := range statefulSet.Spec.Template.Spec.Containers {
+		statefulSet.Spec.Template.Spec.Containers[i].Env = append(statefulSet.Spec.Template.Spec.Containers[i].Env, globalEnvs...)
 	}
 }
