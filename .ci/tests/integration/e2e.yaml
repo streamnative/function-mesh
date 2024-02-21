@@ -89,6 +89,10 @@ setup:
         bash .ci/upload_function.sh pypip
         bash .ci/upload_function.sh go
 
+    - name: apply global env config map
+      command: |
+        kubectl create configmap mesh-global-env -n ${FUNCTION_MESH_NAMESPACE} --from-file=.ci/tests/global.env
+
     - name: install function-mesh operator
       command: |
         make generate
@@ -96,7 +100,7 @@ setup:
         image="function-mesh-operator:latest"
         IMG=${image} make docker-build-skip-test
         kind load docker-image ${image}
-        helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --create-namespace charts/function-mesh-operator
+        helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --set controllerManager.globalConfigMap=mesh-global-env --set controllerManager.globalConfigMapNamespace=${FUNCTION_MESH_NAMESPACE} --set controllerManager.namespacedConfigMap=mesh-namespaced-env --create-namespace charts/function-mesh-operator
       wait:
         - namespace: function-mesh
           resource: pod

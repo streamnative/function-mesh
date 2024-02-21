@@ -20,7 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -1476,6 +1475,17 @@ func generateContainerEnvFrom(messagingConfig string, authSecret string, tlsSecr
 		envs = append(envs, corev1.EnvFromSource{
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{Name: tlsSecret},
+			},
+		})
+	}
+
+	// add env from namespaces config map with optional=true
+	optional := true
+	if utils.NamespacedConfigMap != "" {
+		envs = append(envs, corev1.EnvFromSource{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{Name: utils.NamespacedConfigMap},
+				Optional:             &optional,
 			},
 		})
 	}

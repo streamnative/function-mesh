@@ -19,3 +19,6 @@
 package utils
 
 var EnableInitContainers = false
+var GlobalConfigMap = ""
+var GlobalConfigMapNamespace = "default"
+var NamespacedConfigMap = ""

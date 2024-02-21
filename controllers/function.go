@@ -20,6 +20,7 @@ package controllers
 import (
 	"context"
 
+	"github.com/streamnative/function-mesh/utils"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -95,6 +96,15 @@ func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, funct
 	}
 	desiredStatefulSet := spec.MakeFunctionStatefulSet(function)
 	keepStatefulSetUnchangeableFields(ctx, r, r.Log, desiredStatefulSet)
+	if utils.GlobalConfigMap != "" {
+		globalCM := &corev1.ConfigMap{}
+		err := r.Get(ctx, types.NamespacedName{Namespace: utils.GlobalConfigMapNamespace, Name: utils.GlobalConfigMap}, globalCM)
+		if err != nil {
+			r.Log.Error(err, "error getting global configmap")
+			return err
+		}
+		mergeGlobalEnv(globalCM, desiredStatefulSet)
+	}
 	desiredStatefulSetSpec := desiredStatefulSet.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
 		// function statefulSet mutate logic

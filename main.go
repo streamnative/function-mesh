@@ -72,6 +72,9 @@ func main() {
 	var configFile string
 	var watchedNamespace string
 	var enableInitContainers bool
+	var globalConfigMap string
+	var globalConfigMapNamespace string
+	var namespacedConfigMap string
 	flag.StringVar(&metricsAddr, "metrics-addr", lookupEnvOrString("METRICS_ADDR", ":8080"),
 		"The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id",
@@ -97,10 +100,19 @@ func main() {
 		"The address the pprof binds to.")
 	flag.BoolVar(&enableInitContainers, "enable-init-containers", lookupEnvOrBool("ENABLE_INIT_CONTAINERS", false),
 		"Whether to use an init container to download package")
+	flag.StringVar(&globalConfigMap, "global-config-map", lookupEnvOrString("GLOBAL_CONFIG_MAP", ""),
+		"A ConfigMap used to inject envs to all functions/sinks/sources")
+	flag.StringVar(&globalConfigMapNamespace, "global-config-map-namespace", lookupEnvOrString("GLOBAL_CONFIG_MAP_NAMESPACE", "default"),
+		"The namespace of the global ConfigMap. Defaults to 'default'")
+	flag.StringVar(&namespacedConfigMap, "namespaced-config-map", lookupEnvOrString("NAMESPACED_CONFIG_MAP", ""),
+		"A ConfigMap used to inject envs to functions/sinks/sources in a namespace")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	utils.EnableInitContainers = enableInitContainers
+	utils.GlobalConfigMap = globalConfigMap
+	utils.GlobalConfigMapNamespace = globalConfigMapNamespace
+	utils.NamespacedConfigMap = namespacedConfigMap
 
 	// enable pprof
 	if enablePprof {
