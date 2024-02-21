@@ -172,3 +172,5 @@ verify:
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/python-log-format-json/verify.sh
       expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/global-and-namespaced-env/verify.sh
+      expected: expected.data.yaml

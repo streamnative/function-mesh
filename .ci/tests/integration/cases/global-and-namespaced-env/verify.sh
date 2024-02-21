@@ -45,8 +45,21 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-ci::verify_env "function-sample-env" global1 global1=globalvalue1
-ci::verify_env "function-sample-env" namespaced1 namespaced1=namespacedvalue1
+verify_env_result=$(ci::verify_env "function-sample-env" global1 global1=globalvalue1 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_env_result"
+  kubectl delete -f "${env_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+verify_env_result=$(ci::verify_env "function-sample-env" namespaced1 namespaced1=namespacedvalue1 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_env_result"
+  kubectl delete -f "${env_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
 
 kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
 
@@ -61,5 +74,20 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-ci::verify_env "function-sample-env" global1 global1=globalvalue1
-ci::verify_env "function-sample-env" namespaced1 ""
+verify_env_result=$(ci::verify_env "function-sample-env" global1 global1=globalvalue1 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_env_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+verify_env_result=$(ci::verify_env "function-sample-env" namespaced1 "" 2>&1)
+if [ $? -eq 0 ]; then
+  echo "e2e-test: ok" | yq eval -
+else
+  echo "$verify_env_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
