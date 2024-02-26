@@ -46,13 +46,21 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Setup ssh access to build runner VM
+        uses: ./.github/actions/ssh-access
+        with:
+          limit-access-to-actor: true
+
       - uses: apache/skywalking-infra-e2e@v1.2.0
         with:
           e2e-file: ${{matrix.case.e2e}}
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      - name: Wait for ssh connection when build fails
+        uses: ./.github/actions/ssh-access
         if: failure()
+        continue-on-error: true
+        with:
+          action: wait
 
       - name: Cleanup
         if: ${{ failure() }}
