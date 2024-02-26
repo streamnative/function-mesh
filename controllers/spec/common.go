@@ -20,6 +20,7 @@ package spec
 import (
 	"bytes"
 	"context"
+
 	// used for template
 	_ "embed"
 	"encoding/json"
