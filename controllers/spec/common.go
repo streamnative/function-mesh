@@ -20,7 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -40,6 +39,7 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -203,7 +203,7 @@ func MakeHeadlessServiceName(serviceName string) string {
 	return fmt.Sprintf("%s-headless", serviceName)
 }
 
-func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderImage string,
+func MakeStatefulSet(ctx context.Context, r client.Reader, objectMeta *metav1.ObjectMeta, replicas *int32, downloaderImage string,
 	container *corev1.Container, filebeatContainer *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, pulsar v1alpha1.PulsarMessaging,
 	javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
@@ -265,7 +265,7 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 			Name: DownloaderVolume,
 		})
 	}
-	return &appsv1.StatefulSet{
+	desiredStatefulSet := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
 			APIVersion: "apps/v1",
@@ -275,6 +275,8 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 			MakeHeadlessServiceName(objectMeta.Name), downloaderContainer, volumeClaimTemplates,
 			persistentVolumeClaimRetentionPolicy),
 	}
+	MergeGlobalAndNamespacedEnv(ctx, r, objectMeta.Namespace, desiredStatefulSet)
+	return desiredStatefulSet
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container, filebeatContainer *corev1.Container,
@@ -1480,17 +1482,6 @@ func generateContainerEnvFrom(messagingConfig string, authSecret string, tlsSecr
 		})
 	}
 
-	// add env from namespaces config map with optional=true
-	optional := true
-	if utils.NamespacedConfigMap != "" {
-		envs = append(envs, corev1.EnvFromSource{
-			ConfigMapRef: &corev1.ConfigMapEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{Name: utils.NamespacedConfigMap},
-				Optional:             &optional,
-			},
-		})
-	}
-
 	return envs
 }
 
@@ -2285,5 +2276,39 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 			AllowPrivilegeEscalation: &allowPrivilegeEscalation,
 			RunAsUser:                &uid,
 		},
+	}
+}
+
+func MergeGlobalAndNamespacedEnv(ctx context.Context, r client.Reader, namespace string, statefulSet *appsv1.StatefulSet) {
+	var globalEnvs []corev1.EnvVar
+	if utils.GlobalConfigMap != "" {
+		globalCM := &corev1.ConfigMap{}
+		err := r.Get(ctx, types.NamespacedName{Namespace: utils.GlobalConfigMapNamespace, Name: utils.GlobalConfigMap}, globalCM)
+		if err != nil {
+			return
+		}
+		for key, val := range globalCM.Data {
+			globalEnvs = append(globalEnvs, corev1.EnvVar{
+				Name:  key,
+				Value: val,
+			})
+		}
+	}
+	if utils.NamespacedConfigMap != "" {
+		namespacedCM := &corev1.ConfigMap{}
+		err := r.Get(ctx, types.NamespacedName{Namespace: namespace, Name: utils.NamespacedConfigMap}, namespacedCM)
+		if err != nil {
+			return
+		}
+		for key, val := range namespacedCM.Data {
+			globalEnvs = append(globalEnvs, corev1.EnvVar{
+				Name:  key,
+				Value: val,
+			})
+		}
+	}
+
+	for i := range statefulSet.Spec.Template.Spec.Containers {
+		statefulSet.Spec.Template.Spec.Containers[i].Env = append(statefulSet.Spec.Template.Spec.Containers[i].Env, globalEnvs...)
 	}
 }

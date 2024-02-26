@@ -41,7 +41,7 @@ var _ = Describe("Sink Controller", func() {
 		if sink.Status.Conditions == nil {
 			sink.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 		}
-		statefulSet := spec.MakeSinkStatefulSet(sink)
+		statefulSet := spec.MakeSinkStatefulSet(context.Background(), k8sClient, sink)
 
 		It("Should create pulsar configmap successfully", func() {
 			Expect(k8sClient.Create(context.Background(), pulsarConfig)).Should(Succeed())

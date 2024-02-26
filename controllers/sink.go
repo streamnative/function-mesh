@@ -20,7 +20,6 @@ package controllers
 import (
 	"context"
 
-	"github.com/streamnative/function-mesh/utils"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -70,7 +69,7 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, sink *v1alp
 	}
 	sink.Status.Selector = selector.String()
 
-	if r.checkIfStatefulSetNeedUpdate(statefulSet, sink) {
+	if r.checkIfStatefulSetNeedUpdate(ctx, statefulSet, sink) {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		sink.Status.Conditions[v1alpha1.StatefulSet] = condition
@@ -93,17 +92,8 @@ func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
-	desiredStatefulSet := spec.MakeSinkStatefulSet(sink)
+	desiredStatefulSet := spec.MakeSinkStatefulSet(ctx, r, sink)
 	keepStatefulSetUnchangeableFields(ctx, r, r.Log, desiredStatefulSet)
-	if utils.GlobalConfigMap != "" {
-		globalCM := &corev1.ConfigMap{}
-		err := r.Get(ctx, types.NamespacedName{Namespace: utils.GlobalConfigMapNamespace, Name: utils.GlobalConfigMap}, globalCM)
-		if err != nil {
-			r.Log.Error(err, "error getting global configmap")
-			return err
-		}
-		mergeGlobalEnv(globalCM, desiredStatefulSet)
-	}
 	desiredStatefulSetSpec := desiredStatefulSet.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
 		// sink statefulSet mutate logic
@@ -410,8 +400,8 @@ func (r *SinkReconciler) ApplySinkCleanUpJob(ctx context.Context, sink *v1alpha1
 	return nil
 }
 
-func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet, sink *v1alpha1.Sink) bool {
-	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeSinkStatefulSet(sink).Spec)
+func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(ctx context.Context, statefulSet *appsv1.StatefulSet, sink *v1alpha1.Sink) bool {
+	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeSinkStatefulSet(ctx, r, sink).Spec)
 }
 
 func (r *SinkReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler, sink *v1alpha1.Sink) bool {

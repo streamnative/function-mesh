@@ -40,7 +40,7 @@ var _ = Describe("Source Controller", func() {
 		if source.Status.Conditions == nil {
 			source.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 		}
-		statefulSet := spec.MakeSourceStatefulSet(source)
+		statefulSet := spec.MakeSourceStatefulSet(context.Background(), k8sClient, source)
 
 		It("Should create pulsar configmap successfully", func() {
 			Expect(k8sClient.Create(context.Background(), pulsarConfig)).Should(Succeed())

@@ -20,7 +20,6 @@ package controllers
 import (
 	"context"
 
-	"github.com/streamnative/function-mesh/utils"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -70,7 +69,7 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, fun
 	}
 	function.Status.Selector = selector.String()
 
-	if r.checkIfStatefulSetNeedUpdate(statefulSet, function) {
+	if r.checkIfStatefulSetNeedUpdate(ctx, statefulSet, function) {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		function.Status.Conditions[v1alpha1.StatefulSet] = condition
@@ -94,17 +93,8 @@ func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, funct
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
-	desiredStatefulSet := spec.MakeFunctionStatefulSet(function)
+	desiredStatefulSet := spec.MakeFunctionStatefulSet(ctx, r, function)
 	keepStatefulSetUnchangeableFields(ctx, r, r.Log, desiredStatefulSet)
-	if utils.GlobalConfigMap != "" {
-		globalCM := &corev1.ConfigMap{}
-		err := r.Get(ctx, types.NamespacedName{Namespace: utils.GlobalConfigMapNamespace, Name: utils.GlobalConfigMap}, globalCM)
-		if err != nil {
-			r.Log.Error(err, "error getting global configmap")
-			return err
-		}
-		mergeGlobalEnv(globalCM, desiredStatefulSet)
-	}
 	desiredStatefulSetSpec := desiredStatefulSet.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
 		// function statefulSet mutate logic
@@ -413,9 +403,9 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 	return nil
 }
 
-func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet,
+func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(ctx context.Context, statefulSet *appsv1.StatefulSet,
 	function *v1alpha1.Function) bool {
-	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeFunctionStatefulSet(function).Spec)
+	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeFunctionStatefulSet(ctx, r, function).Spec)
 }
 
 func (r *FunctionReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler,

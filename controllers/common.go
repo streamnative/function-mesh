@@ -24,7 +24,6 @@ import (
 
 	"github.com/streamnative/function-mesh/utils"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -342,17 +341,4 @@ func getBackgroundDeletionPolicy() client.DeleteOption {
 		PropagationPolicy: &backgroundDeletion,
 	}
 	return deleteOptions
-}
-
-func mergeGlobalEnv(globalConfigMap *corev1.ConfigMap, statefulSet *appsv1.StatefulSet) {
-	var globalEnvs []corev1.EnvVar
-	for key, val := range globalConfigMap.Data {
-		globalEnvs = append(globalEnvs, corev1.EnvVar{
-			Name:  key,
-			Value: val,
-		})
-	}
-	for i := range statefulSet.Spec.Template.Spec.Containers {
-		statefulSet.Spec.Template.Spec.Containers[i].Env = append(statefulSet.Spec.Template.Spec.Containers[i].Env, globalEnvs...)
-	}
 }

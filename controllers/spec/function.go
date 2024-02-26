@@ -18,6 +18,7 @@
 package spec
 
 import (
+	"context"
 	"regexp"
 
 	"github.com/streamnative/function-mesh/utils"
@@ -27,6 +28,7 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -57,9 +59,9 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 	return MakeService(objectMeta, labels)
 }
 
-func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
+func MakeFunctionStatefulSet(ctx context.Context, r client.Reader, function *v1alpha1.Function) *appsv1.StatefulSet {
 	objectMeta := MakeFunctionObjectMeta(function)
-	return MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
+	return MakeStatefulSet(ctx, r, objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		makeFunctionContainer(function), makeFilebeatContainer(function.Spec.VolumeMounts, function.Spec.Pod.Env,
 			function.Spec.Name, function.Spec.LogTopic, function.Spec.LogTopicAgent, function.Spec.Pulsar.TLSConfig,
 			function.Spec.Pulsar.AuthConfig, function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.TLSSecret,
