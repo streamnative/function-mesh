@@ -4,3 +4,4 @@ metadata:
   name: mesh-global-env
 data:
   global1: globalvalue1
+  shared1: fromglobal

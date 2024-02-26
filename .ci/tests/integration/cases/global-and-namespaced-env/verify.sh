@@ -61,6 +61,15 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# if global and namespaced env has same key, the value from namespace should be used
+verify_env_result=$(ci::verify_env "function-sample-env" shared1 shared1=fromnamespace 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_env_result"
+  kubectl delete -f "${env_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
 kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
 
 # delete the namespaced env, the function can start successfully but without namespaced env injected
@@ -75,6 +84,13 @@ if [ $? -ne 0 ]; then
 fi
 
 verify_env_result=$(ci::verify_env "function-sample-env" global1 global1=globalvalue1 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_env_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+verify_env_result=$(ci::verify_env "function-sample-env" shared1 shared1=fromglobal 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_env_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
