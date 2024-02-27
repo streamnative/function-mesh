@@ -39,6 +39,7 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -2282,31 +2283,37 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 
 func MergeGlobalAndNamespacedEnv(ctx context.Context, r client.Reader, namespace string, statefulSet *appsv1.StatefulSet) {
 	var globalEnvs []corev1.EnvVar
+	var envData map[string]string
 	if utils.GlobalConfigMap != "" {
 		globalCM := &corev1.ConfigMap{}
 		err := r.Get(ctx, types.NamespacedName{Namespace: utils.GlobalConfigMapNamespace, Name: utils.GlobalConfigMap}, globalCM)
-		if err != nil {
+		if err != nil && !k8serrors.IsNotFound(err) {
 			return
 		}
-		for key, val := range globalCM.Data {
-			globalEnvs = append(globalEnvs, corev1.EnvVar{
-				Name:  key,
-				Value: val,
-			})
+		if globalCM != nil {
+			for key, val := range globalCM.Data {
+				envData[key] = val
+			}
 		}
 	}
 	if utils.NamespacedConfigMap != "" {
 		namespacedCM := &corev1.ConfigMap{}
 		err := r.Get(ctx, types.NamespacedName{Namespace: namespace, Name: utils.NamespacedConfigMap}, namespacedCM)
-		if err != nil {
+		if err != nil && !k8serrors.IsNotFound(err) {
 			return
 		}
-		for key, val := range namespacedCM.Data {
-			globalEnvs = append(globalEnvs, corev1.EnvVar{
-				Name:  key,
-				Value: val,
-			})
+		if namespacedCM != nil {
+			for key, val := range namespacedCM.Data {
+				envData[key] = val
+			}
 		}
+	}
+
+	for key, val := range envData {
+		globalEnvs = append(globalEnvs, corev1.EnvVar{
+			Name:  key,
+			Value: val,
+		})
 	}
 
 	for i := range statefulSet.Spec.Template.Spec.Containers {
