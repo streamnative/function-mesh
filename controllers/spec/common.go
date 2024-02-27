@@ -2282,15 +2282,14 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 }
 
 func MergeGlobalAndNamespacedEnv(ctx context.Context, r client.Reader, namespace string, statefulSet *appsv1.StatefulSet) {
-	var globalEnvs []corev1.EnvVar
-	var envData map[string]string
+	envData := make(map[string]string)
 	if utils.GlobalConfigMap != "" {
 		globalCM := &corev1.ConfigMap{}
 		err := r.Get(ctx, types.NamespacedName{Namespace: utils.GlobalConfigMapNamespace, Name: utils.GlobalConfigMap}, globalCM)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return
 		}
-		if globalCM != nil {
+		if globalCM.Data != nil {
 			for key, val := range globalCM.Data {
 				envData[key] = val
 			}
@@ -2302,13 +2301,18 @@ func MergeGlobalAndNamespacedEnv(ctx context.Context, r client.Reader, namespace
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return
 		}
-		if namespacedCM != nil {
+		if namespacedCM.Data != nil {
 			for key, val := range namespacedCM.Data {
 				envData[key] = val
 			}
 		}
 	}
 
+	if len(envData) == 0 {
+		return
+	}
+
+	globalEnvs := make([]corev1.EnvVar, 0, len(envData))
 	for key, val := range envData {
 		globalEnvs = append(globalEnvs, corev1.EnvVar{
 			Name:  key,
