@@ -166,6 +166,7 @@ func (r *SourceReconciler) ApplySourceService(ctx context.Context, source *v1alp
 func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, source *v1alpha1.Source) error {
 	if source.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
+		delete(source.Status.Conditions, v1alpha1.HPA)
 		return nil
 	}
 
@@ -210,7 +211,12 @@ func (r *SourceReconciler) ObserveSourceHPA(ctx context.Context, source *v1alpha
 
 func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.Source, newGeneration bool) error {
 	if source.Spec.MaxReplicas == nil {
-		// HPA not enabled, skip further action
+		// HPA not enabled, delete HPA if it exists
+		err := deleteHPA(ctx, r.Client, types.NamespacedName{Namespace: source.Namespace, Name: source.Name})
+		if err != nil {
+			r.Log.Error(err, "failed to delete HPA for source", "namespace", source.Namespace, "name", source.Name)
+			return err
+		}
 		return nil
 	}
 	condition := source.Status.Conditions[v1alpha1.HPA]
@@ -235,6 +241,7 @@ func (r *SourceReconciler) ApplySourceHPA(ctx context.Context, source *v1alpha1.
 func (r *SourceReconciler) ObserveSourceHPAV2Beta2(ctx context.Context, source *v1alpha1.Source) error {
 	if source.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
+		delete(source.Status.Conditions, v1alpha1.HPA)
 		return nil
 	}
 
@@ -280,7 +287,12 @@ func (r *SourceReconciler) ObserveSourceHPAV2Beta2(ctx context.Context, source *
 func (r *SourceReconciler) ApplySourceHPAV2Beta2(ctx context.Context, source *v1alpha1.Source,
 	newGeneration bool) error {
 	if source.Spec.MaxReplicas == nil {
-		// HPA not enabled, skip further action
+		// HPA not enabled, delete HPA if it exists
+		err := deleteHPAV2Beta2(ctx, r.Client, types.NamespacedName{Namespace: source.Namespace, Name: source.Name})
+		if err != nil {
+			r.Log.Error(err, "failed to delete HPA for source", "namespace", source.Namespace, "name", source.Name)
+			return err
+		}
 		return nil
 	}
 	condition := source.Status.Conditions[v1alpha1.HPA]

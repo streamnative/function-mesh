@@ -165,6 +165,7 @@ func (r *SinkReconciler) ApplySinkService(ctx context.Context, sink *v1alpha1.Si
 func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, sink *v1alpha1.Sink) error {
 	if sink.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
+		delete(sink.Status.Conditions, v1alpha1.HPA)
 		return nil
 	}
 
@@ -209,7 +210,12 @@ func (r *SinkReconciler) ObserveSinkHPA(ctx context.Context, sink *v1alpha1.Sink
 
 func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
 	if sink.Spec.MaxReplicas == nil {
-		// HPA not enabled, skip further action
+		// HPA not enabled, delete HPA if it exists
+		err := deleteHPA(ctx, r.Client, types.NamespacedName{Namespace: sink.Namespace, Name: sink.Name})
+		if err != nil {
+			r.Log.Error(err, "failed to delete HPA for sink", "namespace", sink.Namespace, "name", sink.Name)
+			return err
+		}
 		return nil
 	}
 	condition := sink.Status.Conditions[v1alpha1.HPA]
@@ -234,6 +240,7 @@ func (r *SinkReconciler) ApplySinkHPA(ctx context.Context, sink *v1alpha1.Sink, 
 func (r *SinkReconciler) ObserveSinkHPAV2Beta2(ctx context.Context, sink *v1alpha1.Sink) error {
 	if sink.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
+		delete(sink.Status.Conditions, v1alpha1.HPA)
 		return nil
 	}
 
@@ -278,7 +285,12 @@ func (r *SinkReconciler) ObserveSinkHPAV2Beta2(ctx context.Context, sink *v1alph
 
 func (r *SinkReconciler) ApplySinkHPAV2Beta2(ctx context.Context, sink *v1alpha1.Sink, newGeneration bool) error {
 	if sink.Spec.MaxReplicas == nil {
-		// HPA not enabled, skip further action
+		// HPA not enabled, delete HPA if it exists
+		err := deleteHPAV2Beta2(ctx, r.Client, types.NamespacedName{Namespace: sink.Namespace, Name: sink.Name})
+		if err != nil {
+			r.Log.Error(err, "failed to delete HPA for sink", "namespace", sink.Namespace, "name", sink.Name)
+			return err
+		}
 		return nil
 	}
 	condition := sink.Status.Conditions[v1alpha1.HPA]

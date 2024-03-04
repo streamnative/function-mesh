@@ -43,6 +43,38 @@ const (
 	CleanUpFinalizerName = "cleanup.subscription.finalizer"
 )
 
+func deleteHPAV2Beta2(ctx context.Context, r client.Client, name types.NamespacedName) error {
+	hpa := &autoscalingv2beta2.HorizontalPodAutoscaler{}
+	err := r.Get(ctx, name, hpa)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	err = r.Delete(ctx, hpa)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func deleteHPA(ctx context.Context, r client.Client, name types.NamespacedName) error {
+	hpa := &autov2.HorizontalPodAutoscaler{}
+	err := r.Get(ctx, name, hpa)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	err = r.Delete(ctx, hpa)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func observeVPA(ctx context.Context, r client.Reader, name types.NamespacedName, vpaSpec *v1alpha1.VPASpec,
 	conditions map[v1alpha1.Component]v1alpha1.ResourceCondition) error {
 	_, ok := conditions[v1alpha1.VPA]
