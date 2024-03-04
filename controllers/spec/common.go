@@ -20,7 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -56,7 +55,7 @@ const (
 	EnvShardID                      = "SHARD_ID"
 	FunctionsInstanceClasspath      = "pulsar.functions.instance.classpath"
 	DefaultRunnerTag                = "2.10.0.0-rc10"
-	DefaultGenericRunnerTag         = "0.1.0"
+	DefaultGenericRunnerTag         = "latest"
 	DefaultRunnerPrefix             = "streamnative/"
 	DefaultRunnerImage              = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
 	DefaultJavaRunnerImage          = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
@@ -394,10 +393,10 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 
 func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterName, details, uid string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, logLevel string) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessGenericRuntimeArgs(language, functionFile, clusterName,
-			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
+			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig, logLevel), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, functionFile, true, true,
@@ -1194,7 +1193,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 
 func getProcessGenericRuntimeArgs(language, functionFile, clusterName, details, uid string, authProvided, tlsProvided bool,
 	secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig,
-	authConfig *v1alpha1.AuthConfig) []string {
+	authConfig *v1alpha1.AuthConfig, logLevel string) []string {
 
 	args := []string{
 		"exec",
@@ -1209,6 +1208,12 @@ func getProcessGenericRuntimeArgs(language, functionFile, clusterName, details, 
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getGenericSecretProviderArgs(secretMaps, language)
 		args = append(args, secretProviderArgs...)
+	}
+	if logLevel != "" {
+		args = append(args, []string{
+			"--log_level",
+			logLevel,
+		}...)
 	}
 	if state != nil && state.Pulsar != nil && state.Pulsar.ServiceURL != "" {
 		statefulArgs := []string{

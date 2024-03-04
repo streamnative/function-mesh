@@ -246,7 +246,8 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				spec.GenericRuntime.Language, spec.ClusterName,
 				generateFunctionDetailsInJSON(function), string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig,
+				function.Spec.GenericRuntime.LogLevel)
 		}
 	}
 
