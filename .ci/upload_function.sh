@@ -45,6 +45,6 @@ case ${1} in
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/test-go-function --path /pulsar/go-examples/exclamationFunc --description "test golang function"
     ;;
   node)
-    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/test-node-function --path /pulsar/examples/node-examples/exclamation.js --description "test nodejs function"
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/test-node-function --path /pulsar/node-examples/exclamation.js --description "test nodejs function"
     ;;
 esac
