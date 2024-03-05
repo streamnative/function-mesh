@@ -139,7 +139,7 @@ function ci::verify_function_mesh() {
         sleep 5
         kubectl get pods -l compute.functionmesh.io/name="${FUNCTION_NAME}"
         kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --tail=50 || true
-        num=$(kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --tail=-1 | grep "Created producer\|Created consumer\|Subscribed to topic\|to pulsar" | wc -l)
+        num=$(kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --tail=-1 | grep "Created producer\|Created consumer\|Subscribed to topic\|to broker pulsar" | wc -l)
     done
 }
 
