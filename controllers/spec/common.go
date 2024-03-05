@@ -20,7 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -55,13 +54,13 @@ import (
 const (
 	EnvShardID                      = "SHARD_ID"
 	FunctionsInstanceClasspath      = "pulsar.functions.instance.classpath"
-	DefaultRunnerTag                = "2.10.0.0-rc10"
+	DefaultRunnerTag                = "3.2.0.1"
 	DefaultGenericRunnerTag         = "latest"
 	DefaultRunnerPrefix             = "streamnative/"
 	DefaultRunnerImage              = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
-	DefaultJavaRunnerImage          = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
-	DefaultPythonRunnerImage        = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
-	DefaultGoRunnerImage            = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
+	DefaultJavaRunnerImage          = DefaultRunnerPrefix + "pulsar-functions-pulsarctl-java-runner:" + DefaultRunnerTag
+	DefaultPythonRunnerImage        = DefaultRunnerPrefix + "pulsar-functions-pulsarctl-python-runner:" + DefaultRunnerTag
+	DefaultGoRunnerImage            = DefaultRunnerPrefix + "pulsar-functions-pulsarctl-go-runner:" + DefaultRunnerTag
 	DefaultGenericNodejsRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-node-runner:" + DefaultGenericRunnerTag
 	DefaultGenericPythonRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-python-runner:" + DefaultGenericRunnerTag
 	DefaultGenericRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-generic-base-runner:" + DefaultGenericRunnerTag
