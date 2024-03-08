@@ -28,7 +28,7 @@ setup:
       command: |
         helm repo add streamnative https://charts.streamnative.io
         rm -rf pulsar-charts/
-        git clone https://github.com/streamnative/charts.git pulsar-charts
+        git clone --branch pulsar-operator-0.17.10 https://github.com/streamnative/charts.git pulsar-charts
         cd pulsar-charts/
         ./scripts/pulsar/prepare_helm_release.sh -n default -k ${PULSAR_RELEASE_NAME} -c
         helm repo add grafana https://grafana.github.io/helm-charts
