@@ -4,7 +4,7 @@ A Kubernetes-Native way to run pulsar functions, connectors and composed functio
 ## Install
 
 ```bash
-curl -sSL https://github.com/streamnative/function-mesh/releases/download/v0.19.0/install.sh | bash
+curl -sSL https://github.com/streamnative/function-mesh/releases/download/v0.20.0/install.sh | bash
 ```
 
 The above command installs all the CRDs, required service account configuration, and all function-mesh operator components. Before you start running a function-mesh example, verify if Function Mesh is installed correctly.
@@ -28,6 +28,7 @@ This table outlines the supported Kubernetes versions. We have tested these vers
 
 | Function Mesh operator                                                          | Kubernetes 1.19 | Kubernetes 1.20 | Kubernetes 1.21 | Kubernetes 1.22 | Kubernetes 1.23 | Kubernetes 1.24 | Kubernetes 1.25 |
 |---------------------------------------------------------------------------------|---------------|--------------|---------------|----------------|-----------------| --------------- | --------------- |
+| [`v0.20.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.20.0) | ✔             | ✔            | ✔             | ✔               | ✔               | ✔               | ✔               |
 | [`v0.19.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.19.0) | ✔             | ✔            | ✔             | ✔               | ✔               | ✔               | ✔               |
 | [`v0.18.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.18.0) | ✔             | ✔            | ✔             | ✔               | ✔               | ✔               | ✔               |
 | [`v0.17.0`](https://github.com/streamnative/function-mesh/releases/tag/v0.17.0) | ✔             | ✔            | ✔             | ✔               | ✔               | ✔               | ✔               |

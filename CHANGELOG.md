@@ -1,3 +1,15 @@
+# Function Mesh v0.20.0 Release Notes
+
+## v0.20.0 What's New
+
+* [Controller] Delete HPA when it's disabled ([#726](https://github.com/streamnative/function-mesh/pull/726))
+* [Helm Charts] Add annotation to exclude the webhook port from Istio proxying ([#728](https://github.com/streamnative/function-mesh/pull/728))
+* [Controller] Use numeric uid:gid in Dockerfile to support Tanzu's PSP ([#720](https://github.com/streamnative/function-mesh/pull/720))
+* [Release] Fix redhat api changes for bundle release ([#719](https://github.com/streamnative/function-mesh/pull/719))
+* [CI] Use /dev/sdb1 to save docker's data in CI ([#723](https://github.com/streamnative/function-mesh/pull/723))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2024-02+is%3Aclosed+)
+
 # Function Mesh v0.19.0 Release Notes
 
 ## v0.19.0 What's New
