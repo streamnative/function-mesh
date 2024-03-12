@@ -167,6 +167,7 @@ func (r *FunctionReconciler) ApplyFunctionService(ctx context.Context, function 
 func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *v1alpha1.Function) error {
 	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
+		delete(function.Status.Conditions, v1alpha1.HPA)
 		return nil
 	}
 
@@ -212,7 +213,12 @@ func (r *FunctionReconciler) ObserveFunctionHPA(ctx context.Context, function *v
 func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1alpha1.Function,
 	newGeneration bool) error {
 	if function.Spec.MaxReplicas == nil {
-		// HPA not enabled, skip further action
+		// HPA not enabled, delete HPA if it exists
+		err := deleteHPA(ctx, r.Client, types.NamespacedName{Namespace: function.Namespace, Name: function.Name})
+		if err != nil {
+			r.Log.Error(err, "failed to delete HPA for function", "namespace", function.Namespace, "name", function.Name)
+			return err
+		}
 		return nil
 	}
 	condition := function.Status.Conditions[v1alpha1.HPA]
@@ -237,6 +243,7 @@ func (r *FunctionReconciler) ApplyFunctionHPA(ctx context.Context, function *v1a
 func (r *FunctionReconciler) ObserveFunctionHPAV2Beta2(ctx context.Context, function *v1alpha1.Function) error {
 	if function.Spec.MaxReplicas == nil {
 		// HPA not enabled, skip further action
+		delete(function.Status.Conditions, v1alpha1.HPA)
 		return nil
 	}
 
@@ -282,7 +289,12 @@ func (r *FunctionReconciler) ObserveFunctionHPAV2Beta2(ctx context.Context, func
 func (r *FunctionReconciler) ApplyFunctionHPAV2Beta2(ctx context.Context, function *v1alpha1.Function,
 	newGeneration bool) error {
 	if function.Spec.MaxReplicas == nil {
-		// HPA not enabled, skip further action
+		// HPA not enabled, delete HPA if it exists
+		err := deleteHPAV2Beta2(ctx, r.Client, types.NamespacedName{Namespace: function.Namespace, Name: function.Name})
+		if err != nil {
+			r.Log.Error(err, "failed to delete HPA for function", "namespace", function.Namespace, "name", function.Name)
+			return err
+		}
 		return nil
 	}
 	condition := function.Status.Conditions[v1alpha1.HPA]
