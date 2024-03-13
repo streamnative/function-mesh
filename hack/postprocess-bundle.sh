@@ -39,3 +39,23 @@ yq -i '.spec.relatedImages = []' bundle/manifests/function-mesh.clusterserviceve
 yq -i '.spec.relatedImages += {"name": "function-mesh", "image": ""}' bundle/manifests/function-mesh.clusterserviceversion.yaml
 yq -i '.spec.relatedImages += {"name": "kube-rbac-proxy", "image": "docker.cloudsmith.io/streamnative/mirrors/gcr.io/kubebuilder/kube-rbac-proxy@sha256:67ecb332573384515406ebd71816781366b70adb0eb66345e5980e92603373e1"}' bundle/manifests/function-mesh.clusterserviceversion.yaml
 yq -i '.spec.relatedImages[0].image += env(IMG_DIGEST)' bundle/manifests/function-mesh.clusterserviceversion.yaml
+
+# Add feature annotations (required)
+# https://docs.openshift.com/container-platform/4.15/operators/operator_sdk/osdk-generating-csvs.html#osdk-csv-manual-annotations_osdk-generating-csvs
+$YQ -i '.metadata.annotations."features.operators.openshift.io/disconnected" = "true"' bundle/manifests/function-mesh.clusterserviceversion.yaml
+$YQ -i '.metadata.annotations."features.operators.openshift.io/fips-compliant" = "false"' bundle/manifests/function-mesh.clusterserviceversion.yaml
+$YQ -i '.metadata.annotations."features.operators.openshift.io/proxy-aware" = "false"' bundle/manifests/function-mesh.clusterserviceversion.yaml
+$YQ -i '.metadata.annotations."features.operators.openshift.io/tls-profiles" = "false"' bundle/manifests/function-mesh.clusterserviceversion.yaml
+$YQ -i '.metadata.annotations."features.operators.openshift.io/token-auth-aws" = "false"' bundle/manifests/function-mesh.clusterserviceversion.yaml
+$YQ -i '.metadata.annotations."features.operators.openshift.io/token-auth-azure" = "false"' bundle/manifests/function-mesh.clusterserviceversion.yaml
+$YQ -i '.metadata.annotations."features.operators.openshift.io/token-auth-gcp" = "false"' bundle/manifests/function-mesh.clusterserviceversion.yaml
+$YQ -i '.metadata.annotations."features.operators.openshift.io/cnf" = "false"' bundle/manifests/function-mesh.clusterserviceversion.yaml
+$YQ -i '.metadata.annotations."features.operators.openshift.io/cni" = "false"' bundle/manifests/function-mesh.clusterserviceversion.yaml
+$YQ -i '.metadata.annotations."features.operators.openshift.io/csi" = "false"' bundle/manifests/function-mesh.clusterserviceversion.yaml
+
+# Add properties.yaml to metadata
+cat <<EOF > bundle/metadata/properties.yaml
+properties:
+  - type: olm.maxOpenShiftVersion
+    value: "4.13"
+EOF
