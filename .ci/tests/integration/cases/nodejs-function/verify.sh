@@ -32,26 +32,23 @@ if [ ! "$KUBECONFIG" ]; then
   export KUBECONFIG=${E2E_KUBECONFIG}
 fi
 
-kubectl apply -f "${BASE_DIR}"/.ci/tests/integration-oauth2/cases/java-download-function-generic-auth/manifests.yaml > /dev/null 2>&1
+manifests_file="${BASE_DIR}"/.ci/tests/integration/cases/nodejs-function/manifests.yaml
 
-verify_fm_result=$(ci::verify_function_mesh function-download-sample-generic-auth 2>&1)
+kubectl apply -f "${manifests_file}" > /dev/null 2>&1
+
+verify_fm_result=$(ci::verify_function_mesh node-function-excla-generic-sample 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_fm_result"
-  kubectl delete -f "${BASE_DIR}"/.ci/tests/integration-oauth2/cases/java-download-function-generic-auth/manifests.yaml > /dev/null 2>&1 || true
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
-verify_log_topic=$(ci::verify_log_topic_with_auth persistent://public/default/logging-generic-auth-function-logs "it is not a NAR file" 10 2>&1)
+verify_node_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_exclamation_function "persistent://public/default/node-generic-excla-input" "persistent://public/default/node-generic-excla-output" "test-message" "test-message!" 10 2>&1)
 if [ $? -ne 0 ]; then
-  echo "$verify_log_topic"
-  kubectl delete -f "${BASE_DIR}"/.ci/tests/integration-oauth2/cases/java-download-function-generic-auth/manifests.yaml > /dev/null 2>&1 || true
+  echo "$verify_node_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
-verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_download_java_function_generic_auth 2>&1)
-if [ $? -eq 0 ]; then
-  echo "e2e-test: ok" | yq eval -
-else
-  echo "$verify_java_result"
-fi
-kubectl delete -f "${BASE_DIR}"/.ci/tests/integration-oauth2/cases/java-download-function-generic-auth/manifests.yaml > /dev/null 2>&1 || true
+echo "e2e-test: ok" | yq eval -
+kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true

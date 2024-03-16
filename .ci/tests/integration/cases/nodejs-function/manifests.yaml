@@ -1,0 +1,45 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: node-function-excla-generic-sample
+  namespace: default
+spec:
+  className: exclamation
+  forwardSourceMessageProperty: true
+  maxPendingAsyncRequests: 1000
+  replicas: 1
+  input:
+    topics:
+    - persistent://public/default/node-generic-excla-input
+    typeClassName: string
+  output:
+    topic: persistent://public/default/node-generic-excla-output
+    typeClassName: string
+  resources:
+    requests:
+      cpu: 500m
+      memory: 0.5G
+    limits:
+      cpu: 500m
+      memory: 0.5G
+  pulsar:
+    pulsarConfig: "test-node-pulsar"
+    tlsConfig:
+      enabled: false
+      allowInsecure: true
+      hostnameVerification: true
+  genericRuntime:
+    functionFile: exclamation.js
+    functionFileLocation: function://public/default/test-node-function
+    language: nodejs
+    logLevel: warn
+  clusterName: test
+  autoAck: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-node-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650

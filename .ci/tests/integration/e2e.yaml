@@ -88,6 +88,7 @@ setup:
         bash .ci/upload_function.sh pyzip
         bash .ci/upload_function.sh pypip
         bash .ci/upload_function.sh go
+        bash .ci/upload_function.sh node
 
     - name: install function-mesh operator
       command: |
@@ -167,4 +168,6 @@ verify:
     - query: timeout 5m bash .ci/tests/integration/cases/java-log-yaml/verify.sh
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/python-log-format-json/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/nodejs-function/verify.sh
       expected: expected.data.yaml
