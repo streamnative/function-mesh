@@ -1,0 +1,9 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: MeshConfig
+metadata:
+  name: mesh-namespaced
+  namespace: default
+spec:
+  env:
+    namespaced1: namespacedvalue1
+    shared1: fromnamespace

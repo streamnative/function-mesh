@@ -97,7 +97,7 @@ func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
-	desiredStatefulSet, err := spec.MakeSinkStatefulSet(ctx, r, sink)
+	desiredStatefulSet, err := spec.MakeSinkStatefulSet(ctx, r.Client, sink)
 	if err != nil {
 		return err
 	}
@@ -421,7 +421,7 @@ func (r *SinkReconciler) ApplySinkCleanUpJob(ctx context.Context, sink *v1alpha1
 }
 
 func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(ctx context.Context, statefulSet *appsv1.StatefulSet, sink *v1alpha1.Sink) (bool, error) {
-	desiredStatefulSet, err := spec.MakeSinkStatefulSet(ctx, r, sink)
+	desiredStatefulSet, err := spec.MakeSinkStatefulSet(ctx, r.Client, sink)
 	if err != nil {
 		return false, err
 	}

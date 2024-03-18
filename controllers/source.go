@@ -98,7 +98,7 @@ func (r *SourceReconciler) ApplySourceStatefulSet(ctx context.Context, source *v
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
-	desiredStatefulSet, err := spec.MakeSourceStatefulSet(ctx, r, source)
+	desiredStatefulSet, err := spec.MakeSourceStatefulSet(ctx, r.Client, source)
 	if err != nil {
 		return err
 	}
@@ -423,7 +423,7 @@ func (r *SourceReconciler) ApplySourceCleanUpJob(ctx context.Context, source *v1
 }
 
 func (r *SourceReconciler) checkIfStatefulSetNeedUpdate(ctx context.Context, statefulSet *appsv1.StatefulSet, source *v1alpha1.Source) (bool, error) {
-	desiredStatefulSet, err := spec.MakeSourceStatefulSet(ctx, r, source)
+	desiredStatefulSet, err := spec.MakeSourceStatefulSet(ctx, r.Client, source)
 	if err != nil {
 		return false, err
 	}
