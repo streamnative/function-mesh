@@ -195,7 +195,7 @@ func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	manager.Watches(&source.Kind{Type: &v1alpha1.MeshConfig{}}, handler.EnqueueRequestsFromMapFunc(
 		func(object client.Object) []reconcile.Request {
-			if object.GetName() == utils.GlobalMeshConfig && object.GetName() == utils.GlobalMeshConfigNamespace {
+			if object.GetName() == utils.GlobalMeshConfig && object.GetNamespace() == utils.GlobalMeshConfigNamespace {
 				ctx := context.Background()
 				sinks := &v1alpha1.SinkList{}
 				err := mgr.GetClient().List(ctx, sinks)

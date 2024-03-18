@@ -1,0 +1,20 @@
+# permissions for end users to view functionmeshes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: meshconfig-viewer-role
+rules:
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - meshconfigs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - meshconfigs/status
+    verbs:
+      - get

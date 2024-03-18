@@ -70,6 +70,9 @@ controllerManager:
     enable: false
     port: 8090
   enableInitContainers: false
+  globalMeshConfig: global-mesh-config
+  globalMeshConfigNamespace: default
+  namespacedMeshConfig: mesh-config
 
 admissionWebhook:
   enabled: true

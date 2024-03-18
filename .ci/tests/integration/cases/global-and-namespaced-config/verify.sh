@@ -99,16 +99,14 @@ if [ $? -ne 0 ]; then
 fi
 
 verify_env_result=$(ci::verify_env "function-sample-env" namespaced1 "" 2>&1)
-if [ $? -eq 0 ]; then
-  echo "e2e-test: ok" | yq eval -
-else
+if [ $? -ne 0 ]; then
   echo "$verify_env_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
 # delete the global config, the function should be reconciled without global env injected
-kubectl delete -f "${global_mesh_config_file}" > /dev/null 2>&1 || true
+kubectl delete -f "${global_mesh_config_file}" -n $FUNCTION_MESH_NAMESPACE > /dev/null 2>&1 || true
 sleep 30
 
 verify_fm_result=$(ci::verify_function_mesh function-sample-env 2>&1)
@@ -119,9 +117,7 @@ if [ $? -ne 0 ]; then
 fi
 
 verify_env_result=$(ci::verify_env "function-sample-env" global1 "" 2>&1)
-if [ $? -eq 0 ]; then
-  echo "e2e-test: ok" | yq eval -
-else
+if [ $? -ne 0 ]; then
   echo "$verify_env_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1

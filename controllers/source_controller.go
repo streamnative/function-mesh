@@ -193,7 +193,7 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	manager.Watches(&k8ssource.Kind{Type: &v1alpha1.MeshConfig{}}, handler.EnqueueRequestsFromMapFunc(
 		func(object client.Object) []reconcile.Request {
-			if object.GetName() == utils.GlobalMeshConfig && object.GetName() == utils.GlobalMeshConfigNamespace {
+			if object.GetName() == utils.GlobalMeshConfig && object.GetNamespace() == utils.GlobalMeshConfigNamespace {
 				ctx := context.Background()
 				sources := &v1alpha1.SourceList{}
 				err := mgr.GetClient().List(ctx, sources)
