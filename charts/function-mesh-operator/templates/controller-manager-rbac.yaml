@@ -141,6 +141,26 @@ rules:
       - patch
       - update
   - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - meshconfigs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
+      - meshconfigs/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
       - ""
     resources:
       - secrets

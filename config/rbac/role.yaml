@@ -55,6 +55,26 @@ rules:
 - apiGroups:
   - compute.functionmesh.io
   resources:
+  - MeshConfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - compute.functionmesh.io
+  resources:
+  - MeshConfigs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - compute.functionmesh.io
+  resources:
   - functionmeshes
   verbs:
   - create
@@ -99,6 +119,18 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - compute.functionmesh.io
+  resources:
+  - meshconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - compute.functionmesh.io
   resources:

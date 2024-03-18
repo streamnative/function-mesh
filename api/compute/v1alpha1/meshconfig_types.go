@@ -57,6 +57,7 @@ type MeshConfig struct {
 }
 
 // +kubebuilder:object:root=true
+
 // MeshConfigList contains a list of MeshConfig
 type MeshConfigList struct {
 	metav1.TypeMeta `json:",inline"`

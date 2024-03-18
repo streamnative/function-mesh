@@ -3361,6 +3361,10 @@ spec:
                         type: string
                     type: object
                   type: object
+                globalMeshConfigRevision:
+                  type: string
+                namespacedMeshConfigRevision:
+                  type: string
                 observedGeneration:
                   format: int64
                   type: integer
