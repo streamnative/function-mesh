@@ -18,8 +18,10 @@
 package spec
 
 import (
+	"context"
 	"regexp"
 
+	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
@@ -27,9 +29,8 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 )
 
 // log is for logging in this package.
@@ -57,9 +58,9 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 	return MakeService(objectMeta, labels)
 }
 
-func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
+func MakeFunctionStatefulSet(ctx context.Context, cli client.Client, function *v1alpha1.Function) (*appsv1.StatefulSet, error) {
 	objectMeta := MakeFunctionObjectMeta(function)
-	return MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
+	statefulSet := MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		makeFunctionContainer(function), makeFilebeatContainer(function.Spec.VolumeMounts, function.Spec.Pod.Env,
 			function.Spec.Name, function.Spec.LogTopic, function.Spec.LogTopicAgent, function.Spec.Pulsar.TLSConfig,
 			function.Spec.Pulsar.AuthConfig, function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.TLSSecret,
@@ -68,6 +69,19 @@ func MakeFunctionStatefulSet(function *v1alpha1.Function) *appsv1.StatefulSet {
 		*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang,
 		function.Spec.VolumeMounts, function.Spec.VolumeClaimTemplates,
 		function.Spec.PersistentVolumeClaimRetentionPolicy)
+
+	globalMeshConfigVersion, namespacedMeshConfigVersion, err := PatchStatefulSet(ctx, cli, function.Namespace, statefulSet)
+	if err != nil {
+		return nil, err
+	}
+	if globalMeshConfigVersion != "" {
+		function.Status.GlobalMeshConfigRevision = globalMeshConfigVersion
+	}
+	if namespacedMeshConfigVersion != "" {
+		function.Status.NamespacedMeshConfigRevision = namespacedMeshConfigVersion
+	}
+
+	return statefulSet, nil
 }
 
 func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {

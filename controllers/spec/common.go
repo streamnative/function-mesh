@@ -20,7 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -39,7 +38,9 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -275,6 +276,70 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 			MakeHeadlessServiceName(objectMeta.Name), downloaderContainer, volumeClaimTemplates,
 			persistentVolumeClaimRetentionPolicy),
 	}
+}
+
+// PatchStatefulSet Apply global and namespaced configs to StatefulSet
+func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, statefulSet *appsv1.StatefulSet) (string, string, error) {
+	globalMeshConfigVersion := ""
+	namespacedMeshConfigVersion := ""
+	envData := make(map[string]string)
+
+	if utils.GlobalMeshConfig != "" && utils.GlobalMeshConfigNamespace != "" {
+		globalMeshConfig := &v1alpha1.MeshConfig{}
+		err := cli.Get(ctx, types.NamespacedName{
+			Namespace: utils.GlobalMeshConfigNamespace,
+			Name:      utils.GlobalMeshConfig,
+		}, globalMeshConfig)
+		if err != nil {
+			// ignore not found error
+			if !k8serrors.IsNotFound(err) {
+				return "", "", err
+			}
+		} else {
+			globalMeshConfigVersion = globalMeshConfig.ResourceVersion
+			for key, val := range globalMeshConfig.Spec.Env {
+				envData[key] = val
+			}
+		}
+	}
+
+	// patch namespaced configs
+	if utils.NamespacedMeshConfig != "" {
+		namespacedMeshConfig := &v1alpha1.MeshConfig{}
+		err := cli.Get(ctx, types.NamespacedName{
+			Namespace: namespace,
+			Name:      utils.GlobalMeshConfig,
+		}, namespacedMeshConfig)
+		if err != nil {
+			// ignore not found error
+			if !k8serrors.IsNotFound(err) {
+				return "", "", err
+			}
+		} else {
+			namespacedMeshConfigVersion = namespacedMeshConfig.ResourceVersion
+			for key, val := range namespacedMeshConfig.Spec.Env {
+				envData[key] = val
+			}
+		}
+	}
+
+	// merge env
+	if len(envData) == 0 {
+		return globalMeshConfigVersion, namespacedMeshConfigVersion, nil
+	}
+	globalEnvs := make([]corev1.EnvVar, 0, len(envData))
+	for key, val := range envData {
+		globalEnvs = append(globalEnvs, corev1.EnvVar{
+			Name:  key,
+			Value: val,
+		})
+	}
+	for i := range statefulSet.Spec.Template.Spec.Containers {
+		statefulSet.Spec.Template.Spec.Containers[i].Env = append(statefulSet.Spec.Template.Spec.Containers[i].Env,
+			globalEnvs...)
+	}
+
+	return globalMeshConfigVersion, namespacedMeshConfigVersion, nil
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container, filebeatContainer *corev1.Container,
