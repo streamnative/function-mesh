@@ -201,15 +201,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Sink")
 		os.Exit(1)
 	}
-	if err = (&controllers.MeshConfigReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("MeshConfig"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("ConfigUpdate"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "MeshConfig")
-		os.Exit(1)
-	}
 
 	// enable the webhook service by default
 	// Disable function-mesh webhook with `ENABLE_WEBHOOKS=false` when we run locally.

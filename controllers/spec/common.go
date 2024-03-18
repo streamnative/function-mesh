@@ -308,7 +308,7 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 		namespacedMeshConfig := &v1alpha1.MeshConfig{}
 		err := cli.Get(ctx, types.NamespacedName{
 			Namespace: namespace,
-			Name:      utils.GlobalMeshConfig,
+			Name:      utils.NamespacedMeshConfig,
 		}, namespacedMeshConfig)
 		if err != nil {
 			// ignore not found error

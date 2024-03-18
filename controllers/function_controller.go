@@ -22,6 +22,9 @@ import (
 	"time"
 
 	"github.com/streamnative/function-mesh/pkg/monitoring"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	v1 "k8s.io/api/batch/v1"
 	"k8s.io/client-go/rest"
@@ -184,6 +187,42 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Service{}).
 		Owns(&corev1.Secret{}).
 		Owns(&v1.Job{})
+
+	manager.Watches(&source.Kind{Type: &v1alpha1.MeshConfig{}}, handler.EnqueueRequestsFromMapFunc(
+		func(object client.Object) []reconcile.Request {
+			if object.GetName() == utils.GlobalMeshConfig && object.GetName() == utils.GlobalMeshConfigNamespace {
+				ctx := context.Background()
+				functions := &v1alpha1.FunctionList{}
+				err := mgr.GetClient().List(ctx, functions)
+				if err != nil {
+					mgr.GetLogger().Error(err, "failed to list all functions")
+				}
+				var requests []reconcile.Request
+				for _, function := range functions.Items {
+					requests = append(requests, reconcile.Request{
+						NamespacedName: types.NamespacedName{Namespace: function.Namespace, Name: function.Name},
+					})
+				}
+				return requests
+			} else if object.GetName() == utils.NamespacedMeshConfig {
+				ctx := context.Background()
+				functions := &v1alpha1.FunctionList{}
+				err := mgr.GetClient().List(ctx, functions, client.InNamespace(object.GetNamespace()))
+				if err != nil {
+					mgr.GetLogger().Error(err, "failed to list functions in namespace: "+object.GetNamespace())
+				}
+				var requests []reconcile.Request
+				for _, function := range functions.Items {
+					requests = append(requests, reconcile.Request{
+						NamespacedName: types.NamespacedName{Namespace: function.Namespace, Name: function.Name},
+					})
+				}
+				return requests
+			} else {
+				return nil
+			}
+		}),
+	)
 
 	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
 		manager.Owns(&vpav1.VerticalPodAutoscaler{})

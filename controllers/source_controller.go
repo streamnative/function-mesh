@@ -22,6 +22,9 @@ import (
 	"time"
 
 	"github.com/streamnative/function-mesh/pkg/monitoring"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	k8ssource "sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -188,5 +191,40 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion != "" {
 		AddControllerBuilderOwn(manager, r.GroupVersionFlags.APIAutoscalingGroupVersion)
 	}
+	manager.Watches(&k8ssource.Kind{Type: &v1alpha1.MeshConfig{}}, handler.EnqueueRequestsFromMapFunc(
+		func(object client.Object) []reconcile.Request {
+			if object.GetName() == utils.GlobalMeshConfig && object.GetName() == utils.GlobalMeshConfigNamespace {
+				ctx := context.Background()
+				sources := &v1alpha1.SourceList{}
+				err := mgr.GetClient().List(ctx, sources)
+				if err != nil {
+					mgr.GetLogger().Error(err, "failed to list all sources")
+				}
+				var requests []reconcile.Request
+				for _, source := range sources.Items {
+					requests = append(requests, reconcile.Request{
+						NamespacedName: types.NamespacedName{Namespace: source.Namespace, Name: source.Name},
+					})
+				}
+				return requests
+			} else if object.GetName() == utils.NamespacedMeshConfig {
+				ctx := context.Background()
+				sources := &v1alpha1.SourceList{}
+				err := mgr.GetClient().List(ctx, sources, client.InNamespace(object.GetNamespace()))
+				if err != nil {
+					mgr.GetLogger().Error(err, "failed to list sources in namespace: "+object.GetNamespace())
+				}
+				var requests []reconcile.Request
+				for _, source := range sources.Items {
+					requests = append(requests, reconcile.Request{
+						NamespacedName: types.NamespacedName{Namespace: source.Namespace, Name: source.Name},
+					})
+				}
+				return requests
+			} else {
+				return nil
+			}
+		}),
+	)
 	return manager.Complete(r)
 }
