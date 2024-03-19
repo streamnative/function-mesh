@@ -80,11 +80,6 @@ setup:
         sed -i "s/http:\/\/sn-platform-pulsar-broker.default.svc.cluster.local:8080/https:\/\/sn-platform-pulsar-broker.default.svc.cluster.local:8443/" .ci/tests/integration/cases/*/*.yaml
         sed -i "s/pulsar:\/\/sn-platform-pulsar-broker.default.svc.cluster.local:6650/pulsar+ssl:\/\/sn-platform-pulsar-broker.default.svc.cluster.local:6651/" .ci/tests/integration/cases/*/*.yaml
 
-    - name: apply global env config map
-      command: |
-        kubectl create ns ${FUNCTION_MESH_NAMESPACE}
-        kubectl create -n ${FUNCTION_MESH_NAMESPACE} -f .ci/clusters/global_mesh.yaml
-
     - name: install function-mesh operator
       command: |
         make generate
@@ -98,6 +93,11 @@ setup:
           resource: pod
           label-selector: app.kubernetes.io/name=function-mesh-operator
           for: condition=Ready
+
+    - name: apply global env config map
+      command: |
+        kubectl create -n ${FUNCTION_MESH_NAMESPACE} -f .ci/clusters/global_mesh.yaml
+
   timeout: 60m
 
 cleanup:
