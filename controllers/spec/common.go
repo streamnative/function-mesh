@@ -342,11 +342,11 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 	javaOpts []string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
+	maxPendingAsyncRequests *int32, logConfigFileName string, java9orAbove bool) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
 			extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
-			authConfig, maxPendingAsyncRequests, logConfigFileName), " ")
+			authConfig, maxPendingAsyncRequests, logConfigFileName, java9orAbove), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(getDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget,
@@ -1092,7 +1092,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
+	maxPendingAsyncRequests *int32, logConfigFileName string, java9orAbove bool) []string {
 	classPath := "/pulsar/instances/java-instance.jar:/pulsar/lib/*"
 	javaLogConfigPath := logConfigFileName
 	if javaLogConfigPath == "" {
@@ -1121,17 +1121,23 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"-Dpulsar.function.log.dir=logs/functions",
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		setLogLevel,
+		"-Dio.netty.tryReflectionSetAccessible=true",
 		"-XX:InitialRAMPercentage=20",
 		"-XX:MaxRAMPercentage=40",
 		"-XX:+UseG1GC",
 		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-XX:HeapDumpPath=/pulsar/tmp/heapdump-%p.hprof",
 		"-Xlog:gc*:file=/pulsar/logs/gc.log:time,level,tags:filecount=5,filesize=10M",
-		strings.Join(javaOpts, " "),
-		"org.apache.pulsar.functions.instance.JavaInstanceMain",
-		"--jar",
-		packageName,
 	}
+	args = append(args, javaOpts...)
+	if java9orAbove {
+		// Needed for netty.DnsResolverUtil on JDK9+
+		args = append(args, "--add-opens java.base/sun.net=ALL-UNNAMED")
+	}
+	args = append(args, "org.apache.pulsar.functions.instance.JavaInstanceMain",
+		"--jar",
+		packageName)
+
 	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig)
 	args = append(args, sharedArgs...)
 	if len(secretMaps) > 0 {
@@ -2275,4 +2281,39 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 			RunAsUser:                &uid,
 		},
 	}
+}
+
+// extract docker image tag from image name
+func extractImageTag(image string) string {
+	if image == "" {
+		return "latest"
+	}
+	s := strings.Split(image, ":")
+	if len(s) == 2 {
+		return s[1]
+	}
+	return "latest"
+}
+
+// check if the image tag is for jre 9+
+func isJava9orAbove(tag string) bool {
+	if tag == "latest" {
+		return true
+	}
+	if strings.Contains(tag, ".") {
+		s := strings.Split(tag, ".")
+		if len(s) > 1 {
+			major, err := strconv.Atoi(s[0])
+			if err != nil {
+				return true
+			}
+			minor, err := strconv.Atoi(s[1])
+			if err != nil {
+				return true
+			}
+
+			return (major == 2 && minor >= 9) || major >= 3
+		}
+	}
+	return true
 }

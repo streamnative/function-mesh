@@ -207,6 +207,8 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		hasPulsarctl = true
 		hasWget = true
 	}
+	imageVersion := extractImageTag(sink.Spec.Image)
+	java9orAbove := isJava9orAbove(imageVersion)
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
 		generateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
@@ -215,7 +217,7 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		spec.Java.ExtraDependenciesDir, string(sink.UID),
 		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
-		generateJavaLogConfigFileName(spec.Java))
+		generateJavaLogConfigFileName(spec.Java), java9orAbove)
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {
