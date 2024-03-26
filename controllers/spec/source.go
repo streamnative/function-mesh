@@ -154,6 +154,8 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		hasPulsarctl = true
 		hasWget = true
 	}
+	imageVersion := extractImageTag(source.Spec.Image)
+	java9orAbove := isJava9orAbove(imageVersion)
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
 		generateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
@@ -162,7 +164,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		spec.Java.ExtraDependenciesDir, string(source.UID),
 		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
-		generateJavaLogConfigFileName(spec.Java))
+		generateJavaLogConfigFileName(spec.Java), java9orAbove)
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {

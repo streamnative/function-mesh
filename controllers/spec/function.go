@@ -212,6 +212,8 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		hasPulsarctl = true
 		hasWget = true
 	}
+	imageVersion := extractImageTag(function.Spec.Image)
+	java9orAbove := isJava9orAbove(imageVersion)
 	if spec.Java != nil {
 		if spec.Java.Jar != "" {
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
@@ -225,7 +227,8 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 				spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig,
 				spec.Pulsar.AuthConfig, spec.MaxPendingAsyncRequests,
-				generateJavaLogConfigFileName(function.Spec.Java))
+				generateJavaLogConfigFileName(function.Spec.Java),
+				java9orAbove)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
