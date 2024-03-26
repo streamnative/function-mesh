@@ -58,7 +58,7 @@ type FunctionReconciler struct {
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functions,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functions/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=functions/finalizers,verbs=get;update
-// +kubebuilder:rbac:groups=compute.functionmesh.io,resources=meshconfigs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=compute.functionmesh.io,resources=backendconfigs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -188,9 +188,9 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Secret{}).
 		Owns(&v1.Job{})
 
-	manager.Watches(&source.Kind{Type: &v1alpha1.MeshConfig{}}, handler.EnqueueRequestsFromMapFunc(
+	manager.Watches(&source.Kind{Type: &v1alpha1.BackendConfig{}}, handler.EnqueueRequestsFromMapFunc(
 		func(object client.Object) []reconcile.Request {
-			if object.GetName() == utils.GlobalMeshConfig && object.GetNamespace() == utils.GlobalMeshConfigNamespace {
+			if object.GetName() == utils.GlobalBackendConfig && object.GetNamespace() == utils.GlobalBackendConfigNamespace {
 				ctx := context.Background()
 				functions := &v1alpha1.FunctionList{}
 				err := mgr.GetClient().List(ctx, functions)
@@ -204,7 +204,7 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 					})
 				}
 				return requests
-			} else if object.GetName() == utils.NamespacedMeshConfig {
+			} else if object.GetName() == utils.NamespacedBackendConfig {
 				ctx := context.Background()
 				functions := &v1alpha1.FunctionList{}
 				err := mgr.GetClient().List(ctx, functions, client.InNamespace(object.GetNamespace()))

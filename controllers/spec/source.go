@@ -65,15 +65,15 @@ func MakeSourceStatefulSet(ctx context.Context, cli client.Client, source *v1alp
 		makeSourceVolumes(source, source.Spec.Pulsar.AuthConfig), makeSourceLabels(source), source.Spec.Pod, *source.Spec.Pulsar,
 		source.Spec.Java, source.Spec.Python, source.Spec.Golang, source.Spec.VolumeMounts, nil, nil)
 
-	globalMeshConfigVersion, namespacedMeshConfigVersion, err := PatchStatefulSet(ctx, cli, source.Namespace, statefulSet)
+	globalBackendConfigVersion, namespacedBackendConfigVersion, err := PatchStatefulSet(ctx, cli, source.Namespace, statefulSet)
 	if err != nil {
 		return nil, err
 	}
-	if globalMeshConfigVersion != "" {
-		source.Status.GlobalMeshConfigRevision = globalMeshConfigVersion
+	if globalBackendConfigVersion != "" {
+		source.Status.GlobalBackendConfigRevision = globalBackendConfigVersion
 	}
-	if namespacedMeshConfigVersion != "" {
-		source.Status.NamespacedMeshConfigRevision = namespacedMeshConfigVersion
+	if namespacedBackendConfigVersion != "" {
+		source.Status.NamespacedBackendConfigRevision = namespacedBackendConfigVersion
 	}
 
 	return statefulSet, nil

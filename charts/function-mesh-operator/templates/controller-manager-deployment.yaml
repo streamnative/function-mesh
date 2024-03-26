@@ -62,9 +62,9 @@ spec:
           - --pprof-addr=:{{ .Values.controllerManager.pprof.port }}
           - --config-file={{ .Values.controllerManager.configFile }}
           - --enable-init-containers={{ .Values.controllerManager.enableInitContainers }}
-          - --global-mesh-config={{ .Values.controllerManager.globalMeshConfig }}
-          - --global-mesh-config-namespace={{ .Values.controllerManager.globalMeshConfigNamespace }}
-          - --namespaced-mesh-config={{ .Values.controllerManager.namespacedMeshConfig }}
+          - --global-backend-config={{ .Values.controllerManager.globalBackendConfig }}
+          - --global-backend-config-namespace={{ .Values.controllerManager.globalBackendConfigNamespace }}
+          - --namespaced-backend-config={{ .Values.controllerManager.namespacedBackendConfig }}
         env:
           - name: NAMESPACE
             valueFrom:

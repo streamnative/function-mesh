@@ -24,9 +24,9 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// MeshConfigSpec defines the desired state of MeshConfig
+// BackendConfigSpec defines the desired state of BackendConfig
 // +kubebuilder:validation:Optional
-type MeshConfigSpec struct {
+type BackendConfigSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Name string `json:"name,omitempty"`
@@ -35,8 +35,8 @@ type MeshConfigSpec struct {
 	Env map[string]string `json:"env,omitempty"`
 }
 
-// MeshConfigStatus defines the observed state of MeshConfig
-type MeshConfigStatus struct {
+// BackendConfigStatus defines the observed state of BackendConfig
+type BackendConfigStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -46,25 +46,25 @@ type MeshConfigStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 
-// MeshConfig is the Schema of the global configs for all functions, sinks and sources
+// BackendConfig is the Schema of the global configs for all functions, sinks and sources
 // +kubebuilder:pruning:PreserveUnknownFields
-type MeshConfig struct {
+type BackendConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MeshConfigSpec   `json:"spec,omitempty"`
-	Status MeshConfigStatus `json:"status,omitempty"`
+	Spec   BackendConfigSpec   `json:"spec,omitempty"`
+	Status BackendConfigStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// MeshConfigList contains a list of MeshConfig
-type MeshConfigList struct {
+// BackendConfigList contains a list of BackendConfig
+type BackendConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []MeshConfig `json:"items"`
+	Items           []BackendConfig `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&MeshConfig{}, &MeshConfigList{})
+	SchemeBuilder.Register(&BackendConfig{}, &BackendConfigList{})
 }

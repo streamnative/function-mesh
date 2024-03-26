@@ -4,6 +4,66 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
     controller-gen.kubebuilder.io/version: v0.9.2
+  name: backendconfigs.compute.functionmesh.io
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: webhook-service
+          namespace: system
+          path: /convert
+          port: 443
+      conversionReviewVersions:
+      - v1
+      - v1beta1
+  group: compute.functionmesh.io
+  names:
+    kind: BackendConfig
+    listKind: BackendConfigList
+    plural: backendconfigs
+    singular: backendconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              env:
+                additionalProperties:
+                  type: string
+                type: object
+              name:
+                type: string
+            type: object
+          status:
+            type: object
+        type: object
+        x-kubernetes-preserve-unknown-fields: true
+    served: true
+    storage: true
+    subresources:
+      scale:
+        labelSelectorPath: .status.selector
+        specReplicasPath: .spec.replicas
+        statusReplicasPath: .status.replicas
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
+    controller-gen.kubebuilder.io/version: v0.9.2
   name: functionmeshes.compute.functionmesh.io
 spec:
   conversion:
@@ -13943,9 +14003,9 @@ spec:
                       type: string
                   type: object
                 type: object
-              globalMeshConfigRevision:
+              globalBackendConfigRevision:
                 type: string
-              namespacedMeshConfigRevision:
+              namespacedBackendConfigRevision:
                 type: string
               observedGeneration:
                 format: int64
@@ -13959,66 +14019,6 @@ spec:
             - conditions
             - replicas
             - selector
-            type: object
-        type: object
-        x-kubernetes-preserve-unknown-fields: true
-    served: true
-    storage: true
-    subresources:
-      scale:
-        labelSelectorPath: .status.selector
-        specReplicasPath: .spec.replicas
-        statusReplicasPath: .status.replicas
-      status: {}
----
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  annotations:
-    cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
-    controller-gen.kubebuilder.io/version: v0.9.2
-  name: meshconfigs.compute.functionmesh.io
-spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: webhook-service
-          namespace: system
-          path: /convert
-          port: 443
-      conversionReviewVersions:
-      - v1
-      - v1beta1
-  group: compute.functionmesh.io
-  names:
-    kind: MeshConfig
-    listKind: MeshConfigList
-    plural: meshconfigs
-    singular: meshconfig
-  scope: Namespaced
-  versions:
-  - name: v1alpha1
-    schema:
-      openAPIV3Schema:
-        properties:
-          apiVersion:
-            type: string
-          kind:
-            type: string
-          metadata:
-            type: object
-          spec:
-            properties:
-              env:
-                additionalProperties:
-                  type: string
-                type: object
-              name:
-                type: string
-            type: object
-          status:
             type: object
         type: object
         x-kubernetes-preserve-unknown-fields: true
@@ -17403,9 +17403,9 @@ spec:
                       type: string
                   type: object
                 type: object
-              globalMeshConfigRevision:
+              globalBackendConfigRevision:
                 type: string
-              namespacedMeshConfigRevision:
+              namespacedBackendConfigRevision:
                 type: string
               observedGeneration:
                 format: int64
@@ -20784,9 +20784,9 @@ spec:
                       type: string
                   type: object
                 type: object
-              globalMeshConfigRevision:
+              globalBackendConfigRevision:
                 type: string
-              namespacedMeshConfigRevision:
+              namespacedBackendConfigRevision:
                 type: string
               observedGeneration:
                 format: int64

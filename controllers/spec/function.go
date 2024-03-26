@@ -70,15 +70,15 @@ func MakeFunctionStatefulSet(ctx context.Context, cli client.Client, function *v
 		function.Spec.VolumeMounts, function.Spec.VolumeClaimTemplates,
 		function.Spec.PersistentVolumeClaimRetentionPolicy)
 
-	globalMeshConfigVersion, namespacedMeshConfigVersion, err := PatchStatefulSet(ctx, cli, function.Namespace, statefulSet)
+	globalBackendConfigVersion, namespacedBackendConfigVersion, err := PatchStatefulSet(ctx, cli, function.Namespace, statefulSet)
 	if err != nil {
 		return nil, err
 	}
-	if globalMeshConfigVersion != "" {
-		function.Status.GlobalMeshConfigRevision = globalMeshConfigVersion
+	if globalBackendConfigVersion != "" {
+		function.Status.GlobalBackendConfigRevision = globalBackendConfigVersion
 	}
-	if namespacedMeshConfigVersion != "" {
-		function.Status.NamespacedMeshConfigRevision = namespacedMeshConfigVersion
+	if namespacedBackendConfigVersion != "" {
+		function.Status.NamespacedBackendConfigRevision = namespacedBackendConfigVersion
 	}
 
 	return statefulSet, nil

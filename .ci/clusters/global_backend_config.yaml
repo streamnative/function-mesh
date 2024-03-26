@@ -1,7 +1,7 @@
 apiVersion: compute.functionmesh.io/v1alpha1
-kind: MeshConfig
+kind: BackendConfig
 metadata:
-  name: mesh-global
+  name: global-backend-config
 spec:
   env:
     global1: globalvalue1

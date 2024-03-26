@@ -57,7 +57,7 @@ type SourceReconciler struct {
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sources,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sources/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sources/finalizers,verbs=get;update
-// +kubebuilder:rbac:groups=compute.functionmesh.io,resources=meshconfigs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=compute.functionmesh.io,resources=backendconfigs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -191,9 +191,9 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion != "" {
 		AddControllerBuilderOwn(manager, r.GroupVersionFlags.APIAutoscalingGroupVersion)
 	}
-	manager.Watches(&k8ssource.Kind{Type: &v1alpha1.MeshConfig{}}, handler.EnqueueRequestsFromMapFunc(
+	manager.Watches(&k8ssource.Kind{Type: &v1alpha1.BackendConfig{}}, handler.EnqueueRequestsFromMapFunc(
 		func(object client.Object) []reconcile.Request {
-			if object.GetName() == utils.GlobalMeshConfig && object.GetNamespace() == utils.GlobalMeshConfigNamespace {
+			if object.GetName() == utils.GlobalBackendConfig && object.GetNamespace() == utils.GlobalBackendConfigNamespace {
 				ctx := context.Background()
 				sources := &v1alpha1.SourceList{}
 				err := mgr.GetClient().List(ctx, sources)
@@ -207,7 +207,7 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 					})
 				}
 				return requests
-			} else if object.GetName() == utils.NamespacedMeshConfig {
+			} else if object.GetName() == utils.NamespacedBackendConfig {
 				ctx := context.Background()
 				sources := &v1alpha1.SourceList{}
 				err := mgr.GetClient().List(ctx, sources, client.InNamespace(object.GetNamespace()))

@@ -1,7 +1,7 @@
 apiVersion: compute.functionmesh.io/v1alpha1
-kind: MeshConfig
+kind: BackendConfig
 metadata:
-  name: mesh-namespaced
+  name: backend-config
   namespace: default
 spec:
   env:

@@ -19,6 +19,6 @@
 package utils
 
 var EnableInitContainers = false
-var GlobalMeshConfig = ""
-var GlobalMeshConfigNamespace = "default"
-var NamespacedMeshConfig = ""
+var GlobalBackendConfig = ""
+var GlobalBackendConfigNamespace = "default"
+var NamespacedBackendConfig = ""

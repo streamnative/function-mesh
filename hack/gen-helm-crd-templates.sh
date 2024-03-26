@@ -150,11 +150,11 @@ function crd::main() {
     # set webhook_enabled to false since the functionmeshes don't have webhooks
     crd::generate_template "$source_file" "$target_file" false
 
-    # crd-meshconfigs
-    file="crd-compute.functionmesh.io-meshconfigs.yaml"
+    # crd-backendconfigs
+    file="crd-compute.functionmesh.io-backendconfigs.yaml"
     target_file="charts/function-mesh-operator/charts/admission-webhook/templates/$file"
     source_file="$tmp/$file"
-    "$KUSTOMIZE" build config/crd | "$YQ" eval '. | select(.metadata.name == "meshconfigs.compute.functionmesh.io")' > "$source_file"
+    "$KUSTOMIZE" build config/crd | "$YQ" eval '. | select(.metadata.name == "backendconfigs.compute.functionmesh.io")' > "$source_file"
     crd::generate_template "$source_file" "$target_file" true
 }
 

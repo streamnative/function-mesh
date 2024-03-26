@@ -33,7 +33,7 @@ spec:
         - /manager
         args:
         - --enable-leader-election
-        - --namespaced-mesh-config=mesh-config
+        - --namespaced-backend-config=backend-config
         image: controller:latest
         name: manager
         resources:

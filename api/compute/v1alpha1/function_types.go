@@ -119,12 +119,12 @@ type FunctionSpec struct {
 type FunctionStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Conditions                   map[Component]ResourceCondition `json:"conditions"`
-	Replicas                     int32                           `json:"replicas"`
-	Selector                     string                          `json:"selector"`
-	ObservedGeneration           int64                           `json:"observedGeneration,omitempty"`
-	GlobalMeshConfigRevision     string                          `json:"globalMeshConfigRevision,omitempty"`
-	NamespacedMeshConfigRevision string                          `json:"namespacedMeshConfigRevision,omitempty"`
+	Conditions                      map[Component]ResourceCondition `json:"conditions"`
+	Replicas                        int32                           `json:"replicas"`
+	Selector                        string                          `json:"selector"`
+	ObservedGeneration              int64                           `json:"observedGeneration,omitempty"`
+	GlobalBackendConfigRevision     string                          `json:"globalBackendConfigRevision,omitempty"`
+	NamespacedBackendConfigRevision string                          `json:"namespacedBackendConfigRevision,omitempty"`
 }
 
 // +genclient

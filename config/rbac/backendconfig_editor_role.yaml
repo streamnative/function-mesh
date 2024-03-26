@@ -2,12 +2,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: meshconfig-editor-role
+  name: backendconfig-editor-role
 rules:
   - apiGroups:
       - compute.functionmesh.io
     resources:
-      - meshconfigs
+      - backendconfigs
     verbs:
       - create
       - delete
@@ -19,6 +19,6 @@ rules:
   - apiGroups:
       - compute.functionmesh.io
     resources:
-      - meshconfigs/status
+      - backendconfigs/status
     verbs:
       - get

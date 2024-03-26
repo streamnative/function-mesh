@@ -64,15 +64,15 @@ func MakeSinkStatefulSet(ctx context.Context, cli client.Client, sink *v1alpha1.
 		makeSinkVolumes(sink, sink.Spec.Pulsar.AuthConfig), makeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
 		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.VolumeMounts, nil, nil)
 
-	globalMeshConfigVersion, namespacedMeshConfigVersion, err := PatchStatefulSet(ctx, cli, sink.Namespace, statefulSet)
+	globalBackendConfigVersion, namespacedBackendConfigVersion, err := PatchStatefulSet(ctx, cli, sink.Namespace, statefulSet)
 	if err != nil {
 		return nil, err
 	}
-	if globalMeshConfigVersion != "" {
-		sink.Status.GlobalMeshConfigRevision = globalMeshConfigVersion
+	if globalBackendConfigVersion != "" {
+		sink.Status.GlobalBackendConfigRevision = globalBackendConfigVersion
 	}
-	if namespacedMeshConfigVersion != "" {
-		sink.Status.NamespacedMeshConfigRevision = namespacedMeshConfigVersion
+	if namespacedBackendConfigVersion != "" {
+		sink.Status.NamespacedBackendConfigRevision = namespacedBackendConfigVersion
 	}
 
 	return statefulSet, nil

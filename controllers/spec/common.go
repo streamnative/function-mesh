@@ -20,7 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -281,44 +280,44 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 
 // PatchStatefulSet Apply global and namespaced configs to StatefulSet
 func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, statefulSet *appsv1.StatefulSet) (string, string, error) {
-	globalMeshConfigVersion := ""
-	namespacedMeshConfigVersion := ""
+	globalBackendConfigVersion := ""
+	namespacedBackendConfigVersion := ""
 	envData := make(map[string]string)
 
-	if utils.GlobalMeshConfig != "" && utils.GlobalMeshConfigNamespace != "" {
-		globalMeshConfig := &v1alpha1.MeshConfig{}
+	if utils.GlobalBackendConfig != "" && utils.GlobalBackendConfigNamespace != "" {
+		globalBackendConfig := &v1alpha1.BackendConfig{}
 		err := cli.Get(ctx, types.NamespacedName{
-			Namespace: utils.GlobalMeshConfigNamespace,
-			Name:      utils.GlobalMeshConfig,
-		}, globalMeshConfig)
+			Namespace: utils.GlobalBackendConfigNamespace,
+			Name:      utils.GlobalBackendConfig,
+		}, globalBackendConfig)
 		if err != nil {
 			// ignore not found error
 			if !k8serrors.IsNotFound(err) {
 				return "", "", err
 			}
 		} else {
-			globalMeshConfigVersion = globalMeshConfig.ResourceVersion
-			for key, val := range globalMeshConfig.Spec.Env {
+			globalBackendConfigVersion = globalBackendConfig.ResourceVersion
+			for key, val := range globalBackendConfig.Spec.Env {
 				envData[key] = val
 			}
 		}
 	}
 
 	// patch namespaced configs
-	if utils.NamespacedMeshConfig != "" {
-		namespacedMeshConfig := &v1alpha1.MeshConfig{}
+	if utils.NamespacedBackendConfig != "" {
+		namespacedBackendConfig := &v1alpha1.BackendConfig{}
 		err := cli.Get(ctx, types.NamespacedName{
 			Namespace: namespace,
-			Name:      utils.NamespacedMeshConfig,
-		}, namespacedMeshConfig)
+			Name:      utils.NamespacedBackendConfig,
+		}, namespacedBackendConfig)
 		if err != nil {
 			// ignore not found error
 			if !k8serrors.IsNotFound(err) {
 				return "", "", err
 			}
 		} else {
-			namespacedMeshConfigVersion = namespacedMeshConfig.ResourceVersion
-			for key, val := range namespacedMeshConfig.Spec.Env {
+			namespacedBackendConfigVersion = namespacedBackendConfig.ResourceVersion
+			for key, val := range namespacedBackendConfig.Spec.Env {
 				envData[key] = val
 			}
 		}
@@ -326,7 +325,7 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 
 	// merge env
 	if len(envData) == 0 {
-		return globalMeshConfigVersion, namespacedMeshConfigVersion, nil
+		return globalBackendConfigVersion, namespacedBackendConfigVersion, nil
 	}
 	globalEnvs := make([]corev1.EnvVar, 0, len(envData))
 	for key, val := range envData {
@@ -340,7 +339,7 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 			globalEnvs...)
 	}
 
-	return globalMeshConfigVersion, namespacedMeshConfigVersion, nil
+	return globalBackendConfigVersion, namespacedBackendConfigVersion, nil
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container, filebeatContainer *corev1.Container,
