@@ -35,7 +35,7 @@ fi
 manifests_file="${BASE_DIR}"/.ci/tests/integration/cases/global-and-namespaced-config/manifests.yaml
 mesh_config_file="${BASE_DIR}"/.ci/tests/integration/cases/global-and-namespaced-config/mesh-config.yaml
 mesh_config_file_in_kube_system="${BASE_DIR}"/.ci/tests/integration/cases/global-and-namespaced-config/mesh-config-kube-system.yaml
-global_mesh_config_file="${BASE_DIR}"/.ci/clusters/global_mesh.yaml
+global_mesh_config_file="${BASE_DIR}"/.ci/clusters/global_backend_config.yaml
 
 
 kubectl apply -f "${mesh_config_file}" > /dev/null 2>&1
