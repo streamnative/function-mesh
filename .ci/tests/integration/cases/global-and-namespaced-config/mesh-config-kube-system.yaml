@@ -1,0 +1,9 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: BackendConfig
+metadata:
+  name: backend-config
+  namespace: kube-system
+spec:
+  env:
+    namespaced1: namespacedvalue1
+    shared1: fromnamespace

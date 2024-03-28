@@ -18,6 +18,7 @@
 package spec
 
 import (
+	"context"
 	"regexp"
 
 	"github.com/streamnative/function-mesh/utils"
@@ -27,6 +28,7 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 )
@@ -53,14 +55,27 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 	return MakeService(objectMeta, labels)
 }
 
-func MakeSinkStatefulSet(sink *v1alpha1.Sink) *appsv1.StatefulSet {
+func MakeSinkStatefulSet(ctx context.Context, cli client.Client, sink *v1alpha1.Sink) (*appsv1.StatefulSet, error) {
 	objectMeta := MakeSinkObjectMeta(sink)
-	return MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, makeSinkContainer(sink),
+	statefulSet := MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, makeSinkContainer(sink),
 		makeFilebeatContainer(sink.Spec.VolumeMounts, sink.Spec.Pod.Env, sink.Spec.Name, sink.Spec.LogTopic, sink.Spec.LogTopicAgent,
 			sink.Spec.Pulsar.TLSConfig, sink.Spec.Pulsar.AuthConfig, sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.TLSSecret,
 			sink.Spec.Pulsar.AuthSecret, sink.Spec.FilebeatImage),
 		makeSinkVolumes(sink, sink.Spec.Pulsar.AuthConfig), makeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
 		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.VolumeMounts, nil, nil)
+
+	globalBackendConfigVersion, namespacedBackendConfigVersion, err := PatchStatefulSet(ctx, cli, sink.Namespace, statefulSet)
+	if err != nil {
+		return nil, err
+	}
+	if globalBackendConfigVersion != "" {
+		sink.Status.GlobalBackendConfigRevision = globalBackendConfigVersion
+	}
+	if namespacedBackendConfigVersion != "" {
+		sink.Status.NamespacedBackendConfigRevision = namespacedBackendConfigVersion
+	}
+
+	return statefulSet, nil
 }
 
 func MakeSinkServiceName(sink *v1alpha1.Sink) string {

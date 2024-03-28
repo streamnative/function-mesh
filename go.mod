@@ -10,7 +10,7 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/streamnative/pulsarctl v0.4.3-0.20220702165443-e4c26e2c39cf
 	github.com/stretchr/testify v1.7.0
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/protobuf v1.33.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.25.0
 	k8s.io/apimachinery v0.25.0

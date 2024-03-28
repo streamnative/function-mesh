@@ -18,6 +18,7 @@
 package spec
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 
@@ -28,6 +29,7 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 )
@@ -54,14 +56,27 @@ func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
 	return MakeService(objectMeta, labels)
 }
 
-func MakeSourceStatefulSet(source *v1alpha1.Source) *appsv1.StatefulSet {
+func MakeSourceStatefulSet(ctx context.Context, cli client.Client, source *v1alpha1.Source) (*appsv1.StatefulSet, error) {
 	objectMeta := MakeSourceObjectMeta(source)
-	return MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, makeSourceContainer(source),
+	statefulSet := MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, makeSourceContainer(source),
 		makeFilebeatContainer(source.Spec.VolumeMounts, source.Spec.Pod.Env, source.Spec.Name, source.Spec.LogTopic, source.Spec.LogTopicAgent,
 			source.Spec.Pulsar.TLSConfig, source.Spec.Pulsar.AuthConfig, source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.TLSSecret,
 			source.Spec.Pulsar.AuthSecret, source.Spec.FilebeatImage),
 		makeSourceVolumes(source, source.Spec.Pulsar.AuthConfig), makeSourceLabels(source), source.Spec.Pod, *source.Spec.Pulsar,
 		source.Spec.Java, source.Spec.Python, source.Spec.Golang, source.Spec.VolumeMounts, nil, nil)
+
+	globalBackendConfigVersion, namespacedBackendConfigVersion, err := PatchStatefulSet(ctx, cli, source.Namespace, statefulSet)
+	if err != nil {
+		return nil, err
+	}
+	if globalBackendConfigVersion != "" {
+		source.Status.GlobalBackendConfigRevision = globalBackendConfigVersion
+	}
+	if namespacedBackendConfigVersion != "" {
+		source.Status.NamespacedBackendConfigRevision = namespacedBackendConfigVersion
+	}
+
+	return statefulSet, nil
 }
 
 func MakeSourceObjectMeta(source *v1alpha1.Source) *metav1.ObjectMeta {

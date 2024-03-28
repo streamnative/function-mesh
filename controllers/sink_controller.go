@@ -22,6 +22,9 @@ import (
 	"time"
 
 	"github.com/streamnative/function-mesh/pkg/monitoring"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	v1 "k8s.io/api/batch/v1"
 	"k8s.io/client-go/rest"
@@ -55,6 +58,7 @@ type SinkReconciler struct {
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sinks,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sinks/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=compute.functionmesh.io,resources=sinks/finalizers,verbs=get;update
+// +kubebuilder:rbac:groups=compute.functionmesh.io,resources=backendconfigs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -188,6 +192,42 @@ func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion != "" {
 		AddControllerBuilderOwn(manager, r.GroupVersionFlags.APIAutoscalingGroupVersion)
 	}
+
+	manager.Watches(&source.Kind{Type: &v1alpha1.BackendConfig{}}, handler.EnqueueRequestsFromMapFunc(
+		func(object client.Object) []reconcile.Request {
+			if object.GetName() == utils.GlobalBackendConfig && object.GetNamespace() == utils.GlobalBackendConfigNamespace {
+				ctx := context.Background()
+				sinks := &v1alpha1.SinkList{}
+				err := mgr.GetClient().List(ctx, sinks)
+				if err != nil {
+					mgr.GetLogger().Error(err, "failed to list all sinks")
+				}
+				var requests []reconcile.Request
+				for _, sink := range sinks.Items {
+					requests = append(requests, reconcile.Request{
+						NamespacedName: types.NamespacedName{Namespace: sink.Namespace, Name: sink.Name},
+					})
+				}
+				return requests
+			} else if object.GetName() == utils.NamespacedBackendConfig {
+				ctx := context.Background()
+				sinks := &v1alpha1.SinkList{}
+				err := mgr.GetClient().List(ctx, sinks, client.InNamespace(object.GetNamespace()))
+				if err != nil {
+					mgr.GetLogger().Error(err, "failed to list sinks in namespace: "+object.GetNamespace())
+				}
+				var requests []reconcile.Request
+				for _, sink := range sinks.Items {
+					requests = append(requests, reconcile.Request{
+						NamespacedName: types.NamespacedName{Namespace: sink.Namespace, Name: sink.Name},
+					})
+				}
+				return requests
+			} else {
+				return nil
+			}
+		}),
+	)
 
 	return manager.Complete(r)
 }

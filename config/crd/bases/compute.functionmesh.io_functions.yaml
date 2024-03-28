@@ -3623,6 +3623,10 @@ spec:
                       type: string
                   type: object
                 type: object
+              globalBackendConfigRevision:
+                type: string
+              namespacedBackendConfigRevision:
+                type: string
               observedGeneration:
                 format: int64
                 type: integer

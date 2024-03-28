@@ -69,7 +69,12 @@ func (r *FunctionReconciler) ObserveFunctionStatefulSet(ctx context.Context, fun
 	}
 	function.Status.Selector = selector.String()
 
-	if r.checkIfStatefulSetNeedUpdate(statefulSet, function) {
+	needUpdate, err := r.checkIfStatefulSetNeedUpdate(ctx, statefulSet, function)
+	if err != nil {
+		r.Log.Error(err, "error comparing statefulSet")
+		return err
+	}
+	if needUpdate {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		function.Status.Conditions[v1alpha1.StatefulSet] = condition
@@ -93,7 +98,10 @@ func (r *FunctionReconciler) ApplyFunctionStatefulSet(ctx context.Context, funct
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
-	desiredStatefulSet := spec.MakeFunctionStatefulSet(function)
+	desiredStatefulSet, err := spec.MakeFunctionStatefulSet(ctx, r.Client, function)
+	if err != nil {
+		return err
+	}
 	keepStatefulSetUnchangeableFields(ctx, r, r.Log, desiredStatefulSet)
 	desiredStatefulSetSpec := desiredStatefulSet.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
@@ -415,9 +423,13 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 	return nil
 }
 
-func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet,
-	function *v1alpha1.Function) bool {
-	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeFunctionStatefulSet(function).Spec)
+func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(ctx context.Context, statefulSet *appsv1.StatefulSet,
+	function *v1alpha1.Function) (bool, error) {
+	desiredStatefulSet, err := spec.MakeFunctionStatefulSet(ctx, r.Client, function)
+	if err != nil {
+		return false, err
+	}
+	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &desiredStatefulSet.Spec), nil
 }
 
 func (r *FunctionReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler,
