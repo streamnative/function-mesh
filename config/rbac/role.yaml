@@ -55,6 +55,18 @@ rules:
 - apiGroups:
   - compute.functionmesh.io
   resources:
+  - backendconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - compute.functionmesh.io
+  resources:
   - functionmeshes
   verbs:
   - create

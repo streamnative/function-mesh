@@ -69,7 +69,12 @@ func (r *SinkReconciler) ObserveSinkStatefulSet(ctx context.Context, sink *v1alp
 	}
 	sink.Status.Selector = selector.String()
 
-	if r.checkIfStatefulSetNeedUpdate(statefulSet, sink) {
+	needUpdate, err := r.checkIfStatefulSetNeedUpdate(ctx, statefulSet, sink)
+	if err != nil {
+		r.Log.Error(err, "error comparing statefulSet")
+		return err
+	}
+	if needUpdate {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		sink.Status.Conditions[v1alpha1.StatefulSet] = condition
@@ -92,7 +97,10 @@ func (r *SinkReconciler) ApplySinkStatefulSet(ctx context.Context, sink *v1alpha
 	if condition.Status == metav1.ConditionTrue && !newGeneration {
 		return nil
 	}
-	desiredStatefulSet := spec.MakeSinkStatefulSet(sink)
+	desiredStatefulSet, err := spec.MakeSinkStatefulSet(ctx, r.Client, sink)
+	if err != nil {
+		return err
+	}
 	keepStatefulSetUnchangeableFields(ctx, r, r.Log, desiredStatefulSet)
 	desiredStatefulSetSpec := desiredStatefulSet.Spec
 	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredStatefulSet, func() error {
@@ -412,8 +420,12 @@ func (r *SinkReconciler) ApplySinkCleanUpJob(ctx context.Context, sink *v1alpha1
 	return nil
 }
 
-func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(statefulSet *appsv1.StatefulSet, sink *v1alpha1.Sink) bool {
-	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &spec.MakeSinkStatefulSet(sink).Spec)
+func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(ctx context.Context, statefulSet *appsv1.StatefulSet, sink *v1alpha1.Sink) (bool, error) {
+	desiredStatefulSet, err := spec.MakeSinkStatefulSet(ctx, r.Client, sink)
+	if err != nil {
+		return false, err
+	}
+	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &desiredStatefulSet.Spec), nil
 }
 
 func (r *SinkReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler, sink *v1alpha1.Sink) bool {

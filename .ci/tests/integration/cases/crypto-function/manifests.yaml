@@ -9,7 +9,6 @@ spec:
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1
-  maxReplicas: 5
   logTopic: persistent://public/default/logging-function-logs
   input:
     topics:

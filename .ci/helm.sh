@@ -596,3 +596,16 @@ function ci::verify_log_topic_with_auth() {
   fi
   return 1
 }
+
+function ci::verify_env() {
+  pod="$1-function-0"
+  key=$2
+  expect=$3
+  result=$(kubectl exec -n ${NAMESPACE} ${pod} -- env | grep "${key}")
+  echo "$result"
+  echo "$expect"
+  if [[ "$result" = "$expect" ]]; then
+    return 0
+  fi
+  return 1
+}

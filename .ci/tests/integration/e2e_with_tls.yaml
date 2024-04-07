@@ -87,12 +87,17 @@ setup:
         image="function-mesh-operator:latest"
         IMG=${image} make docker-build-skip-test
         kind load docker-image ${image}
-        helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --create-namespace charts/function-mesh-operator
+        helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --set controllerManager.globalBackendConfig=global-backend-config --set controllerManager.globalBackendConfigNamespace=${FUNCTION_MESH_NAMESPACE} --set controllerManager.namespacedBackendConfig=backend-config --create-namespace charts/function-mesh-operator
       wait:
         - namespace: function-mesh
           resource: pod
           label-selector: app.kubernetes.io/name=function-mesh-operator
           for: condition=Ready
+
+    - name: apply global env config map
+      command: |
+        kubectl create -n ${FUNCTION_MESH_NAMESPACE} -f .ci/clusters/global_backend_config.yaml
+
   timeout: 60m
 
 cleanup:
@@ -123,4 +128,6 @@ verify:
     - query: bash .ci/tests/integration/cases/mongodb-source/verify.sh true
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/crypto-function/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/global-and-namespaced-config/verify.sh
       expected: expected.data.yaml
