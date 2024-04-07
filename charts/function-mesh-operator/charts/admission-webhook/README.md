@@ -1,6 +1,6 @@
 # admission-webhook
 
-![Version: 0.2.26](https://img.shields.io/badge/Version-0.2.26-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.20.0](https://img.shields.io/badge/AppVersion-0.20.0-informational?style=flat-square)
+![Version: 0.2.27](https://img.shields.io/badge/Version-0.2.27-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.20.1-rc-1](https://img.shields.io/badge/AppVersion-0.20.1--rc--1-informational?style=flat-square)
 
 function mesh admission webhook Helm chart for Kubernetes
 
