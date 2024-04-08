@@ -23,23 +23,16 @@ jobs:
           docker rmi $(docker images -q) -f
           df -h
 
-      - name: Setup ssh access to build runner VM
-        uses: ./.github/actions/ssh-access
-        with:
-          limit-access-to-actor: true
-
       - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Wait for ssh connection when build fails
+      - name: Setup ssh access to build runner VM
         uses: ./.github/actions/ssh-access
-        if: failure()
-        continue-on-error: true
         with:
-          action: wait
+          limit-access-to-actor: true
 
       - name: Deploy k8s cluster env
         uses: nick-invision/retry@v2
@@ -61,4 +54,10 @@ jobs:
       - name: Verify function runner
         run: |
           .ci/verify_function_runner.sh
-          
+
+      - name: Wait for ssh connection when build fails
+        uses: ./.github/actions/ssh-access
+        if: failure()
+        continue-on-error: true
+        with:
+          action: wait
