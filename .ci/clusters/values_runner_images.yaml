@@ -40,31 +40,31 @@ monitoring:
 
 images:
   zookeeper:
-    repository: streamnative/pulsar-all
+    repository: streamnative/sn-platform
     tag: 2.9.2.23
     pullPolicy: IfNotPresent
   bookie:
-    repository: streamnative/pulsar-all
+    repository: streamnative/sn-platform
     tag: 2.9.2.23
     pullPolicy: IfNotPresent
   autorecovery:
-    repository: streamnative/pulsar-all
+    repository: streamnative/sn-platform
     tag: 2.9.2.23
     pullPolicy: IfNotPresent
   broker:
-    repository: streamnative/pulsar-all
+    repository: streamnative/sn-platform
     tag: 2.9.2.23
     pullPolicy: IfNotPresent
   proxy:
-    repository: streamnative/pulsar-all
+    repository: streamnative/sn-platform
     tag: 2.9.2.23
     pullPolicy: IfNotPresent
   functions:
-    repository: streamnative/pulsar-all
+    repository: streamnative/sn-platform
     tag: 2.9.2.23
     pullPolicy: IfNotPresent
   presto:
-    repository: streamnative/pulsar-all
+    repository: streamnative/sn-platform
     tag: 2.9.2.23
     pullPolicy: IfNotPresent
 
@@ -75,7 +75,7 @@ bookkeeper:
   replicaCount: 0
   metadata:
     image:
-      repository: streamnative/pulsar-all
+      repository: streamnative/sn-platform
       tag: 2.9.2.23
   configData:
     PULSAR_PREFIX_autoRecoveryDaemonEnabled: "false"
@@ -109,7 +109,7 @@ bookkeeper:
 
 pulsar_metadata:
   image:
-    repository: streamnative/pulsar-all
+    repository: streamnative/sn-platform
     tag: 2.9.2.23
     pullPolicy: IfNotPresent
 
