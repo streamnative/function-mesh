@@ -19,7 +19,7 @@
 #
 set -e
 
-PULSAR_IMAGE=${PULSAR_IMAGE:-"streamnative/pulsar-all"}
+PULSAR_IMAGE=${PULSAR_IMAGE:-"streamnative/sn-platform"}
 PULSAR_IMAGE_TAG=${PULSAR_IMAGE_TAG:-"2.7.1"}
 DOCKER_REPO=${DOCKER_REPO:-"streamnative"}
 RUNNER_BASE="pulsar-functions-runner-base"
