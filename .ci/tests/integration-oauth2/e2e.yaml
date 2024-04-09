@@ -3,11 +3,6 @@ setup:
   file: ../kind.yaml
   init-system-environment: ../env
   steps:
-    - name: build images
-      command: |
-        chmod +x images/build.sh images/samples/build.sh
-        PULSAR_IMAGE_TAG=2.9.2.23 PULSAR_IMAGE=streamnative/sn-platform KIND_PUSH=true images/build.sh
-
     - name: install helm
       command: |
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
