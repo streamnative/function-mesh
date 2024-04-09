@@ -41,31 +41,31 @@ monitoring:
 images:
   zookeeper:
     repository: streamnative/sn-platform
-    tag: 3.2.2.1
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   bookie:
     repository: streamnative/sn-platform
-    tag: 3.2.2.1
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   autorecovery:
     repository: streamnative/sn-platform
-    tag: 3.2.2.1
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   broker:
     repository: streamnative/sn-platform
-    tag: 3.2.2.1
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   proxy:
     repository: streamnative/sn-platform
-    tag: 3.2.2.1
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   functions:
     repository: streamnative/sn-platform
-    tag: 3.2.2.1
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
   presto:
     repository: streamnative/sn-platform
-    tag: 3.2.2.1
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
 
 zookeeper:
@@ -76,7 +76,7 @@ bookkeeper:
   metadata:
     image:
       repository: streamnative/sn-platform
-      tag: 3.2.2.1
+      tag: 2.9.2.23
   configData:
     PULSAR_PREFIX_autoRecoveryDaemonEnabled: "false"
     PULSAR_PREFIX_dlog.bkcEnsembleSize: "1"
@@ -110,7 +110,7 @@ bookkeeper:
 pulsar_metadata:
   image:
     repository: streamnative/sn-platform
-    tag: 3.2.2.1
+    tag: 2.9.2.23
     pullPolicy: IfNotPresent
 
 broker:
