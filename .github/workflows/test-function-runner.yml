@@ -57,7 +57,7 @@ jobs:
         env:
           DOCKER_REPO: localhost:5000
         run: |
-          PULSAR_IMAGE_TAG=2.9.2.23 PULSAR_IMAGE=streamnative/sn-platform KIND_PUSH=false images/build.sh
+          PULSAR_IMAGE_TAG=3.2.2.1 PULSAR_IMAGE=streamnative/sn-platform KIND_PUSH=false images/build.sh
 
       - name: Verify function runner
         run: |

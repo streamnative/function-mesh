@@ -41,27 +41,27 @@ monitoring:
 images:
   zookeeper:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
   bookie:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
   autorecovery:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
   broker:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
   proxy:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
   functions:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
 
 zookeeper:
@@ -72,7 +72,7 @@ bookkeeper:
   metadata:
     image:
       repository: streamnative/sn-platform
-      tag: 2.9.2.23
+      tag: 3.2.2.1
   configData:
     PULSAR_PREFIX_autoRecoveryDaemonEnabled: "false"
     PULSAR_PREFIX_dlog.bkcEnsembleSize: "1"
@@ -109,7 +109,7 @@ bookkeeper:
 pulsar_metadata:
   image:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
 
 broker:
@@ -157,9 +157,9 @@ functions:
     narExtractionDirectory: ""
   functionRuntimeFactoryConfigs:
     functionDockerImages:
-      JAVA: "streamnative/pulsar-functions-java-runner:2.9.2.23"
-      PYTHON: "streamnative/pulsar-functions-python-runner:2.9.2.23"
-      GO: "streamnative/pulsar-functions-go-runner:2.9.2.23"
+      JAVA: "streamnative/pulsar-functions-java-runner:3.2.2.1"
+      PYTHON: "streamnative/pulsar-functions-python-runner:3.2.2.1"
+      GO: "streamnative/pulsar-functions-go-runner:3.2.2.1"
 
 proxy:
   replicaCount: 1

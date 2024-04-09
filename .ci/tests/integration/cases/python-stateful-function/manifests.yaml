@@ -4,7 +4,7 @@ metadata:
   name: python-function-stateful-sample
   namespace: default
 spec:
-  image: streamnative/pulsar-functions-python-sample:2.9.2.23
+  image: streamnative/pulsar-functions-python-sample:3.2.2.1
   className: wordcount_function.WordCountFunction
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000

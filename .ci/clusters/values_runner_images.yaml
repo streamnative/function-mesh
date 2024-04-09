@@ -41,31 +41,31 @@ monitoring:
 images:
   zookeeper:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
   bookie:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
   autorecovery:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
   broker:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
   proxy:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
   functions:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
   presto:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
 
 zookeeper:
@@ -76,7 +76,7 @@ bookkeeper:
   metadata:
     image:
       repository: streamnative/sn-platform
-      tag: 2.9.2.23
+      tag: 3.2.2.1
   configData:
     PULSAR_PREFIX_autoRecoveryDaemonEnabled: "false"
     PULSAR_PREFIX_dlog.bkcEnsembleSize: "1"
@@ -110,7 +110,7 @@ bookkeeper:
 pulsar_metadata:
   image:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
     pullPolicy: IfNotPresent
 
 broker:
@@ -172,9 +172,9 @@ functions:
     disk: 1048576000
   functionRuntimeFactoryConfigs:
     functionDockerImages:
-      JAVA: "localhost:5000/pulsar-functions-java-runner:2.9.2.23"
-      PYTHON: "localhost:5000/pulsar-functions-python-runner:2.9.2.23"
-      GO: "localhost:5000/pulsar-functions-go-runner:2.9.2.23"
+      JAVA: "localhost:5000/pulsar-functions-java-runner:3.2.2.1"
+      PYTHON: "localhost:5000/pulsar-functions-python-runner:3.2.2.1"
+      GO: "localhost:5000/pulsar-functions-go-runner:3.2.2.1"
     functionInstanceMinResources:
       cpu: 0.1
       ram: 10485760

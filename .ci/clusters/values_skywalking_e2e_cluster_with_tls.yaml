@@ -44,16 +44,16 @@ monitoring:
 images:
   zookeeper:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
   bookie:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
   broker:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
   functions:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
 
 zookeeper:
   replicaCount: 1
@@ -67,7 +67,7 @@ bookkeeper:
   metadata:
     image:
       repository: streamnative/sn-platform
-      tag: 2.9.2.23
+      tag: 3.2.2.1
   resources:
     requests:
       memory: 256Mi
@@ -105,7 +105,7 @@ bookkeeper:
 pulsar_metadata:
   image:
     repository: streamnative/sn-platform
-    tag: 2.9.2.23
+    tag: 3.2.2.1
 
 broker:
   replicaCount: 1
