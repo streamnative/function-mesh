@@ -50,7 +50,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-verify_log_topic=$(ci::verify_log_topic_with_auth persistent://public/default/batch-source-logs "org.apache.pulsar.functions.runtime.JavaInstanceStarter" 10 2>&1)
+verify_log_topic=$(ci::verify_log_topic_with_auth persistent://public/default/batch-source-logs "it may be a NAR file" 10 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_log_topic"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true

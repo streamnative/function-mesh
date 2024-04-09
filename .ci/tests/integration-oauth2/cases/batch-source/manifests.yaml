@@ -49,9 +49,9 @@ spec:
         scope: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
         keySecretName: sn-platform-oauth2-private-key
         keySecretKey: auth.json
-  image: streamnative/pulsar-io-batch-data-generator:2.9.2.23
+  image: streamnative/pulsar-io-batch-data-generator:3.2.2.1
   java:
-    jar: connectors/pulsar-io-batch-data-generator-2.9.2.23.nar
+    jar: connectors/pulsar-io-batch-data-generator-3.2.2.1.nar
     jarLocation: "" # use pulsar provided connectors
     # use package name:
     # jarLocation: function://public/default/nul-test-java-source@v1
