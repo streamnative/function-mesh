@@ -21,25 +21,23 @@ import (
 	"context"
 	"time"
 
-	"github.com/streamnative/function-mesh/pkg/monitoring"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	k8ssource "sigs.k8s.io/controller-runtime/pkg/source"
-
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
+	"github.com/streamnative/function-mesh/pkg/monitoring"
 	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -191,10 +189,9 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion != "" {
 		AddControllerBuilderOwn(manager, r.GroupVersionFlags.APIAutoscalingGroupVersion)
 	}
-	manager.Watches(&k8ssource.Kind{Type: &v1alpha1.BackendConfig{}}, handler.EnqueueRequestsFromMapFunc(
-		func(object client.Object) []reconcile.Request {
+	manager.Watches(&v1alpha1.BackendConfig{}, handler.EnqueueRequestsFromMapFunc(
+		func(ctx context.Context, object client.Object) []reconcile.Request {
 			if object.GetName() == utils.GlobalBackendConfig && object.GetNamespace() == utils.GlobalBackendConfigNamespace {
-				ctx := context.Background()
 				sources := &v1alpha1.SourceList{}
 				err := mgr.GetClient().List(ctx, sources)
 				if err != nil {

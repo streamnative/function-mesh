@@ -22,12 +22,10 @@ import (
 	"time"
 
 	"github.com/streamnative/function-mesh/pkg/monitoring"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
 	v1 "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -188,8 +186,8 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Secret{}).
 		Owns(&v1.Job{})
 
-	manager.Watches(&source.Kind{Type: &v1alpha1.BackendConfig{}}, handler.EnqueueRequestsFromMapFunc(
-		func(object client.Object) []reconcile.Request {
+	manager.Watches(&v1alpha1.BackendConfig{}, handler.EnqueueRequestsFromMapFunc(
+		func(ctx context.Context, object client.Object) []reconcile.Request {
 			if object.GetName() == utils.GlobalBackendConfig && object.GetNamespace() == utils.GlobalBackendConfigNamespace {
 				ctx := context.Background()
 				functions := &v1alpha1.FunctionList{}

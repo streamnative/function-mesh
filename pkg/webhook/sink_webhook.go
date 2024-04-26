@@ -138,13 +138,13 @@ func (webhook *SinkWebhook) Default(ctx context.Context, obj runtime.Object) err
 var _ admission.CustomValidator = &SinkWebhook{}
 
 // ValidateCreate implements admission.CustomValidator so a webhook will be registered for the type
-func (webhook *SinkWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (webhook *SinkWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
-		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
 	if req.Kind.Kind != sinkKind {
-		return fmt.Errorf("expected Kind %q got %q", sinkKind, req.Kind.Kind)
+		return nil, fmt.Errorf("expected Kind %q got %q", sinkKind, req.Kind.Kind)
 	}
 
 	r := obj.(*v1alpha1.Sink) //nolint:ifshort
@@ -235,42 +235,42 @@ func (webhook *SinkWebhook) ValidateCreate(ctx context.Context, obj runtime.Obje
 	}
 
 	if len(allErrs) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	return apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "SinkWebhook"}, r.Name, allErrs)
+	return nil, apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "SinkWebhook"}, r.Name, allErrs)
 }
 
 // ValidateUpdate implements admission.CustomValidator so a webhook will be registered for the type
-func (webhook *SinkWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (webhook *SinkWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
-		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
 	if req.Kind.Kind != sinkKind {
-		return fmt.Errorf("expected Kind %q got %q", sinkKind, req.Kind.Kind)
+		return nil, fmt.Errorf("expected Kind %q got %q", sinkKind, req.Kind.Kind)
 	}
 
 	r := oldObj.(*v1alpha1.Sink) //nolint:ifshort
 	sinklog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
-	return nil
+	return nil, nil
 }
 
 // ValidateDelete implements admission.CustomValidator so a webhook will be registered for the type
-func (webhook *SinkWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+func (webhook *SinkWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
-		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
 	if req.Kind.Kind != sinkKind {
-		return fmt.Errorf("expected Kind %q got %q", sinkKind, req.Kind.Kind)
+		return nil, fmt.Errorf("expected Kind %q got %q", sinkKind, req.Kind.Kind)
 	}
 
 	r := obj.(*v1alpha1.Sink) //nolint:ifshort
 	sinklog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
-	return nil
+	return nil, nil
 }

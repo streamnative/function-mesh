@@ -25,7 +25,9 @@ import (
 	"strconv"
 
 	"github.com/streamnative/function-mesh/pkg/monitoring"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/go-logr/logr"
 	computev1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -43,6 +45,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	runtimeWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -130,17 +133,32 @@ func main() {
 		}
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      metricsAddr,
+	options := ctrl.Options{
+		Scheme: scheme,
+		Metrics: server.Options{
+			BindAddress: metricsAddr,
+		},
 		HealthProbeBindAddress:  healthProbeAddr,
-		Port:                    9443,
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        leaderElectionID,
-		Namespace:               watchedNamespace,
-		CertDir:                 certDir,
-	})
+	}
+	if watchedNamespace != "" {
+		options.Cache = cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				watchedNamespace: {},
+			},
+		}
+	}
+	if certDir != "" {
+		options.WebhookServer = &runtimeWebhook.DefaultServer{
+			Options: runtimeWebhook.Options{
+				Port:    9443,
+				CertDir: certDir,
+			},
+		}
+	}
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
