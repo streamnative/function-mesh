@@ -539,7 +539,7 @@ func TriggerCleanup(ctx context.Context, k8sclient client.Client, restClient res
 	if err != nil {
 		return err
 	}
-	err = executor.Stream(remotecommand.StreamOptions{
+	err = executor.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdin:  nil,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
