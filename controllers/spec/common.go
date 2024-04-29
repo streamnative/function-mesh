@@ -1025,7 +1025,7 @@ func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.Pytho
 			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
 args=(\"%s\", 'D', 1, 5,)
 class=handlers.TimedRotatingFileHandler
-level=%s 
+level=%s
 formatter=formatter`, logFile, lc.Level))
 		case v1alpha1.TimedPolicyWithWeekly:
 			lc.Handlers = "stream_handler,timed_rotating_file_handler"
@@ -1186,11 +1186,13 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		fmt.Sprintf("-Dlog4j.configurationFile=%s", javaLogConfigPath),
 		"-Dpulsar.function.log.dir=logs/functions",
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
+		"-Dpulsar.allocator.exit_on_oom=true",
 		setLogLevel,
 		"-XX:MaxRAMPercentage=40",
 		"-XX:+UseG1GC",
 		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-XX:HeapDumpPath=/pulsar/tmp/heapdump-%p.hprof",
+		"-XX:+ExitOnOutOfMemoryError",
 		"-Xlog:gc*:file=/pulsar/logs/gc.log:time,level,tags:filecount=5,filesize=10M",
 		strings.Join(javaOpts, " "),
 		"org.apache.pulsar.functions.instance.JavaInstanceMain",
