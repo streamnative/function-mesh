@@ -179,7 +179,7 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
-		Name:            "pulsar-function",
+		Name:            FunctionContainerName,
 		Image:           getFunctionRunnerImage(&function.Spec),
 		Command:         makeFunctionCommand(function),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
@@ -202,12 +202,12 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 	jobName := makeJobName(function.Name, v1alpha1.FunctionComponent)
 	labels := map[string]string{
-		"app.kubernetes.io/name":            jobName,
-		"app.kubernetes.io/instance":        jobName,
-		"compute.functionmesh.io/app":       AppFunctionMesh,
-		"compute.functionmesh.io/component": ComponentFunction,
-		"compute.functionmesh.io/name":      function.Name,
-		"compute.functionmesh.io/namespace": function.Namespace,
+		"app.kubernetes.io/name":      jobName,
+		"app.kubernetes.io/instance":  jobName,
+		"compute.functionmesh.io/app": AppFunctionMesh,
+		LabelComponent:                ComponentFunction,
+		LabelName:                     function.Name,
+		LabelNamespace:                function.Namespace,
 		// The following will be deprecated after two releases
 		"app":       AppFunctionMesh,
 		"component": ComponentFunction,

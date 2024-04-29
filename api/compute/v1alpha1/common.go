@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 
 	autov2 "k8s.io/api/autoscaling/v2"
@@ -558,6 +559,19 @@ type VPASpec struct {
 	// Controls how the autoscaler computes recommended resources.
 	// +optional
 	ResourcePolicy *vpav1.PodResourcePolicy `json:"resourcePolicy,omitempty"`
+
+	// Whether the function or connector has a special resource unit
+	// if yes, the vpa should not update the pod resources automatically
+	// +optional
+	ResourceUnit *ResourceUnit `json:"resourceUnit,omitempty"`
+}
+
+type ResourceUnit struct {
+	// The CPU request for the pod
+	Cpu resource.Quantity `json:"cpu,omitempty"`
+
+	// The memory request for the pod
+	Memory resource.Quantity `json:"memory,omitempty"`
 }
 
 type Liveness struct {

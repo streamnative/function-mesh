@@ -323,8 +323,21 @@ func (r *SourceReconciler) ApplySourceHPAV2Beta2(ctx context.Context, source *v1
 }
 
 func (r *SourceReconciler) ObserveSourceVPA(ctx context.Context, source *v1alpha1.Source) error {
-	return observeVPA(ctx, r, types.NamespacedName{Namespace: source.Namespace,
+	resource, err := observeVPA(ctx, r, types.NamespacedName{Namespace: source.Namespace,
 		Name: spec.MakeSourceObjectMeta(source).Name}, source.Spec.Pod.VPA, source.Status.Conditions)
+	if resource != nil {
+		originalResource := source.Spec.Resources
+		// the resource may not have limits
+		if resource.Limits == nil {
+			resource.Limits = originalResource.Limits
+		}
+		source.Spec.Resources = *resource
+		if err = r.Update(ctx, source); err != nil {
+			return err
+		}
+		source.Spec.Resources = originalResource
+	}
+	return err
 }
 
 func (r *SourceReconciler) ApplySourceVPA(ctx context.Context, source *v1alpha1.Source) error {

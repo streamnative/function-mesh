@@ -24,6 +24,8 @@ import (
 
 	"github.com/streamnative/function-mesh/utils"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -76,7 +78,7 @@ func deleteHPA(ctx context.Context, r client.Client, name types.NamespacedName) 
 }
 
 func observeVPA(ctx context.Context, r client.Reader, name types.NamespacedName, vpaSpec *v1alpha1.VPASpec,
-	conditions map[v1alpha1.Component]v1alpha1.ResourceCondition) error {
+	conditions map[v1alpha1.Component]v1alpha1.ResourceCondition) (*corev1.ResourceRequirements, error) {
 	_, ok := conditions[v1alpha1.VPA]
 	condition := v1alpha1.ResourceCondition{Condition: v1alpha1.VPAReady}
 	if !ok {
@@ -84,10 +86,10 @@ func observeVPA(ctx context.Context, r client.Reader, name types.NamespacedName,
 			condition.Status = metav1.ConditionFalse
 			condition.Action = v1alpha1.Create
 			conditions[v1alpha1.VPA] = condition
-			return nil
+			return nil, nil
 		}
 		// VPA is not enabled, skip further action
-		return nil
+		return nil, nil
 	}
 
 	vpa := &vpav1.VerticalPodAutoscaler{}
@@ -96,14 +98,14 @@ func observeVPA(ctx context.Context, r client.Reader, name types.NamespacedName,
 		if errors.IsNotFound(err) {
 			if vpaSpec == nil { // VPA is deleted, delete the status
 				delete(conditions, v1alpha1.VPA)
-				return nil
+				return nil, nil
 			}
 			condition.Status = metav1.ConditionFalse
 			condition.Action = v1alpha1.Create
 			conditions[v1alpha1.VPA] = condition
-			return nil
+			return nil, nil
 		}
-		return err
+		return nil, err
 	}
 
 	// old VPA exists while new Spec removes it, delete the old one
@@ -111,22 +113,81 @@ func observeVPA(ctx context.Context, r client.Reader, name types.NamespacedName,
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Delete
 		conditions[v1alpha1.VPA] = condition
-		return nil
+		return nil, nil
 	}
 
 	// compare exists VPA with new Spec
-	if !reflect.DeepEqual(vpa.Spec.UpdatePolicy, vpaSpec.UpdatePolicy) ||
-		!reflect.DeepEqual(vpa.Spec.ResourcePolicy, vpaSpec.ResourcePolicy) {
+	updatePolicy := vpaSpec.UpdatePolicy
+	spec.UpdateVPAUpdatePolicy(updatePolicy, vpaSpec.ResourceUnit)
+	resourcePolicy := vpaSpec.ResourcePolicy
+	containerName := spec.GetVPAContainerName(&vpa.ObjectMeta)
+	spec.UpdateResourcePolicy(resourcePolicy, containerName)
+	if !reflect.DeepEqual(updatePolicy, vpa.Spec.UpdatePolicy) ||
+		!reflect.DeepEqual(resourcePolicy, vpa.Spec.ResourcePolicy) {
 		condition.Status = metav1.ConditionFalse
 		condition.Action = v1alpha1.Update
 		conditions[v1alpha1.VPA] = condition
-		return nil
+		return nil, nil
 	}
 
 	condition.Action = v1alpha1.NoAction
 	condition.Status = metav1.ConditionTrue
 	conditions[v1alpha1.VPA] = condition
-	return nil
+
+	// if object has special resource unit, we need to manually apply the recommendation to it
+	resources := calculateVPARecommendation(vpa, vpaSpec)
+	return resources, nil
+}
+
+func calculateVPARecommendation(vpa *vpav1.VerticalPodAutoscaler, vpaSpec *v1alpha1.VPASpec) *corev1.ResourceRequirements {
+	var multiple int64 = 0
+	if vpaSpec.ResourceUnit == nil || vpaSpec.ResourceUnit.Cpu.MilliValue() == 0 && vpaSpec.ResourceUnit.Memory.MilliValue() == 0 {
+		return nil
+	}
+	if vpa.Status.Recommendation != nil && vpa.Status.Recommendation.ContainerRecommendations != nil {
+		for _, recommend := range vpa.Status.Recommendation.ContainerRecommendations {
+			// set resource based on CPU
+			if recommend.Target.Cpu() != nil && recommend.Target.Cpu().Value() != 0 {
+				multiple = recommend.Target.Cpu().MilliValue() / vpaSpec.ResourceUnit.Cpu.MilliValue()
+				if recommend.Target.Cpu().MilliValue()%vpaSpec.ResourceUnit.Cpu.MilliValue() != 0 {
+					multiple += 1
+				}
+			} else if recommend.Target.Memory() != nil { // set resources based on Memory
+				multiple = recommend.Target.Memory().MilliValue() / vpaSpec.ResourceUnit.Memory.MilliValue()
+				if recommend.Target.Memory().MilliValue()%vpaSpec.ResourceUnit.Memory.MilliValue() != 0 {
+					multiple += 1
+				}
+			}
+		}
+	}
+
+	if multiple == 0 {
+		return nil
+	}
+	targetCpu := *resource.NewScaledQuantity(multiple*vpaSpec.ResourceUnit.Cpu.MilliValue(), resource.Milli)
+	targetMemory := *resource.NewScaledQuantity(multiple*vpaSpec.ResourceUnit.Memory.MilliValue(), resource.Milli)
+
+	if vpa.Spec.ResourcePolicy == nil || len(vpa.Spec.ResourcePolicy.ContainerPolicies) == 0 ||
+		vpa.Spec.ResourcePolicy.ContainerPolicies[0].ControlledValues == nil ||
+		*vpa.Spec.ResourcePolicy.ContainerPolicies[0].ControlledValues == vpav1.ContainerControlledValuesRequestsAndLimits {
+		return &corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    targetCpu,
+				corev1.ResourceMemory: targetMemory,
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    targetCpu,
+				corev1.ResourceMemory: targetMemory,
+			},
+		}
+	} else {
+		return &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    targetCpu,
+				corev1.ResourceMemory: targetMemory,
+			},
+		}
+	}
 }
 
 func applyVPA(ctx context.Context, r client.Client, logger logr.Logger, condition v1alpha1.ResourceCondition,

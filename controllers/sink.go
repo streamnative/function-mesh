@@ -321,8 +321,21 @@ func (r *SinkReconciler) ApplySinkHPAV2Beta2(ctx context.Context, sink *v1alpha1
 }
 
 func (r *SinkReconciler) ObserveSinkVPA(ctx context.Context, sink *v1alpha1.Sink) error {
-	return observeVPA(ctx, r, types.NamespacedName{Namespace: sink.Namespace,
+	resource, err := observeVPA(ctx, r, types.NamespacedName{Namespace: sink.Namespace,
 		Name: spec.MakeSinkObjectMeta(sink).Name}, sink.Spec.Pod.VPA, sink.Status.Conditions)
+	if resource != nil {
+		originalResource := sink.Spec.Resources
+		// the resource may not have limits
+		if resource.Limits == nil {
+			resource.Limits = originalResource.Limits
+		}
+		sink.Spec.Resources = *resource
+		if err = r.Update(ctx, sink); err != nil {
+			return err
+		}
+		sink.Spec.Resources = originalResource
+	}
+	return err
 }
 
 func (r *SinkReconciler) ApplySinkVPA(ctx context.Context, sink *v1alpha1.Sink) error {
