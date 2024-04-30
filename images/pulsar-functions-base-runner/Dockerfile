@@ -1,13 +1,13 @@
 ARG PULSAR_IMAGE
 ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
-FROM ubuntu:20.04 as functions-runner
+FROM alpine:3.19 as functions-runner
 
 ENV GID=10001
 ENV UID=10000
 ENV USER=pulsar
-RUN groupadd -g $GID pulsar
-RUN adduser -u $UID --gid $GID --disabled-login --disabled-password --gecos '' $USER
+RUN addgroup -g $GID pulsar
+RUN adduser -u $UID -G pulsar -D -g '' $USER
 
 RUN mkdir -p /pulsar/bin/ \
     && mkdir -p /pulsar/lib/ \
@@ -28,38 +28,36 @@ RUN echo "VERSION_TAG=${VERSION_TAG}" && \
     VERSION_PATCH=$(echo $VERSION_TAG | cut -d. -f3) && \
     if [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 7 ]; then \
         echo "Pulsar version is 2.7, use java 1.8" && \
-        export JRE_PACKAGE_NAME=openjdk-8-jre-headless; \
+        export JRE_PACKAGE_NAME=openjdk8; \
     elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 8 ]; then \
         echo "Pulsar version is 2.8, use java 1.8" && \
-        export JRE_PACKAGE_NAME=openjdk-8-jre-headless; \
+        export JRE_PACKAGE_NAME=openjdk8; \
     elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 9 ]; then \
         echo "Pulsar version is 2.9, use java 11" && \
-        export JRE_PACKAGE_NAME=openjdk-11-jre-headless; \
+        export JRE_PACKAGE_NAME=openjdk11; \
     elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 10 ]; then \
         echo "Pulsar version is 2.10, use java 11" && \
-        export JRE_PACKAGE_NAME=openjdk-11-jre-headless; \
+        export JRE_PACKAGE_NAME=openjdk11; \
     elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 11 ]; then \
         echo "Pulsar version is 2.11, use java 17" && \
-        export JRE_PACKAGE_NAME=openjdk-17-jre-headless; \
+        export JRE_PACKAGE_NAME=openjdk11; \
     else \
         echo "Pulsar version is not in the list, use java 17 instead" && \
-        export JRE_PACKAGE_NAME=openjdk-17-jre-headless; \
+        export JRE_PACKAGE_NAME=openjdk17; \
     fi && \
-    apt-get update \
-         && apt-get -y dist-upgrade \
-         && apt-get -y install $JRE_PACKAGE_NAME \
-         && apt-get -y --purge autoremove \
-         && apt-get autoclean \
-         && apt-get clean \
-         && rm -rf /var/lib/apt/lists/*
+    apk update && apk add --no-cache $JRE_PACKAGE_NAME bash
 
 COPY --from=pulsar --chown=$UID:$GID /pulsar/conf /pulsar/conf
 COPY --from=pulsar --chown=$UID:$GID /pulsar/bin /pulsar/bin
 COPY --from=pulsar --chown=$UID:$GID /pulsar/lib /pulsar/lib
 
+# remove the vertx jar since it's not need ans has a cve
+RUN rm -rf /pulsar/lib/io.vertx-vertx-core-*.jar || true
+
 # remove presto dependencies because they are not needed
 RUN rm -rf /pulsar/lib/presto || true
 RUN rm -rf /pulsar/conf/presto || true
+RUN rm -rf /pulsar/bin/pulsar-detector || true
 
 ENV PULSAR_ROOT_LOGGER=INFO,CONSOLE
 ENV java.io.tmpdir=/pulsar/tmp/

@@ -11,9 +11,17 @@ on:
       - 'LICENSE'
       - 'mesh-worker-service/README.md'
       - 'tools/README.md'
+
+permissions:
+  pull-requests: write
+  issues: write
+
 jobs:
   build:
     name: Scan
+    permissions:
+      pull-requests: write
+      issues: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -60,3 +68,55 @@ jobs:
           image-ref: 'function-mesh-operator:latest'
           format: 'table'
           exit-code: '1'
+
+      - name: Build runner images
+        run: |
+          PULSAR_IMAGE_TAG=3.2.2.6 PULSAR_IMAGE=streamnative/sn-platform KIND_PUSH=false images/build.sh
+
+      - name: Run Trivy vulnerability scanner for java
+        id: scan-java-runner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'pulsar-functions-java-runner:latest'
+          format: 'table'
+          exit-code: '0'
+
+      - name: Run Trivy vulnerability scanner for python
+        id: scan-python-runner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'pulsar-functions-python-runner:latest'
+          format: 'table'
+          exit-code: '0'
+
+      - name: Run Trivy vulnerability scanner for go
+        id: scan-go-runner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'pulsar-functions-go-runner:latest'
+          format: 'table'
+          exit-code: '0'
+
+      - name: Run Trivy vulnerability scanner for java with pulsarctl
+        id: scan-java-pulsarctl-runner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'pulsar-functions-pulsarctl-java-runner:latest'
+          format: 'table'
+          exit-code: '0'
+
+      - name: Run Trivy vulnerability scanner for python with pulsarctl
+        id: scan-python-pulsarctl-runner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'pulsar-functions-pulsarctl-python-runner:latest'
+          format: 'table'
+          exit-code: '0'
+
+      - name: Run Trivy vulnerability scanner for go with pulsarctl
+        id: scan-go-pulsarctl-runner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'pulsar-functions-pulsarctl-go-runner:latest'
+          format: 'table'
+          exit-code: '0'
