@@ -1,0 +1,60 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Source
+metadata:
+  name: vpa-source-sample
+spec:
+  className: org.apache.pulsar.io.datagenerator.DataGeneratorSource
+  replicas: 1
+  output:
+    producerConf:
+      maxPendingMessages: 1000
+      maxPendingMessagesAcrossPartitions: 50000
+      useThreadLocalProducers: true
+    topic: persistent://public/default/output-vpa-source-topic
+    typeClassName: org.apache.pulsar.io.datagenerator.Person
+  forwardSourceMessageProperty: true
+  sourceConfig:
+    test: test
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+    requests:
+      cpu: "0.1"
+      memory: 1G
+  pod:
+    vpa:
+      resourceUnit:
+        cpu: 200m
+        memory: 800Mi
+      updatePolicy:
+        updateMode: "Auto"
+      resourcePolicy:
+        containerPolicies:
+          - containerName: "*"
+            minAllowed:
+              cpu: 200m
+              memory: 100Mi
+            maxAllowed:
+              cpu: 1
+              memory: 1000Mi
+  pulsar:
+    pulsarConfig: "test-source"
+    tlsConfig:
+      enabled: false
+      allowInsecure: false
+      hostnameVerification: true
+      certSecretName: sn-platform-tls-broker
+      certSecretKey: ""
+  image: streamnative/pulsar-io-data-generator:3.2.2.1
+  java:
+    jar: connectors/pulsar-io-data-generator-3.2.2.1.nar
+  clusterName: test-pulsar
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-source
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650

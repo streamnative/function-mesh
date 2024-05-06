@@ -1,0 +1,57 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Sink
+metadata:
+  name: vpa-sink-sample
+spec:
+  className: org.apache.pulsar.io.datagenerator.DataGeneratorPrintSink
+  replicas: 1
+  sinkConfig:
+    test: test
+  input:
+    topics:
+      - persistent://public/default/input-vpa-sink-topic
+    typeClassName: org.apache.pulsar.io.datagenerator.Person
+  forwardSourceMessageProperty: true
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+    requests:
+      cpu: "0.1"
+      memory: 1G
+  pod:
+    vpa:
+      resourceUnit:
+        cpu: 200m
+        memory: 800Mi
+      updatePolicy:
+        updateMode: "Auto"
+      resourcePolicy:
+        containerPolicies:
+          - containerName: "*"
+            minAllowed:
+              cpu: 200m
+              memory: 100Mi
+            maxAllowed:
+              cpu: 1
+              memory: 1000Mi
+  pulsar:
+    pulsarConfig: "test-sink"
+    tlsConfig:
+      enabled: false
+      allowInsecure: false
+      hostnameVerification: true
+      certSecretName: sn-platform-tls-broker
+      certSecretKey: ""
+  image: streamnative/pulsar-io-data-generator:3.2.2.1
+  java:
+    jar: connectors/pulsar-io-data-generator-3.2.2.1.nar
+  clusterName: test-pulsar
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-sink
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650

@@ -28,13 +28,11 @@ import (
 
 func MakeVPA(objectMeta *metav1.ObjectMeta, targetRef *autov2.CrossVersionObjectReference, vpa *v1alpha1.VPASpec) *vpav1.VerticalPodAutoscaler {
 	containerName := GetVPAContainerName(objectMeta)
-	updatePolicy := vpa.UpdatePolicy
-	UpdateVPAUpdatePolicy(updatePolicy, vpa.ResourceUnit)
+	updatePolicy := UpdateVPAUpdatePolicy(vpa.UpdatePolicy, vpa.ResourceUnit)
 	if vpa.ResourceUnit != nil {
 		objectMeta.Labels[LabelCustomResourceUnit] = "true"
 	}
-	resourcePolicy := vpa.ResourcePolicy
-	UpdateResourcePolicy(resourcePolicy, containerName)
+	resourcePolicy := UpdateResourcePolicy(vpa.ResourcePolicy, containerName)
 
 	return &vpav1.VerticalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
@@ -67,19 +65,24 @@ func GetVPAContainerName(objectMeta *metav1.ObjectMeta) string {
 	return containerName
 }
 
-func UpdateVPAUpdatePolicy(updatePolicy *vpav1.PodUpdatePolicy, resourceUnit *v1alpha1.ResourceUnit) {
-	if updatePolicy != nil && resourceUnit != nil {
+func UpdateVPAUpdatePolicy(updatePolicy *vpav1.PodUpdatePolicy, resourceUnit *v1alpha1.ResourceUnit) *vpav1.PodUpdatePolicy {
+	resultUpdatePolicy := updatePolicy
+	if resourceUnit != nil {
+		if resultUpdatePolicy == nil {
+			resultUpdatePolicy = &vpav1.PodUpdatePolicy{}
+		}
 		off := vpav1.UpdateModeOff
-		updatePolicy.UpdateMode = &off
+		resultUpdatePolicy.UpdateMode = &off
 	}
+	return resultUpdatePolicy
 }
 
-func UpdateResourcePolicy(resourcePolicy *vpav1.PodResourcePolicy, containerName string) {
+func UpdateResourcePolicy(resourcePolicy *vpav1.PodResourcePolicy, containerName string) *vpav1.PodResourcePolicy {
 	var containerPolicies []vpav1.ContainerResourcePolicy
 	containerScalingMode := vpav1.ContainerScalingModeAuto
 	if resourcePolicy != nil {
 		if resourcePolicy.ContainerPolicies == nil {
-			resourcePolicy.ContainerPolicies = []vpav1.ContainerResourcePolicy{}
+			containerPolicies = []vpav1.ContainerResourcePolicy{}
 		}
 		for _, policy := range resourcePolicy.ContainerPolicies {
 			if policy.ContainerName == containerName {
@@ -99,5 +102,10 @@ func UpdateResourcePolicy(resourcePolicy *vpav1.PodResourcePolicy, containerName
 			},
 		}
 	}
-	resourcePolicy.ContainerPolicies = containerPolicies
+	resultResourcePolicy := resourcePolicy
+	if resultResourcePolicy == nil {
+		resultResourcePolicy = &vpav1.PodResourcePolicy{}
+	}
+	resultResourcePolicy.ContainerPolicies = containerPolicies
+	return resultResourcePolicy
 }

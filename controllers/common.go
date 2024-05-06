@@ -117,11 +117,9 @@ func observeVPA(ctx context.Context, r client.Reader, name types.NamespacedName,
 	}
 
 	// compare exists VPA with new Spec
-	updatePolicy := vpaSpec.UpdatePolicy
-	spec.UpdateVPAUpdatePolicy(updatePolicy, vpaSpec.ResourceUnit)
-	resourcePolicy := vpaSpec.ResourcePolicy
+	updatePolicy := spec.UpdateVPAUpdatePolicy(vpaSpec.UpdatePolicy, vpaSpec.ResourceUnit)
 	containerName := spec.GetVPAContainerName(&vpa.ObjectMeta)
-	spec.UpdateResourcePolicy(resourcePolicy, containerName)
+	resourcePolicy := spec.UpdateResourcePolicy(vpaSpec.ResourcePolicy, containerName)
 	if !reflect.DeepEqual(updatePolicy, vpa.Spec.UpdatePolicy) ||
 		!reflect.DeepEqual(resourcePolicy, vpa.Spec.ResourcePolicy) {
 		condition.Status = metav1.ConditionFalse
@@ -141,21 +139,24 @@ func observeVPA(ctx context.Context, r client.Reader, name types.NamespacedName,
 
 func calculateVPARecommendation(vpa *vpav1.VerticalPodAutoscaler, vpaSpec *v1alpha1.VPASpec) *corev1.ResourceRequirements {
 	var multiple int64 = 0
-	if vpaSpec.ResourceUnit == nil || vpaSpec.ResourceUnit.Cpu.MilliValue() == 0 && vpaSpec.ResourceUnit.Memory.MilliValue() == 0 {
+	if vpaSpec.ResourceUnit == nil || vpaSpec.ResourceUnit.CPU.MilliValue() == 0 && vpaSpec.ResourceUnit.Memory.MilliValue() == 0 {
 		return nil
 	}
+	containerName := spec.GetVPAContainerName(&vpa.ObjectMeta)
 	if vpa.Status.Recommendation != nil && vpa.Status.Recommendation.ContainerRecommendations != nil {
 		for _, recommend := range vpa.Status.Recommendation.ContainerRecommendations {
-			// set resource based on CPU
-			if recommend.Target.Cpu() != nil && recommend.Target.Cpu().Value() != 0 {
-				multiple = recommend.Target.Cpu().MilliValue() / vpaSpec.ResourceUnit.Cpu.MilliValue()
-				if recommend.Target.Cpu().MilliValue()%vpaSpec.ResourceUnit.Cpu.MilliValue() != 0 {
-					multiple += 1
-				}
-			} else if recommend.Target.Memory() != nil { // set resources based on Memory
-				multiple = recommend.Target.Memory().MilliValue() / vpaSpec.ResourceUnit.Memory.MilliValue()
-				if recommend.Target.Memory().MilliValue()%vpaSpec.ResourceUnit.Memory.MilliValue() != 0 {
-					multiple += 1
+			if containerName == recommend.ContainerName {
+				// set resource based on CPU
+				if recommend.Target.Cpu() != nil && recommend.Target.Cpu().Value() != 0 {
+					multiple = recommend.Target.Cpu().MilliValue() / vpaSpec.ResourceUnit.CPU.MilliValue()
+					if recommend.Target.Cpu().MilliValue()%vpaSpec.ResourceUnit.CPU.MilliValue() != 0 {
+						multiple += 1
+					}
+				} else if recommend.Target.Memory() != nil { // set resources based on Memory
+					multiple = recommend.Target.Memory().MilliValue() / vpaSpec.ResourceUnit.Memory.MilliValue()
+					if recommend.Target.Memory().MilliValue()%vpaSpec.ResourceUnit.Memory.MilliValue() != 0 {
+						multiple += 1
+					}
 				}
 			}
 		}
@@ -164,7 +165,7 @@ func calculateVPARecommendation(vpa *vpav1.VerticalPodAutoscaler, vpaSpec *v1alp
 	if multiple == 0 {
 		return nil
 	}
-	targetCpu := *resource.NewScaledQuantity(multiple*vpaSpec.ResourceUnit.Cpu.MilliValue(), resource.Milli)
+	targetCPU := *resource.NewScaledQuantity(multiple*vpaSpec.ResourceUnit.CPU.MilliValue(), resource.Milli)
 	targetMemory := *resource.NewScaledQuantity(multiple*vpaSpec.ResourceUnit.Memory.MilliValue(), resource.Milli)
 
 	if vpa.Spec.ResourcePolicy == nil || len(vpa.Spec.ResourcePolicy.ContainerPolicies) == 0 ||
@@ -172,18 +173,18 @@ func calculateVPARecommendation(vpa *vpav1.VerticalPodAutoscaler, vpaSpec *v1alp
 		*vpa.Spec.ResourcePolicy.ContainerPolicies[0].ControlledValues == vpav1.ContainerControlledValuesRequestsAndLimits {
 		return &corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
-				corev1.ResourceCPU:    targetCpu,
+				corev1.ResourceCPU:    targetCPU,
 				corev1.ResourceMemory: targetMemory,
 			},
 			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    targetCpu,
+				corev1.ResourceCPU:    targetCPU,
 				corev1.ResourceMemory: targetMemory,
 			},
 		}
 	} else {
 		return &corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    targetCpu,
+				corev1.ResourceCPU:    targetCPU,
 				corev1.ResourceMemory: targetMemory,
 			},
 		}

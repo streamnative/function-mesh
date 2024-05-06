@@ -1,19 +1,21 @@
-/*
-Copyright 2017 The Kubernetes Authors.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
+// Package controllers define k8s operator controllers
 package controllers
 
 import (
@@ -45,6 +47,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 						Recommendation: &vpav1.RecommendedPodResources{
 							ContainerRecommendations: []vpav1.RecommendedContainerResources{
 								{
+									ContainerName: "*",
 									Target: corev1.ResourceList{
 										corev1.ResourceCPU:    resource.MustParse("0.2"),
 										corev1.ResourceMemory: resource.MustParse("1Gi"),
@@ -56,7 +59,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 				},
 				vpaSpec: &v1alpha1.VPASpec{
 					ResourceUnit: &v1alpha1.ResourceUnit{
-						Cpu:    resource.MustParse("200m"),
+						CPU:    resource.MustParse("200m"),
 						Memory: resource.MustParse("800Mi"),
 					},
 				},
@@ -80,6 +83,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 						Recommendation: &vpav1.RecommendedPodResources{
 							ContainerRecommendations: []vpav1.RecommendedContainerResources{
 								{
+									ContainerName: "*",
 									Target: corev1.ResourceList{
 										corev1.ResourceCPU:    resource.MustParse("100m"),
 										corev1.ResourceMemory: resource.MustParse("1Gi"),
@@ -91,7 +95,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 				},
 				vpaSpec: &v1alpha1.VPASpec{
 					ResourceUnit: &v1alpha1.ResourceUnit{
-						Cpu:    resource.MustParse("0.2"),       // 200m
+						CPU:    resource.MustParse("0.2"),       // 200m
 						Memory: resource.MustParse("838860800"), // 800Mi
 					},
 				},
@@ -115,6 +119,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 						Recommendation: &vpav1.RecommendedPodResources{
 							ContainerRecommendations: []vpav1.RecommendedContainerResources{
 								{
+									ContainerName: "*",
 									Target: corev1.ResourceList{
 										corev1.ResourceCPU:    resource.MustParse("400m"),
 										corev1.ResourceMemory: resource.MustParse("1Gi"),
@@ -126,7 +131,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 				},
 				vpaSpec: &v1alpha1.VPASpec{
 					ResourceUnit: &v1alpha1.ResourceUnit{
-						Cpu:    resource.MustParse("0.2"),
+						CPU:    resource.MustParse("0.2"),
 						Memory: resource.MustParse("838860800"),
 					},
 				},
@@ -150,6 +155,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 						Recommendation: &vpav1.RecommendedPodResources{
 							ContainerRecommendations: []vpav1.RecommendedContainerResources{
 								{
+									ContainerName: "*",
 									Target: corev1.ResourceList{
 										corev1.ResourceCPU:    resource.MustParse("0.45"),
 										corev1.ResourceMemory: resource.MustParse("1Gi"),
@@ -161,7 +167,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 				},
 				vpaSpec: &v1alpha1.VPASpec{
 					ResourceUnit: &v1alpha1.ResourceUnit{
-						Cpu:    resource.MustParse("200m"),
+						CPU:    resource.MustParse("200m"),
 						Memory: resource.MustParse("800Mi"),
 					},
 				},
@@ -185,6 +191,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 						Recommendation: &vpav1.RecommendedPodResources{
 							ContainerRecommendations: []vpav1.RecommendedContainerResources{
 								{
+									ContainerName: "*",
 									Target: corev1.ResourceList{
 										corev1.ResourceMemory: resource.MustParse("800Mi"),
 									},
@@ -195,7 +202,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 				},
 				vpaSpec: &v1alpha1.VPASpec{
 					ResourceUnit: &v1alpha1.ResourceUnit{
-						Cpu:    resource.MustParse("200m"),
+						CPU:    resource.MustParse("200m"),
 						Memory: resource.MustParse("838860800"),
 					},
 				},
@@ -219,6 +226,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 						Recommendation: &vpav1.RecommendedPodResources{
 							ContainerRecommendations: []vpav1.RecommendedContainerResources{
 								{
+									ContainerName: "*",
 									Target: corev1.ResourceList{
 										corev1.ResourceMemory: resource.MustParse("629145600"), // 600Mi
 									},
@@ -229,7 +237,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 				},
 				vpaSpec: &v1alpha1.VPASpec{
 					ResourceUnit: &v1alpha1.ResourceUnit{
-						Cpu:    resource.MustParse("200m"),
+						CPU:    resource.MustParse("200m"),
 						Memory: resource.MustParse("800Mi"),
 					},
 				},
@@ -253,6 +261,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 						Recommendation: &vpav1.RecommendedPodResources{
 							ContainerRecommendations: []vpav1.RecommendedContainerResources{
 								{
+									ContainerName: "*",
 									Target: corev1.ResourceList{
 										corev1.ResourceMemory: resource.MustParse("1600Mi"),
 									},
@@ -263,7 +272,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 				},
 				vpaSpec: &v1alpha1.VPASpec{
 					ResourceUnit: &v1alpha1.ResourceUnit{
-						Cpu:    resource.MustParse("200m"),
+						CPU:    resource.MustParse("200m"),
 						Memory: resource.MustParse("800Mi"),
 					},
 				},
@@ -287,6 +296,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 						Recommendation: &vpav1.RecommendedPodResources{
 							ContainerRecommendations: []vpav1.RecommendedContainerResources{
 								{
+									ContainerName: "*",
 									Target: corev1.ResourceList{
 										corev1.ResourceMemory: resource.MustParse("1.7Gi"),
 									},
@@ -297,7 +307,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 				},
 				vpaSpec: &v1alpha1.VPASpec{
 					ResourceUnit: &v1alpha1.ResourceUnit{
-						Cpu:    resource.MustParse("200m"),
+						CPU:    resource.MustParse("200m"),
 						Memory: resource.MustParse("800Mi"),
 					},
 				},
@@ -321,6 +331,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 						Recommendation: &vpav1.RecommendedPodResources{
 							ContainerRecommendations: []vpav1.RecommendedContainerResources{
 								{
+									ContainerName: "*",
 									Target: corev1.ResourceList{
 										corev1.ResourceCPU:    resource.MustParse("200m"),
 										corev1.ResourceMemory: resource.MustParse("1Gi"),
@@ -342,7 +353,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 				},
 				vpaSpec: &v1alpha1.VPASpec{
 					ResourceUnit: &v1alpha1.ResourceUnit{
-						Cpu:    resource.MustParse("200m"),
+						CPU:    resource.MustParse("200m"),
 						Memory: resource.MustParse("800Mi"),
 					},
 				},

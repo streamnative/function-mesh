@@ -32,7 +32,11 @@ import (
 
 func TestMakeVPA(t *testing.T) {
 	mode := vpav1.UpdateModeAuto
+	off := vpav1.UpdateModeOff
+	containerMode := vpav1.ContainerScalingModeAuto
+	containerOffMode := vpav1.ContainerScalingModeOff
 	controlledValues := vpav1.ContainerControlledValuesRequestsAndLimits
+	var minReplicas int32 = 3
 	type args struct {
 		objectMeta *metav1.ObjectMeta
 		targetRef  *autov2.CrossVersionObjectReference
@@ -48,6 +52,9 @@ func TestMakeVPA(t *testing.T) {
 			args: args{
 				objectMeta: &metav1.ObjectMeta{
 					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent: "function",
+					},
 				},
 				targetRef: &autov2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
@@ -60,7 +67,7 @@ func TestMakeVPA(t *testing.T) {
 					},
 					ResourcePolicy: &vpav1.PodResourcePolicy{
 						ContainerPolicies: []vpav1.ContainerResourcePolicy{{
-							ContainerName: "test-container",
+							ContainerName: "pulsar-function",
 							MinAllowed: v1.ResourceList{
 								v1.ResourceCPU:    resource.MustParse("100m"),
 								v1.ResourceMemory: resource.MustParse("100Mi"),
@@ -80,6 +87,9 @@ func TestMakeVPA(t *testing.T) {
 			want: &vpav1.VerticalPodAutoscaler{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent: "function",
+					},
 				},
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "autoscaling.k8s.io/v1",
@@ -97,7 +107,7 @@ func TestMakeVPA(t *testing.T) {
 					ResourcePolicy: &vpav1.PodResourcePolicy{
 						ContainerPolicies: []vpav1.ContainerResourcePolicy{
 							{
-								ContainerName: "test-container",
+								ContainerName: "pulsar-function",
 								MinAllowed: v1.ResourceList{
 									v1.ResourceCPU:    resource.MustParse("100m"),
 									v1.ResourceMemory: resource.MustParse("100Mi"),
@@ -110,6 +120,7 @@ func TestMakeVPA(t *testing.T) {
 									v1.ResourceCPU, v1.ResourceMemory,
 								},
 								ControlledValues: &controlledValues,
+								Mode:             &containerMode,
 							},
 						},
 					},
@@ -121,6 +132,9 @@ func TestMakeVPA(t *testing.T) {
 			args: args{
 				objectMeta: &metav1.ObjectMeta{
 					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent: "function",
+					},
 				},
 				targetRef: &autov2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
@@ -136,6 +150,9 @@ func TestMakeVPA(t *testing.T) {
 			want: &vpav1.VerticalPodAutoscaler{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent: "function",
+					},
 				},
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "autoscaling.k8s.io/v1",
@@ -150,7 +167,14 @@ func TestMakeVPA(t *testing.T) {
 					UpdatePolicy: &vpav1.PodUpdatePolicy{
 						UpdateMode: &mode,
 					},
-					ResourcePolicy: nil,
+					ResourcePolicy: &vpav1.PodResourcePolicy{
+						ContainerPolicies: []vpav1.ContainerResourcePolicy{
+							{
+								ContainerName: "pulsar-function",
+								Mode:          &containerMode,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -159,6 +183,9 @@ func TestMakeVPA(t *testing.T) {
 			args: args{
 				objectMeta: &metav1.ObjectMeta{
 					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent: "sink",
+					},
 				},
 				targetRef: &autov2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
@@ -168,7 +195,7 @@ func TestMakeVPA(t *testing.T) {
 				vpa: &v1alpha1.VPASpec{
 					ResourcePolicy: &vpav1.PodResourcePolicy{
 						ContainerPolicies: []vpav1.ContainerResourcePolicy{{
-							ContainerName: "test-container",
+							ContainerName: "pulsar-sink",
 							MinAllowed: v1.ResourceList{
 								v1.ResourceCPU:    resource.MustParse("100m"),
 								v1.ResourceMemory: resource.MustParse("100Mi"),
@@ -189,6 +216,9 @@ func TestMakeVPA(t *testing.T) {
 			want: &vpav1.VerticalPodAutoscaler{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent: "sink",
+					},
 				},
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "autoscaling.k8s.io/v1",
@@ -204,7 +234,7 @@ func TestMakeVPA(t *testing.T) {
 					ResourcePolicy: &vpav1.PodResourcePolicy{
 						ContainerPolicies: []vpav1.ContainerResourcePolicy{
 							{
-								ContainerName: "test-container",
+								ContainerName: "pulsar-sink",
 								MinAllowed: v1.ResourceList{
 									v1.ResourceCPU:    resource.MustParse("100m"),
 									v1.ResourceMemory: resource.MustParse("100Mi"),
@@ -217,6 +247,7 @@ func TestMakeVPA(t *testing.T) {
 									v1.ResourceCPU, v1.ResourceMemory,
 								},
 								ControlledValues: &controlledValues,
+								Mode:             &containerMode,
 							},
 						},
 					},
@@ -228,6 +259,9 @@ func TestMakeVPA(t *testing.T) {
 			args: args{
 				objectMeta: &metav1.ObjectMeta{
 					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent: "source",
+					},
 				},
 				targetRef: &autov2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
@@ -239,6 +273,9 @@ func TestMakeVPA(t *testing.T) {
 			want: &vpav1.VerticalPodAutoscaler{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent: "source",
+					},
 				},
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "autoscaling.k8s.io/v1",
@@ -250,8 +287,158 @@ func TestMakeVPA(t *testing.T) {
 						Kind:       "Deployment",
 						Name:       "test-deployment",
 					},
-					UpdatePolicy:   nil,
-					ResourcePolicy: nil,
+					UpdatePolicy: nil,
+					ResourcePolicy: &vpav1.PodResourcePolicy{
+						ContainerPolicies: []vpav1.ContainerResourcePolicy{
+							{
+								ContainerName: "pulsar-source",
+								Mode:          &containerMode,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Generate VPA with resource unit successfully",
+			args: args{
+				objectMeta: &metav1.ObjectMeta{
+					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent: "source",
+					},
+				},
+				targetRef: &autov2.CrossVersionObjectReference{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+					Name:       "test-deployment",
+				},
+				vpa: &v1alpha1.VPASpec{
+					ResourceUnit: &v1alpha1.ResourceUnit{
+						CPU:    resource.MustParse("200m"),
+						Memory: resource.MustParse("800Mi"),
+					},
+				},
+			},
+			want: &vpav1.VerticalPodAutoscaler{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent:          "source",
+						LabelCustomResourceUnit: "true",
+					},
+				},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "autoscaling.k8s.io/v1",
+					Kind:       "VerticalPodAutoscaler",
+				},
+				Spec: vpav1.VerticalPodAutoscalerSpec{
+					TargetRef: &autoscaling.CrossVersionObjectReference{
+						APIVersion: "apps/v1",
+						Kind:       "Deployment",
+						Name:       "test-deployment",
+					},
+					UpdatePolicy: &vpav1.PodUpdatePolicy{
+						UpdateMode: &off,
+					},
+					ResourcePolicy: &vpav1.PodResourcePolicy{
+						ContainerPolicies: []vpav1.ContainerResourcePolicy{
+							{
+								ContainerName: "pulsar-source",
+								Mode:          &containerMode,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Generate VPA with resource unit and resource policy successfully",
+			args: args{
+				objectMeta: &metav1.ObjectMeta{
+					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent: "source",
+					},
+				},
+				targetRef: &autov2.CrossVersionObjectReference{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+					Name:       "test-deployment",
+				},
+				vpa: &v1alpha1.VPASpec{
+					ResourceUnit: &v1alpha1.ResourceUnit{
+						CPU:    resource.MustParse("200m"),
+						Memory: resource.MustParse("800Mi"),
+					},
+					UpdatePolicy: &vpav1.PodUpdatePolicy{
+						UpdateMode:  &mode, // should be set to 'Off'
+						MinReplicas: &minReplicas,
+					},
+					ResourcePolicy: &vpav1.PodResourcePolicy{
+						ContainerPolicies: []vpav1.ContainerResourcePolicy{
+							{
+								ContainerName: "pulsar-source",
+								MinAllowed: v1.ResourceList{
+									v1.ResourceCPU:    resource.MustParse("100m"),
+									v1.ResourceMemory: resource.MustParse("100Mi"),
+								},
+								MaxAllowed: v1.ResourceList{
+									v1.ResourceCPU:    resource.MustParse("1000m"),
+									v1.ResourceMemory: resource.MustParse("1000Mi"),
+								},
+								Mode:                &containerOffMode, // should be converted to 'Auto'
+								ControlledValues:    &controlledValues,
+								ControlledResources: &[]v1.ResourceName{v1.ResourceCPU},
+							},
+							{
+								ContainerName: "istio", // should be ignored
+								Mode:          &containerMode,
+							},
+						},
+					},
+				},
+			},
+			want: &vpav1.VerticalPodAutoscaler{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-vpa",
+					Labels: map[string]string{
+						LabelComponent:          "source",
+						LabelCustomResourceUnit: "true",
+					},
+				},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "autoscaling.k8s.io/v1",
+					Kind:       "VerticalPodAutoscaler",
+				},
+				Spec: vpav1.VerticalPodAutoscalerSpec{
+					TargetRef: &autoscaling.CrossVersionObjectReference{
+						APIVersion: "apps/v1",
+						Kind:       "Deployment",
+						Name:       "test-deployment",
+					},
+					UpdatePolicy: &vpav1.PodUpdatePolicy{
+						UpdateMode:  &off,
+						MinReplicas: &minReplicas,
+					},
+					ResourcePolicy: &vpav1.PodResourcePolicy{
+						ContainerPolicies: []vpav1.ContainerResourcePolicy{
+							{
+								ContainerName: "pulsar-source",
+								Mode:          &containerMode,
+								MinAllowed: v1.ResourceList{
+									v1.ResourceCPU:    resource.MustParse("100m"),
+									v1.ResourceMemory: resource.MustParse("100Mi"),
+								},
+								MaxAllowed: v1.ResourceList{
+									v1.ResourceCPU:    resource.MustParse("1000m"),
+									v1.ResourceMemory: resource.MustParse("1000Mi"),
+								},
+								ControlledValues:    &controlledValues,
+								ControlledResources: &[]v1.ResourceName{v1.ResourceCPU},
+							},
+						},
+					},
 				},
 			},
 		},

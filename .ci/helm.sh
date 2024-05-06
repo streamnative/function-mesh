@@ -239,7 +239,7 @@ function ci::verify_download_java_function_generic_auth() {
 }
 
 function ci::verify_vpa_java_function() {
-  kubectl wait -l name=function-sample-vpa-function --for=condition=RecommendationProvided --timeout=2m vpa && true
+  kubectl wait -l name=function-sample-vpa --for=condition=RecommendationProvided --timeout=2m vpa
   cpu=`kubectl get vpa function-sample-vpa-function -o jsonpath='{.status.recommendation.containerRecommendations[0].target.cpu}'`
   memory=`kubectl get vpa function-sample-vpa-function -o jsonpath='{.status.recommendation.containerRecommendations[0].target.memory}'`
   resources='{"limits":{"cpu":"'$cpu'","memory":"'$memory'"},"requests":{"cpu":"'$cpu'","memory":"'$memory'"}}'
@@ -267,6 +267,39 @@ function ci::verify_vpa_java_function() {
   echo "vpa tests passed"
 
   ci::verify_exclamation_function "persistent://public/default/input-vpa-java-topic" "persistent://public/default/output-vpa-java-topic" "test-message" "test-message!" 10
+}
+
+function ci::verify_vpa_with_resource_unit() {
+  name=$1
+  kind=$2
+  baseCpu=200 # cpu value of the resource unit
+  baseMemory=`echo $((800*1024*1024))` # memory value of the resource unit
+  vpaName="$1-$2"
+  kubectl wait -l name=$name --for=condition=RecommendationProvided --timeout=2m vpa
+  cpu=`kubectl get vpa $vpaName -o jsonpath='{.status.recommendation.containerRecommendations[0].target.cpu}'`
+  cpu_value=${cpu%m}
+
+  quotient=$(($cpu_value / $baseCpu))
+  remainder=$(($cpu_value % $baseCpu))
+
+  # If there's any remainder, we need to round up
+  if [ $remainder -ne 0 ]; then
+      multiple=$(($quotient + 1))
+  else
+      multiple=$quotient
+  fi
+  targetCpu=`echo $(($baseCpu* $multiple ))m`
+  targetMemory=`echo $(($baseMemory * $multiple ))`
+
+  resources='{"limits":{"cpu":"'$targetCpu'","memory":"'$targetMemory'"},"requests":{"cpu":"'$targetCpu'","memory":"'$targetMemory'"}}'
+
+  realResource=`kubectl get $kind $name -o jsonpath='{.spec.resources}'`
+  if [[ "$resources" != "$realResource" ]]; then
+    echo "vpa tests failed for $kind"
+    echo "recommend resource is: ${resources}, actual resource is ${realResource}"
+    exit 1
+  fi
+  echo "vpa tests passed"
 }
 
 function ci::verify_python_function() {
@@ -349,7 +382,8 @@ function ci::verify_exclamation_function() {
     timesleep=$5
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
     sleep "$timesleep"
-    MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${outputtopic}")
+    sub=`cat /dev/urandom | tr -dc 'a-z' | head -c 8`
+    MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "${sub}" --subscription-position Earliest "${outputtopic}")
     echo "$MESSAGE"
     if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
         return 0
@@ -366,7 +400,8 @@ function ci::verify_exclamation_function_with_auth() {
     command="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-client --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters produce -m \"${inputmessage}\" -n 1 \"${inputtopic}\"'"
     sh -c "$command"
     sleep "$timesleep"
-    consumeCommand="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-client --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters consume -n 1 -s "sub" --subscription-position Earliest \"${outputtopic}\"'"
+    sub=`cat /dev/urandom | tr -dc 'a-z' | head -c 8`
+    consumeCommand="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-client --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters consume -n 1 -s \"${sub}\" --subscription-position Earliest \"${outputtopic}\"'"
     MESSAGE=$(sh -c "$consumeCommand")
     echo "$MESSAGE"
     if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
@@ -383,7 +418,8 @@ function ci::verify_wordcount_function() {
     timesleep=$5
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
     sleep "$timesleep"
-    MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 3 -s "sub" --subscription-position Earliest "${outputtopic}")
+    sub=`cat /dev/urandom | tr -dc 'a-z' | head -c 8`
+    MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 3 -s "${sub}" --subscription-position Earliest "${outputtopic}")
     echo "$MESSAGE"
     if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
         return 0
@@ -453,12 +489,13 @@ function ci::verify_elasticsearch_sink() {
 
 function ci::verify_mongodb_source() {
     timesleep=$1
-    kubectl exec mongo-dbz-0 -c mongo -- mongo -u debezium -p dbz --authenticationDatabase admin localhost:27017/inventory --eval 'db.products.update({"_id":NumberLong(104)},{$set:{weight:1.25}})'
+    kubectl exec mongo-dbz-0 -c mongo -- mongosh -u debezium -p dbz --authenticationDatabase admin localhost:27017/inventory --eval 'db.products.update({"_id":NumberLong(104)},{$set:{weight:1.25}})'
     sleep "$timesleep"
     kubectl logs --tail=-1 -l compute.functionmesh.io/name=source-sample | grep "records sent"
     if [ $? -eq 0 ]; then
         return 0
     fi
+    kubectl logs --tail=-1 -l compute.functionmesh.io/name=source-sample
     return 1
 }
 
@@ -484,7 +521,8 @@ function ci::verify_function_with_encryption() {
 
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -ekn "myapp1" -ekv "data:application/x-pem-file;base64,${correct_pubkey}" -m "${inputmessage}" -n 1 "${inputtopic}"
     sleep "$timesleep"
-    MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${outputtopic}")
+    sub=`cat /dev/urandom | tr -dc 'a-z' | head -c 8`
+    MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "${sub}" --subscription-position Earliest "${outputtopic}")
     echo "$MESSAGE"
     if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
         return 0
@@ -573,7 +611,8 @@ function ci::verify_log_topic() {
   timesleep=$3
 
   sleep "$timesleep"
-  MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${logTopic}")
+  sub=`cat /dev/urandom | tr -dc 'a-z' | head -c 8`
+  MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "${sub}" --subscription-position Earliest "${logTopic}")
   echo "$MESSAGE"
   if [[ "$MESSAGE" == *"$message"* ]]; then
     return 0
@@ -588,7 +627,8 @@ function ci::verify_log_topic_with_auth() {
   timesleep=$3
 
   sleep "$timesleep"
-  consumeCommand="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-client --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters consume -n 1 -s "sub" --subscription-position Earliest \"${logTopic}\"'"
+  sub=`cat /dev/urandom | tr -dc 'a-z' | head -c 8`
+  consumeCommand="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-client --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters consume -n 1 -s \"${sub}\" --subscription-position Earliest \"${logTopic}\"'"
   MESSAGE=$(sh -c "$consumeCommand")
   echo "$MESSAGE"
   if [[ "$MESSAGE" == *"$message"* ]]; then

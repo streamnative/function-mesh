@@ -568,7 +568,7 @@ type VPASpec struct {
 
 type ResourceUnit struct {
 	// The CPU request for the pod
-	Cpu resource.Quantity `json:"cpu,omitempty"`
+	CPU resource.Quantity `json:"cpu,omitempty"`
 
 	// The memory request for the pod
 	Memory resource.Quantity `json:"memory,omitempty"`
