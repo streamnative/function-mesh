@@ -1,6 +1,10 @@
 # Build the manager binary
 FROM golang:1.22.3-bullseye as builder
 
+WORKDIR /workspace/api
+COPY api/ .
+RUN go mod download
+
 WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
@@ -11,7 +15,6 @@ RUN go mod download
 
 # Copy the go source
 COPY main.go main.go
-COPY api/ api/
 COPY pkg/ pkg/
 COPY controllers/ controllers/
 COPY utils/ utils/
