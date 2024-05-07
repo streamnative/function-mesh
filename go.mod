@@ -10,6 +10,8 @@ require (
 	github.com/onsi/gomega v1.32.0
 	github.com/prometheus/client_golang v1.18.0
 	github.com/streamnative/pulsarctl v0.4.3-0.20240321142126-f3939fb0ed38
+	github.com/streamnative/function-mesh/api v0.0.0
+	github.com/streamnative/pulsarctl v0.4.3-0.20220702165443-e4c26e2c39cf
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/protobuf v1.33.0
 	gotest.tools v2.2.0+incompatible
@@ -30,7 +32,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dvsekhvalnov/jose2go v1.6.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
-	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
@@ -83,7 +84,7 @@ require (
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
+	golang.org/x/time v0.4.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -98,3 +99,5 @@ require (
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
+
+replace github.com/streamnative/function-mesh/api => ./api
