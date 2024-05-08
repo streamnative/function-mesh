@@ -20,7 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -132,7 +131,7 @@ const (
 	LabelComponent          = "compute.functionmesh.io/component"
 	LabelName               = "compute.functionmesh.io/name"
 	LabelNamespace          = "compute.functionmesh.io/namespace"
-	LabelCustomResourceUnit = "streamnative.io/custom-resource-unit"
+	LabelCustomResourceUnit = "compute.functionmesh.io/custom-resource-unit"
 
 	FunctionContainerName = "pulsar-function"
 	SinkContainerName     = "pulsar-sink"
