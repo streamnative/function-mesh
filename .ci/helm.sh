@@ -296,16 +296,26 @@ function ci::verify_vpa_with_resource_unit() {
   multiplier=$(ci::calculate_multiplies $baseCpu $cpu_value)
 
   memory=`kubectl get vpa $vpaName -o jsonpath='{.status.recommendation.containerRecommendations[0].target.memory}'`
-  memory_value=${memory%k}
-  memory_value=$((memory_value*1024))
+  if [[ "$memory" == "*k" ]]; then
+    memory_value=${memory%k}
+    memory_value=$((memory_value*1000))
+  elif [[ "$memory" == "*Mi" ]]; then
+    memory_value=${memory%Mi}
+    memory_value=$((memory_value*1024*1024))
+  elif [[ "$memory" == "*Gi" ]]; then
+    memory_value=${memory%Gi}
+    memory_value=$((memory_value*1024*1024*1024))
+  else
+    memory_value=${memory}
+  fi
   memoryMultiplier=$(ci::calculate_multiplies $baseMemory $memory_value)
 
   if [ $memoryMultiplier -gt $multiplier ]; then
     multiplier=$memoryMultiplier
   fi
 
-  targetCpu=`echo $(($baseCpu* $multiple))m`
-  targetMemory=`echo $(($baseMemory * $multiple))`
+  targetCpu=`echo $(($baseCpu* $multiplier))m`
+  targetMemory=`echo $(($baseMemory * $multiplier))`
 
   resources='{"limits":{"cpu":"'$targetCpu'","memory":"'$targetMemory'"},"requests":{"cpu":"'$targetCpu'","memory":"'$targetMemory'"}}'
 
