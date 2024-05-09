@@ -50,7 +50,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 									ContainerName: "*",
 									Target: corev1.ResourceList{
 										corev1.ResourceCPU:    resource.MustParse("0.2"),
-										corev1.ResourceMemory: resource.MustParse("1Gi"),
+										corev1.ResourceMemory: resource.MustParse("600Mi"),
 									},
 								},
 							},
@@ -86,7 +86,7 @@ func Test_calculateVPARecommendation(t *testing.T) {
 									ContainerName: "*",
 									Target: corev1.ResourceList{
 										corev1.ResourceCPU:    resource.MustParse("100m"),
-										corev1.ResourceMemory: resource.MustParse("1Gi"),
+										corev1.ResourceMemory: resource.MustParse("0.6Gi"),
 									},
 								},
 							},
@@ -180,6 +180,42 @@ func Test_calculateVPARecommendation(t *testing.T) {
 				Limits: corev1.ResourceList{
 					corev1.ResourceCPU:    *resource.NewScaledQuantity(600, resource.Milli),
 					corev1.ResourceMemory: *resource.NewScaledQuantity(3*800*1024*1024*1000, resource.Milli),
+				},
+			},
+		},
+		{
+			name: "Use memory to calculate multiplier when it increase more than cpu",
+			args: args{
+				vpa: &vpav1.VerticalPodAutoscaler{
+					Status: vpav1.VerticalPodAutoscalerStatus{
+						Recommendation: &vpav1.RecommendedPodResources{
+							ContainerRecommendations: []vpav1.RecommendedContainerResources{
+								{
+									ContainerName: "*",
+									Target: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("0.2"),
+										corev1.ResourceMemory: resource.MustParse("1Gi"),
+									},
+								},
+							},
+						},
+					},
+				},
+				vpaSpec: &v1alpha1.VPASpec{
+					ResourceUnit: &v1alpha1.ResourceUnit{
+						CPU:    resource.MustParse("200m"),
+						Memory: resource.MustParse("800Mi"),
+					},
+				},
+			},
+			want: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    *resource.NewScaledQuantity(400, resource.Milli),
+					corev1.ResourceMemory: *resource.NewScaledQuantity(2*800*1024*1024*1000, resource.Milli),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    *resource.NewScaledQuantity(400, resource.Milli),
+					corev1.ResourceMemory: *resource.NewScaledQuantity(2*800*1024*1024*1000, resource.Milli),
 				},
 			},
 		},
@@ -360,8 +396,8 @@ func Test_calculateVPARecommendation(t *testing.T) {
 			},
 			want: &corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					corev1.ResourceCPU:    *resource.NewScaledQuantity(200, resource.Milli),
-					corev1.ResourceMemory: *resource.NewScaledQuantity(800*1024*1024*1000, resource.Milli),
+					corev1.ResourceCPU:    *resource.NewScaledQuantity(400, resource.Milli),
+					corev1.ResourceMemory: *resource.NewScaledQuantity(2*800*1024*1024*1000, resource.Milli),
 				},
 			},
 		},

@@ -269,6 +269,21 @@ function ci::verify_vpa_java_function() {
   ci::verify_exclamation_function "persistent://public/default/input-vpa-java-topic" "persistent://public/default/output-vpa-java-topic" "test-message" "test-message!" 10
 }
 
+function ci::calculate_multiplies() {
+  base=$1
+  value=$2
+  quotient=$(($value / $base))
+  remainder=$(($value % $base))
+
+  # If there's any remainder, we need to round up
+  if [ $remainder -ne 0 ]; then
+      multiple=$(($quotient + 1))
+  else
+      multiple=$quotient
+  fi
+  echo $multiple
+}
+
 function ci::verify_vpa_with_resource_unit() {
   name=$1
   kind=$2
@@ -278,18 +293,19 @@ function ci::verify_vpa_with_resource_unit() {
   kubectl wait -l name=$name --for=condition=RecommendationProvided --timeout=2m vpa
   cpu=`kubectl get vpa $vpaName -o jsonpath='{.status.recommendation.containerRecommendations[0].target.cpu}'`
   cpu_value=${cpu%m}
+  multiplier=$(ci::calculate_multiplies $baseCpu $cpu_value)
 
-  quotient=$(($cpu_value / $baseCpu))
-  remainder=$(($cpu_value % $baseCpu))
+  memory=`kubectl get vpa $vpaName -o jsonpath='{.status.recommendation.containerRecommendations[0].target.memory}'`
+  memory_value=${memory%k}
+  memory_value=$((memory_value*1024))
+  memoryMultiplier=$(ci::calculate_multiplies $baseMemory $memory_value)
 
-  # If there's any remainder, we need to round up
-  if [ $remainder -ne 0 ]; then
-      multiple=$(($quotient + 1))
-  else
-      multiple=$quotient
+  if [ $memoryMultiplier -gt $multiplier ]; then
+    multiplier=$memoryMultiplier
   fi
-  targetCpu=`echo $(($baseCpu* $multiple ))m`
-  targetMemory=`echo $(($baseMemory * $multiple ))`
+
+  targetCpu=`echo $(($baseCpu* $multiple))m`
+  targetMemory=`echo $(($baseMemory * $multiple))`
 
   resources='{"limits":{"cpu":"'$targetCpu'","memory":"'$targetMemory'"},"requests":{"cpu":"'$targetCpu'","memory":"'$targetMemory'"}}'
 

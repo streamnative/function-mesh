@@ -152,10 +152,15 @@ func calculateVPARecommendation(vpa *vpav1.VerticalPodAutoscaler, vpaSpec *v1alp
 					if recommend.Target.Cpu().MilliValue()%vpaSpec.ResourceUnit.CPU.MilliValue() != 0 {
 						multiple += 1
 					}
-				} else if recommend.Target.Memory() != nil { // set resources based on Memory
-					multiple = recommend.Target.Memory().MilliValue() / vpaSpec.ResourceUnit.Memory.MilliValue()
+				}
+				if recommend.Target.Memory() != nil && recommend.Target.Memory().Value() != 0 {
+					multipleMemory := recommend.Target.Memory().MilliValue() / vpaSpec.ResourceUnit.Memory.MilliValue()
 					if recommend.Target.Memory().MilliValue()%vpaSpec.ResourceUnit.Memory.MilliValue() != 0 {
-						multiple += 1
+						multipleMemory += 1
+					}
+					// use the larger multiple
+					if multipleMemory > multiple {
+						multiple = multipleMemory
 					}
 				}
 			}
