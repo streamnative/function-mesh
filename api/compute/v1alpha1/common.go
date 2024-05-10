@@ -369,9 +369,11 @@ const (
 
 // ResourceCondition The `Status` of a given `Condition` and the `Action` needed to reach the `Status`
 type ResourceCondition struct {
-	Condition ResourceConditionType  `json:"condition,omitempty"`
-	Status    metav1.ConditionStatus `json:"status,omitempty"`
-	Action    ReconcileAction        `json:"action,omitempty"`
+	Condition  ResourceConditionType  `json:"condition,omitempty"`
+	Status     metav1.ConditionStatus `json:"status,omitempty"`
+	Action     ReconcileAction        `json:"action,omitempty"`
+	ApiVersion string                 `json:"apiVersion,omitempty"`
+	Kind       string                 `json:"kind,omitempty"`
 }
 
 type ResourceConditionType string
@@ -379,10 +381,11 @@ type ResourceConditionType string
 const (
 	Orphaned ResourceConditionType = "Orphaned"
 
-	MeshReady     ResourceConditionType = "MeshReady"
-	FunctionReady ResourceConditionType = "FunctionReady"
-	SourceReady   ResourceConditionType = "SourceReady"
-	SinkReady     ResourceConditionType = "SinkReady"
+	MeshReady            ResourceConditionType = "MeshReady"
+	FunctionReady        ResourceConditionType = "FunctionReady"
+	SourceReady          ResourceConditionType = "SourceReady"
+	SinkReady            ResourceConditionType = "SinkReady"
+	GenericResourceReady ResourceConditionType = "GenericResourceReady"
 
 	StatefulSetReady ResourceConditionType = "StatefulSetReady"
 	ServiceReady     ResourceConditionType = "ServiceReady"

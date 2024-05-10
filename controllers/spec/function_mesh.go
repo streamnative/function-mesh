@@ -20,6 +20,7 @@ package spec
 import (
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func MakeFunctionComponent(functionName string, mesh *v1alpha1.FunctionMesh,
@@ -72,4 +73,22 @@ func MakeSinkComponent(sinkName string, mesh *v1alpha1.FunctionMesh, spec *v1alp
 		},
 		Spec: *spec,
 	}
+}
+
+func MakeGenericCRComponent(mesh *v1alpha1.FunctionMesh, spec *v1alpha1.GenericResourceSpec) *unstructured.Unstructured {
+	obj := &unstructured.Unstructured{}
+	obj.SetAPIVersion(spec.APIVersion)
+	obj.SetKind(spec.Kind)
+	obj.SetName(spec.Name)
+	obj.SetNamespace(mesh.Namespace)
+
+	specFieldName := "spec"
+	if spec.SpecFieldName != "" {
+		specFieldName = spec.SpecFieldName
+	}
+	obj.Object[specFieldName] = spec.Spec
+
+	// Set owner reference for garbage collection
+	obj.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(mesh, mesh.GroupVersionKind())})
+	return obj
 }
