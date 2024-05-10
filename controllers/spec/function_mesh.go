@@ -75,11 +75,11 @@ func MakeSinkComponent(sinkName string, mesh *v1alpha1.FunctionMesh, spec *v1alp
 	}
 }
 
-func MakeGenericCRComponent(mesh *v1alpha1.FunctionMesh, spec *v1alpha1.GenericResourceSpec) *unstructured.Unstructured {
+func MakeGenericResourceComponent(resourceName string, mesh *v1alpha1.FunctionMesh, spec *v1alpha1.GenericResourceSpec) *unstructured.Unstructured {
 	obj := &unstructured.Unstructured{}
 	obj.SetAPIVersion(spec.APIVersion)
 	obj.SetKind(spec.Kind)
-	obj.SetName(spec.Name)
+	obj.SetName(resourceName)
 	obj.SetNamespace(mesh.Namespace)
 
 	specFieldName := "spec"

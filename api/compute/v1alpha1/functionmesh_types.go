@@ -58,9 +58,9 @@ type GenericResourceSpec struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Spec *Config `json:"spec,omitempty"`
 
-	// The filed in the `Status` field of Resource used to check whether the resource is ready
+	// The fields in the `Status` field of Resource used to check whether the resource is ready
 	// should equal to ConditionTrue when it's ready
-	ReadyField string `json:"readyField,omitempty"`
+	ReadyFields []string `json:"readyFields,omitempty"`
 }
 
 // FunctionMeshStatus defines the observed state of FunctionMesh
@@ -70,7 +70,7 @@ type FunctionMeshStatus struct {
 	SourceConditions          map[string]ResourceCondition `json:"sourceConditions,omitempty"`
 	SinkConditions            map[string]ResourceCondition `json:"sinkConditions,omitempty"`
 	FunctionConditions        map[string]ResourceCondition `json:"functionConditions,omitempty"`
-	GenericResourceConditions map[string]ResourceCondition `json:"genericCRConditions,omitempty"`
+	GenericResourceConditions map[string]ResourceCondition `json:"genericResourceConditions,omitempty"`
 	ObservedGeneration        int64                        `json:"observedGeneration,omitempty"`
 	Condition                 *ResourceCondition           `json:"condition,omitempty"`
 }

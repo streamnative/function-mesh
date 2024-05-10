@@ -267,7 +267,7 @@ func (r *FunctionMeshReconciler) observeGenericResources(ctx context.Context, me
 
 		err := r.Get(ctx, types.NamespacedName{
 			Namespace: mesh.Namespace,
-			Name:      resource.Name,
+			Name:      makeComponentName(mesh.Name, resource.Name),
 		}, obj)
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -289,14 +289,18 @@ func (r *FunctionMeshReconciler) observeGenericResources(ctx context.Context, me
 			condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.NoAction, metav1.ConditionTrue)
 		}
 
-		if resource.ReadyField != "" {
-			readyValue, ok := status[resource.ReadyField].(metav1.ConditionStatus)
-			if ok && readyValue == metav1.ConditionTrue {
-				condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.NoAction, metav1.ConditionTrue)
-			} else {
-				// resource created but not ready, we need to wait
-				condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.Wait, metav1.ConditionFalse)
+		componentReady := true
+		for _, readyField := range resource.ReadyFields {
+			readyValue, ok := status[readyField].(metav1.ConditionStatus)
+			if !ok || readyValue != metav1.ConditionTrue {
+				componentReady = false
+				break
 			}
+		}
+		if componentReady {
+			condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.NoAction, metav1.ConditionTrue)
+		} else {
+			condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.Wait, metav1.ConditionFalse)
 		}
 	}
 
@@ -400,20 +404,20 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 		}
 	}
 
-	for _, genericCRSpec := range mesh.Spec.GenericResources {
-		condition := mesh.Status.SourceConditions[genericCRSpec.Name]
+	for _, genericResource := range mesh.Spec.GenericResources {
+		condition := mesh.Status.SourceConditions[genericResource.Name]
 		if !newGeneration &&
 			condition.Status == metav1.ConditionTrue &&
 			condition.Action == v1alpha1.NoAction {
 			continue
 		}
-		obj := spec.MakeGenericCRComponent(mesh, &genericCRSpec)
+		obj := spec.MakeGenericResourceComponent(makeComponentName(mesh.Name, genericResource.Name), mesh, &genericResource)
 
 		// Create or update the resource
 		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, obj, func() error {
 			return nil
 		}); err != nil {
-			r.Log.Error(err, "failed to handle "+genericCRSpec.Kind, "name", genericCRSpec.Name, "action", "createOrUpdate")
+			r.Log.Error(err, "failed to handle "+genericResource.Kind, "name", genericResource.Name, "action", "createOrUpdate")
 			return err
 		}
 	}
@@ -495,19 +499,28 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 	}
 
 	if len(mesh.Spec.GenericResources) != len(mesh.Status.GenericResourceConditions) {
-		for crName, crCondition := range mesh.Status.GenericResourceConditions {
-			if crCondition.Condition == v1alpha1.Orphaned {
-				// clean up the orphaned genericCRs
+		for resourceName, resourceCondition := range mesh.Status.GenericResourceConditions {
+			if resourceCondition.Condition == v1alpha1.Orphaned {
+				// clean up the orphaned generic resource
 				obj := &unstructured.Unstructured{}
-				obj.SetAPIVersion(crCondition.ApiVersion)
-				obj.SetKind(crCondition.Kind)
-				obj.SetName(crName)
-				obj.SetNamespace(mesh.Namespace)
-				if err := r.Delete(ctx, obj); err != nil && !errors.IsNotFound(err) {
-					r.Log.Error(err, "failed to delete orphaned genericCR", "name", crName)
+				obj.SetAPIVersion(resourceCondition.ApiVersion)
+				obj.SetKind(resourceCondition.Kind)
+				if err := r.Get(ctx, types.NamespacedName{
+					Namespace: mesh.Namespace,
+					Name:      makeComponentName(mesh.Name, resourceName),
+				}, obj); err != nil {
+					if errors.IsNotFound(err) {
+						delete(mesh.Status.GenericResourceConditions, resourceName)
+						continue
+					}
+					r.Log.Error(err, "failed to get orphaned generic resource", "name", resourceName)
 					return err
 				}
-				delete(mesh.Status.GenericResourceConditions, crName)
+				if err := r.Delete(ctx, obj); err != nil && !errors.IsNotFound(err) {
+					r.Log.Error(err, "failed to delete orphaned generic resource", "name", resourceName)
+					return err
+				}
+				delete(mesh.Status.GenericResourceConditions, resourceName)
 			}
 		}
 	}

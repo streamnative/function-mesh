@@ -3817,8 +3817,10 @@ spec:
                         type: string
                       name:
                         type: string
-                      readyField:
-                        type: string
+                      readyFields:
+                        items:
+                          type: string
+                        type: array
                       spec:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
@@ -10846,7 +10848,7 @@ spec:
                         type: string
                     type: object
                   type: object
-                genericCRConditions:
+                genericResourceConditions:
                   additionalProperties:
                     properties:
                       action:
