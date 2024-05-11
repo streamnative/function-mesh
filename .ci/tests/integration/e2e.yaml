@@ -122,6 +122,8 @@ verify:
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/functionmesh/verify.sh
       expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/functionmesh-with-generic-resources/verify.sh
+      expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/hpa/verify.sh
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/builtin-hpa/verify.sh

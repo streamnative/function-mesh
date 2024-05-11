@@ -131,5 +131,3 @@ verify:
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/global-and-namespaced-config/verify.sh
       expected: expected.data.yaml
-    - query: timeout 5m bash .ci/tests/integration/cases/functionmesh-with-generic-resources/verify.sh
-      expected: expected.data.yaml
