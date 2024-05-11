@@ -1,7 +1,7 @@
 apiVersion: compute.functionmesh.io/v1alpha1
 kind: FunctionMesh
 metadata:
-  name: functionmesh-generic-resources-sample
+  name: functionmesh-generic-sample
 spec:
   genericResources:
     - apiVersion: "compute.functionmesh.io/v1alpha1"

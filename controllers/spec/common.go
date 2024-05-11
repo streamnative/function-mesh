@@ -39,6 +39,7 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -2058,7 +2059,7 @@ func CheckIfStatefulSetSpecIsEqual(spec *appsv1.StatefulSetSpec, desiredSpec *ap
 					container.ImagePullPolicy != desiredContainer.ImagePullPolicy ||
 					!reflect.DeepEqual(ports, desiredPorts) ||
 					!reflect.DeepEqual(containerEnvFrom, desiredContainerEnvFrom) ||
-					!reflect.DeepEqual(container.Resources, desiredContainer.Resources) {
+					!equality.Semantic.DeepEqual(container.Resources, desiredContainer.Resources) {
 					return false
 				}
 

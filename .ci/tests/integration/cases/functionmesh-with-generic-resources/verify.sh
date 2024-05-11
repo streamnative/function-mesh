@@ -36,21 +36,21 @@ manifests_file="${BASE_DIR}"/.ci/tests/integration/cases/functionmesh-with-gener
 
 kubectl apply -f "${manifests_file}" > /dev/null 2>&1
 
-verify_fm_result=$(ci::verify_function_mesh functionmesh-generic-resources-sample-java-function 2>&1)
+verify_fm_result=$(ci::verify_function_mesh functionmesh-generic-sample-java-function 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_fm_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
-verify_fm_result=$(ci::verify_function_mesh functionmesh-generic-resources-sample-golang-function 2>&1)
+verify_fm_result=$(ci::verify_function_mesh functionmesh-generic-sample-golang-function 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_fm_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
-verify_fm_result=$(ci::verify_function_mesh functionmesh-generic-resources-sample-python-function 2>&1)
+verify_fm_result=$(ci::verify_function_mesh functionmesh-generic-sample-python-function 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_fm_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true

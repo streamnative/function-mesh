@@ -251,7 +251,7 @@ func (r *FunctionMeshReconciler) observeGenericResources(ctx context.Context, me
 		condition, ok := mesh.Status.GenericResourceConditions[resource.Name]
 		if !ok {
 			mesh.Status.GenericResourceConditions[resource.Name] = v1alpha1.ResourceCondition{
-				Condition:  v1alpha1.SinkReady,
+				Condition:  v1alpha1.GenericResourceReady,
 				Status:     metav1.ConditionFalse,
 				Action:     v1alpha1.Create,
 				ApiVersion: resource.APIVersion,
