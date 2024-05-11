@@ -279,28 +279,33 @@ func (r *FunctionMeshReconciler) observeGenericResources(ctx context.Context, me
 			return err
 		}
 
-		statusFieldName := "status"
-		if resource.StatusFieldName != "" {
-			statusFieldName = resource.StatusFieldName
-		}
-		status, found, err := unstructured.NestedMap(obj.Object, statusFieldName)
-		// if status field is not present, we consider the resource is ready
-		if err != nil || !found {
-			condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.NoAction, metav1.ConditionTrue)
-		}
-
-		componentReady := true
-		for _, readyField := range resource.ReadyFields {
-			readyValue, ok := status[readyField].(metav1.ConditionStatus)
-			if !ok || readyValue != metav1.ConditionTrue {
-				componentReady = false
-				break
+		// check whether the resource is ready or not
+		if len(resource.ReadyFields) > 0 {
+			statusFieldName := "status"
+			if resource.StatusFieldName != "" {
+				statusFieldName = resource.StatusFieldName
 			}
-		}
-		if componentReady {
+			status, found, err := unstructured.NestedMap(obj.Object, statusFieldName)
+			// if status field is not present, we consider the resource is ready
+			if err != nil || !found {
+				condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.NoAction, metav1.ConditionTrue)
+			}
+
+			componentReady := true
+			for _, readyField := range resource.ReadyFields {
+				readyValue, ok := status[readyField].(metav1.ConditionStatus)
+				if !ok || readyValue != metav1.ConditionTrue {
+					componentReady = false
+					break
+				}
+			}
+			if componentReady {
+				condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.NoAction, metav1.ConditionTrue)
+			} else {
+				condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.Wait, metav1.ConditionFalse)
+			}
+		} else { // if `readyFields` is not set, we assume the resource is ready
 			condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.NoAction, metav1.ConditionTrue)
-		} else {
-			condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.Wait, metav1.ConditionFalse)
 		}
 	}
 
