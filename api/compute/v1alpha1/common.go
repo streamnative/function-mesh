@@ -372,7 +372,7 @@ type ResourceCondition struct {
 	Condition  ResourceConditionType  `json:"condition,omitempty"`
 	Status     metav1.ConditionStatus `json:"status,omitempty"`
 	Action     ReconcileAction        `json:"action,omitempty"`
-	ApiVersion string                 `json:"apiVersion,omitempty"`
+	APIVersion string                 `json:"apiVersion,omitempty"`
 	Kind       string                 `json:"kind,omitempty"`
 }
 

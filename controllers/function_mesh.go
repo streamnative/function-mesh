@@ -254,7 +254,7 @@ func (r *FunctionMeshReconciler) observeGenericResources(ctx context.Context, me
 				Condition:  v1alpha1.GenericResourceReady,
 				Status:     metav1.ConditionFalse,
 				Action:     v1alpha1.Create,
-				ApiVersion: resource.APIVersion,
+				APIVersion: resource.APIVersion,
 				Kind:       resource.Kind,
 			}
 			continue
@@ -508,7 +508,7 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 			if resourceCondition.Condition == v1alpha1.Orphaned {
 				// clean up the orphaned generic resource
 				obj := &unstructured.Unstructured{}
-				obj.SetAPIVersion(resourceCondition.ApiVersion)
+				obj.SetAPIVersion(resourceCondition.APIVersion)
 				obj.SetKind(resourceCondition.Kind)
 				if err := r.Get(ctx, types.NamespacedName{
 					Namespace: mesh.Namespace,
