@@ -1,5 +1,14 @@
 # Function Mesh v0.20.0 Release Notes
 
+## v0.21.0 What's New
+
+* [Controller] Add BackendConfig crd to provider cluster wide and namespace wide configs ([#734](https://github.com/streamnative/function-mesh/pull/734))
+* [Controller] Remove initial ram percentage ([#724](https://github.com/streamnative/function-mesh/pull/724))
+* [Image] Update versions of golang and alpine ([#743](https://github.com/streamnative/function-mesh/pull/743))
+* [Controller] Add exit_on_oom=tru ([#744](https://github.com/streamnative/function-mesh/pull/744))
+
+For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2024-04+is%3Aclosed+)
+
 ## v0.20.0 What's New
 
 * [Controller] Delete HPA when it's disabled ([#726](https://github.com/streamnative/function-mesh/pull/726))
