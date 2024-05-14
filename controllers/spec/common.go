@@ -34,6 +34,7 @@ import (
 	"strconv"
 	"strings"
 
+	pctlutil "github.com/apache/pulsar-client-go/pulsaradmin/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -51,7 +52,6 @@ import (
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
 	"github.com/streamnative/function-mesh/utils"
-	pctlutil "github.com/streamnative/pulsarctl/pkg/pulsar/utils"
 )
 
 const (
