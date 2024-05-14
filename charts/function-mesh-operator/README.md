@@ -1,6 +1,6 @@
 # function-mesh-operator
 
-![Version: 0.2.26](https://img.shields.io/badge/Version-0.2.26-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.20.0](https://img.shields.io/badge/AppVersion-0.20.0-informational?style=flat-square)
+![Version: 0.2.27](https://img.shields.io/badge/Version-0.2.27-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.21.0](https://img.shields.io/badge/AppVersion-0.21.0-informational?style=flat-square)
 
 function mesh operator Helm chart for Kubernetes
 
@@ -20,7 +20,7 @@ function mesh operator Helm chart for Kubernetes
 
 | Repository | Name | Version |
 |------------|------|---------|
-|  | admission-webhook | 0.2.26 |
+|  | admission-webhook | 0.2.27 |
 
 ## Values
 
@@ -33,8 +33,11 @@ function mesh operator Helm chart for Kubernetes
 | controllerManager.create | bool | `true` |  |
 | controllerManager.enableInitContainers | bool | `false` |  |
 | controllerManager.enableLeaderElection | bool | `true` |  |
+| controllerManager.globalBackendConfig | string | `"global-backend-config"` |  |
+| controllerManager.globalBackendConfigNamespace | string | `"default"` |  |
 | controllerManager.healthProbe.port | int | `8000` |  |
 | controllerManager.metrics.port | int | `8080` |  |
+| controllerManager.namespacedBackendConfig | string | `"backend-config"` |  |
 | controllerManager.nodeSelector | object | `{}` |  |
 | controllerManager.pprof.enable | bool | `false` |  |
 | controllerManager.pprof.port | int | `8090` |  |
@@ -47,7 +50,7 @@ function mesh operator Helm chart for Kubernetes
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | imagePullSecrets | list | `[]` |  |
 | installation.namespace | string | `"function-mesh-system"` |  |
-| operatorImage | string | `"streamnative/function-mesh:v0.20.0"` |  |
+| operatorImage | string | `"streamnative/function-mesh:v0.21.0"` |  |
 | rbac.create | bool | `true` |  |
 
 ----------------------------------------------
