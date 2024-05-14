@@ -23,9 +23,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/apache/pulsar-client-go/pulsaradmin/pkg/admin/config"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	cmdutils "github.com/streamnative/pulsarctl/pkg/cmdutils"
-	"github.com/streamnative/pulsarctl/pkg/pulsar/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +34,7 @@ import (
 
 func main() {
 	admin := cmdutils.NewPulsarClient()
-	functionAdmin := cmdutils.NewPulsarClientWithAPIVersion(common.V3)
+	functionAdmin := cmdutils.NewPulsarClientWithAPIVersion(config.V3)
 	tenants, err := admin.Tenants().List()
 	if err != nil {
 		fmt.Printf("List tenant failed from service %s\n", cmdutils.PulsarCtlConfig.WebServiceURL)
@@ -81,7 +81,7 @@ func main() {
 						sourceSpecs[s] = v1alpha1.ConsumerConfig{
 							SchemaType:        functionConfig.InputSpecs[s].SchemaType,
 							SerdeClassName:    functionConfig.InputSpecs[s].SerdeClassName,
-							IsRegexPattern:    functionConfig.InputSpecs[s].IsRegexPattern,
+							IsRegexPattern:    functionConfig.InputSpecs[s].RegexPattern,
 							ReceiverQueueSize: &receiveQueueSize,
 						}
 					}
