@@ -35,7 +35,7 @@ spec:
     matchLabels:
       role: mongo
   serviceName: "mongo"
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       labels:
@@ -44,7 +44,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: mongo
-          image: debezium/example-mongodb:0.10
+          image: debezium/example-mongodb:2.6
           env:
             - name: MONGODB_USER
               value: "debezium"

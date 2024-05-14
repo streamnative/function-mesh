@@ -325,8 +325,21 @@ func (r *FunctionReconciler) ApplyFunctionHPAV2Beta2(ctx context.Context, functi
 }
 
 func (r *FunctionReconciler) ObserveFunctionVPA(ctx context.Context, function *v1alpha1.Function) error {
-	return observeVPA(ctx, r, types.NamespacedName{Namespace: function.Namespace,
+	resource, err := observeVPA(ctx, r, types.NamespacedName{Namespace: function.Namespace,
 		Name: spec.MakeFunctionObjectMeta(function).Name}, function.Spec.Pod.VPA, function.Status.Conditions)
+	if resource != nil {
+		originalResource := function.Spec.Resources
+		// the resource may not have limits
+		if resource.Limits == nil {
+			resource.Limits = originalResource.Limits
+		}
+		function.Spec.Resources = *resource
+		if err = r.Update(ctx, function); err != nil {
+			return err
+		}
+		function.Spec.Resources = originalResource
+	}
+	return err
 }
 
 func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1alpha1.Function) error {

@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/streamnative/function-mesh/pkg/monitoring"
@@ -100,6 +101,12 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		function.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 	}
 
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
+		err = r.ObserveFunctionVPA(ctx, function)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 	err = r.ObserveFunctionStatefulSet(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -115,12 +122,6 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	} else if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2 {
 		err = r.ObserveFunctionHPA(ctx, function)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
-		err = r.ObserveFunctionVPA(ctx, function)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -221,6 +222,27 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			}
 		}),
 	)
+
+	// Watch for vpa changes if function has special resource unit
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
+		manager.Watches(&vpav1.VerticalPodAutoscaler{}, handler.EnqueueRequestsFromMapFunc(
+			func(ctx context.Context, object client.Object) []reconcile.Request {
+				if object.GetLabels()[spec.LabelCustomResourceUnit] == "true" &&
+					object.GetLabels()[spec.LabelComponent] == spec.ComponentFunction {
+					return []reconcile.Request{
+						{
+							NamespacedName: types.NamespacedName{
+								Namespace: object.GetNamespace(),
+								Name:      strings.TrimSuffix(object.GetName(), "-function"),
+							},
+						},
+					}
+
+				}
+				return nil
+			}),
+		)
+	}
 
 	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
 		manager.Owns(&vpav1.VerticalPodAutoscaler{})

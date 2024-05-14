@@ -107,7 +107,7 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
-		Name:            "pulsar-sink",
+		Name:            SinkContainerName,
 		Image:           getSinkRunnerImage(&sink.Spec),
 		Command:         MakeSinkCommand(sink),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
@@ -130,11 +130,11 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 func makeSinkLabels(sink *v1alpha1.Sink) map[string]string {
 	jobName := makeJobName(sink.Name, v1alpha1.SinkComponent)
 	labels := map[string]string{
-		"app.kubernetes.io/name":            jobName,
-		"app.kubernetes.io/instance":        jobName,
-		"compute.functionmesh.io/component": ComponentSink,
-		"compute.functionmesh.io/name":      sink.Name,
-		"compute.functionmesh.io/namespace": sink.Namespace,
+		"app.kubernetes.io/name":     jobName,
+		"app.kubernetes.io/instance": jobName,
+		LabelComponent:               ComponentSink,
+		LabelName:                    sink.Name,
+		LabelNamespace:               sink.Namespace,
 		// The following will be deprecated after two releases
 		"component": ComponentSink,
 		"name":      sink.Name,

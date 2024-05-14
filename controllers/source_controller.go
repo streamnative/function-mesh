@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -99,6 +100,12 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		source.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 	}
 
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
+		err = r.ObserveSourceVPA(ctx, source)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 	err = r.ObserveSourceStatefulSet(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -114,12 +121,6 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	} else if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2 {
 		err = r.ObserveSourceHPA(ctx, source)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
-		err = r.ObserveSourceVPA(ctx, source)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -223,5 +224,27 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			}
 		}),
 	)
+
+	// Watch for vpa changes if source has special resource unit
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
+		manager.Watches(&vpav1.VerticalPodAutoscaler{}, handler.EnqueueRequestsFromMapFunc(
+			func(ctx context.Context, object client.Object) []reconcile.Request {
+				if object.GetLabels()[spec.LabelCustomResourceUnit] == "true" &&
+					object.GetLabels()[spec.LabelComponent] == spec.ComponentSource {
+					return []reconcile.Request{
+						{
+							NamespacedName: types.NamespacedName{
+								Namespace: object.GetNamespace(),
+								Name:      strings.TrimSuffix(object.GetName(), "-source"),
+							},
+						},
+					}
+
+				}
+				return nil
+			}),
+		)
+	}
+
 	return manager.Complete(r)
 }

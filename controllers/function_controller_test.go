@@ -174,6 +174,7 @@ var _ = Describe("Function Controller (builtin HPA)", func() {
 var _ = Describe("Function Controller (VPA)", func() {
 	Context("Simple Function Item with VPA", func() {
 		mode := vpav1.UpdateModeAuto
+		containerMode := vpav1.ContainerScalingModeAuto
 		controlledValues := vpav1.ContainerControlledValuesRequestsAndLimits
 		function := makeFunctionSample(TestFunctionVPAName)
 		function.Spec.Pod.VPA = &v1alpha1.VPASpec{
@@ -183,7 +184,7 @@ var _ = Describe("Function Controller (VPA)", func() {
 			ResourcePolicy: &vpav1.PodResourcePolicy{
 				ContainerPolicies: []vpav1.ContainerResourcePolicy{
 					{
-						ContainerName: "*",
+						ContainerName: "pulsar-function",
 						MinAllowed: v1.ResourceList{
 							v1.ResourceCPU:    resource.MustParse("100m"),
 							v1.ResourceMemory: resource.MustParse("100Mi"),
@@ -196,6 +197,7 @@ var _ = Describe("Function Controller (VPA)", func() {
 							v1.ResourceCPU, v1.ResourceMemory,
 						},
 						ControlledValues: &controlledValues,
+						Mode:             &containerMode,
 					},
 				},
 			},

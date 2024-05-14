@@ -24,6 +24,17 @@ setup:
           label-selector: app=cert-manager
           for: condition=Ready
 
+    - name: setup vpa
+      command: |
+        helm repo add cowboysysop https://cowboysysop.github.io/charts/
+        helm repo update
+        helm install vpa cowboysysop/vertical-pod-autoscaler
+      wait:
+        - namespace: default
+          resource: pod
+          label-selector: app.kubernetes.io/name=vertical-pod-autoscaler
+          for: condition=Ready
+
     - name: install pulsar cluster
       command: |
         helm repo add streamnative https://charts.streamnative.io
@@ -36,6 +47,11 @@ setup:
         yq -i '.dependencies[0].repository = "https://grafana.github.io/helm-charts"' charts/pulsar/requirements.yaml
         helm dependency update charts/pulsar
         helm install ${PULSAR_RELEASE_NAME} --set initialize=true --values ../.ci/clusters/values_skywalking_e2e_cluster_with_tls.yaml charts/pulsar
+
+    - name: install metrics service
+      command: |
+        kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+        kubectl patch -n kube-system deployment metrics-server --type=json -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
 
     - name: wait for pulsar cluster ready
       command: |
@@ -129,5 +145,11 @@ verify:
       expected: expected.data.yaml
     - query: bash .ci/tests/integration/cases/crypto-function/verify.sh
       expected: expected.data.yaml
-    - query: timeout 5m bash .ci/tests/integration/cases/global-and-namespaced-config/verify.sh
+    - query: bash .ci/tests/integration/cases/global-and-namespaced-config/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/vpa-with-resource-unit/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/vpa-with-resource-unit-sink/verify.sh
+      expected: expected.data.yaml
+    - query: bash .ci/tests/integration/cases/vpa-with-resource-unit-source/verify.sh
       expected: expected.data.yaml

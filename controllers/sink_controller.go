@@ -19,6 +19,7 @@ package controllers
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/streamnative/function-mesh/pkg/monitoring"
@@ -99,6 +100,12 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		sink.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 	}
 
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
+		err = r.ObserveSinkVPA(ctx, sink)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 	err = r.ObserveSinkStatefulSet(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -114,12 +121,6 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 	} else if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2 {
 		err = r.ObserveSinkHPA(ctx, sink)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
-		err = r.ObserveSinkVPA(ctx, sink)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -226,6 +227,26 @@ func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			}
 		}),
 	)
+
+	// Watch for vpa changes if sink has special resource unit
+	if r.GroupVersionFlags != nil && r.GroupVersionFlags.WatchVPACRDs {
+		manager.Watches(&vpav1.VerticalPodAutoscaler{}, handler.EnqueueRequestsFromMapFunc(
+			func(ctx context.Context, object client.Object) []reconcile.Request {
+				if object.GetLabels()[spec.LabelCustomResourceUnit] == "true" &&
+					object.GetLabels()[spec.LabelComponent] == spec.ComponentSink {
+					return []reconcile.Request{
+						{
+							NamespacedName: types.NamespacedName{
+								Namespace: object.GetNamespace(),
+								Name:      strings.TrimSuffix(object.GetName(), "-sink"),
+							},
+						},
+					}
+				}
+				return nil
+			}),
+		)
+	}
 
 	return manager.Complete(r)
 }

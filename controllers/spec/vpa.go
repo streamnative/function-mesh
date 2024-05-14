@@ -27,6 +27,12 @@ import (
 )
 
 func MakeVPA(objectMeta *metav1.ObjectMeta, targetRef *autov2.CrossVersionObjectReference, vpa *v1alpha1.VPASpec) *vpav1.VerticalPodAutoscaler {
+	containerName := GetVPAContainerName(objectMeta)
+	updatePolicy := UpdateVPAUpdatePolicy(vpa.UpdatePolicy, vpa.ResourceUnit)
+	if vpa.ResourceUnit != nil {
+		objectMeta.Labels[LabelCustomResourceUnit] = "true"
+	}
+	resourcePolicy := UpdateResourcePolicy(vpa.ResourcePolicy, containerName)
 
 	return &vpav1.VerticalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
@@ -40,8 +46,66 @@ func MakeVPA(objectMeta *metav1.ObjectMeta, targetRef *autov2.CrossVersionObject
 				Name:       targetRef.Name,
 				APIVersion: targetRef.APIVersion,
 			},
-			UpdatePolicy:   vpa.UpdatePolicy,
-			ResourcePolicy: vpa.ResourcePolicy,
+			UpdatePolicy:   updatePolicy,
+			ResourcePolicy: resourcePolicy,
 		},
 	}
+}
+
+func GetVPAContainerName(objectMeta *metav1.ObjectMeta) string {
+	containerName := "*"
+	label := objectMeta.GetLabels()[LabelComponent]
+	if label == ComponentFunction {
+		containerName = FunctionContainerName
+	} else if label == ComponentSink {
+		containerName = SinkContainerName
+	} else if label == ComponentSource {
+		containerName = SourceContainerName
+	}
+	return containerName
+}
+
+func UpdateVPAUpdatePolicy(updatePolicy *vpav1.PodUpdatePolicy, resourceUnit *v1alpha1.ResourceUnit) *vpav1.PodUpdatePolicy {
+	resultUpdatePolicy := updatePolicy
+	if resourceUnit != nil {
+		if resultUpdatePolicy == nil {
+			resultUpdatePolicy = &vpav1.PodUpdatePolicy{}
+		}
+		off := vpav1.UpdateModeOff
+		resultUpdatePolicy.UpdateMode = &off
+	}
+	return resultUpdatePolicy
+}
+
+func UpdateResourcePolicy(resourcePolicy *vpav1.PodResourcePolicy, containerName string) *vpav1.PodResourcePolicy {
+	var containerPolicies []vpav1.ContainerResourcePolicy
+	containerScalingMode := vpav1.ContainerScalingModeAuto
+	if resourcePolicy != nil {
+		if resourcePolicy.ContainerPolicies == nil {
+			containerPolicies = []vpav1.ContainerResourcePolicy{}
+		}
+		for _, policy := range resourcePolicy.ContainerPolicies {
+			if policy.ContainerName == containerName {
+				policy.Mode = &containerScalingMode
+				containerPolicies = []vpav1.ContainerResourcePolicy{policy}
+				break
+			}
+		}
+	}
+
+	// if resource policy is not set, set the default policy, so the vpa policy won't be applied to other containers
+	if len(containerPolicies) == 0 {
+		containerPolicies = []vpav1.ContainerResourcePolicy{
+			{
+				ContainerName: containerName,
+				Mode:          &containerScalingMode,
+			},
+		}
+	}
+	resultResourcePolicy := resourcePolicy
+	if resultResourcePolicy == nil {
+		resultResourcePolicy = &vpav1.PodResourcePolicy{}
+	}
+	resultResourcePolicy.ContainerPolicies = containerPolicies
+	return resultResourcePolicy
 }

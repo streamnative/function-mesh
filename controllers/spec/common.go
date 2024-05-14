@@ -128,6 +128,15 @@ const (
 	DefaultFilebeatImage  = "streamnative/filebeat:v0.6.0-rc7"
 
 	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
+
+	LabelComponent          = "compute.functionmesh.io/component"
+	LabelName               = "compute.functionmesh.io/name"
+	LabelNamespace          = "compute.functionmesh.io/namespace"
+	LabelCustomResourceUnit = "compute.functionmesh.io/custom-resource-unit"
+
+	FunctionContainerName = "pulsar-function"
+	SinkContainerName     = "pulsar-sink"
+	SourceContainerName   = "pulsar-source"
 )
 
 //go:embed template/java-runtime-log4j.xml.tmpl
