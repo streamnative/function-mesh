@@ -95,6 +95,9 @@ jobs:
         with:
           image-ref: 'pulsar-functions-go-runner:latest'
           format: 'table'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results-go.sarif'
+          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
           exit-code: '0'
 
       - name: Run Trivy vulnerability scanner for java with pulsarctl
@@ -103,6 +106,9 @@ jobs:
         with:
           image-ref: 'pulsar-functions-pulsarctl-java-runner:latest'
           format: 'table'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results.sarif'
+          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
           exit-code: '0'
 
       - name: Run Trivy vulnerability scanner for python with pulsarctl
@@ -111,6 +117,9 @@ jobs:
         with:
           image-ref: 'pulsar-functions-pulsarctl-python-runner:latest'
           format: 'table'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results-python.sarif'
+          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
           exit-code: '0'
 
       - name: Run Trivy vulnerability scanner for go with pulsarctl
@@ -120,3 +129,26 @@ jobs:
           image-ref: 'pulsar-functions-pulsarctl-go-runner:latest'
           format: 'table'
           exit-code: '0'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results-pulsarctl.sarif'
+          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Upload Trivy go scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results-go.sarif'
+
+      - name: Upload Trivy pulsarctl scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results-pulsarctl.sarif'
+
+      - name: Upload Trivy python scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results-python.sarif'
