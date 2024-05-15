@@ -45,7 +45,7 @@ function install_mongodb_server() {
     # install mongodb server
     kubectl apply -f "${mongodb_file}"
     num=0
-    while [[ ${num} -lt 3 ]]; do
+    while [[ ${num} -lt 1 ]]; do
         sleep 5
         kubectl get pods
         num=$(kubectl get pods -l role=mongo | wc -l)
