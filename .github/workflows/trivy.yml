@@ -15,6 +15,12 @@ on:
 permissions:
   pull-requests: write
   issues: write
+  # For Trivy uploads to Github Security tab
+  # required for all workflows
+  security-events: write
+  # only required for workflows in private repositories
+  actions: read
+  contents: read
 
 jobs:
   build:
@@ -94,7 +100,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'pulsar-functions-go-runner:latest'
-          format: 'table'
+          format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'trivy-results-go.sarif'
           severity: 'LOW,MEDIUM,HIGH,CRITICAL'
@@ -105,7 +111,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'pulsar-functions-pulsarctl-java-runner:latest'
-          format: 'table'
+          format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'trivy-results.sarif'
           severity: 'LOW,MEDIUM,HIGH,CRITICAL'
@@ -116,7 +122,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'pulsar-functions-pulsarctl-python-runner:latest'
-          format: 'table'
+          format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'trivy-results-python.sarif'
           severity: 'LOW,MEDIUM,HIGH,CRITICAL'
@@ -127,7 +133,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'pulsar-functions-pulsarctl-go-runner:latest'
-          format: 'table'
+          format: 'template'
           exit-code: '0'
           template: '@/contrib/sarif.tpl'
           output: 'trivy-results-pulsarctl.sarif'
