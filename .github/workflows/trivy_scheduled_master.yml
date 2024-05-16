@@ -1,8 +1,8 @@
-name: Precommit - Scan security vulnerabilities
+name: Scheduled master branch scan security vulnerabilities
 on:
   pull_request:
     branches:
-      - '*'
+      - 'master'
     paths-ignore:
       - 'docs/**'
       - 'README.md'
@@ -11,10 +11,18 @@ on:
       - 'LICENSE'
       - 'mesh-worker-service/README.md'
       - 'tools/README.md'
+  schedule:
+    - cron: '0 0 * * *'
 
 permissions:
   pull-requests: write
   issues: write
+  # For Trivy uploads to Github Security tab
+  # required for all workflows
+  security-events: write
+  # only required for workflows in private repositories
+  actions: read
+  contents: read
 
 jobs:
   build:
@@ -94,7 +102,10 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'pulsar-functions-go-runner:latest'
-          format: 'table'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results-go.sarif'
+          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
           exit-code: '0'
 
       - name: Run Trivy vulnerability scanner for java with pulsarctl
@@ -102,7 +113,10 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'pulsar-functions-pulsarctl-java-runner:latest'
-          format: 'table'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results.sarif'
+          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
           exit-code: '0'
 
       - name: Run Trivy vulnerability scanner for python with pulsarctl
@@ -110,7 +124,10 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'pulsar-functions-pulsarctl-python-runner:latest'
-          format: 'table'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results-python.sarif'
+          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
           exit-code: '0'
 
       - name: Run Trivy vulnerability scanner for go with pulsarctl
@@ -118,5 +135,32 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'pulsar-functions-pulsarctl-go-runner:latest'
-          format: 'table'
+          format: 'template'
           exit-code: '0'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results-pulsarctl.sarif'
+          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'Default'
+
+      - name: Upload Trivy go scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results-go.sarif'
+          category: 'Golang'
+
+      - name: Upload Trivy pulsarctl scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results-pulsarctl.sarif'
+          category: 'Pulsarctl'
+
+      - name: Upload Trivy python scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results-python.sarif'
+          category: 'Python'
