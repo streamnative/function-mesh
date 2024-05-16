@@ -143,18 +143,22 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
+          category: 'Default'
 
       - name: Upload Trivy go scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results-go.sarif'
+          category: 'Golang'
 
       - name: Upload Trivy pulsarctl scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results-pulsarctl.sarif'
+          category: 'Pulsarctl'
 
       - name: Upload Trivy python scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results-python.sarif'
+          category: 'Python'
