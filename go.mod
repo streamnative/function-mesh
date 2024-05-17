@@ -9,9 +9,8 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.32.0
 	github.com/prometheus/client_golang v1.18.0
-	github.com/streamnative/pulsarctl v0.4.3-0.20240321142126-f3939fb0ed38
 	github.com/streamnative/function-mesh/api v0.0.0
-	github.com/streamnative/pulsarctl v0.4.3-0.20220702165443-e4c26e2c39cf
+	github.com/streamnative/pulsarctl v0.4.3-0.20240321142126-f3939fb0ed38
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/protobuf v1.33.0
 	gotest.tools v2.2.0+incompatible
