@@ -21,7 +21,7 @@ RUN echo "VERSION_TAG=${VERSION_TAG}" && \
         export JRE_PACKAGE_NAME=openjdk11; \
     elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 10 ]; then \
         echo "Pulsar version is 2.10, use java 11" && \
-        export JRE_PACKAGE_NAME=openjdk11; \
+        export JRE_PACKAGE_NAME='openjdk11 gcompat'; \
     elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 11 ]; then \
         echo "Pulsar version is 2.11, use java 17" && \
         export JRE_PACKAGE_NAME=openjdk17; \
@@ -30,6 +30,8 @@ RUN echo "VERSION_TAG=${VERSION_TAG}" && \
         export JRE_PACKAGE_NAME=openjdk17; \
     fi && \
     apk update && apk add --no-cache $JRE_PACKAGE_NAME
+
+ENV LD_PRELOAD=/lib/libgcompat.so.0
 
 COPY --from=pulsar --chown=$UID:$GID /pulsar/conf /pulsar/conf
 COPY --from=pulsar --chown=$UID:$GID /pulsar/lib /pulsar/lib
