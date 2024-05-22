@@ -26,8 +26,8 @@ RUN apk update \
      && mv /usr/lib/python3.11/EXTERNALLY-MANAGED  /usr/lib/python3.11/EXTERNALLY-MANAGED.old \
      && python3 get-pip.py && pip3 install --upgrade pip
 
-RUN if [ -f "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh || pip3 install 'pulsar-client[all]==3.5.0' ; fi
-RUN if [ -f "/pulsar/bin/install-pulsar-client.sh" ]; then /pulsar/bin/install-pulsar-client.sh || pip3 install 'pulsar-client[all]==3.5.0' ; fi
+RUN if [ -f "/pulsar/bin/install-pulsar-client-37.sh" ]; then /pulsar/bin/install-pulsar-client-37.sh || true; else pip3 install 'pulsar-client[all]==3.5.0' ; fi
+RUN if [ -f "/pulsar/bin/install-pulsar-client.sh" ]; then /pulsar/bin/install-pulsar-client.sh || true; else pip3 install 'pulsar-client[all]==3.5.0' ; fi
 
 # this dir is duplicate with the installed pulsar-client pip package, and maybe not compatible with the `_pulsar`(the .so library package)
 RUN rm -rf /pulsar/instances/python-instance/pulsar/ \
