@@ -40,13 +40,7 @@ func MakeSinkHPA(sink *v1alpha1.Sink) *autov2.HorizontalPodAutoscaler {
 		Name:       sink.Name,
 		APIVersion: sink.APIVersion,
 	}
-	if isBuiltinHPAEnabled(sink.Spec.MinReplicas, sink.Spec.MaxReplicas, sink.Spec.Pod) {
-		return makeBuiltinHPA(objectMeta, *sink.Spec.MinReplicas, *sink.Spec.MaxReplicas, targetRef,
-			sink.Spec.Pod.BuiltinAutoscaler)
-	} else if !isDefaultHPAEnabled(sink.Spec.MinReplicas, sink.Spec.MaxReplicas, sink.Spec.Pod) {
-		return makeHPA(objectMeta, *sink.Spec.MinReplicas, *sink.Spec.MaxReplicas, sink.Spec.Pod, targetRef)
-	}
-	return makeDefaultHPA(objectMeta, *sink.Spec.MinReplicas, *sink.Spec.MaxReplicas, targetRef)
+	return MakeHPA(objectMeta, targetRef, sink.Spec.MinReplicas, sink.Spec.MaxReplicas, sink.Spec.Pod)
 }
 
 func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
@@ -58,11 +52,10 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 func MakeSinkStatefulSet(ctx context.Context, cli client.Client, sink *v1alpha1.Sink) (*appsv1.StatefulSet, error) {
 	objectMeta := MakeSinkObjectMeta(sink)
 	statefulSet := MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, makeSinkContainer(sink),
-		makeFilebeatContainer(sink.Spec.VolumeMounts, sink.Spec.Pod.Env, sink.Spec.Name, sink.Spec.LogTopic, sink.Spec.LogTopicAgent,
-			sink.Spec.Pulsar.TLSConfig, sink.Spec.Pulsar.AuthConfig, sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.TLSSecret,
-			sink.Spec.Pulsar.AuthSecret, sink.Spec.FilebeatImage),
-		makeSinkVolumes(sink, sink.Spec.Pulsar.AuthConfig), makeSinkLabels(sink), sink.Spec.Pod, *sink.Spec.Pulsar,
-		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.VolumeMounts, nil, nil)
+		makeSinkVolumes(sink, sink.Spec.Pulsar.AuthConfig), makeSinkLabels(sink), sink.Spec.Pod, sink.Spec.Pulsar.AuthConfig,
+		sink.Spec.Pulsar.TLSConfig, sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret, sink.Spec.Pulsar.TLSSecret,
+		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.Pod.Env, sink.Name, sink.Spec.LogTopic, sink.Spec.FilebeatImage,
+		sink.Spec.LogTopicAgent, sink.Spec.VolumeMounts, nil, nil)
 
 	globalBackendConfigVersion, namespacedBackendConfigVersion, err := PatchStatefulSet(ctx, cli, sink.Namespace, statefulSet)
 	if err != nil {
@@ -114,7 +107,7 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		Env:             generateBasicContainerEnv(sink.Spec.SecretsMap, sink.Spec.Pod.Env),
 		Resources:       sink.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
-		EnvFrom: generateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret,
+		EnvFrom: GenerateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret,
 			sink.Spec.Pulsar.TLSSecret),
 		VolumeMounts:  mounts,
 		LivenessProbe: probe,
@@ -193,24 +186,24 @@ func MakeSinkCleanUpJob(sink *v1alpha1.Sink) *v1.Job {
 }
 
 func makeSinkVolumes(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) []corev1.Volume {
-	return generatePodVolumes(
+	return GeneratePodVolumes(
 		sink.Spec.Pod.Volumes,
 		nil,
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
+		GetRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
 		sink.Spec.LogTopicAgent)
 }
 
 func makeSinkVolumeMounts(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {
-	return generateContainerVolumeMounts(
+	return GenerateContainerVolumeMounts(
 		sink.Spec.VolumeMounts,
 		nil,
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
+		GetRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
 		sink.Spec.LogTopicAgent)
 }
 
@@ -224,13 +217,13 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 		spec.Name, spec.ClusterName,
-		generateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
+		GenerateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
 		parseJavaLogLevel(spec.Java),
 		generateSinkDetailsInJSON(sink),
 		spec.Java.ExtraDependenciesDir, string(sink.UID),
 		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
-		generateJavaLogConfigFileName(spec.Java))
+		GenerateJavaLogConfigFileName(spec.Java))
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {

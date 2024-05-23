@@ -66,16 +66,12 @@ type PulsarMessaging struct {
 	CleanupAuthConfig *AuthConfig `json:"cleanupAuthConfig,omitempty"`
 }
 
-type TLSConfig struct {
+type PulsarTLSConfig struct {
 	Enabled              bool   `json:"enabled,omitempty"`
 	AllowInsecure        bool   `json:"allowInsecure,omitempty"`
 	HostnameVerification bool   `json:"hostnameVerification,omitempty"`
 	CertSecretName       string `json:"certSecretName,omitempty"`
 	CertSecretKey        string `json:"certSecretKey,omitempty"`
-}
-
-type PulsarTLSConfig struct {
-	TLSConfig `json:",inline"`
 }
 
 func (c *PulsarTLSConfig) IsEnabled() bool {
