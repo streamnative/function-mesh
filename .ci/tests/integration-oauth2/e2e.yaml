@@ -92,8 +92,8 @@ setup:
       command: |
         make generate
         make helm-crds
-        image="function-mesh-operator:latest"
-        IMG=${image} make docker-build-skip-test
+        image="function-mesh:latest"
+        docker build --platform linux/amd64 -f operator.Dockerfile -t $image .
         kind load docker-image ${image}
         helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --create-namespace charts/function-mesh-operator
       wait:
