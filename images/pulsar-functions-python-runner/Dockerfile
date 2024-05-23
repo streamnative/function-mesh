@@ -23,7 +23,7 @@ RUN if [ -d "/tmp/pulsar/cpp-client" ]; then mv /tmp/pulsar/cpp-client /pulsar/c
 # Install some utilities
 RUN apk update \
      && apk add --no-cache python3 python3-dev tk-dev curl ca-certificates\
-     && mv /usr/lib/python3.11/EXTERNALLY-MANAGED  /usr/lib/python3.11/EXTERNALLY-MANAGED.old
+     && mv /usr/lib/python3.*/EXTERNALLY-MANAGED  /tmp/EXTERNALLY-MANAGED.old
 
 RUN mkdir -p /etc/pki/tls/certs && cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
 
