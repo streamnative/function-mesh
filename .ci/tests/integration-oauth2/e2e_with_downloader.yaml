@@ -90,7 +90,7 @@ setup:
 
     - name: install function-mesh operator
       command: |
-        make generate
+        make manager
         make helm-crds
         image="function-mesh:latest"
         docker build --platform linux/amd64 -f operator.Dockerfile -t $image .
