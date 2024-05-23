@@ -43,13 +43,7 @@ func MakeFunctionHPA(function *v1alpha1.Function) *autov2.HorizontalPodAutoscale
 		Name:       function.Name,
 		APIVersion: function.APIVersion,
 	}
-	if isBuiltinHPAEnabled(function.Spec.MinReplicas, function.Spec.MaxReplicas, function.Spec.Pod) {
-		return makeBuiltinHPA(objectMeta, *function.Spec.MinReplicas, *function.Spec.MaxReplicas, targetRef,
-			function.Spec.Pod.BuiltinAutoscaler)
-	} else if !isDefaultHPAEnabled(function.Spec.MinReplicas, function.Spec.MaxReplicas, function.Spec.Pod) {
-		return makeHPA(objectMeta, *function.Spec.MinReplicas, *function.Spec.MaxReplicas, function.Spec.Pod, targetRef)
-	}
-	return makeDefaultHPA(objectMeta, *function.Spec.MinReplicas, *function.Spec.MaxReplicas, targetRef)
+	return MakeHPA(objectMeta, targetRef, function.Spec.MinReplicas, function.Spec.MaxReplicas, function.Spec.Pod)
 }
 
 func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
@@ -60,15 +54,13 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 
 func MakeFunctionStatefulSet(ctx context.Context, cli client.Client, function *v1alpha1.Function) (*appsv1.StatefulSet, error) {
 	objectMeta := MakeFunctionObjectMeta(function)
+	labels := makeFunctionLabels(function)
 	statefulSet := MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
-		makeFunctionContainer(function), makeFilebeatContainer(function.Spec.VolumeMounts, function.Spec.Pod.Env,
-			function.Spec.Name, function.Spec.LogTopic, function.Spec.LogTopicAgent, function.Spec.Pulsar.TLSConfig,
-			function.Spec.Pulsar.AuthConfig, function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.TLSSecret,
-			function.Spec.Pulsar.AuthSecret, function.Spec.FilebeatImage),
-		makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), makeFunctionLabels(function), function.Spec.Pod,
-		*function.Spec.Pulsar, function.Spec.Java, function.Spec.Python, function.Spec.Golang,
-		function.Spec.VolumeMounts, function.Spec.VolumeClaimTemplates,
-		function.Spec.PersistentVolumeClaimRetentionPolicy)
+		makeFunctionContainer(function), makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), labels, function.Spec.Pod,
+		function.Spec.Pulsar.AuthConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
+		function.Spec.Pulsar.TLSSecret, function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.Pod.Env, function.Name,
+		function.Spec.LogTopic, function.Spec.FilebeatImage, function.Spec.LogTopicAgent, function.Spec.VolumeMounts,
+		function.Spec.VolumeClaimTemplates, function.Spec.PersistentVolumeClaimRetentionPolicy)
 
 	globalBackendConfigVersion, namespacedBackendConfigVersion, err := PatchStatefulSet(ctx, cli, function.Namespace, statefulSet)
 	if err != nil {
@@ -146,22 +138,22 @@ func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
 }
 
 func makeFunctionVolumes(function *v1alpha1.Function, authConfig *v1alpha1.AuthConfig) []corev1.Volume {
-	return generatePodVolumes(function.Spec.Pod.Volumes,
+	return GeneratePodVolumes(function.Spec.Pod.Volumes,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
+		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
 		function.Spec.LogTopicAgent)
 }
 
 func makeFunctionVolumeMounts(function *v1alpha1.Function, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {
-	return generateContainerVolumeMounts(function.Spec.VolumeMounts,
+	return GenerateContainerVolumeMounts(function.Spec.VolumeMounts,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
 		authConfig,
-		getRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
+		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
 		function.Spec.LogTopicAgent)
 }
 
@@ -186,7 +178,7 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		Env:             generateContainerEnv(function),
 		Resources:       function.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
-		EnvFrom: generateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
+		EnvFrom: GenerateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
 			function.Spec.Pulsar.TLSSecret),
 		VolumeMounts:  mounts,
 		LivenessProbe: probe,
@@ -230,7 +222,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		if spec.Java.Jar != "" {
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
 				spec.Name, spec.ClusterName,
-				generateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
+				GenerateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
 				parseJavaLogLevel(spec.Java),
 				generateFunctionDetailsInJSON(function),
 				spec.Java.ExtraDependenciesDir,
@@ -239,7 +231,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 				spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig,
 				spec.Pulsar.AuthConfig, spec.MaxPendingAsyncRequests,
-				generateJavaLogConfigFileName(function.Spec.Java))
+				GenerateJavaLogConfigFileName(function.Spec.Java))
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {

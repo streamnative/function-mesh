@@ -136,13 +136,11 @@ func TestGetDownloadCommand(t *testing.T) {
 		// test get the download command with a tls config
 		{"function://public/default/test@v1", "function-package.jar",
 			&v1alpha1.PulsarTLSConfig{
-				TLSConfig: v1alpha1.TLSConfig{
-					Enabled:              true,
-					AllowInsecure:        false,
-					HostnameVerification: true,
-					CertSecretName:       "test-secret",
-					CertSecretKey:        "test-key",
-				},
+				Enabled:              true,
+				AllowInsecure:        false,
+				HostnameVerification: true,
+				CertSecretName:       "test-secret",
+				CertSecretKey:        "test-key",
 			}, nil, nil,
 			[]string{
 				"export PATH=$PATH:/pulsar/bin && ",
@@ -157,13 +155,11 @@ func TestGetDownloadCommand(t *testing.T) {
 		},
 		{"function://public/default/test@v1", "function-package.jar",
 			&v1alpha1.PulsarTLSConfig{
-				TLSConfig: v1alpha1.TLSConfig{
-					Enabled:              false,
-					AllowInsecure:        false,
-					HostnameVerification: true,
-					CertSecretName:       "test-secret",
-					CertSecretKey:        "test-key",
-				},
+				Enabled:              false,
+				AllowInsecure:        false,
+				HostnameVerification: true,
+				CertSecretName:       "test-secret",
+				CertSecretKey:        "test-key",
 			}, nil, nil,
 			[]string{
 				"export PATH=$PATH:/pulsar/bin && ",
@@ -175,13 +171,11 @@ func TestGetDownloadCommand(t *testing.T) {
 		},
 		{"function://public/default/test@v1", "function-package.jar",
 			&v1alpha1.PulsarTLSConfig{
-				TLSConfig: v1alpha1.TLSConfig{
-					Enabled:              true,
-					AllowInsecure:        true,
-					HostnameVerification: false,
-					CertSecretName:       "test-secret",
-					CertSecretKey:        "test-key",
-				},
+				Enabled:              true,
+				AllowInsecure:        true,
+				HostnameVerification: false,
+				CertSecretName:       "test-secret",
+				CertSecretKey:        "test-key",
 			}, nil, nil,
 			[]string{
 				"export PATH=$PATH:/pulsar/bin && ",
@@ -196,13 +190,11 @@ func TestGetDownloadCommand(t *testing.T) {
 		},
 		{"function://public/default/test@v1", "function-package.jar",
 			&v1alpha1.PulsarTLSConfig{
-				TLSConfig: v1alpha1.TLSConfig{
-					Enabled:              true,
-					AllowInsecure:        true,
-					HostnameVerification: false,
-					CertSecretName:       "test-secret",
-					CertSecretKey:        "test-key",
-				},
+				Enabled:              true,
+				AllowInsecure:        true,
+				HostnameVerification: false,
+				CertSecretName:       "test-secret",
+				CertSecretKey:        "test-key",
 			}, nil, &v1alpha1.GenericAuth{
 				ClientAuthenticationParameters: "auth-params",
 				ClientAuthenticationPlugin:     "auth-plugin",
@@ -228,13 +220,11 @@ func TestGetDownloadCommand(t *testing.T) {
 		},
 		{"http://aaa.bbb.ccc/test.jar", "function-package.jar",
 			&v1alpha1.PulsarTLSConfig{
-				TLSConfig: v1alpha1.TLSConfig{
-					Enabled:              true,
-					AllowInsecure:        true,
-					HostnameVerification: false,
-					CertSecretName:       "test-secret",
-					CertSecretKey:        "test-key",
-				},
+				Enabled:              true,
+				AllowInsecure:        true,
+				HostnameVerification: false,
+				CertSecretName:       "test-secret",
+				CertSecretKey:        "test-key",
 			}, nil, nil,
 			[]string{
 				"wget",
@@ -268,13 +258,11 @@ func TestGetDownloadCommand(t *testing.T) {
 			false,
 		},
 		{"source://public/default/test@v1", "source-package.jar", &v1alpha1.PulsarTLSConfig{
-			TLSConfig: v1alpha1.TLSConfig{
-				Enabled:              true,
-				AllowInsecure:        false,
-				HostnameVerification: true,
-				CertSecretName:       "test-secret",
-				CertSecretKey:        "test-key",
-			},
+			Enabled:              true,
+			AllowInsecure:        false,
+			HostnameVerification: true,
+			CertSecretName:       "test-secret",
+			CertSecretKey:        "test-key",
 		}, nil, nil,
 			[]string{
 				PulsarAdminExecutableFile,
@@ -287,13 +275,11 @@ func TestGetDownloadCommand(t *testing.T) {
 		},
 		// test get the download command with normal name
 		{"/test", "test.jar", &v1alpha1.PulsarTLSConfig{
-			TLSConfig: v1alpha1.TLSConfig{
-				Enabled:              true,
-				AllowInsecure:        true,
-				HostnameVerification: true,
-				CertSecretName:       "test-secret",
-				CertSecretKey:        "test-key",
-			},
+			Enabled:              true,
+			AllowInsecure:        true,
+			HostnameVerification: true,
+			CertSecretName:       "test-secret",
+			CertSecretKey:        "test-key",
 		}, nil, nil,
 			[]string{
 				PulsarAdminExecutableFile,
@@ -306,13 +292,11 @@ func TestGetDownloadCommand(t *testing.T) {
 		},
 		// test get the download command with a wrong package name
 		{"source/public/default/test@v1", "source-package.jar", &v1alpha1.PulsarTLSConfig{
-			TLSConfig: v1alpha1.TLSConfig{
-				Enabled:              true,
-				AllowInsecure:        true,
-				HostnameVerification: false,
-				CertSecretName:       "test-secret",
-				CertSecretKey:        "test-key",
-			},
+			Enabled:              true,
+			AllowInsecure:        true,
+			HostnameVerification: false,
+			CertSecretName:       "test-secret",
+			CertSecretKey:        "test-key",
 		}, nil, nil,
 			[]string{
 				PulsarAdminExecutableFile,
@@ -324,13 +308,11 @@ func TestGetDownloadCommand(t *testing.T) {
 			false,
 		},
 		{"source:/public/default/test@v1", "source-package.jar", &v1alpha1.PulsarTLSConfig{
-			TLSConfig: v1alpha1.TLSConfig{
-				Enabled:              false,
-				AllowInsecure:        true,
-				HostnameVerification: false,
-				CertSecretName:       "test-secret",
-				CertSecretKey:        "test-key",
-			},
+			Enabled:              false,
+			AllowInsecure:        true,
+			HostnameVerification: false,
+			CertSecretName:       "test-secret",
+			CertSecretKey:        "test-key",
 		}, nil, nil,
 			[]string{
 				PulsarAdminExecutableFile,
@@ -348,7 +330,7 @@ func TestGetDownloadCommand(t *testing.T) {
 		} else if v.genericAuth != nil {
 			authConfig.GenericAuth = v.genericAuth
 		}
-		actualResult := getDownloadCommand(v.downloadPath, v.componentPackage, v.hasPulsarctl, v.hasPulsarctl, false, false, v.tlsConfig, &authConfig)
+		actualResult := GetDownloadCommand(v.downloadPath, v.componentPackage, v.hasPulsarctl, v.hasPulsarctl, false, false, v.tlsConfig, &authConfig)
 		assert.Equal(t, v.expectedCommand, actualResult)
 	}
 }
@@ -641,13 +623,11 @@ func TestGeneratePodVolumes(t *testing.T) {
 					},
 				},
 				trustCert: &v1alpha1.PulsarTLSConfig{
-					TLSConfig: v1alpha1.TLSConfig{
-						Enabled:              true,
-						AllowInsecure:        true,
-						HostnameVerification: true,
-						CertSecretName:       "test-trust-secret",
-						CertSecretKey:        "test-trust-key",
-					},
+					Enabled:              true,
+					AllowInsecure:        true,
+					HostnameVerification: true,
+					CertSecretName:       "test-trust-secret",
+					CertSecretKey:        "test-trust-key",
 				},
 			},
 			want: []corev1.Volume{
@@ -835,7 +815,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equalf(t, tt.want,
-				generatePodVolumes(
+				GeneratePodVolumes(
 					tt.args.podVolumes,
 					tt.args.producerConf,
 					tt.args.consumerConfs,
@@ -843,7 +823,7 @@ func TestGeneratePodVolumes(t *testing.T) {
 					tt.args.authConfig,
 					tt.args.logConf,
 					v1alpha1.RUNTIME,
-				), "generatePodVolumes(%v, %v, %v, %v)", tt.args.podVolumes, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
+				), "GeneratePodVolumes(%v, %v, %v, %v)", tt.args.podVolumes, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
 		})
 	}
 }
@@ -957,13 +937,11 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 					},
 				},
 				trustCert: &v1alpha1.PulsarTLSConfig{
-					TLSConfig: v1alpha1.TLSConfig{
-						Enabled:              true,
-						AllowInsecure:        true,
-						HostnameVerification: true,
-						CertSecretName:       "test-trust-secret",
-						CertSecretKey:        "test-trust-key",
-					},
+					Enabled:              true,
+					AllowInsecure:        true,
+					HostnameVerification: true,
+					CertSecretName:       "test-trust-secret",
+					CertSecretKey:        "test-trust-key",
 				},
 			},
 			want: []corev1.VolumeMount{
@@ -1005,13 +983,11 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 					},
 				},
 				trustCert: &v1alpha1.PulsarTLSConfig{
-					TLSConfig: v1alpha1.TLSConfig{
-						Enabled:              true,
-						AllowInsecure:        true,
-						HostnameVerification: true,
-						CertSecretName:       "test-trust-secret",
-						CertSecretKey:        "test-trust-key",
-					},
+					Enabled:              true,
+					AllowInsecure:        true,
+					HostnameVerification: true,
+					CertSecretName:       "test-trust-secret",
+					CertSecretKey:        "test-trust-key",
 				},
 				javaRuntime: &v1alpha1.JavaRuntime{
 					Jar:         "test.jar",
@@ -1115,14 +1091,14 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equalf(t, tt.want,
-				generateContainerVolumeMounts(
+				GenerateContainerVolumeMounts(
 					tt.args.volumeMounts,
 					tt.args.producerConf,
 					tt.args.consumerConfs,
 					tt.args.trustCert,
 					tt.args.authConfig,
 					tt.args.logConf,
-					v1alpha1.RUNTIME), "generateContainerVolumeMounts(%v, %v, %v, %v)", tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
+					v1alpha1.RUNTIME), "GenerateContainerVolumeMounts(%v, %v, %v, %v)", tt.args.volumeMounts, tt.args.producerConf, tt.args.consumerConfs, tt.args.trustCert)
 		})
 	}
 }
