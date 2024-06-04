@@ -248,9 +248,15 @@ func ConvertHPAV2ToV2beta2(hpa *autov2.HorizontalPodAutoscaler) *autoscalingv2be
 	}
 
 	result := &autoscalingv2beta2.HorizontalPodAutoscaler{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "autoscaling/v2beta2",
+			Kind:       "HorizontalPodAutoscaler",
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: hpa.Namespace,
-			Name:      hpa.Name,
+			Namespace:       hpa.Namespace,
+			Name:            hpa.Name,
+			Labels:          hpa.Labels,
+			OwnerReferences: hpa.OwnerReferences,
 		},
 		Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{

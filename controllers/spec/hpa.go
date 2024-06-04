@@ -181,3 +181,12 @@ func makeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, podP
 		Spec:       spec,
 	}
 }
+
+func MakeHPA(objectMeta *metav1.ObjectMeta, targetRef autov2.CrossVersionObjectReference, minReplicas, maxReplicas *int32, policy v1alpha1.PodPolicy) *autov2.HorizontalPodAutoscaler {
+	if isBuiltinHPAEnabled(minReplicas, maxReplicas, policy) {
+		return makeBuiltinHPA(objectMeta, *minReplicas, *maxReplicas, targetRef, policy.BuiltinAutoscaler)
+	} else if !isDefaultHPAEnabled(minReplicas, maxReplicas, policy) {
+		return makeHPA(objectMeta, *minReplicas, *maxReplicas, policy, targetRef)
+	}
+	return makeDefaultHPA(objectMeta, *minReplicas, *maxReplicas, targetRef)
+}
