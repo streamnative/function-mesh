@@ -73,6 +73,7 @@ setup:
       command: |
         bash .ci/upload_function_with_oauth.sh java
         bash .ci/upload_function_with_oauth.sh py
+        bash .ci/upload_function_with_oauth.sh pubsub
 
     # testing download packages from http
     - name: start nginx http server
@@ -130,4 +131,6 @@ verify:
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/py-download-from-http-function/verify.sh
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/batch-source/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration-oauth2/cases/google-pubsub-source/verify.sh
       expected: expected.data.yaml
