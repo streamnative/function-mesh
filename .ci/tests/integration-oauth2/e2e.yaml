@@ -89,6 +89,12 @@ setup:
       command: |
         kubectl cp .ci/examples/py-examples/exclamation.zip nginx-0:/tmp
 
+    - name: set gcloud auth
+      env:
+        CREDENTIAL: ${{ secrets.GSA_CREDENTIAL }}
+      command: |
+        sed -i "s/GCP_KEY_DATA/${CREDENTIAL}/g" .ci/tests/integration-oauth2/cases/google-pubsub-source/manifests.yaml
+
     - name: install function-mesh operator
       command: |
         make manager
