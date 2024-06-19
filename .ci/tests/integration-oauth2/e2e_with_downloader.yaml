@@ -26,8 +26,8 @@ setup:
 
     - name: Update values file
       command: |
-        sed -i "s/CLIENT_SECRET/${OAUTH_CLIENT_SECRET}/g" .ci/clusters/values_skywalking_e2e_cluster_with_oauth.yaml
-        sed -i "s/CLIENT_ID/${OAUTH_CLIENT_ID}/g" .ci/clusters/values_skywalking_e2e_cluster_with_oauth.yaml
+        sed -i "s/CLIENT_SECRET/${AZURE_CLIENT_SECRET}/g" .ci/clusters/values_skywalking_e2e_cluster_with_oauth.yaml
+        sed -i "s/CLIENT_ID/${AZURE_CLIENT_ID}/g" .ci/clusters/values_skywalking_e2e_cluster_with_oauth.yaml
 
     - name: install pulsar cluster
       command: |
