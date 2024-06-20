@@ -48,4 +48,5 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+echo "e2e-test: ok" | yq eval -
 kubectl delete -f "${BASE_DIR}"/.ci/tests/integration-oauth2/cases/google-pubsub-source/manifests.yaml > /dev/null 2>&1 || true
