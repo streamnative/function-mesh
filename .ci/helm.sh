@@ -614,9 +614,9 @@ function ci::verify_pod_log() {
   pod=$1
   log=$2
   sleep 30
-  kubectl logs --tail=-1 $pod | grep $log
+  kubectl logs --tail=-1 $pod | grep "$log"
   while [[ $? -ne 0 ]]; do
       sleep 5
-      kubectl logs --tail=-1 $pod | grep $log
+      kubectl logs --tail=-1 $pod | grep "$log"
   done
 }
