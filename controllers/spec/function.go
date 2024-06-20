@@ -169,10 +169,11 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		mounts = append(mounts,
 			generateDownloaderVolumeMountsForRuntime(function.Spec.Java, function.Spec.Python, function.Spec.Golang)...)
 	}
+	function.Spec.Image = getFunctionRunnerImage(&function.Spec)
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            "pulsar-function",
-		Image:           getFunctionRunnerImage(&function.Spec),
+		Image:           function.Spec.Image,
 		Command:         makeFunctionCommand(function),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
 		Env:             generateContainerEnv(function),
@@ -252,7 +253,8 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				spec.GenericRuntime.Language, spec.ClusterName,
 				generateFunctionDetailsInJSON(function), string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
+				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig,
+				function.Spec.GenericRuntime.LogLevel)
 		}
 	}
 

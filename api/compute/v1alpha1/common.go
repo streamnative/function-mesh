@@ -273,6 +273,7 @@ type GenericRuntime struct {
 	// +kubebuilder:validation:Required
 	Language             string `json:"language"`
 	FunctionFileLocation string `json:"functionFileLocation,omitempty"`
+	LogLevel             string `json:"logLevel,omitempty"`
 }
 
 type SecretRef struct {

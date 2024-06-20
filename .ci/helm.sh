@@ -139,7 +139,7 @@ function ci::verify_function_mesh() {
         sleep 5
         kubectl get pods -l compute.functionmesh.io/name="${FUNCTION_NAME}"
         kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --tail=50 || true
-        num=$(kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --tail=-1 | grep "Created producer\|Created consumer\|Subscribed to topic" | wc -l)
+        num=$(kubectl logs -l compute.functionmesh.io/name="${FUNCTION_NAME}" --tail=-1 | grep "Created producer\|Created consumer\|Subscribed to topic\|to broker pulsar" | wc -l)
     done
 }
 
@@ -573,7 +573,7 @@ function ci::verify_log_topic() {
   timesleep=$3
 
   sleep "$timesleep"
-  MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${logTopic}")
+  MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 2 -s "sub" --subscription-position Earliest "${logTopic}")
   echo "$MESSAGE"
   if [[ "$MESSAGE" == *"$message"* ]]; then
     return 0
@@ -588,7 +588,7 @@ function ci::verify_log_topic_with_auth() {
   timesleep=$3
 
   sleep "$timesleep"
-  consumeCommand="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-client --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters consume -n 1 -s "sub" --subscription-position Earliest \"${logTopic}\"'"
+  consumeCommand="kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- sh -c 'bin/pulsar-client --auth-plugin \$brokerClientAuthenticationPlugin --auth-params \$brokerClientAuthenticationParameters consume -n 2 -s "sub" --subscription-position Earliest \"${logTopic}\"'"
   MESSAGE=$(sh -c "$consumeCommand")
   echo "$MESSAGE"
   if [[ "$MESSAGE" == *"$message"* ]]; then

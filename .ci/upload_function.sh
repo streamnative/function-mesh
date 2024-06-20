@@ -44,4 +44,8 @@ case ${1} in
     kubectl cp "${PULSAR_HOME}/.ci/examples/go-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-0:/pulsar/"
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/test-go-function --path /pulsar/go-examples/exclamationFunc --description "test golang function"
     ;;
+  node)
+    kubectl cp "${PULSAR_HOME}/.ci/examples/node-examples" "${NAMESPACE}/${CLUSTER}-pulsar-broker-0:/pulsar/"
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin packages upload function://public/default/test-node-function --path /pulsar/node-examples/exclamation.js --description "test nodejs function"
+    ;;
 esac

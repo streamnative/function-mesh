@@ -57,14 +57,14 @@ import (
 const (
 	EnvShardID                      = "SHARD_ID"
 	FunctionsInstanceClasspath      = "pulsar.functions.instance.classpath"
-	DefaultRunnerTag                = "2.10.0.0-rc10"
-	DefaultGenericRunnerTag         = "0.1.0"
+	DefaultRunnerTag                = "3.2.0.1"
+	DefaultGenericRunnerTag         = "latest"
 	DefaultRunnerPrefix             = "streamnative/"
 	DefaultRunnerImage              = DefaultRunnerPrefix + "pulsar-all:" + DefaultRunnerTag
-	DefaultJavaRunnerImage          = DefaultRunnerPrefix + "pulsar-functions-java-runner:" + DefaultRunnerTag
-	DefaultPythonRunnerImage        = DefaultRunnerPrefix + "pulsar-functions-python-runner:" + DefaultRunnerTag
-	DefaultGoRunnerImage            = DefaultRunnerPrefix + "pulsar-functions-go-runner:" + DefaultRunnerTag
-	DefaultGenericNodejsRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-nodejs-runner:" + DefaultGenericRunnerTag
+	DefaultJavaRunnerImage          = DefaultRunnerPrefix + "pulsar-functions-pulsarctl-java-runner:" + DefaultRunnerTag
+	DefaultPythonRunnerImage        = DefaultRunnerPrefix + "pulsar-functions-pulsarctl-python-runner:" + DefaultRunnerTag
+	DefaultGoRunnerImage            = DefaultRunnerPrefix + "pulsar-functions-pulsarctl-go-runner:" + DefaultRunnerTag
+	DefaultGenericNodejsRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-node-runner:" + DefaultGenericRunnerTag
 	DefaultGenericPythonRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-python-runner:" + DefaultGenericRunnerTag
 	DefaultGenericRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-generic-base-runner:" + DefaultGenericRunnerTag
 	PulsarAdminExecutableFile       = "/pulsar/bin/pulsar-admin"
@@ -461,10 +461,10 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 
 func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterName, details, uid string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, logLevel string) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessGenericRuntimeArgs(language, functionFile, clusterName,
-			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
+			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig, logLevel), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(GetDownloadCommand(downloadPath, functionFile, true, true,
@@ -1262,7 +1262,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 
 func getProcessGenericRuntimeArgs(language, functionFile, clusterName, details, uid string, authProvided, tlsProvided bool,
 	secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig,
-	authConfig *v1alpha1.AuthConfig) []string {
+	authConfig *v1alpha1.AuthConfig, logLevel string) []string {
 
 	args := []string{
 		"exec",
@@ -1277,6 +1277,12 @@ func getProcessGenericRuntimeArgs(language, functionFile, clusterName, details, 
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getGenericSecretProviderArgs(secretMaps, language)
 		args = append(args, secretProviderArgs...)
+	}
+	if logLevel != "" {
+		args = append(args, []string{
+			"--log_level",
+			logLevel,
+		}...)
 	}
 	if state != nil && state.Pulsar != nil && state.Pulsar.ServiceURL != "" {
 		statefulArgs := []string{
