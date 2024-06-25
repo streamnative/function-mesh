@@ -20,7 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -859,9 +858,6 @@ func GenerateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime, agent v1alpha1.
 }
 
 func GenerateJavaLogConfigFileName(runtime *v1alpha1.JavaRuntime) string {
-	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
-		return DefaultJavaLogConfigPath
-	}
 	configFileType := v1alpha1.XML
 	if runtime != nil && runtime.Log != nil && runtime.Log.JavaLog4JConfigFileType != nil {
 		configFileType = *runtime.Log.JavaLog4JConfigFileType
