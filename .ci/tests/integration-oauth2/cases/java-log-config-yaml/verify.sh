@@ -43,7 +43,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_exclamation_function "persistent://public/default/input-java-log-config-yaml-topic" "persistent://public/default/output-java-log-config-yaml-topic" "test-message" "test-message!" 10 2>&1)
+verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_exclamation_function_with_auth "persistent://public/default/input-java-log-config-yaml-topic" "persistent://public/default/output-java-log-config-yaml-topic" "test-message" "test-message!" 10 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_java_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
