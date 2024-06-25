@@ -29,20 +29,50 @@ type FunctionMeshSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Sources   []SourceSpec   `json:"sources,omitempty"`
-	Sinks     []SinkSpec     `json:"sinks,omitempty"`
-	Functions []FunctionSpec `json:"functions,omitempty"`
+	Sources          []SourceSpec          `json:"sources,omitempty"`
+	Sinks            []SinkSpec            `json:"sinks,omitempty"`
+	Functions        []FunctionSpec        `json:"functions,omitempty"`
+	GenericResources []GenericResourceSpec `json:"genericResources,omitempty"`
+}
+
+type GenericResourceSpec struct {
+	// +kubebuilder:validation:Required
+	APIVersion string `json:"apiVersion"`
+
+	// +kubebuilder:validation:Required
+	Kind string `json:"kind"`
+
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+
+	// the field in the resource used to get the spec, default to "spec"
+	// +kubebuilder:validation:Optional
+	SpecFieldName string `json:"specFieldName,omitempty"`
+
+	// the field in the resource used to get the status, default to "status"
+	// +kubebuilder:validation:Optional
+	StatusFieldName string `json:"statusFieldName,omitempty"`
+
+	// the spec fields of the resource
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Spec *Config `json:"spec,omitempty"`
+
+	// The fields in the `Status` field of Resource used to check whether the resource is ready
+	// should equal to ConditionTrue when it's ready
+	ReadyFields []string `json:"readyFields,omitempty"`
 }
 
 // FunctionMeshStatus defines the observed state of FunctionMesh
 type FunctionMeshStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	SourceConditions   map[string]ResourceCondition `json:"sourceConditions,omitempty"`
-	SinkConditions     map[string]ResourceCondition `json:"sinkConditions,omitempty"`
-	FunctionConditions map[string]ResourceCondition `json:"functionConditions,omitempty"`
-	ObservedGeneration int64                        `json:"observedGeneration,omitempty"`
-	Condition          *ResourceCondition           `json:"condition,omitempty"`
+	SourceConditions          map[string]ResourceCondition `json:"sourceConditions,omitempty"`
+	SinkConditions            map[string]ResourceCondition `json:"sinkConditions,omitempty"`
+	FunctionConditions        map[string]ResourceCondition `json:"functionConditions,omitempty"`
+	GenericResourceConditions map[string]ResourceCondition `json:"genericResourceConditions,omitempty"`
+	ObservedGeneration        int64                        `json:"observedGeneration,omitempty"`
+	Condition                 *ResourceCondition           `json:"condition,omitempty"`
 }
 
 // +genclient
