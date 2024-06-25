@@ -1,0 +1,130 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: java-log-config-yaml
+  namespace: default
+spec:
+  image: streamnative/pulsar-functions-java-sample:2.9.2.23
+  className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+  forwardSourceMessageProperty: true
+  maxPendingAsyncRequests: 1000
+  replicas: 1
+  maxReplicas: 5
+  logTopic: persistent://public/default/logging-function-logs
+  input:
+    topics:
+    - persistent://public/default/input-java-log-config-yaml-topic
+    typeClassName: java.lang.String
+  output:
+    topic: persistent://public/default/output-java-log-config-yaml-topic
+    typeClassName: java.lang.String
+  resources:
+    requests:
+      cpu: 50m
+      memory: 1G
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+  # each secret will be loaded ad an env variable from the `path` secret with the `key` in that secret in the name of `name`
+  secretsMap:
+    "name":
+        path: "test-secret"
+        key: "username"
+    "pwd":
+        path: "test-secret"
+        key: "password"
+  pulsar:
+    pulsarConfig: "test-pulsar"
+    tlsConfig:
+      enabled: false
+      allowInsecure: false
+      hostnameVerification: true
+      certSecretName: sn-platform-tls-broker
+      certSecretKey: ""
+    authConfig:
+      oauth2Config:
+        audience: urn:sn:pulsar:sndev:test
+        issuerUrl: https://auth.sncloud-stg.dev/
+        keySecretName: sn-platform-oauth2-private-key
+        keySecretKey: auth.json
+  java:
+    log:
+      javaLog4JConfigFileType: yaml
+      logConfig:
+        name: "java-log-config-cm"
+        key: "log.yaml"
+    jar: /pulsar/examples/api-examples.jar
+  # to be delete & use admission hook
+  clusterName: test
+  autoAck: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
+---
+apiVersion: v1
+data:
+  username: YWRtaW4=
+  password: MWYyZDFlMmU2N2Rm
+kind: Secret
+metadata:
+  name: test-secret
+type: Opaque
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: java-log-config-cm
+data:
+  log.yaml: |
+    Configuration:
+      name: pulsar-functions-kubernetes-instance
+      monitorInterval: 30
+      Properties:
+        Property:
+        - name: pulsar.log.level
+          value: DEBUG
+        - name: bk.log.level
+          value: DEBUG
+
+      Appenders:
+        Console:
+          name: Console
+          target: SYSTEM_OUT
+
+          PatternLayout:
+            Pattern: "%d{ISO8601_OFFSET_DATE_TIME_HHMM} [%t] %-5level %logger{36} - %msg%n"
+
+
+        RollingRandomAccessFile:
+          name: RollingRandomAccessFile
+          fileName: "${sys:pulsar.function.log.dir}/${sys:pulsar.function.log.file}.log"
+          filePattern: "${sys:pulsar.function.log.dir}/${sys:pulsar.function.log.file}.%d{yyyy-MM-dd}-%i.log.gz"
+
+          PatternLayout:
+            Pattern: "%d{yyyy-MMM-dd HH:mm:ss a} [%t] %-5level %logger{36} - %msg%n"
+
+          Policies:
+            SizeBasedTriggeringPolicy:
+              size: "10MB"
+          DefaultRolloverStrategy:
+            max: 5
+
+      Loggers:
+        Root:
+          level: "${sys:pulsar.log.level}"
+          AppenderRef:
+            - ref: Console
+              level: "${sys:pulsar.log.level}"
+            - ref: RollingRandomAccessFile
+        Logger:
+          name: org.apache.pulsar.functions.runtime.shaded.org.apache.bookkeeper
+          level: "${sys:bk.log.level}"
+          additivity: false
+          AppenderRef:
+          - ref: Console
+          - ref: RollingRandomAccessFile

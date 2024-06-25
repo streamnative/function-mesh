@@ -20,9 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-	"regexp"
-
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 
 	// used for template
 	_ "embed"
@@ -32,9 +29,12 @@ import (
 	"html/template"
 	"os"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 
 	appsv1 "k8s.io/api/apps/v1"
 	autov2 "k8s.io/api/autoscaling/v2"
@@ -773,9 +773,6 @@ func generateJavaLogConfigCommand(runtime *v1alpha1.JavaRuntime, agent v1alpha1.
 }
 
 func generateJavaLogConfigFileName(runtime *v1alpha1.JavaRuntime) string {
-	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
-		return DefaultJavaLogConfigPath
-	}
 	configFileType := v1alpha1.XML
 	if runtime != nil && runtime.Log != nil && runtime.Log.JavaLog4JConfigFileType != nil {
 		configFileType = *runtime.Log.JavaLog4JConfigFileType
