@@ -87,9 +87,9 @@ data:
       Properties:
         Property:
         - name: pulsar.log.level
-          value: INFO
+          value: DEBUG
         - name: bk.log.level
-          value: INFO
+          value: DEBUG
 
       Appenders:
         Console:
