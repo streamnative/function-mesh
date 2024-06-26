@@ -135,12 +135,12 @@ auth:
     enabled: true
     provider: "oauth2"
     oauth2:
-      issuerUrl: https://sts.windows.net/06a8a086-ae6e-45b5-a22e-ad90de23013e/
-      issuerUrlParam: https://sts.windows.net/06a8a086-ae6e-45b5-a22e-ad90de23013e/v2.0
-      audience: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e
-      audienceParam: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
-      brokerClientCredential: '{"client_id":"CLIENT_ID","client_secret":"CLIENT_SECRET","issuer_url":"https://sts.windows.net/06a8a086-ae6e-45b5-a22e-ad90de23013e/v2.0"}'
-      subjectClaim: appid
-      adminScope: appid
-      adminScopeParam: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
+      issuerUrl: https://auth.sncloud-stg.dev/
+      issuerUrlParam: https://auth.sncloud-stg.dev/
+      audience: "urn:sn:pulsar:sndev:test"
+      audienceParam: "urn:sn:pulsar:sndev:test"
+      brokerClientCredential: '{"client_id":"CLIENT_ID","client_secret":"CLIENT_SECRET","issuer_url":"https://auth.sncloud-stg.dev/"}'
+      subjectClaim: https://streamnative.io/username
+      adminScope: https://streamnative.io/username
+      adminScopeParam: ""
       authenticationProviders: io.streamnative.pulsar.broker.authentication.AuthenticationProviderOAuth
