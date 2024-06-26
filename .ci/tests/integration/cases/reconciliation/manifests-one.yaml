@@ -5,7 +5,7 @@ metadata:
 spec:
   sinks:
     - name: sink-one
-      image: streamnative/pulsar-io-elastic-search:2.9.2.23
+      image: streamnative/pulsar-io-elastic-search:3.2.2.1
       className: org.apache.pulsar.io.elasticsearch.ElasticSearchSink
       replicas: 1
       maxReplicas: 1
@@ -29,13 +29,13 @@ spec:
           cpu: "0.1"
           memory: 1G
       java:
-        jar: connectors/pulsar-io-elastic-search-2.9.2.23.nar
+        jar: connectors/pulsar-io-elastic-search-3.2.2.1.nar
         jarLocation: "" # use pulsar provided connectors
       clusterName: test-pulsar
       autoAck: true
   functions:
     - name: function-one
-      image: streamnative/pulsar-functions-java-sample:2.9.2.23
+      image: streamnative/pulsar-functions-java-sample:3.2.2.1
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
       replicas: 1
       maxReplicas: 1
@@ -90,9 +90,9 @@ spec:
         pulsar.service.url: pulsar://test-pulsar-broker.default.svc.cluster.local:6650
       pulsar:
         pulsarConfig: "mesh-test-pulsar"
-      image: streamnative/pulsar-io-debezium-mongodb:2.9.2.23
+      image: streamnative/pulsar-io-debezium-mongodb:3.2.2.1
       java:
-        jar: connectors/pulsar-io-debezium-mongodb-2.9.2.23.nar
+        jar: connectors/pulsar-io-debezium-mongodb-3.2.2.1.nar
         jarLocation: "" # use pulsar provided connectors
       clusterName: test-pulsar
 ---

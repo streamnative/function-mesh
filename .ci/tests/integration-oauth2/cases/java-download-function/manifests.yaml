@@ -4,7 +4,7 @@ metadata:
   name: function-download-sample
   namespace: default
 spec:
-  image: streamnative/pulsar-functions-pulsarctl-java-runner:2.9.2.23
+  image: streamnative/pulsar-functions-pulsarctl-java-runner:3.2.2.1
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
   cleanupSubscription: true
   subscriptionName: java-download-subscription

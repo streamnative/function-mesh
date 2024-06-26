@@ -47,9 +47,9 @@ spec:
         issuerUrl: https://auth.sncloud-stg.dev/
         keySecretName: sn-platform-oauth2-private-key
         keySecretKey: auth.json
-  image: streamnative/pulsar-io-batch-data-generator:2.9.2.23
+  image: streamnative/pulsar-io-batch-data-generator:3.2.2.1
   java:
-    jar: connectors/pulsar-io-batch-data-generator-2.9.2.23.nar
+    jar: connectors/pulsar-io-batch-data-generator-3.2.2.1.nar
     jarLocation: "" # use pulsar provided connectors
     # use package name:
     # jarLocation: function://public/default/nul-test-java-source@v1
