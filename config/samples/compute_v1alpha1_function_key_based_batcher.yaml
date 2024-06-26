@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   className: org.apache.pulsar.functions.api.examples.ExclamationFunction
-  image: streamnative/pulsar-all:2.7.1
+  image: streamnative/sn-platform:2.7.1
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
   replicas: 1

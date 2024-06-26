@@ -21,7 +21,7 @@
 set -e
 
 PULSAR_IMAGE_TAG=${PULSAR_IMAGE_TAG:-"2.7.1"}
-PULSAR_IMAGE=${PULSAR_IMAGE:-"streamnative/pulsar-all"}
+PULSAR_IMAGE=${PULSAR_IMAGE:-"streamnative/sn-platform"}
 JAVA_RUNNER_IMAGE=${RUNNER_IMAGE:-"streamnative/pulsar-functions-java-runner"}
 DOCKER_REPO=${DOCKER_REPO:-"streamnative"}
 JAVA_SAMPLE="pulsar-functions-java-sample"
