@@ -85,7 +85,7 @@ function ci::install_pulsar_charts() {
     if [ -d "pulsar-charts" ]; then
         rm -rf pulsar-charts
     fi
-    git clone https://github.com/streamnative/charts.git pulsar-charts
+    git clone --branch pulsar-operator-0.17.10 https://github.com/streamnative/charts.git pulsar-charts
     cp ${values} pulsar-charts/charts/pulsar/mini_values.yaml
     cd pulsar-charts
     ./scripts/pulsar/prepare_helm_release.sh -n default -k sn-platform -c

@@ -1852,24 +1852,6 @@ func getPythonSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []str
 	return ret
 }
 
-func getGenericSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef, language string) []string {
-	var ret []string
-	if len(secretMaps) > 0 {
-		if language == "python" {
-			ret = []string{
-				"--secrets_provider",
-				"secrets_provider.EnvironmentBasedSecretsProvider",
-			}
-		} else if language == "nodejs" {
-			ret = []string{
-				"--secrets_provider",
-				"EnvironmentBasedSecretsProvider",
-			}
-		}
-	}
-	return ret
-}
-
 func getTLSTrustCertPath(tlsVolume TLSConfig, path string) string {
 	return fmt.Sprintf("%s/%s", tlsVolume.GetMountPath(), path)
 }
