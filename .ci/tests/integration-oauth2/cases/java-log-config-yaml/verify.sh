@@ -32,36 +32,28 @@ if [ ! "$KUBECONFIG" ]; then
   export KUBECONFIG=${E2E_KUBECONFIG}
 fi
 
-manifests_file="${BASE_DIR}"/.ci/tests/integration-oauth2/cases/batch-source/manifests.yaml
+manifests_file="${BASE_DIR}"/.ci/tests/integration-oauth2/cases/java-log-config-yaml/manifests.yaml
 
 kubectl apply -f "${manifests_file}" > /dev/null 2>&1
 
-verify_fm_result=$(ci::verify_function_mesh batch-source-sample 2>&1)
+verify_fm_result=$(ci::verify_function_mesh java-log-config-yaml 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_fm_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
-verify_source_result=$(ci::verify_batch_source 2>&1)
+verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_exclamation_function_with_auth "persistent://public/default/input-java-log-config-yaml-topic" "persistent://public/default/output-java-log-config-yaml-topic" "test-message" "test-message!" 10 2>&1)
 if [ $? -ne 0 ]; then
-  echo "$verify_source_result"
+  echo "$verify_java_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
-verify_log_topic=$(ci::verify_log_topic_with_auth persistent://public/default/batch-source-logs "it may be a NAR file" 10 2>&1)
-if [ $? -ne 0 ]; then
-  echo "$verify_log_topic"
-  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
-  exit 1
-fi
-
-kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
-
-verify_cleanup_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_cleanup_batch_source_with_auth persistent://public/default/batch-source-sample-intermediate BatchSourceExecutor-public/default/batch-source-sample 2>&1)
+verify_log_config_result=$(kubectl logs -l compute.functionmesh.io/name=java-log-config-yaml --tail=-1 | grep "Got result: object:" 2>&1)
 if [ $? -eq 0 ]; then
   echo "e2e-test: ok" | yq eval -
 else
-  echo "$verify_cleanup_result"
+  echo "$verify_log_config_result"
 fi
+kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true

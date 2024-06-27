@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.17.1
+VERSION ?= 0.17.2
 # Default image tag
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:v$(VERSION)
@@ -130,7 +130,7 @@ image-push:
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.15.0)
 
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v4.5.5)

@@ -4,7 +4,7 @@ metadata:
   name: py-function-download-from-http-sample
   namespace: default
 spec:
-  image: streamnative/pulsar-functions-pulsarctl-python-runner:2.9.2.23
+  image: streamnative/pulsar-functions-pulsarctl-python-runner:3.2.2.1
   className: exclamation
   forwardSourceMessageProperty: true
   maxPendingAsyncRequests: 1000
@@ -39,9 +39,8 @@ spec:
       hostnameVerification: true
     authConfig:
       oauth2Config:
-        audience: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
-        issuerUrl: https://sts.windows.net/06a8a086-ae6e-45b5-a22e-ad90de23013e/v2.0
-        scope: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
+        audience: urn:sn:pulsar:sndev:test
+        issuerUrl: https://auth.sncloud-stg.dev/
         keySecretName: sn-platform-oauth2-private-key
         keySecretKey: auth.json
   python:

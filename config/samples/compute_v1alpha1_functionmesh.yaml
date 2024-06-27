@@ -6,7 +6,7 @@ spec:
   functions:
     - name: ex1
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
-      image: streamnative/pulsar-functions-java-sample:2.9.2.23
+      image: streamnative/pulsar-functions-java-sample:3.2.2.1
       replicas: 1
       maxReplicas: 1
       logTopic: persistent://public/default/logging-function-log
@@ -37,7 +37,7 @@ spec:
       clusterName: test-pulsar
     - name: ex2
       className: org.apache.pulsar.functions.api.examples.ExclamationFunction
-      image: streamnative/pulsar-functions-java-sample:2.9.2.23
+      image: streamnative/pulsar-functions-java-sample:3.2.2.1
       replicas: 1
       maxReplicas: 1
       logTopic: persistent://public/default/logging-function-logs

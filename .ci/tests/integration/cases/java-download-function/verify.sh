@@ -55,7 +55,7 @@ if [ $? -ne 0 ]; then
 fi
 
 if [ $USE_TLS == "false" ]; then
-  verify_log_topic=$(ci::verify_log_topic persistent://public/default/logging-function-logs-sidecar "org.apache.pulsar.functions.runtime.JavaInstanceStarter" 10 2>&1)
+  verify_log_topic=$(ci::verify_log_topic persistent://public/default/logging-function-logs-sidecar "it is not a NAR file" 10 2>&1)
   if [ $? -ne 0 ]; then
     echo "$verify_log_topic"
     kubectl delete -f "${BASE_DIR}"/.ci/tests/integration/cases/java-download-function/manifests.yaml > /dev/null 2>&1 || true

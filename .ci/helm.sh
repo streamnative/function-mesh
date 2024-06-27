@@ -85,7 +85,7 @@ function ci::install_pulsar_charts() {
     if [ -d "pulsar-charts" ]; then
         rm -rf pulsar-charts
     fi
-    git clone https://github.com/streamnative/charts.git pulsar-charts
+    git clone --branch pulsar-operator-0.17.10 https://github.com/streamnative/charts.git pulsar-charts
     cp ${values} pulsar-charts/charts/pulsar/mini_values.yaml
     cd pulsar-charts
     ./scripts/pulsar/prepare_helm_release.sh -n default -k sn-platform -c
@@ -453,7 +453,7 @@ function ci::verify_elasticsearch_sink() {
 
 function ci::verify_mongodb_source() {
     timesleep=$1
-    kubectl exec mongo-dbz-0 -c mongo -- mongo -u debezium -p dbz --authenticationDatabase admin localhost:27017/inventory --eval 'db.products.update({"_id":NumberLong(104)},{$set:{weight:1.25}})'
+    kubectl exec mongo-dbz-0 -c mongo -- mongosh -u debezium -p dbz --authenticationDatabase admin localhost:27017/inventory --eval 'db.products.update({"_id":NumberLong(104)},{$set:{weight:1.25}})'
     sleep "$timesleep"
     kubectl logs --tail=-1 -l compute.functionmesh.io/name=source-sample | grep "records sent"
     if [ $? -eq 0 ]; then

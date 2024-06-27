@@ -23,6 +23,14 @@ jobs:
           docker rmi $(docker images -q) -f
           df -h
 
+      # the runner machine has a disk /dev/sdb1 which mounted to /mnt, and it has more free disk than /dev/sda1.
+      # we can use it to save docker's data to avoid bookie error due to lack of disk.
+      - name: change docker data dir
+        run: |
+          sudo service docker stop
+          echo '{ "exec-opts": ["native.cgroupdriver=cgroupfs"], "cgroup-parent": "/actions_job", "data-root": "/mnt/docker" }' | sudo tee /etc/docker/daemon.json
+          sudo service docker start
+
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -44,7 +52,7 @@ jobs:
         env:
           DOCKER_REPO: localhost:5000
         run: |
-          PULSAR_IMAGE_TAG=2.9.2.23 PULSAR_IMAGE=streamnative/pulsar-all KIND_PUSH=false images/build.sh
+          PULSAR_IMAGE_TAG=3.2.2.1 PULSAR_IMAGE=streamnative/sn-platform KIND_PUSH=false images/build.sh
 
       - name: Verify function runner
         run: |

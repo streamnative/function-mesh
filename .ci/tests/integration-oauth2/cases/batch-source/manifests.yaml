@@ -37,21 +37,19 @@ spec:
       certSecretKey: ""
     authConfig:
       oauth2Config:
-        audience: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
-        issuerUrl: https://sts.windows.net/06a8a086-ae6e-45b5-a22e-ad90de23013e/v2.0
-        scope: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
+        audience: urn:sn:pulsar:sndev:test
+        issuerUrl: https://auth.sncloud-stg.dev/
         keySecretName: sn-platform-oauth2-private-key
         keySecretKey: auth.json
     cleanupAuthConfig:
       oauth2Config:
-        audience: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
-        issuerUrl: https://sts.windows.net/06a8a086-ae6e-45b5-a22e-ad90de23013e/v2.0
-        scope: api://56c1bd14-3ba7-4804-b47b-d46de6dce33e/.default
+        audience: urn:sn:pulsar:sndev:test
+        issuerUrl: https://auth.sncloud-stg.dev/
         keySecretName: sn-platform-oauth2-private-key
         keySecretKey: auth.json
-  image: streamnative/pulsar-io-batch-data-generator:2.9.2.23
+  image: streamnative/pulsar-io-batch-data-generator:3.2.2.1
   java:
-    jar: connectors/pulsar-io-batch-data-generator-2.9.2.23.nar
+    jar: connectors/pulsar-io-batch-data-generator-3.2.2.1.nar
     jarLocation: "" # use pulsar provided connectors
     # use package name:
     # jarLocation: function://public/default/nul-test-java-source@v1
