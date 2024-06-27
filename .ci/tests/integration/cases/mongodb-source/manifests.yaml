@@ -23,7 +23,7 @@ spec:
       cpu: "0.1"
       memory: 1G
   sourceConfig:
-    mongodb.hosts: rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-1.mongo.default.svc.cluster.local:27017,rs0/mongo-dbz-2.mongo.default.svc.cluster.local:27017
+    mongodb.hosts: rs0/mongo-dbz-0.mongo.default.svc.cluster.local:27017
     mongodb.name: dbserver1
     mongodb.user: debezium
     mongodb.password: dbz
