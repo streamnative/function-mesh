@@ -30,23 +30,26 @@ spec:
                 additionalProperties:
                   type: string
                 type: object
-              liveness:
-                properties:
-                  failureThreshold:
-                    format: int32
-                    type: integer
-                  initialDelaySeconds:
-                    format: int32
-                    type: integer
-                  periodSeconds:
-                    format: int32
-                    type: integer
-                  successThreshold:
-                    format: int32
-                    type: integer
-                type: object
               name:
                 type: string
+              pod:
+                properties:
+                  liveness:
+                    properties:
+                      failureThreshold:
+                        format: int32
+                        type: integer
+                      initialDelaySeconds:
+                        format: int32
+                        type: integer
+                      periodSeconds:
+                        format: int32
+                        type: integer
+                      successThreshold:
+                        format: int32
+                        type: integer
+                    type: object
+                type: object
             type: object
           status:
             type: object

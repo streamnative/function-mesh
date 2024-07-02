@@ -6,6 +6,7 @@ spec:
   env:
     global1: globalvalue1
     shared1: fromglobal
-  liveness:
-    initialDelaySeconds: 10
-    periodSeconds: 30
+  pod:
+    liveness:
+      initialDelaySeconds: 10
+      periodSeconds: 30

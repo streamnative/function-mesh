@@ -7,6 +7,7 @@ spec:
   env:
     namespaced1: namespacedvalue1
     shared1: fromnamespace
-  liveness:
-    initialDelaySeconds: 30
-    periodSeconds: 10
+  pod:
+    liveness:
+      initialDelaySeconds: 30
+      periodSeconds: 10

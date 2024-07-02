@@ -20,6 +20,7 @@ package spec
 import (
 	"bytes"
 	"context"
+
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -306,8 +307,10 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 			for key, val := range globalBackendConfig.Spec.Env {
 				envData[key] = val
 			}
-			if globalBackendConfig.Spec.Liveness != nil {
-				liveness = globalBackendConfig.Spec.Liveness
+			if globalBackendConfig.Spec.Pod != nil {
+				if globalBackendConfig.Spec.Pod.Liveness != nil {
+					liveness = globalBackendConfig.Spec.Pod.Liveness
+				}
 			}
 		}
 	}
@@ -329,8 +332,10 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 			for key, val := range namespacedBackendConfig.Spec.Env {
 				envData[key] = val
 			}
-			if namespacedBackendConfig.Spec.Liveness != nil {
-				liveness = namespacedBackendConfig.Spec.Liveness
+			if namespacedBackendConfig.Spec.Pod != nil {
+				if namespacedBackendConfig.Spec.Pod.Liveness != nil {
+					liveness = namespacedBackendConfig.Spec.Pod.Liveness
+				}
 			}
 		}
 	}
