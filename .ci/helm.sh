@@ -609,3 +609,13 @@ function ci::verify_env() {
   fi
   return 1
 }
+
+function ci::verify_liveness_probe() {
+  pod=$1
+  expected=$2
+  result=$(kubectl get pod $pod -o jsonpath='{.spec.containers[*].livenessProbe}')
+  echo "liveness probe is $result"
+  if [[ "$result" != "$expected" ]]; then
+    return 1
+  fi
+}

@@ -107,7 +107,7 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
-		Name:            "pulsar-sink",
+		Name:            SinkContainerName,
 		Image:           getSinkRunnerImage(&sink.Spec),
 		Command:         MakeSinkCommand(sink),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
