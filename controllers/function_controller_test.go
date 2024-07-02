@@ -245,7 +245,7 @@ func createFunction(function *v1alpha1.Function) {
 			containers := statefulSet.Spec.Template.Spec.Containers
 			Expect(len(containers) > 0).Should(BeTrue())
 			for _, container := range containers {
-				if container.Name == "pulsar-function" {
+				if container.Name == spec.FunctionContainerName {
 					fullCommand := strings.Join(container.Command, " ")
 					Expect(fullCommand).Should(ContainSubstring("--state_storage_serviceurl"),
 						"--state_storage_serviceurl should be set in [%s]", fullCommand)
