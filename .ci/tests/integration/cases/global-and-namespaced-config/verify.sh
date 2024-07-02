@@ -73,6 +73,15 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# verify liveness config
+verify_liveness_result=$(ci::verify_liveness_probe function-sample-env-function-0 '{"failureThreshold":3,"httpGet":{"path":"/","port":9094,"scheme":"HTTP"},"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":10}' 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_liveness_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
 # delete the namespaced config, the function should be reconciled without namespaced env injected
 kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
 sleep 30
@@ -105,6 +114,14 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# it should use liveness config from global config
+verify_liveness_result=$(ci::verify_liveness_probe function-sample-env-function-0 '{"failureThreshold":3,"httpGet":{"path":"/","port":9094,"scheme":"HTTP"},"initialDelaySeconds":10,"periodSeconds":30,"successThreshold":1,"timeoutSeconds":30}' 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_liveness_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
 # delete the global config, the function should be reconciled without global env injected
 kubectl delete -f "${global_mesh_config_file}" -n $FUNCTION_MESH_NAMESPACE > /dev/null 2>&1 || true
 sleep 30
@@ -123,6 +140,14 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# it should has no liveness config
+verify_liveness_result=$(ci::verify_liveness_probe function-sample-env-function-0 "" 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_liveness_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
 # config created in an another namespace should not affect functions in other namespaces
 kubectl apply -f "${mesh_config_file_in_kube_system}" > /dev/null 2>&1
 sleep 30
@@ -130,6 +155,14 @@ sleep 30
 verify_fm_result=$(ci::verify_function_mesh function-sample-env 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_fm_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# it should has no liveness config
+verify_liveness_result=$(ci::verify_liveness_probe function-sample-env-function-0 "" 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_liveness_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi

@@ -620,3 +620,15 @@ function ci::verify_pod_log() {
       kubectl logs --tail=-1 $pod | grep "$log"
   done
 }
+
+function ci::verify_liveness_probe() {
+  pod=$1
+  expected=$2
+  result=$(kubectl get pod $pod -o jsonpath='{.spec.containers[*].livenessProbe}')
+  echo "liveness probe is $result"
+  if [[ "$result" != "$expected" ]]; then
+    echo "failed"
+    return 1
+  fi
+  echo "succeeded"
+}
