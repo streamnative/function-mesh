@@ -20,7 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-
 	// used for template
 	_ "embed"
 	"encoding/json"
@@ -128,6 +127,10 @@ const (
 	DefaultFilebeatImage  = "streamnative/filebeat:v0.6.0-rc7"
 
 	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
+
+	FunctionContainerName = "pulsar-function"
+	SinkContainerName     = "pulsar-sink"
+	SourceContainerName   = "pulsar-source"
 )
 
 //go:embed template/java-runtime-log4j.xml.tmpl
@@ -285,6 +288,7 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 	globalBackendConfigVersion := ""
 	namespacedBackendConfigVersion := ""
 	envData := make(map[string]string)
+	var liveness *v1alpha1.Liveness = nil
 
 	if utils.GlobalBackendConfig != "" && utils.GlobalBackendConfigNamespace != "" {
 		globalBackendConfig := &v1alpha1.BackendConfig{}
@@ -301,6 +305,9 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 			globalBackendConfigVersion = globalBackendConfig.ResourceVersion
 			for key, val := range globalBackendConfig.Spec.Env {
 				envData[key] = val
+			}
+			if globalBackendConfig.Spec.Liveness != nil {
+				liveness = globalBackendConfig.Spec.Liveness
 			}
 		}
 	}
@@ -322,6 +329,9 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 			for key, val := range namespacedBackendConfig.Spec.Env {
 				envData[key] = val
 			}
+			if namespacedBackendConfig.Spec.Liveness != nil {
+				liveness = namespacedBackendConfig.Spec.Liveness
+			}
 		}
 	}
 
@@ -337,8 +347,19 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 		})
 	}
 	for i := range statefulSet.Spec.Template.Spec.Containers {
-		statefulSet.Spec.Template.Spec.Containers[i].Env = append(statefulSet.Spec.Template.Spec.Containers[i].Env,
-			globalEnvs...)
+		container := &statefulSet.Spec.Template.Spec.Containers[i]
+		container.Env = append(container.Env, globalEnvs...)
+
+		// configs which only work for the workload container
+		switch container.Name {
+		case FunctionContainerName, SinkContainerName, SourceContainerName:
+			// set liveness probe if it's not set
+			if container.LivenessProbe == nil && liveness != nil {
+				container.LivenessProbe = MakeLivenessProbe(liveness)
+			}
+		default:
+			// No action needed for other containers
+		}
 	}
 
 	return globalBackendConfigVersion, namespacedBackendConfigVersion, nil

@@ -6,7 +6,7 @@ metadata:
     {{- if eq .Values.admissionWebhook.certificate.provider "cert-manager" }}
       {{- include "function-mesh-operator.certManager.annotation" . | nindent 4 -}}
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.9.2
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: backendconfigs.compute.functionmesh.io
 spec:
   conversion:
@@ -51,6 +51,21 @@ spec:
                 env:
                   additionalProperties:
                     type: string
+                  type: object
+                liveness:
+                  properties:
+                    failureThreshold:
+                      format: int32
+                      type: integer
+                    initialDelaySeconds:
+                      format: int32
+                      type: integer
+                    periodSeconds:
+                      format: int32
+                      type: integer
+                    successThreshold:
+                      format: int32
+                      type: integer
                   type: object
                 name:
                   type: string
