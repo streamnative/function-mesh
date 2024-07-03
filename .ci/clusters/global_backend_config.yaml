@@ -1,0 +1,12 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: BackendConfig
+metadata:
+  name: global-backend-config
+spec:
+  env:
+    global1: globalvalue1
+    shared1: fromglobal
+  pod:
+    liveness:
+      initialDelaySeconds: 10
+      periodSeconds: 30

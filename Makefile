@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.17.2
+VERSION ?= 0.17.3
 # Default image tag
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:v$(VERSION)
@@ -72,7 +72,7 @@ test-ginkgo: generate fmt vet manifests envtest
 
 .PHONY: envtest
 envtest:
-	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20240320141353-395cfc7486e6
 
 # Build manager binary
 manager: generate fmt vet

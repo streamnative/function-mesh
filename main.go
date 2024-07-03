@@ -24,9 +24,8 @@ import (
 	"os"
 	"strconv"
 
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-
 	"github.com/streamnative/function-mesh/pkg/monitoring"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
 	"github.com/go-logr/logr"
 	computev1alpha1 "github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -72,6 +71,9 @@ func main() {
 	var configFile string
 	var watchedNamespace string
 	var enableInitContainers bool
+	var globalBackendConfig string
+	var globalBackendConfigNamespace string
+	var namespacedBackendConfig string
 	flag.StringVar(&metricsAddr, "metrics-addr", lookupEnvOrString("METRICS_ADDR", ":8080"),
 		"The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id",
@@ -97,10 +99,19 @@ func main() {
 		"The address the pprof binds to.")
 	flag.BoolVar(&enableInitContainers, "enable-init-containers", lookupEnvOrBool("ENABLE_INIT_CONTAINERS", false),
 		"Whether to use an init container to download package")
+	flag.StringVar(&globalBackendConfig, "global-backend-config", lookupEnvOrString("GLOBAL_BACKEND_CONFIG", ""),
+		"The global backend config name used for all functions&sinks&sources")
+	flag.StringVar(&globalBackendConfigNamespace, "global-backend-config-namespace", lookupEnvOrString("GLOBAL_BACKEND_CONFIG_NAMESPACE", "default"),
+		"The namespace of the global backend config name used for all functions&sinks&sources")
+	flag.StringVar(&namespacedBackendConfig, "namespaced-backend-config", lookupEnvOrString("NAMESPACED_BACKEND_CONFIG", "backend-config"),
+		"The backend config name used for functions&sinks&sources in the same namespace")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	utils.EnableInitContainers = enableInitContainers
+	utils.GlobalBackendConfig = globalBackendConfig
+	utils.GlobalBackendConfigNamespace = globalBackendConfigNamespace
+	utils.NamespacedBackendConfig = namespacedBackendConfig
 
 	// enable pprof
 	if enablePprof {

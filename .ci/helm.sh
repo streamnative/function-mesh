@@ -596,3 +596,26 @@ function ci::verify_log_topic_with_auth() {
   fi
   return 1
 }
+
+function ci::verify_env() {
+  pod="$1-function-0"
+  key=$2
+  expect=$3
+  result=$(kubectl exec -n ${NAMESPACE} ${pod} -- env | grep "${key}")
+  echo "$result"
+  echo "$expect"
+  if [[ "$result" = "$expect" ]]; then
+    return 0
+  fi
+  return 1
+}
+
+function ci::verify_liveness_probe() {
+  pod=$1
+  expected=$2
+  result=$(kubectl get pod $pod -o jsonpath='{.spec.containers[*].livenessProbe}')
+  echo "liveness probe is $result"
+  if [[ "$result" != "$expected" ]]; then
+    return 1
+  fi
+}
