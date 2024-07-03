@@ -56,7 +56,7 @@ EOF
 
 main() {
   local local_kube="kind"
-  local fm_version="v0.17.2"
+  local fm_version="v0.17.3"
   local kind_name="kind"
   local kind_version="v0.7.0"
   local node_num=2
