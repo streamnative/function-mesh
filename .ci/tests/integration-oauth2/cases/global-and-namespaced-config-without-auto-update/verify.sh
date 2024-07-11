@@ -81,7 +81,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # update the namespaced config, it should not trigger the reconcile since the autoUpdate is false
-kubectl patch BackendConfig backend-config --type='json' -p='[{"op": "replace", "path": "/spec/env/shared1", "value": "newvalue"}]'
+kubectl patch BackendConfig backend-config --type='json' -p='[{"op": "replace", "path": "/spec/env/shared1", "value": "newvalue"}]' > /dev/null 2>&1
 sleep 30
 
 verify_env_result=$(ci::verify_env "test-datagen-source-source-0" shared1 shared1=fromnamespace 2>&1)
