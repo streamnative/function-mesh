@@ -48,7 +48,8 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-verify_env_result=$(ci::verify_env "function-sample-env" global1 global1=globalvalue1 2>&1)
+# if the function defines the same env, it will use the value from the function instead of the backend config
+verify_env_result=$(ci::verify_env "function-sample-env-function-0" podenv podenv=podvalue 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_env_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -56,7 +57,15 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-verify_env_result=$(ci::verify_env "function-sample-env" namespaced1 namespaced1=namespacedvalue1 2>&1)
+verify_env_result=$(ci::verify_env "function-sample-env-function-0" global1 global1=globalvalue1 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_env_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+verify_env_result=$(ci::verify_env "function-sample-env-function-0" namespaced1 namespaced1=namespacedvalue1 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_env_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -65,7 +74,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # if global and namespaced config has same key, the value from namespace should be used
-verify_env_result=$(ci::verify_env "function-sample-env" shared1 shared1=fromnamespace 2>&1)
+verify_env_result=$(ci::verify_env "function-sample-env-function-0" shared1 shared1=fromnamespace 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_env_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -75,6 +84,30 @@ fi
 
 # verify liveness config
 verify_liveness_result=$(ci::verify_liveness_probe function-sample-env-function-0 '{"failureThreshold":3,"httpGet":{"path":"/","port":9094,"scheme":"HTTP"},"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":10}' 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_liveness_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# update the namespaced config, it should trigger the reconcile since the autoUpdate is true
+kubectl patch BackendConfig backend-config --type='json' -p='[{"op": "replace", "path": "/spec/env/shared1", "value": "newvalue"}]'
+sleep 30
+
+verify_env_result=$(ci::verify_env "function-sample-env-function-0" shared1 shared1=newvalue 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_env_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# the liveness probe should also be updated
+kubectl patch BackendConfig backend-config --type='json' -p='[{"op": "replace", "path": "/spec/pod/liveness/initialDelaySeconds", "value": 20}]'
+sleep 30
+
+verify_liveness_result=$(ci::verify_liveness_probe function-sample-env-function-0 '{"failureThreshold":3,"httpGet":{"path":"/","port":9094,"scheme":"HTTP"},"initialDelaySeconds":20,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":10}' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_liveness_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -93,21 +126,21 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-verify_env_result=$(ci::verify_env "function-sample-env" global1 global1=globalvalue1 2>&1)
+verify_env_result=$(ci::verify_env "function-sample-env-function-0" global1 global1=globalvalue1 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_env_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
-verify_env_result=$(ci::verify_env "function-sample-env" shared1 shared1=fromglobal 2>&1)
+verify_env_result=$(ci::verify_env "function-sample-env-function-0" shared1 shared1=fromglobal 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_env_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
-verify_env_result=$(ci::verify_env "function-sample-env" namespaced1 "" 2>&1)
+verify_env_result=$(ci::verify_env "function-sample-env-function-0" namespaced1 "" 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_env_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
@@ -133,7 +166,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-verify_env_result=$(ci::verify_env "function-sample-env" global1 "" 2>&1)
+verify_env_result=$(ci::verify_env "function-sample-env-function-0" global1 "" 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_env_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
@@ -167,7 +200,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-verify_env_result=$(ci::verify_env "function-sample-env" namespaced1 "" 2>&1)
+verify_env_result=$(ci::verify_env "function-sample-env-function-0" namespaced1 "" 2>&1)
 if [ $? -eq 0 ]; then
   echo "e2e-test: ok" | yq eval -
 else

@@ -598,7 +598,7 @@ function ci::verify_log_topic_with_auth() {
 }
 
 function ci::verify_env() {
-  pod="$1-function-0"
+  pod=$1
   key=$2
   expect=$3
   result=$(kubectl exec -n ${NAMESPACE} ${pod} -- env | grep "${key}")

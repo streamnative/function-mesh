@@ -24,8 +24,11 @@ import (
 
 	"github.com/streamnative/function-mesh/utils"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -335,4 +338,59 @@ func ConvertHPAV2ToV2beta2(hpa *autov2.HorizontalPodAutoscaler) *autoscalingv2be
 	}
 
 	return result
+}
+
+func getBackgroundDeletionPolicy() client.DeleteOption {
+	backgroundDeletion := metav1.DeletePropagationBackground
+	var deleteOptions client.DeleteOption = &client.DeleteOptions{
+		PropagationPolicy: &backgroundDeletion,
+	}
+	return deleteOptions
+}
+
+func listAndEnqueueRequests(ctx context.Context, mgr manager.Manager, list client.ObjectList, namespace string) ([]reconcile.Request, error) {
+	err := mgr.GetClient().List(ctx, list, client.InNamespace(namespace))
+	if err != nil {
+		mgr.GetLogger().Error(err, "failed to list resources in namespace: "+namespace)
+		return nil, err
+	}
+	requests := []reconcile.Request{}
+	items, err := meta.ExtractList(list)
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range items {
+		metaObj, err := meta.Accessor(item)
+		if err != nil {
+			return nil, err
+		}
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: metaObj.GetNamespace(), Name: metaObj.GetName()},
+		})
+	}
+	return requests, nil
+}
+
+func handleBackendConfigEnqueueRequests(mgr manager.Manager, object client.Object, listType client.ObjectList) []reconcile.Request {
+	backendConfig := object.(*v1alpha1.BackendConfig)
+	// if autoUpdate is false, we don't need to reconcile functions
+	if !backendConfig.Spec.AutoUpdate {
+		return nil
+	}
+
+	var namespace string
+	if object.GetName() == utils.GlobalBackendConfig && object.GetNamespace() == utils.GlobalBackendConfigNamespace {
+		namespace = ""
+	} else if object.GetName() == utils.NamespacedBackendConfig {
+		namespace = object.GetNamespace()
+	} else {
+		return nil
+	}
+
+	ctx := context.Background()
+	requests, err := listAndEnqueueRequests(ctx, mgr, listType, namespace)
+	if err != nil {
+		return nil
+	}
+	return requests
 }

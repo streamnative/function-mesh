@@ -22,12 +22,10 @@ import (
 	"time"
 
 	"github.com/streamnative/function-mesh/pkg/monitoring"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
 	v1 "k8s.io/api/batch/v1"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -188,37 +186,7 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	manager.Watches(&source.Kind{Type: &v1alpha1.BackendConfig{}}, handler.EnqueueRequestsFromMapFunc(
 		func(object client.Object) []reconcile.Request {
-			if object.GetName() == utils.GlobalBackendConfig && object.GetNamespace() == utils.GlobalBackendConfigNamespace {
-				ctx := context.Background()
-				functions := &v1alpha1.FunctionList{}
-				err := mgr.GetClient().List(ctx, functions)
-				if err != nil {
-					mgr.GetLogger().Error(err, "failed to list all functions")
-				}
-				var requests []reconcile.Request
-				for _, function := range functions.Items {
-					requests = append(requests, reconcile.Request{
-						NamespacedName: types.NamespacedName{Namespace: function.Namespace, Name: function.Name},
-					})
-				}
-				return requests
-			} else if object.GetName() == utils.NamespacedBackendConfig {
-				ctx := context.Background()
-				functions := &v1alpha1.FunctionList{}
-				err := mgr.GetClient().List(ctx, functions, client.InNamespace(object.GetNamespace()))
-				if err != nil {
-					mgr.GetLogger().Error(err, "failed to list functions in namespace: "+object.GetNamespace())
-				}
-				var requests []reconcile.Request
-				for _, function := range functions.Items {
-					requests = append(requests, reconcile.Request{
-						NamespacedName: types.NamespacedName{Namespace: function.Namespace, Name: function.Name},
-					})
-				}
-				return requests
-			} else {
-				return nil
-			}
+			return handleBackendConfigEnqueueRequests(mgr, object, &v1alpha1.FunctionList{})
 		}),
 	)
 
