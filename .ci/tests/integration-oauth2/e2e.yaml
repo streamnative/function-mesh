@@ -106,6 +106,9 @@ setup:
           resource: pod
           label-selector: app.kubernetes.io/name=function-mesh-operator
           for: condition=Ready
+    - name: apply global env config map
+      command: |
+        kubectl create -n ${FUNCTION_MESH_NAMESPACE} -f .ci/clusters/global_backend_config_without_env.yaml
   timeout: 60m
 
 cleanup:
@@ -139,4 +142,6 @@ verify:
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/batch-source/verify.sh
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration-oauth2/cases/google-pubsub-source/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration-oauth2/cases/global-and-namespaced-config/verify.sh
       expected: expected.data.yaml

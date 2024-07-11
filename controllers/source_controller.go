@@ -31,7 +31,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -191,36 +190,7 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	manager.Watches(&v1alpha1.BackendConfig{}, handler.EnqueueRequestsFromMapFunc(
 		func(ctx context.Context, object client.Object) []reconcile.Request {
-			if object.GetName() == utils.GlobalBackendConfig && object.GetNamespace() == utils.GlobalBackendConfigNamespace {
-				sources := &v1alpha1.SourceList{}
-				err := mgr.GetClient().List(ctx, sources)
-				if err != nil {
-					mgr.GetLogger().Error(err, "failed to list all sources")
-				}
-				var requests []reconcile.Request
-				for _, source := range sources.Items {
-					requests = append(requests, reconcile.Request{
-						NamespacedName: types.NamespacedName{Namespace: source.Namespace, Name: source.Name},
-					})
-				}
-				return requests
-			} else if object.GetName() == utils.NamespacedBackendConfig {
-				ctx := context.Background()
-				sources := &v1alpha1.SourceList{}
-				err := mgr.GetClient().List(ctx, sources, client.InNamespace(object.GetNamespace()))
-				if err != nil {
-					mgr.GetLogger().Error(err, "failed to list sources in namespace: "+object.GetNamespace())
-				}
-				var requests []reconcile.Request
-				for _, source := range sources.Items {
-					requests = append(requests, reconcile.Request{
-						NamespacedName: types.NamespacedName{Namespace: source.Namespace, Name: source.Name},
-					})
-				}
-				return requests
-			} else {
-				return nil
-			}
+			return handleBackendConfigEnqueueRequests(mgr, object, &v1alpha1.SourceList{})
 		}),
 	)
 	return manager.Complete(r)

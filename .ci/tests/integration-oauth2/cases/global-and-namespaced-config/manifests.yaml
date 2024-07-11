@@ -1,0 +1,50 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Sink
+metadata:
+  name: test-datagen-sink
+spec:
+  autoAck: true
+  className: org.apache.pulsar.io.datagenerator.DataGeneratorPrintSink
+  clusterName: test-pulsar
+  image: docker.io/streamnative/pulsar-io-data-generator:3.2.2.1
+  input:
+    sourceSpecs:
+      public/default/datagen:
+        receiverQueueSize: 1000
+    topics:
+      - public/default/datagen
+    typeClassName: org.apache.pulsar.io.datagenerator.Person
+  java:
+    extraDependenciesDir: /pulsar/lib
+    jar: connectors/pulsar-io-data-generator-3.2.2.1.nar
+  minReplicas: 1
+  namespace: default
+  processingGuarantee: atleast_once
+  sinkConfig: {}
+  pulsar:
+    authConfig:
+      oauth2Config:
+        audience: urn:sn:pulsar:sndev:test
+        issuerUrl: https://auth.sncloud-stg.dev/
+        keySecretName: sn-platform-oauth2-private-key
+        keySecretKey: auth.json
+    pulsarConfig: test-sink
+  replicas: 1
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+    requests:
+      cpu: "0.1"
+      memory: 1G
+  subscriptionName: mysub
+  subscriptionPosition: latest
+  tenant: public
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-sink
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
