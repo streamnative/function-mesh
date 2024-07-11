@@ -101,6 +101,7 @@ setup:
           resource: pod
           label-selector: app.kubernetes.io/name=function-mesh-operator
           for: condition=Ready
+
     - name: apply global env config map
       command: |
         kubectl create -n ${FUNCTION_MESH_NAMESPACE} -f .ci/clusters/global_backend_config.yaml

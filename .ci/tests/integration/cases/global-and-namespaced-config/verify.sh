@@ -92,7 +92,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # update the namespaced config, it should trigger the reconcile since the autoUpdate is true
-kubectl patch BackendConfig backend-config --type='json' -p='[{"op": "replace", "path": "/spec/env/shared1", "value": "newvalue"}]'
+kubectl patch BackendConfig backend-config --type='json' -p='[{"op": "replace", "path": "/spec/env/shared1", "value": "newvalue"}]' > /dev/null 2>&1
 sleep 30
 
 verify_env_result=$(ci::verify_env "function-sample-env-function-0" shared1 shared1=newvalue 2>&1)
@@ -104,7 +104,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # the liveness probe should also be updated
-kubectl patch BackendConfig backend-config --type='json' -p='[{"op": "replace", "path": "/spec/pod/liveness/initialDelaySeconds", "value": 20}]'
+kubectl patch BackendConfig backend-config --type='json' -p='[{"op": "replace", "path": "/spec/pod/liveness/initialDelaySeconds", "value": 20}]' > /dev/null 2>&1
 sleep 30
 
 verify_liveness_result=$(ci::verify_liveness_probe function-sample-env-function-0 '{"failureThreshold":3,"httpGet":{"path":"/","port":9094,"scheme":"HTTP"},"initialDelaySeconds":20,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":10}' 2>&1)
