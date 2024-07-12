@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.17.3
+VERSION ?= 0.17.4
 # Default image tag
 DOCKER_REPO := $(if $(DOCKER_REPO),$(DOCKER_REPO),streamnative)
 OPERATOR_IMG ?= ${DOCKER_REPO}/function-mesh:v$(VERSION)
