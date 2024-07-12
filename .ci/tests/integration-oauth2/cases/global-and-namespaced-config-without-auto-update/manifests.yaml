@@ -1,0 +1,47 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Source
+metadata:
+  name: test-datagen-source
+spec:
+  className: org.apache.pulsar.io.datagenerator.DataGeneratorSource
+  clusterName: test-pulsar
+  forwardSourceMessageProperty: true
+  image: docker.io/streamnative/pulsar-io-data-generator:3.2.2.1
+  java:
+    extraDependenciesDir: /pulsar/lib
+    jar: connectors/pulsar-io-data-generator-3.2.2.1.nar
+  minReplicas: 1
+  name: test-datagen-source
+  namespace: default
+  output:
+    producerConf: {}
+    topic: public/default/test-datagen-source
+    typeClassName: org.apache.pulsar.io.datagenerator.Person
+  processingGuarantee: atleast_once
+  pulsar:
+    authConfig:
+      oauth2Config:
+        audience: urn:sn:pulsar:sndev:test
+        issuerUrl: https://auth.sncloud-stg.dev/
+        keySecretName: sn-platform-oauth2-private-key
+        keySecretKey: auth.json
+    pulsarConfig: test-source
+  replicas: 1
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+    requests:
+      cpu: "0.1"
+      memory: 1G
+  sourceConfig:
+    sleepBetweenMessages: "5000"
+  tenant: public
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-source
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650

@@ -26,6 +26,8 @@ spec:
             type: object
           spec:
             properties:
+              autoUpdate:
+                type: boolean
               env:
                 additionalProperties:
                   type: string

@@ -4,7 +4,6 @@ metadata:
   name: backend-config
   namespace: default
 spec:
-  autoUpdate: true
   env:
     namespaced1: namespacedvalue1
     shared1: fromnamespace
