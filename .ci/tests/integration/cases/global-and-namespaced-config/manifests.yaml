@@ -15,6 +15,10 @@ spec:
     topics:
       - persistent://public/default/input-java-topic
     typeClassName: java.lang.String
+  pod:
+    env:
+      - name: "podenv"
+        value: "podvalue"
   output:
     topic: persistent://public/default/output-java-topic
     typeClassName: java.lang.String

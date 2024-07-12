@@ -128,6 +128,10 @@ const (
 	DefaultFilebeatImage  = "streamnative/filebeat:v0.6.0-rc7"
 
 	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
+
+	FunctionContainerName = "pulsar-function"
+	SinkContainerName     = "pulsar-sink"
+	SourceContainerName   = "pulsar-source"
 )
 
 //go:embed template/java-runtime-log4j.xml.tmpl
@@ -285,6 +289,7 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 	globalBackendConfigVersion := ""
 	namespacedBackendConfigVersion := ""
 	envData := make(map[string]string)
+	var liveness *v1alpha1.Liveness = nil
 
 	if utils.GlobalBackendConfig != "" && utils.GlobalBackendConfigNamespace != "" {
 		globalBackendConfig := &v1alpha1.BackendConfig{}
@@ -301,6 +306,11 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 			globalBackendConfigVersion = globalBackendConfig.ResourceVersion
 			for key, val := range globalBackendConfig.Spec.Env {
 				envData[key] = val
+			}
+			if globalBackendConfig.Spec.Pod != nil {
+				if globalBackendConfig.Spec.Pod.Liveness != nil {
+					liveness = globalBackendConfig.Spec.Pod.Liveness
+				}
 			}
 		}
 	}
@@ -322,14 +332,16 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 			for key, val := range namespacedBackendConfig.Spec.Env {
 				envData[key] = val
 			}
+			if namespacedBackendConfig.Spec.Pod != nil {
+				if namespacedBackendConfig.Spec.Pod.Liveness != nil {
+					liveness = namespacedBackendConfig.Spec.Pod.Liveness
+				}
+			}
 		}
 	}
 
 	// merge env
-	if len(envData) == 0 {
-		return globalBackendConfigVersion, namespacedBackendConfigVersion, nil
-	}
-	globalEnvs := make([]corev1.EnvVar, 0, len(envData))
+	globalEnvs := []corev1.EnvVar{}
 	for key, val := range envData {
 		globalEnvs = append(globalEnvs, corev1.EnvVar{
 			Name:  key,
@@ -337,8 +349,21 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 		})
 	}
 	for i := range statefulSet.Spec.Template.Spec.Containers {
-		statefulSet.Spec.Template.Spec.Containers[i].Env = append(statefulSet.Spec.Template.Spec.Containers[i].Env,
-			globalEnvs...)
+		container := &statefulSet.Spec.Template.Spec.Containers[i]
+		if len(globalEnvs) > 0 {
+			container.Env = append(globalEnvs, container.Env...)
+		}
+
+		// configs which only work for the workload container
+		switch container.Name {
+		case FunctionContainerName, SinkContainerName, SourceContainerName:
+			// set liveness probe if it's not set
+			if container.LivenessProbe == nil && liveness != nil {
+				container.LivenessProbe = MakeLivenessProbe(liveness)
+			}
+		default:
+			// No action needed for other containers
+		}
 	}
 
 	return globalBackendConfigVersion, namespacedBackendConfigVersion, nil
@@ -2057,6 +2082,7 @@ func CheckIfStatefulSetSpecIsEqual(spec *appsv1.StatefulSetSpec, desiredSpec *ap
 				if !reflect.DeepEqual(container.Command, desiredContainer.Command) ||
 					container.Image != desiredContainer.Image ||
 					container.ImagePullPolicy != desiredContainer.ImagePullPolicy ||
+					container.LivenessProbe != desiredContainer.LivenessProbe ||
 					!reflect.DeepEqual(ports, desiredPorts) ||
 					!reflect.DeepEqual(containerEnvFrom, desiredContainerEnvFrom) ||
 					!reflect.DeepEqual(container.Resources, desiredContainer.Resources) {

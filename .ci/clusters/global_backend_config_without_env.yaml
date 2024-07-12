@@ -1,0 +1,10 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: BackendConfig
+metadata:
+  name: global-backend-config
+spec:
+  autoUpdate: true
+  pod:
+    liveness:
+      initialDelaySeconds: 10
+      periodSeconds: 30

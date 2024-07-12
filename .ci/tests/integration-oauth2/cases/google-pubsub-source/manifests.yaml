@@ -1,0 +1,62 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Source
+metadata:
+  name: pubsub-source
+  namespace: default
+spec:
+  className: org.apache.pulsar.ecosystem.io.pubsub.PubsubSource
+  clusterName: test-pulsar
+  forwardSourceMessageProperty: true
+  image: streamnative/pulsar-functions-pulsarctl-java-runner:3.2.2.1
+  java:
+    jar: /tmp/pulsar-io-google-pubsub.nar
+    jarLocation: function://public/default/pubsub
+  minReplicas: 1
+  name: test
+  namespace: default
+  output:
+    producerConf: {}
+    topic: persistent://public/default/test-pubsub-output
+    typeClassName: '[B'
+  processingGuarantee: atleast_once
+  pulsar:
+    pulsarConfig: test-pulsar
+    authConfig:
+      oauth2Config:
+        audience: urn:sn:pulsar:sndev:test
+        issuerUrl: https://auth.sncloud-stg.dev/
+        keySecretName: sn-platform-oauth2-private-key
+        keySecretKey: auth.json
+  replicas: 1
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: 1.1G
+    requests:
+      cpu: "0.1"
+      memory: 1G
+  secretsMap:
+    pubsubCredential:
+      key: GCP_KEY
+      path: gcp-account
+  sourceConfig:
+    pubsubProjectId: sncloud-dev-pengcheng
+    pubsubTopicId: test-input
+  tenant: public
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
+---
+apiVersion: v1
+data:
+  GCP_KEY: GCP_KEY_DATA
+kind: Secret
+metadata:
+  name: gcp-account
+  namespace: default
+type: Opaque

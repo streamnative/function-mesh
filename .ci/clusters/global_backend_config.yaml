@@ -3,6 +3,11 @@ kind: BackendConfig
 metadata:
   name: global-backend-config
 spec:
+  autoUpdate: true
   env:
     global1: globalvalue1
     shared1: fromglobal
+  pod:
+    liveness:
+      initialDelaySeconds: 10
+      periodSeconds: 30

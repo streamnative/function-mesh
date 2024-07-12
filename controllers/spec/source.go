@@ -96,7 +96,7 @@ func makeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
-		Name:            "pulsar-source",
+		Name:            SourceContainerName,
 		Image:           getSourceRunnerImage(&source.Spec),
 		Command:         makeSourceCommand(source),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},

@@ -33,6 +33,20 @@ type BackendConfigSpec struct {
 
 	// +kubebuilder:validation:Optional
 	Env map[string]string `json:"env,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Pod *BackendConfigPodPolicy `json:"pod,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// indicate whether auto update functions&sinks&source when the BackendConfig is updated
+	AutoUpdate bool `json:"autoUpdate,omitempty"`
+}
+
+// BackendConfigPodPolicy defines the policy for the pod
+// TODO: Support more fields from PodPolicy
+type BackendConfigPodPolicy struct {
+	// +kubebuilder:validation:Optional
+	Liveness *Liveness `json:"liveness,omitempty"`
 }
 
 // BackendConfigStatus defines the observed state of BackendConfig

@@ -4,6 +4,12 @@ metadata:
   name: backend-config
   namespace: default
 spec:
+  autoUpdate: true
   env:
     namespaced1: namespacedvalue1
     shared1: fromnamespace
+    podenv: backendconfigvalue
+  pod:
+    liveness:
+      initialDelaySeconds: 30
+      periodSeconds: 10

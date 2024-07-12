@@ -1,0 +1,11 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: BackendConfig
+metadata:
+  name: backend-config
+  namespace: kube-system
+spec:
+  autoUpdate: true
+  pod:
+    liveness:
+      initialDelaySeconds: 50
+      periodSeconds: 60
