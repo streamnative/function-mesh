@@ -36,6 +36,10 @@ type BackendConfigSpec struct {
 
 	// +kubebuilder:validation:Optional
 	Pod *BackendConfigPodPolicy `json:"pod,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// indicate whether auto update functions&sinks&source when the BackendConfig is updated
+	AutoUpdate bool `json:"autoUpdate,omitempty"`
 }
 
 // BackendConfigPodPolicy defines the policy for the pod

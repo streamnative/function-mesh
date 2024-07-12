@@ -341,10 +341,7 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 	}
 
 	// merge env
-	if len(envData) == 0 {
-		return globalBackendConfigVersion, namespacedBackendConfigVersion, nil
-	}
-	globalEnvs := make([]corev1.EnvVar, 0, len(envData))
+	globalEnvs := []corev1.EnvVar{}
 	for key, val := range envData {
 		globalEnvs = append(globalEnvs, corev1.EnvVar{
 			Name:  key,
@@ -353,7 +350,9 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 	}
 	for i := range statefulSet.Spec.Template.Spec.Containers {
 		container := &statefulSet.Spec.Template.Spec.Containers[i]
-		container.Env = append(container.Env, globalEnvs...)
+		if len(globalEnvs) > 0 {
+			container.Env = append(globalEnvs, container.Env...)
+		}
 
 		// configs which only work for the workload container
 		switch container.Name {
@@ -2083,6 +2082,7 @@ func CheckIfStatefulSetSpecIsEqual(spec *appsv1.StatefulSetSpec, desiredSpec *ap
 				if !reflect.DeepEqual(container.Command, desiredContainer.Command) ||
 					container.Image != desiredContainer.Image ||
 					container.ImagePullPolicy != desiredContainer.ImagePullPolicy ||
+					container.LivenessProbe != desiredContainer.LivenessProbe ||
 					!reflect.DeepEqual(ports, desiredPorts) ||
 					!reflect.DeepEqual(containerEnvFrom, desiredContainerEnvFrom) ||
 					!reflect.DeepEqual(container.Resources, desiredContainer.Resources) {
