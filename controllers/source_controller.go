@@ -21,14 +21,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/streamnative/function-mesh/pkg/monitoring"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	k8ssource "sigs.k8s.io/controller-runtime/pkg/source"
-
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/spec"
+	"github.com/streamnative/function-mesh/pkg/monitoring"
 	"github.com/streamnative/function-mesh/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/batch/v1"
@@ -40,8 +36,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	k8ssource "sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // SourceReconciler reconciles a Source object
@@ -190,37 +188,7 @@ func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	manager.Watches(&k8ssource.Kind{Type: &v1alpha1.BackendConfig{}}, handler.EnqueueRequestsFromMapFunc(
 		func(object client.Object) []reconcile.Request {
-			if object.GetName() == utils.GlobalBackendConfig && object.GetNamespace() == utils.GlobalBackendConfigNamespace {
-				ctx := context.Background()
-				sources := &v1alpha1.SourceList{}
-				err := mgr.GetClient().List(ctx, sources)
-				if err != nil {
-					mgr.GetLogger().Error(err, "failed to list all sources")
-				}
-				var requests []reconcile.Request
-				for _, source := range sources.Items {
-					requests = append(requests, reconcile.Request{
-						NamespacedName: types.NamespacedName{Namespace: source.Namespace, Name: source.Name},
-					})
-				}
-				return requests
-			} else if object.GetName() == utils.NamespacedBackendConfig {
-				ctx := context.Background()
-				sources := &v1alpha1.SourceList{}
-				err := mgr.GetClient().List(ctx, sources, client.InNamespace(object.GetNamespace()))
-				if err != nil {
-					mgr.GetLogger().Error(err, "failed to list sources in namespace: "+object.GetNamespace())
-				}
-				var requests []reconcile.Request
-				for _, source := range sources.Items {
-					requests = append(requests, reconcile.Request{
-						NamespacedName: types.NamespacedName{Namespace: source.Namespace, Name: source.Name},
-					})
-				}
-				return requests
-			} else {
-				return nil
-			}
+			return handleBackendConfigEnqueueRequests(mgr, object, &v1alpha1.SourceList{})
 		}),
 	)
 	return manager.Complete(r)

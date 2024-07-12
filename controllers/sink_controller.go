@@ -22,12 +22,10 @@ import (
 	"time"
 
 	"github.com/streamnative/function-mesh/pkg/monitoring"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
 	v1 "k8s.io/api/batch/v1"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -192,37 +190,7 @@ func (r *SinkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	manager.Watches(&source.Kind{Type: &v1alpha1.BackendConfig{}}, handler.EnqueueRequestsFromMapFunc(
 		func(object client.Object) []reconcile.Request {
-			if object.GetName() == utils.GlobalBackendConfig && object.GetNamespace() == utils.GlobalBackendConfigNamespace {
-				ctx := context.Background()
-				sinks := &v1alpha1.SinkList{}
-				err := mgr.GetClient().List(ctx, sinks)
-				if err != nil {
-					mgr.GetLogger().Error(err, "failed to list all sinks")
-				}
-				var requests []reconcile.Request
-				for _, sink := range sinks.Items {
-					requests = append(requests, reconcile.Request{
-						NamespacedName: types.NamespacedName{Namespace: sink.Namespace, Name: sink.Name},
-					})
-				}
-				return requests
-			} else if object.GetName() == utils.NamespacedBackendConfig {
-				ctx := context.Background()
-				sinks := &v1alpha1.SinkList{}
-				err := mgr.GetClient().List(ctx, sinks, client.InNamespace(object.GetNamespace()))
-				if err != nil {
-					mgr.GetLogger().Error(err, "failed to list sinks in namespace: "+object.GetNamespace())
-				}
-				var requests []reconcile.Request
-				for _, sink := range sinks.Items {
-					requests = append(requests, reconcile.Request{
-						NamespacedName: types.NamespacedName{Namespace: sink.Namespace, Name: sink.Name},
-					})
-				}
-				return requests
-			} else {
-				return nil
-			}
+			return handleBackendConfigEnqueueRequests(mgr, object, &v1alpha1.SinkList{})
 		}),
 	)
 
