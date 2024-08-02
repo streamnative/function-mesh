@@ -20,8 +20,6 @@ package spec
 import (
 	"bytes"
 	"context"
-
-	// used for template
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -125,7 +123,7 @@ const (
 	DefaultPythonLogConfigPath   = PythonLogConifgDirectory + PythonLogConfigFile
 
 	DefaultFilebeatConfig = "/usr/share/filebeat/config/filebeat.yaml"
-	DefaultFilebeatImage  = "streamnative/filebeat:v0.6.0-rc7"
+	DefaultFilebeatImage  = "streamnative/filebeat:v0.6.0"
 
 	EnvGoFunctionLogLevel = "LOGGING_LEVEL"
 
@@ -1114,7 +1112,7 @@ func parseJavaLogLevel(runtime *v1alpha1.JavaRuntime) string {
 		v1alpha1.LogLevelFatal: "FATAL",
 		v1alpha1.LogLevelOff:   "OFF",
 	}
-	if runtime.Log != nil && runtime.Log.Level != "" && runtime.Log.LogConfig == nil {
+	if runtime.Log != nil && runtime.Log.Level != "" {
 		if level, exist := levelMap[runtime.Log.Level]; exist {
 			return level
 		}
