@@ -3,6 +3,7 @@ filebeat.inputs:
   paths:
   - /pulsar/logs/functions/*.log
 output.pulsar:
+  fast_fail: true
   url: \${brokerServiceURL}
   topic: \${logTopic}
   name: \${logName}
