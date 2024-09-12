@@ -177,7 +177,7 @@ type PodPolicy struct {
 
 	// TerminationGracePeriodSeconds is the amount of time that kubernetes will give
 	// for a pod before terminating it.
-	TerminationGracePeriodSeconds int64 `json:"terminationGracePeriodSeconds,omitempty"`
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 
 	// List of volumes that can be mounted by containers belonging to the pod.
 	// More info: https://kubernetes.io/docs/concepts/storage/volumes
