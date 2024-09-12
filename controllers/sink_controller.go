@@ -98,6 +98,13 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		sink.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 	}
 
+	isNewGeneration := r.checkIfSinkGenerationsIsIncreased(sink)
+
+	// skip reconcile if pauseRollout is set to true and the generation is not increased
+	if spec.IsPauseRollout(sink) && !isNewGeneration {
+		return ctrl.Result{}, nil
+	}
+
 	err = r.ObserveSinkStatefulSet(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -128,8 +135,6 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		r.Log.Error(err, "failed to update sink status")
 		return ctrl.Result{}, err
 	}
-
-	isNewGeneration := r.checkIfSinkGenerationsIsIncreased(sink)
 
 	err = r.ApplySinkStatefulSet(ctx, sink, isNewGeneration)
 	if err != nil {

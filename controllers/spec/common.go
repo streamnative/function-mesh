@@ -99,6 +99,7 @@ const (
 	AnnotationPrometheusScrape = "prometheus.io/scrape"
 	AnnotationPrometheusPort   = "prometheus.io/port"
 	AnnotationManaged          = "compute.functionmesh.io/managed"
+	AnnotationPauseRollout     = "compute.functionmesh.io/pause-rollout"
 	AnnotationNeedCleanup      = "compute.functionmesh.io/need-cleanup"
 
 	// if labels contains below, we think it comes from function-mesh-worker-service
@@ -169,6 +170,11 @@ type TLSConfig interface {
 func IsManaged(object metav1.Object) bool {
 	managed, exists := object.GetAnnotations()[AnnotationManaged]
 	return !exists || managed != "false"
+}
+
+func IsPauseRollout(object metav1.Object) bool {
+	pauseRollout, exists := object.GetAnnotations()[AnnotationPauseRollout]
+	return exists && pauseRollout == "true"
 }
 
 func NeedCleanup(object metav1.Object) bool {
