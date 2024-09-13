@@ -125,6 +125,7 @@ type FunctionStatus struct {
 	ObservedGeneration              int64                           `json:"observedGeneration,omitempty"`
 	GlobalBackendConfigRevision     string                          `json:"globalBackendConfigRevision,omitempty"`
 	NamespacedBackendConfigRevision string                          `json:"namespacedBackendConfigRevision,omitempty"`
+	PendingChange                   string                          `json:"pendingChange,omitempty"`
 }
 
 // +genclient

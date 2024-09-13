@@ -40,8 +40,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
@@ -2373,4 +2375,23 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 			RunAsUser:                &uid,
 		},
 	}
+}
+
+func CreateDiff(orj, modified runtime.Object) (string, error) {
+	orjCopy := orj.DeepCopyObject()
+	modifiedCopy := modified.DeepCopyObject()
+
+	orjData, err := json.Marshal(orjCopy)
+	if err != nil {
+		return "", fmt.Errorf("marshal origin %w", err)
+	}
+	modifiedData, err := json.Marshal(modifiedCopy)
+	if err != nil {
+		return "", fmt.Errorf("marshal modified %w", err)
+	}
+	patch, err := strategicpatch.CreateTwoWayMergePatch(orjData, modifiedData, orj)
+	if err != nil {
+		return "", fmt.Errorf("create diff %w", err)
+	}
+	return string(patch), nil
 }

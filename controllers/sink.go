@@ -425,6 +425,11 @@ func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(ctx context.Context, state
 	if err != nil {
 		return false, err
 	}
+	diff, err := spec.CreateDiff(statefulSet, desiredStatefulSet)
+	if err != nil {
+		return false, err
+	}
+	sink.Status.PendingChange = diff
 	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &desiredStatefulSet.Spec), nil
 }
 

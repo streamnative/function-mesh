@@ -112,6 +112,8 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
+	} else {
+		sink.Status.PendingChange = ""
 	}
 
 	err = r.ObserveSinkService(ctx, sink)

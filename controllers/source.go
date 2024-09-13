@@ -427,6 +427,11 @@ func (r *SourceReconciler) checkIfStatefulSetNeedUpdate(ctx context.Context, sta
 	if err != nil {
 		return false, err
 	}
+	diff, err := spec.CreateDiff(statefulSet, desiredStatefulSet)
+	if err != nil {
+		return false, err
+	}
+	source.Status.PendingChange = diff
 	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &desiredStatefulSet.Spec), nil
 }
 

@@ -112,6 +112,8 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
+	} else {
+		source.Status.PendingChange = ""
 	}
 
 	err = r.ObserveSourceService(ctx, source)

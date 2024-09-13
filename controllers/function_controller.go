@@ -113,6 +113,8 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
+	} else {
+		function.Status.PendingChange = ""
 	}
 
 	err = r.ObserveFunctionService(ctx, function)
