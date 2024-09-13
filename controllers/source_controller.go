@@ -100,15 +100,15 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	isNewGeneration := r.checkIfSourceGenerationsIsIncreased(source)
 
+	err = r.ObserveSourceStatefulSet(ctx, source)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	// skip reconcile if pauseRollout is set to true and the generation is not increased
 	if spec.IsPauseRollout(source) && !isNewGeneration {
 		return ctrl.Result{}, nil
 	}
 
-	err = r.ObserveSourceStatefulSet(ctx, source)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
 	err = r.ObserveSourceService(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err

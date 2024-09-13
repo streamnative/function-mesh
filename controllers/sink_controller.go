@@ -100,15 +100,15 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	isNewGeneration := r.checkIfSinkGenerationsIsIncreased(sink)
 
+	err = r.ObserveSinkStatefulSet(ctx, sink)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	// skip reconcile if pauseRollout is set to true and the generation is not increased
 	if spec.IsPauseRollout(sink) && !isNewGeneration {
 		return ctrl.Result{}, nil
 	}
 
-	err = r.ObserveSinkStatefulSet(ctx, sink)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
 	err = r.ObserveSinkService(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err

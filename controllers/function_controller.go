@@ -101,15 +101,15 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	isNewGeneration := r.checkIfFunctionGenerationsIsIncreased(function)
 
+	err = r.ObserveFunctionStatefulSet(ctx, function)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	// skip reconcile if pauseRollout is set to true and the generation is not increased
 	if spec.IsPauseRollout(function) && !isNewGeneration {
 		return ctrl.Result{}, nil
 	}
 
-	err = r.ObserveFunctionStatefulSet(ctx, function)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
 	err = r.ObserveFunctionService(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
