@@ -106,6 +106,11 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	// skip reconcile if pauseRollout is set to true and the generation is not increased
 	if spec.IsPauseRollout(source) && !isNewGeneration {
+		err = r.Status().Update(ctx, source)
+		if err != nil {
+			r.Log.Error(err, "failed to update source status after observing statefulset")
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{}, nil
 	}
 

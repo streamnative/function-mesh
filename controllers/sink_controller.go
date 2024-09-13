@@ -106,6 +106,11 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 	// skip reconcile if pauseRollout is set to true and the generation is not increased
 	if spec.IsPauseRollout(sink) && !isNewGeneration {
+		err = r.Status().Update(ctx, sink)
+		if err != nil {
+			r.Log.Error(err, "failed to update sink status after observing statefulset")
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{}, nil
 	}
 

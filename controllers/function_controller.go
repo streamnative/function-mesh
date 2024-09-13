@@ -107,6 +107,11 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 	// skip reconcile if pauseRollout is set to true and the generation is not increased
 	if spec.IsPauseRollout(function) && !isNewGeneration {
+		err = r.Status().Update(ctx, function)
+		if err != nil {
+			r.Log.Error(err, "failed to update function status after observing statefulset")
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{}, nil
 	}
 
