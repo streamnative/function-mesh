@@ -516,8 +516,9 @@ func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/",
-				Port: intstr.FromInt32(MetricsPort.ContainerPort),
+				Path:   "/",
+				Port:   intstr.FromInt32(MetricsPort.ContainerPort),
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: initialDelay,
@@ -2087,7 +2088,7 @@ func CheckIfStatefulSetSpecIsEqual(spec *appsv1.StatefulSetSpec, desiredSpec *ap
 				if !reflect.DeepEqual(container.Command, desiredContainer.Command) ||
 					container.Image != desiredContainer.Image ||
 					container.ImagePullPolicy != desiredContainer.ImagePullPolicy ||
-					container.LivenessProbe != desiredContainer.LivenessProbe ||
+					!reflect.DeepEqual(container.LivenessProbe, desiredContainer.LivenessProbe) ||
 					!reflect.DeepEqual(ports, desiredPorts) ||
 					!reflect.DeepEqual(containerEnvFrom, desiredContainerEnvFrom) ||
 					!reflect.DeepEqual(container.Resources, desiredContainer.Resources) {
