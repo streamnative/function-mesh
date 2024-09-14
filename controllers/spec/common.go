@@ -40,7 +40,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -2377,9 +2376,11 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 	}
 }
 
-func CreateDiff(orj, modified runtime.Object) (string, error) {
-	orjCopy := orj.DeepCopyObject()
-	modifiedCopy := modified.DeepCopyObject()
+func CreateDiff(orj, modified *appsv1.StatefulSet) (string, error) {
+	orjCopy := orj.DeepCopyObject().(*appsv1.StatefulSet)
+	modifiedCopy := modified.DeepCopyObject().(*appsv1.StatefulSet)
+	modifiedCopy.Status = orjCopy.Status
+	modifiedCopy.ObjectMeta = orjCopy.ObjectMeta
 
 	orjData, err := json.Marshal(orjCopy)
 	if err != nil {
@@ -2389,7 +2390,7 @@ func CreateDiff(orj, modified runtime.Object) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("marshal modified %w", err)
 	}
-	patch, err := strategicpatch.CreateTwoWayMergePatch(orjData, modifiedData, orj)
+	patch, err := strategicpatch.CreateTwoWayMergePatch(orjData, modifiedData, orjCopy)
 	if err != nil {
 		return "", fmt.Errorf("create diff %w", err)
 	}
