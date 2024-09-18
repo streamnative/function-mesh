@@ -416,7 +416,7 @@ func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Cont
 		Spec: corev1.PodSpec{
 			InitContainers:                initContainers,
 			Containers:                    containers,
-			TerminationGracePeriodSeconds: &policy.TerminationGracePeriodSeconds,
+			TerminationGracePeriodSeconds: policy.TerminationGracePeriodSeconds,
 			Volumes:                       volumes,
 			NodeSelector:                  policy.NodeSelector,
 			Affinity:                      policy.Affinity,
