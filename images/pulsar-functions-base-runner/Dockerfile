@@ -1,7 +1,7 @@
 ARG PULSAR_IMAGE
 ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
-FROM alpine:3.20 as functions-runner
+FROM alpine:3.20.3 as functions-runner
 
 ENV GID=10001
 ENV UID=10000
