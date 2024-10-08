@@ -14,7 +14,7 @@ Configuration:
       target: SYSTEM_OUT
       {{ if .Format | eq "json" }}
       JSONLayout:
-        complete: true
+        complete: false
         compact: true
         eventEol: true
       {{ else }}
@@ -28,7 +28,7 @@ Configuration:
       filePattern: \"\${sys:pulsar.function.log.dir}/\${sys:pulsar.function.log.file}.%d{yyyy-MM-dd}-%i.log.gz\"
       {{ if .Format | eq "json" }}
       JSONLayout:
-        complete: true
+        complete: false
         compact: true
         eventEol: true
       {{ else }}
