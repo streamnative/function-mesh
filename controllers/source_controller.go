@@ -98,10 +98,24 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		source.Status.Conditions = make(map[v1alpha1.Component]v1alpha1.ResourceCondition)
 	}
 
+	isNewGeneration := r.checkIfSourceGenerationsIsIncreased(source)
+
 	err = r.ObserveSourceStatefulSet(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	// skip reconcile if pauseRollout is set to true and the generation is not increased
+	if spec.IsPauseRollout(source) && !isNewGeneration {
+		err = r.Status().Update(ctx, source)
+		if err != nil {
+			r.Log.Error(err, "failed to update source status after observing statefulset")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	} else {
+		source.Status.PendingChange = ""
+	}
+
 	err = r.ObserveSourceService(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -128,8 +142,6 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		r.Log.Error(err, "failed to update source status")
 		return ctrl.Result{}, err
 	}
-
-	isNewGeneration := r.checkIfSourceGenerationsIsIncreased(source)
 
 	err = r.ApplySourceStatefulSet(ctx, source, isNewGeneration)
 	if err != nil {

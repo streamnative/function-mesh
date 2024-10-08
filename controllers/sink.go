@@ -425,7 +425,15 @@ func (r *SinkReconciler) checkIfStatefulSetNeedUpdate(ctx context.Context, state
 	if err != nil {
 		return false, err
 	}
-	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &desiredStatefulSet.Spec), nil
+	needUpdate := !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &desiredStatefulSet.Spec)
+	if needUpdate {
+		diff, err := spec.CreateDiff(statefulSet, desiredStatefulSet)
+		if err != nil {
+			return needUpdate, err
+		}
+		sink.Status.PendingChange = diff
+	}
+	return needUpdate, nil
 }
 
 func (r *SinkReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler, sink *v1alpha1.Sink) bool {
