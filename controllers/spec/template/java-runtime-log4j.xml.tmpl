@@ -17,7 +17,7 @@
             <target>SYSTEM_OUT</target>
             {{ if .Format | eq "json" }}
             <JSONLayout>
-                <complete>true</complete>
+                <complete>false</complete>
                 <compact>true</compact>
                 <eventEol>true</eventEol>
             </JSONLayout>
@@ -34,7 +34,7 @@
             <filePattern>\${sys:pulsar.function.log.dir}/\${sys:pulsar.function.log.file}.%d{yyyy-MM-dd-hh-mm}-%i.log.gz</filePattern>
             {{ if .Format | eq "json" }}
             <JSONLayout>
-                <complete>true</complete>
+                <complete>false</complete>
                 <compact>true</compact>
                 <eventEol>true</eventEol>
             </JSONLayout>
