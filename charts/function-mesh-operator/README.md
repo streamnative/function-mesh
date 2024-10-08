@@ -1,6 +1,6 @@
 # function-mesh-operator
 
-![Version: 0.2.28](https://img.shields.io/badge/Version-0.2.28-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.22.0-rc-1](https://img.shields.io/badge/AppVersion-0.22.0--rc--1-informational?style=flat-square)
+![Version: 0.2.28](https://img.shields.io/badge/Version-0.2.28-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.22.0](https://img.shields.io/badge/AppVersion-0.22.0--rc--1-informational?style=flat-square)
 
 function mesh operator Helm chart for Kubernetes
 
@@ -50,7 +50,7 @@ function mesh operator Helm chart for Kubernetes
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | imagePullSecrets | list | `[]` |  |
 | installation.namespace | string | `"function-mesh-system"` |  |
-| operatorImage | string | `"streamnative/function-mesh:v0.22.0-rc-1"` |  |
+| operatorImage | string | `"streamnative/function-mesh:v0.22.0"` |  |
 | rbac.create | bool | `true` |  |
 
 ----------------------------------------------

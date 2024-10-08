@@ -1,4 +1,15 @@
-# Function Mesh v0.20.0 Release Notes
+# Function Mesh v0.22.0 Release Notes
+
+## v0.22.0 What's New
+
+* [Image] Update runner image base to alpine ([#747](https://github.com/streamnative/function-mesh/pull/747))
+* [Image] Install gcompat for Pulsar 2.10.x ([#756](https://github.com/streamnative/function-mesh/pull/756))
+* [Controller] Add liveness in backend config ([#767](https://github.com/streamnative/function-mesh/pull/767)) 
+* [Controller] Change type of TerminationGracePeriodSeconds to `*int64` ([#778](https://github.com/streamnative/function-mesh/pull/778))
+
+For the full changes in this release, see the full changelog: [v0.21.6...v0.22.0](https://github.com/streamnative/function-mesh/compare/v0.21.6...v0.22.0)
+
+# Function Mesh v0.21.0 Release Notes
 
 ## v0.21.0 What's New
 
@@ -8,6 +19,8 @@
 * [Controller] Add exit_on_oom=tru ([#744](https://github.com/streamnative/function-mesh/pull/744))
 
 For the full changes in this release, see the [Pull Requests](https://github.com/streamnative/function-mesh/pulls?q=is%3Apr+label%3Am%2F2024-04+is%3Aclosed+)
+
+# Function Mesh v0.20.0 Release Notes
 
 ## v0.20.0 What's New
 
