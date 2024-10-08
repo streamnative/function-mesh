@@ -3825,6 +3825,8 @@ spec:
               observedGeneration:
                 format: int64
                 type: integer
+              pendingChange:
+                type: string
               replicas:
                 format: int32
                 type: integer

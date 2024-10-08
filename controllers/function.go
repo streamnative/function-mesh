@@ -429,7 +429,15 @@ func (r *FunctionReconciler) checkIfStatefulSetNeedUpdate(ctx context.Context, s
 	if err != nil {
 		return false, err
 	}
-	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &desiredStatefulSet.Spec), nil
+	needUpdate := !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &desiredStatefulSet.Spec)
+	if needUpdate {
+		diff, err := spec.CreateDiff(statefulSet, desiredStatefulSet)
+		if err != nil {
+			return needUpdate, err
+		}
+		function.Status.PendingChange = diff
+	}
+	return needUpdate, nil
 }
 
 func (r *FunctionReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler,

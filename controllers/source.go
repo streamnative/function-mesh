@@ -427,7 +427,15 @@ func (r *SourceReconciler) checkIfStatefulSetNeedUpdate(ctx context.Context, sta
 	if err != nil {
 		return false, err
 	}
-	return !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &desiredStatefulSet.Spec), nil
+	needUpdate := !spec.CheckIfStatefulSetSpecIsEqual(&statefulSet.Spec, &desiredStatefulSet.Spec)
+	if needUpdate {
+		diff, err := spec.CreateDiff(statefulSet, desiredStatefulSet)
+		if err != nil {
+			return needUpdate, err
+		}
+		source.Status.PendingChange = diff
+	}
+	return needUpdate, nil
 }
 
 func (r *SourceReconciler) checkIfHPANeedUpdate(hpa *autov2.HorizontalPodAutoscaler, source *v1alpha1.Source) bool {

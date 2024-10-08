@@ -1,6 +1,8 @@
 apiVersion: compute.functionmesh.io/v1alpha1
 kind: Function
 metadata:
+  annotations:
+    compute.functionmesh.io/pause-rollout: "false"
   name: function-download-sample
   namespace: default
 spec:

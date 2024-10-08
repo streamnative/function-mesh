@@ -42,6 +42,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
@@ -99,6 +100,7 @@ const (
 	AnnotationPrometheusScrape = "prometheus.io/scrape"
 	AnnotationPrometheusPort   = "prometheus.io/port"
 	AnnotationManaged          = "compute.functionmesh.io/managed"
+	AnnotationPauseRollout     = "compute.functionmesh.io/pause-rollout"
 	AnnotationNeedCleanup      = "compute.functionmesh.io/need-cleanup"
 
 	// if labels contains below, we think it comes from function-mesh-worker-service
@@ -169,6 +171,11 @@ type TLSConfig interface {
 func IsManaged(object metav1.Object) bool {
 	managed, exists := object.GetAnnotations()[AnnotationManaged]
 	return !exists || managed != "false"
+}
+
+func IsPauseRollout(object metav1.Object) bool {
+	pauseRollout, exists := object.GetAnnotations()[AnnotationPauseRollout]
+	return exists && pauseRollout == "true"
 }
 
 func NeedCleanup(object metav1.Object) bool {
@@ -509,8 +516,9 @@ func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/",
-				Port: intstr.FromInt32(MetricsPort.ContainerPort),
+				Path:   "/",
+				Port:   intstr.FromInt32(MetricsPort.ContainerPort),
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: initialDelay,
@@ -2080,7 +2088,7 @@ func CheckIfStatefulSetSpecIsEqual(spec *appsv1.StatefulSetSpec, desiredSpec *ap
 				if !reflect.DeepEqual(container.Command, desiredContainer.Command) ||
 					container.Image != desiredContainer.Image ||
 					container.ImagePullPolicy != desiredContainer.ImagePullPolicy ||
-					container.LivenessProbe != desiredContainer.LivenessProbe ||
+					!reflect.DeepEqual(container.LivenessProbe, desiredContainer.LivenessProbe) ||
 					!reflect.DeepEqual(ports, desiredPorts) ||
 					!reflect.DeepEqual(containerEnvFrom, desiredContainerEnvFrom) ||
 					!reflect.DeepEqual(container.Resources, desiredContainer.Resources) {
@@ -2367,4 +2375,25 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 			RunAsUser:                &uid,
 		},
 	}
+}
+
+func CreateDiff(orj, modified *appsv1.StatefulSet) (string, error) {
+	orjCopy := orj.DeepCopyObject().(*appsv1.StatefulSet)
+	modifiedCopy := modified.DeepCopyObject().(*appsv1.StatefulSet)
+	modifiedCopy.Status = orjCopy.Status
+	modifiedCopy.ObjectMeta = orjCopy.ObjectMeta
+
+	orjData, err := json.Marshal(orjCopy)
+	if err != nil {
+		return "", fmt.Errorf("marshal origin %w", err)
+	}
+	modifiedData, err := json.Marshal(modifiedCopy)
+	if err != nil {
+		return "", fmt.Errorf("marshal modified %w", err)
+	}
+	patch, err := strategicpatch.CreateTwoWayMergePatch(orjData, modifiedData, orjCopy)
+	if err != nil {
+		return "", fmt.Errorf("create diff %w", err)
+	}
+	return string(patch), nil
 }
