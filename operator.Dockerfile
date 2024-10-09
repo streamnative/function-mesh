@@ -1,4 +1,4 @@
-FROM alpine:3.20.3
+FROM alpine:3.20
 
 ENV GID=10001
 ENV UID=10000
