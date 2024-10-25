@@ -34,6 +34,8 @@ spec:
         args:
         - --enable-leader-election
         - --namespaced-backend-config=backend-config
+        - --global-backend-config=global-backend-config
+        - --global-backend-config-namespace=sn-system
         image: controller:latest
         name: manager
         resources:
