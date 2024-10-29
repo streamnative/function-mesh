@@ -49,6 +49,8 @@ spec:
   java:
     jar: pulsar-functions-api-examples.jar
     jarLocation: function://public/default/test-java-function
+    log:
+      javaLog4JConfigFileType: "yaml"
   # to be delete & use admission hook
   clusterName: test
   autoAck: true
