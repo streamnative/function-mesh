@@ -45,6 +45,8 @@ RUN rm -rf /pulsar/lib/io.vertx-vertx-core-*.jar || true
 RUN rm -rf /pulsar/lib/presto || true
 RUN rm -rf /pulsar/conf/presto || true
 
+RUN copy /pulsar/lib/com.fasterxml.jackson.dataformat-jackson-dataformat-yaml-*.jar /pulsar/instances/deps/ || true
+
 ENV PULSAR_ROOT_LOGGER=INFO,CONSOLE
 ENV java.io.tmpdir=/pulsar/tmp/
 
