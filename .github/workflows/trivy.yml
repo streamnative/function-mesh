@@ -23,6 +23,9 @@ jobs:
       pull-requests: write
       issues: write
     runs-on: ubuntu-latest
+    env:
+      TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+      TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db
     steps:
       - name: Checkout
         uses: actions/checkout@v3
