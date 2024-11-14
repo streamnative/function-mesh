@@ -1923,6 +1923,14 @@ func generateAnnotations(customAnnotations ...map[string]string) map[string]stri
 	return annotations
 }
 
+func getFunctionRunnerImagePullSecret() []map[string]string {
+	return Configs.RunnerImagePullSecrets
+}
+
+func getFunctionRunnerImagePullPolicy() corev1.PullPolicy {
+	return Configs.RunnerImagePullPolicy
+}
+
 func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
 	runtime := &spec.Runtime
 	img := spec.Image
@@ -1940,6 +1948,14 @@ func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
 	return DefaultRunnerImage
 }
 
+func getSinkRunnerImagePullSecret() []map[string]string {
+	return Configs.RunnerImagePullSecrets
+}
+
+func getSinkRunnerImagePullPolicy() corev1.PullPolicy {
+	return Configs.RunnerImagePullPolicy
+}
+
 func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
 	img := spec.Image
 	if img != "" {
@@ -1950,6 +1966,14 @@ func getSinkRunnerImage(spec *v1alpha1.SinkSpec) string {
 		return Configs.RunnerImages.Java
 	}
 	return DefaultRunnerImage
+}
+
+func getSourceRunnerImagePullSecret() []map[string]string {
+	return Configs.RunnerImagePullSecrets
+}
+
+func getSourceRunnerImagePullPolicy() corev1.PullPolicy {
+	return Configs.RunnerImagePullPolicy
 }
 
 func getSourceRunnerImage(spec *v1alpha1.SourceSpec) string {

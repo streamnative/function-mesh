@@ -54,6 +54,16 @@ func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {
 
 func MakeFunctionStatefulSet(ctx context.Context, cli client.Client, function *v1alpha1.Function) (*appsv1.StatefulSet, error) {
 	objectMeta := MakeFunctionObjectMeta(function)
+
+	runnerImagePullSecrets := getFunctionRunnerImagePullSecret()
+	for _, mapSecret := range runnerImagePullSecrets {
+		if value, ok := mapSecret["name"]; ok {
+			function.Spec.Pod.ImagePullSecrets = append(function.Spec.Pod.ImagePullSecrets, corev1.LocalObjectReference{Name: value})
+		}
+	}
+	runnerImagePullPolicy := getFunctionRunnerImagePullPolicy()
+	function.Spec.ImagePullPolicy = runnerImagePullPolicy
+
 	labels := makeFunctionLabels(function)
 	statefulSet := MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		makeFunctionContainer(function), makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), labels, function.Spec.Pod,
