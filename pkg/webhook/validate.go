@@ -389,10 +389,6 @@ func validateWindowConfigs(windowConfig *v1alpha1.WindowConfig) *field.Error {
 					"Watermark interval must be positive")
 			}
 		}
-		if windowConfig.ProcessingGuarantee == v1alpha1.Manual || windowConfig.ProcessingGuarantee == v1alpha1.EffectivelyOnce {
-			return field.Invalid(field.NewPath("spec").Child("windowConfig"), windowConfig.ProcessingGuarantee,
-				"Window function only supports atleast_once and atmost_once")
-		}
 	}
 	return nil
 }

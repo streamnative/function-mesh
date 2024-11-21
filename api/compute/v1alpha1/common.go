@@ -407,6 +407,10 @@ const (
 	Manual          ProcessGuarantee = "manual"
 )
 
+// WindowProcessGuarantee enum type
+// +kubebuilder:validation:Enum=ATLEAST_ONCE;ATMOST_ONCE
+type WindowProcessGuarantee string
+
 // LogTopicAgent enum type
 // +kubebuilder:validation:Enum=runtime;sidecar
 type LogTopicAgent string
@@ -533,16 +537,16 @@ type LogConfig struct {
 }
 
 type WindowConfig struct {
-	ActualWindowFunctionClassName string           `json:"actualWindowFunctionClassName"`
-	WindowLengthCount             *int32           `json:"windowLengthCount,omitempty"`
-	WindowLengthDurationMs        *int64           `json:"windowLengthDurationMs,omitempty"`
-	SlidingIntervalCount          *int32           `json:"slidingIntervalCount,omitempty"`
-	SlidingIntervalDurationMs     *int64           `json:"slidingIntervalDurationMs,omitempty"`
-	LateDataTopic                 string           `json:"lateDataTopic,omitempty"`
-	MaxLagMs                      *int64           `json:"maxLagMs,omitempty"`
-	WatermarkEmitIntervalMs       *int64           `json:"watermarkEmitIntervalMs,omitempty"`
-	TimestampExtractorClassName   *string          `json:"timestampExtractorClassName,omitempty"`
-	ProcessingGuarantee           ProcessGuarantee `json:"processingGuarantee,omitempty"`
+	ActualWindowFunctionClassName string                 `json:"actualWindowFunctionClassName"`
+	WindowLengthCount             *int32                 `json:"windowLengthCount,omitempty"`
+	WindowLengthDurationMs        *int64                 `json:"windowLengthDurationMs,omitempty"`
+	SlidingIntervalCount          *int32                 `json:"slidingIntervalCount,omitempty"`
+	SlidingIntervalDurationMs     *int64                 `json:"slidingIntervalDurationMs,omitempty"`
+	LateDataTopic                 string                 `json:"lateDataTopic,omitempty"`
+	MaxLagMs                      *int64                 `json:"maxLagMs,omitempty"`
+	WatermarkEmitIntervalMs       *int64                 `json:"watermarkEmitIntervalMs,omitempty"`
+	TimestampExtractorClassName   *string                `json:"timestampExtractorClassName,omitempty"`
+	ProcessingGuarantee           WindowProcessGuarantee `json:"processingGuarantee,omitempty"`
 }
 
 type VPASpec struct {

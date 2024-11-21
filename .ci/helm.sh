@@ -346,8 +346,8 @@ function ci::verify_backlog() {
     topic=$1
     sub=$2
     expected=$3
-    BACKLOG=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-amdin topic stats $topic | grep msgBacklog)
-    if [[ "$BACKLOG" == *"\"msgBacklog\" : $expecte"* ]]; then
+    BACKLOG=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats $topic | grep msgBacklog)
+    if [[ "$BACKLOG" == *"\"msgBacklog\" : $expected"* ]]; then
        return 0
     fi
     return 1

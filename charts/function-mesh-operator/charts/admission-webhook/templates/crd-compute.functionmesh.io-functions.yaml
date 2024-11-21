@@ -3807,10 +3807,8 @@ spec:
                       type: integer
                     processingGuarantee:
                       enum:
-                        - atleast_once
-                        - atmost_once
-                        - effectively_once
-                        - manual
+                        - ATLEAST_ONCE
+                        - ATMOST_ONCE
                       type: string
                     slidingIntervalCount:
                       format: int32
