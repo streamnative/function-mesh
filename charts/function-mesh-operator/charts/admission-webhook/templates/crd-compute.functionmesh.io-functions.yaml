@@ -3805,6 +3805,13 @@ spec:
                     maxLagMs:
                       format: int64
                       type: integer
+                    processingGuarantee:
+                      enum:
+                        - atleast_once
+                        - atmost_once
+                        - effectively_once
+                        - manual
+                      type: string
                     slidingIntervalCount:
                       format: int32
                       type: integer

@@ -43,9 +43,36 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::send_test_data "persistent://public/default/window-function-input-topic" "test-message" 2>&1)
+verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::send_test_data "persistent://public/default/window-function-input-topic" "test-message" 3 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_java_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+sleep 3
+
+# the 3 messages will not be processed, so backlog should be 3
+verify_backlog_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_backlog "persistent://public/default/window-function-input-topic-partition-0" "public/default/window-function-sample" 3 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_backlog_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# it will fire the window with first 5 messages when get the 5th message, and then fire again with 10 messages when get 10th message
+verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::send_test_data "persistent://public/default/window-function-input-topic" "test-message" 7 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_java_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+sleep 3
+
+verify_backlog_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_backlog "persistent://public/default/window-function-input-topic-partition-0" "public/default/window-function-sample" 0 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_backlog_result"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
@@ -53,7 +80,7 @@ fi
 verify_log_result=$(kubectl logs -l compute.functionmesh.io/name=window-function-sample --tail=-1 | grep -e "-window-log" | wc -l)
 if [ $verify_log_result -ne 0 ]; then
   sub_name=$(echo $RANDOM | md5sum | head -c 20; echo;)
-  verify_log_topic_result=$(kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-broker-0 -- bin/pulsar-client consume -n 10 -s $sub_name --subscription-position Earliest "persistent://public/default/window-function-logs" | grep  -e "-window-log" | wc -l)
+  verify_log_topic_result=$(kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-broker-0 -- bin/pulsar-client consume -n 15 -s $sub_name --subscription-position Earliest "persistent://public/default/window-function-logs" | grep  -e "-window-log" | wc -l)
   if [ $verify_log_topic_result -ne 0 ]; then
     echo "e2e-test: ok" | yq eval -
   else
