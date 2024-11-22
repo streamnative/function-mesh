@@ -51,6 +51,16 @@ func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
 
 func MakeSinkStatefulSet(ctx context.Context, cli client.Client, sink *v1alpha1.Sink) (*appsv1.StatefulSet, error) {
 	objectMeta := MakeSinkObjectMeta(sink)
+
+	runnerImagePullSecrets := getSinkRunnerImagePullSecret()
+	for _, mapSecret := range runnerImagePullSecrets {
+		if value, ok := mapSecret["name"]; ok {
+			sink.Spec.Pod.ImagePullSecrets = append(sink.Spec.Pod.ImagePullSecrets, corev1.LocalObjectReference{Name: value})
+		}
+	}
+	runnerImagePullPolicy := getSinkRunnerImagePullPolicy()
+	sink.Spec.ImagePullPolicy = runnerImagePullPolicy
+
 	statefulSet := MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, makeSinkContainer(sink),
 		makeSinkVolumes(sink, sink.Spec.Pulsar.AuthConfig), makeSinkLabels(sink), sink.Spec.Pod, sink.Spec.Pulsar.AuthConfig,
 		sink.Spec.Pulsar.TLSConfig, sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret, sink.Spec.Pulsar.TLSSecret,

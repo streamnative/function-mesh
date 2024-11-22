@@ -15,6 +15,14 @@ data:
     runnerImages:
 {{ toYaml .Values.controllerManager.runnerImages | indent 6 }}
     {{- end }}
+    {{- if .Values.controllerManager.runnerImagePullSecrets }}
+    runnerImagePullSecrets:
+{{ toYaml .Values.controllerManager.runnerImagePullSecrets | indent 6 }}
+    {{- end }}
+    {{- if .Values.controllerManager.runnerImagePullPolicy }}
+    runnerImagePullPolicy:
+{{ toYaml .Values.controllerManager.runnerImagePullPolicy | indent 6 }}
+    {{- end }}
     {{- if .Values.controllerManager.resourceLabels }}
     resourceLabels:
 {{ toYaml .Values.controllerManager.resourceLabels | indent 6 }}
