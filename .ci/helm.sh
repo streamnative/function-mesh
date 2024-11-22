@@ -337,8 +337,20 @@ function ci::verify_crypto_function() {
 function ci::send_test_data() {
     inputtopic=$1
     inputmessage=$2
-    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 100 "${inputtopic}"
+    count=$3
+    kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n $count "${inputtopic}"
     return 0
+}
+
+function ci::verify_backlog() {
+    topic=$1
+    sub=$2
+    expected=$3
+    BACKLOG=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats $topic | grep msgBacklog)
+    if [[ "$BACKLOG" == *"\"msgBacklog\" : $expected"* ]]; then
+       return 0
+    fi
+    return 1
 }
 
 function ci::verify_exclamation_function() {
