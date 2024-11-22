@@ -21,6 +21,7 @@ set -e
 
 PULSAR_IMAGE=${PULSAR_IMAGE:-"streamnative/sn-platform"}
 PULSAR_IMAGE_TAG=${PULSAR_IMAGE_TAG:-"2.7.1"}
+PYTHON_VERSION=${PYTHON_VERSION:-"3.12"}
 DOCKER_REPO=${DOCKER_REPO:-"streamnative"}
 RUNNER_BASE="pulsar-functions-runner-base"
 PULSARCTL_RUNNER_BASE="pulsar-functions-pulsarctl-runner-base"
@@ -48,7 +49,7 @@ docker tag ${PULSARCTL_JAVA_RUNNER} "${DOCKER_REPO}"/${PULSARCTL_JAVA_RUNNER}:"$
 
 echo "build python runner"
 docker build --platform linux/amd64 -t ${PYTHON_RUNNER} images/pulsar-functions-python-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
-docker build --platform linux/amd64 -t ${PULSARCTL_PYTHON_RUNNER} images/pulsar-functions-python-runner -f images/pulsar-functions-python-runner/pulsarctl.Dockerfile --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
+docker build --platform linux/amd64 -t ${PULSARCTL_PYTHON_RUNNER} images/pulsar-functions-python-runner -f images/pulsar-functions-python-runner/pulsarctl.Dockerfile --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --build-arg PYTHON_VERSION="$PYTHON_VERSION" --progress=plain
 docker tag ${PYTHON_RUNNER} "${DOCKER_REPO}"/${PYTHON_RUNNER}:"${RUNNER_TAG}"
 docker tag ${PULSARCTL_PYTHON_RUNNER} "${DOCKER_REPO}"/${PULSARCTL_PYTHON_RUNNER}:"${RUNNER_TAG}"
 
