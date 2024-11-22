@@ -6,7 +6,7 @@ setup:
     - name: build images
       command: |
         chmod +x images/build.sh images/samples/build.sh
-        PULSAR_IMAGE_TAG=3.2.2.1 PULSAR_IMAGE=streamnative/sn-platform PYTHON_VERSION=3.12 KIND_PUSH=true images/build.sh
+        PULSAR_IMAGE_TAG=3.2.2.1 PULSAR_IMAGE=streamnative/sn-platform KIND_PUSH=true images/build.sh
         PULSAR_IMAGE_TAG=3.2.2.1 KIND_PUSH=true images/samples/build.sh
 
     - name: install helm
