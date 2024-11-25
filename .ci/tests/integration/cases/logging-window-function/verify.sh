@@ -44,8 +44,9 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify the `processingGuarantees` config
-kubectl logs window-function-sample | grep processingGuarantees=ATLEAST_ONCE
+verify_pg=$(kubectl logs window-function-sample-function-0 | grep processingGuarantees=ATLEAST_ONCE)
 if [ $? -ne 0 ]; then
+  echo "$verify_pg"
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
@@ -87,7 +88,7 @@ fi
 #fi
 
 verify_log_result=$(kubectl logs -l compute.functionmesh.io/name=window-function-sample --tail=-1 | grep -e "-window-log" | wc -l)
-if [ $verify_log_result -ne 0 ]; then
+if [ $verify_log_result -eq 15 ]; then
   sub_name=$(echo $RANDOM | md5sum | head -c 20; echo;)
   verify_log_topic_result=$(kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-broker-0 -- bin/pulsar-client consume -n 15 -s $sub_name --subscription-position Earliest "persistent://public/default/window-function-logs" | grep  -e "-window-log" | wc -l)
   if [ $verify_log_topic_result -ne 0 ]; then
