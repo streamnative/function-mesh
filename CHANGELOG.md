@@ -1,3 +1,14 @@
+# Function Mesh v0.23.0 Release Notes
+
+## v0.23.0 What's New
+
+* [Controller] Remove `/pulsar/lib/*` from classPath ([#787](https://github.com/streamnative/function-mesh/pull/787))
+* [CRD] Add ProcessGuarantee to WindowConfig ([#792](https://github.com/streamnative/function-mesh/pull/792))
+* [Controller] added feature to provide imagePullSecrets and imagePullPolicy to runner images when pulling ([#791](https://github.com/streamnative/function-mesh/pull/791))
+* [Image] Support set python version when build python runner image ([#784](https://github.com/streamnative/function-mesh/pull/784))
+
+For the full changes in this release, see the full changelog: [v0.22.0...v0.23.0](https://github.com/streamnative/function-mesh/compare/v0.22.0...v0.23.0)
+
 # Function Mesh v0.22.0 Release Notes
 
 ## v0.22.0 What's New
