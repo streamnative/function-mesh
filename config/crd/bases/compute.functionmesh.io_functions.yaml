@@ -3783,7 +3783,7 @@ spec:
                   maxLagMs:
                     format: int64
                     type: integer
-                  processingGuarantee:
+                  processingGuarantees:
                     enum:
                     - ATLEAST_ONCE
                     - ATMOST_ONCE

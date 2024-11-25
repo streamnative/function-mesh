@@ -43,6 +43,13 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# verify the `processingGuarantees` config
+kubectl logs window-function-sample | grep processingGuarantees=ATLEAST_ONCE
+if [ $? -ne 0 ]; then
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
 verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::send_test_data "persistent://public/default/window-function-input-topic" "test-message" 3 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_java_result"
