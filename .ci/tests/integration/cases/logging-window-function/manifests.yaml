@@ -36,7 +36,7 @@ spec:
   windowConfig:
     windowLengthCount: 10
     slidingIntervalCount: 5
-    processingGuarantee: ATLEAST_ONCE
+    processingGuarantees: ATLEAST_ONCE
   # the processingGuarantee should be manual for window function
   # see: https://github.com/apache/pulsar/pull/16279/files#diff-c77c024ccb31c94a7aa80cb8e96d7e370709157bdc104a1be7867fb6c7aa0586R318-R319
   processingGuarantee: manual

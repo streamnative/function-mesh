@@ -546,7 +546,7 @@ type WindowConfig struct {
 	MaxLagMs                      *int64                 `json:"maxLagMs,omitempty"`
 	WatermarkEmitIntervalMs       *int64                 `json:"watermarkEmitIntervalMs,omitempty"`
 	TimestampExtractorClassName   *string                `json:"timestampExtractorClassName,omitempty"`
-	ProcessingGuarantee           WindowProcessGuarantee `json:"processingGuarantee,omitempty"`
+	ProcessingGuarantees          WindowProcessGuarantee `json:"processingGuarantees,omitempty"`
 }
 
 type VPASpec struct {
