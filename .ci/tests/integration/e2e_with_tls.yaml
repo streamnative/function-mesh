@@ -34,6 +34,7 @@ setup:
         helm repo add grafana https://grafana.github.io/helm-charts
         helm repo update
         yq -i '.dependencies[0].repository = "https://grafana.github.io/helm-charts"' charts/pulsar/requirements.yaml
+        yq -i 'del(.dependencies[1])' charts/pulsar/requirements.yaml
         helm dependency update charts/pulsar
         helm install ${PULSAR_RELEASE_NAME} --set initialize=true --values ../.ci/clusters/values_skywalking_e2e_cluster_with_tls.yaml charts/pulsar
 

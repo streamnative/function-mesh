@@ -92,6 +92,8 @@ function ci::install_pulsar_charts() {
     helm repo add grafana https://grafana.github.io/helm-charts
     helm repo update
     yq -i '.dependencies[0].repository = "https://grafana.github.io/helm-charts"' charts/pulsar/requirements.yaml
+    # the superset chart seems got some issue, so we remove it
+    yq -i 'del(.dependencies[1])' charts/pulsar/requirements.yaml
     helm dependency update charts/pulsar
     ${HELM} install sn-platform --set initialize=true --values charts/pulsar/mini_values.yaml charts/pulsar --debug
 
