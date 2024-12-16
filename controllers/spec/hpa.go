@@ -89,11 +89,11 @@ func NewHPARuleAverageUtilizationMemoryPercent(memoryPercentage int32) BuiltinAu
 func GetBuiltinAutoScaler(builtinRule v1alpha1.BuiltinHPARule, res corev1.ResourceRequirements) (BuiltinAutoScaler, int) {
 	switch builtinRule {
 	case v1alpha1.AverageUtilizationCPUPercent80:
-		return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(80, getResourceCpuFactor(res))), cpuRuleIdx
+		return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(80, getResourceCPUFactor(res))), cpuRuleIdx
 	case v1alpha1.AverageUtilizationCPUPercent50:
-		return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(50, getResourceCpuFactor(res))), cpuRuleIdx
+		return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(50, getResourceCPUFactor(res))), cpuRuleIdx
 	case v1alpha1.AverageUtilizationCPUPercent20:
-		return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(20, getResourceCpuFactor(res))), cpuRuleIdx
+		return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(20, getResourceCPUFactor(res))), cpuRuleIdx
 	case v1alpha1.AverageUtilizationMemoryPercent80:
 		return NewHPARuleAverageUtilizationMemoryPercent(getUtilizationPercentage(80, getResourceMemoryFactor(res))), memoryRuleIdx
 	case v1alpha1.AverageUtilizationMemoryPercent50:
@@ -107,7 +107,7 @@ func GetBuiltinAutoScaler(builtinRule v1alpha1.BuiltinHPARule, res corev1.Resour
 
 // defaultHPAMetrics generates a default HPA Metrics settings based on CPU usage and utilized on 80%.
 func defaultHPAMetrics(res corev1.ResourceRequirements) []autov2.MetricSpec {
-	return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(80, getResourceCpuFactor(res))).Metrics()
+	return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(80, getResourceCPUFactor(res))).Metrics()
 }
 
 func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2.CrossVersionObjectReference, res corev1.ResourceRequirements) *autov2.HorizontalPodAutoscaler {
@@ -191,7 +191,7 @@ func MakeHPA(objectMeta *metav1.ObjectMeta, targetRef autov2.CrossVersionObjectR
 	return makeDefaultHPA(objectMeta, *minReplicas, *maxReplicas, targetRef, res)
 }
 
-func getResourceCpuFactor(res corev1.ResourceRequirements) float64 {
+func getResourceCPUFactor(res corev1.ResourceRequirements) float64 {
 	if res.Requests.Cpu() != nil && res.Limits.Cpu() != nil {
 		if !res.Requests.Cpu().IsZero() && !res.Limits.Cpu().IsZero() {
 			return float64(res.Limits.Cpu().MilliValue()) / float64(res.Requests.Cpu().MilliValue())
