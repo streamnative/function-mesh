@@ -43,7 +43,7 @@ func MakeFunctionHPA(function *v1alpha1.Function) *autov2.HorizontalPodAutoscale
 		Name:       function.Name,
 		APIVersion: function.APIVersion,
 	}
-	return MakeHPA(objectMeta, targetRef, function.Spec.MinReplicas, function.Spec.MaxReplicas, function.Spec.Pod)
+	return MakeHPA(objectMeta, targetRef, function.Spec.MinReplicas, function.Spec.MaxReplicas, function.Spec.Pod, function.Spec.Resources)
 }
 
 func MakeFunctionService(function *v1alpha1.Function) *corev1.Service {

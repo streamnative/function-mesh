@@ -41,7 +41,7 @@ func MakeSourceHPA(source *v1alpha1.Source) *autov2.HorizontalPodAutoscaler {
 		Name:       source.Name,
 		APIVersion: source.APIVersion,
 	}
-	return MakeHPA(objectMeta, targetRef, source.Spec.MinReplicas, source.Spec.MaxReplicas, source.Spec.Pod)
+	return MakeHPA(objectMeta, targetRef, source.Spec.MinReplicas, source.Spec.MaxReplicas, source.Spec.Pod, source.Spec.Resources)
 }
 
 func MakeSourceService(source *v1alpha1.Source) *corev1.Service {
