@@ -86,31 +86,31 @@ func NewHPARuleAverageUtilizationMemoryPercent(memoryPercentage int32) BuiltinAu
 	}
 }
 
-func GetBuiltinAutoScaler(builtinRule v1alpha1.BuiltinHPARule) (BuiltinAutoScaler, int) {
+func GetBuiltinAutoScaler(builtinRule v1alpha1.BuiltinHPARule, res corev1.ResourceRequirements) (BuiltinAutoScaler, int) {
 	switch builtinRule {
 	case v1alpha1.AverageUtilizationCPUPercent80:
-		return NewHPARuleAverageUtilizationCPUPercent(80), cpuRuleIdx
+		return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(80, getResourceCpuFactor(res))), cpuRuleIdx
 	case v1alpha1.AverageUtilizationCPUPercent50:
-		return NewHPARuleAverageUtilizationCPUPercent(50), cpuRuleIdx
+		return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(50, getResourceCpuFactor(res))), cpuRuleIdx
 	case v1alpha1.AverageUtilizationCPUPercent20:
-		return NewHPARuleAverageUtilizationCPUPercent(20), cpuRuleIdx
+		return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(20, getResourceCpuFactor(res))), cpuRuleIdx
 	case v1alpha1.AverageUtilizationMemoryPercent80:
-		return NewHPARuleAverageUtilizationMemoryPercent(80), memoryRuleIdx
+		return NewHPARuleAverageUtilizationMemoryPercent(getUtilizationPercentage(80, getResourceMemoryFactor(res))), memoryRuleIdx
 	case v1alpha1.AverageUtilizationMemoryPercent50:
-		return NewHPARuleAverageUtilizationMemoryPercent(50), memoryRuleIdx
+		return NewHPARuleAverageUtilizationMemoryPercent(getUtilizationPercentage(50, getResourceMemoryFactor(res))), memoryRuleIdx
 	case v1alpha1.AverageUtilizationMemoryPercent20:
-		return NewHPARuleAverageUtilizationMemoryPercent(20), memoryRuleIdx
+		return NewHPARuleAverageUtilizationMemoryPercent(getUtilizationPercentage(20, getResourceMemoryFactor(res))), memoryRuleIdx
 	default:
 		return nil, 2
 	}
 }
 
 // defaultHPAMetrics generates a default HPA Metrics settings based on CPU usage and utilized on 80%.
-func defaultHPAMetrics() []autov2.MetricSpec {
-	return NewHPARuleAverageUtilizationCPUPercent(80).Metrics()
+func defaultHPAMetrics(res corev1.ResourceRequirements) []autov2.MetricSpec {
+	return NewHPARuleAverageUtilizationCPUPercent(getUtilizationPercentage(80, getResourceCpuFactor(res))).Metrics()
 }
 
-func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2.CrossVersionObjectReference) *autov2.HorizontalPodAutoscaler {
+func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2.CrossVersionObjectReference, res corev1.ResourceRequirements) *autov2.HorizontalPodAutoscaler {
 	return &autov2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "autoscaling/v2",
@@ -121,7 +121,7 @@ func makeDefaultHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int3
 			ScaleTargetRef: targetRef,
 			MinReplicas:    &minReplicas,
 			MaxReplicas:    maxReplicas,
-			Metrics:        defaultHPAMetrics(),
+			Metrics:        defaultHPAMetrics(res),
 		},
 	}
 }
@@ -131,11 +131,11 @@ const (
 	memoryRuleIdx
 )
 
-func MakeMetricsFromBuiltinHPARules(builtinRules []v1alpha1.BuiltinHPARule) []autov2.MetricSpec {
+func MakeMetricsFromBuiltinHPARules(builtinRules []v1alpha1.BuiltinHPARule, res corev1.ResourceRequirements) []autov2.MetricSpec {
 	isRuleExists := map[int]bool{}
 	metrics := []autov2.MetricSpec{}
 	for _, r := range builtinRules {
-		s, idx := GetBuiltinAutoScaler(r)
+		s, idx := GetBuiltinAutoScaler(r, res)
 		if s != nil {
 			if isRuleExists[idx] {
 				continue
@@ -147,8 +147,8 @@ func MakeMetricsFromBuiltinHPARules(builtinRules []v1alpha1.BuiltinHPARule) []au
 	return metrics
 }
 
-func makeBuiltinHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2.CrossVersionObjectReference, builtinRules []v1alpha1.BuiltinHPARule) *autov2.HorizontalPodAutoscaler {
-	metrics := MakeMetricsFromBuiltinHPARules(builtinRules)
+func makeBuiltinHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, targetRef autov2.CrossVersionObjectReference, builtinRules []v1alpha1.BuiltinHPARule, res corev1.ResourceRequirements) *autov2.HorizontalPodAutoscaler {
+	metrics := MakeMetricsFromBuiltinHPARules(builtinRules, res)
 	return &autov2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "autoscaling/v2",
@@ -182,11 +182,33 @@ func makeHPA(objectMeta *metav1.ObjectMeta, minReplicas, maxReplicas int32, podP
 	}
 }
 
-func MakeHPA(objectMeta *metav1.ObjectMeta, targetRef autov2.CrossVersionObjectReference, minReplicas, maxReplicas *int32, policy v1alpha1.PodPolicy) *autov2.HorizontalPodAutoscaler {
+func MakeHPA(objectMeta *metav1.ObjectMeta, targetRef autov2.CrossVersionObjectReference, minReplicas, maxReplicas *int32, policy v1alpha1.PodPolicy, res corev1.ResourceRequirements) *autov2.HorizontalPodAutoscaler {
 	if isBuiltinHPAEnabled(minReplicas, maxReplicas, policy) {
-		return makeBuiltinHPA(objectMeta, *minReplicas, *maxReplicas, targetRef, policy.BuiltinAutoscaler)
+		return makeBuiltinHPA(objectMeta, *minReplicas, *maxReplicas, targetRef, policy.BuiltinAutoscaler, res)
 	} else if !isDefaultHPAEnabled(minReplicas, maxReplicas, policy) {
 		return makeHPA(objectMeta, *minReplicas, *maxReplicas, policy, targetRef)
 	}
-	return makeDefaultHPA(objectMeta, *minReplicas, *maxReplicas, targetRef)
+	return makeDefaultHPA(objectMeta, *minReplicas, *maxReplicas, targetRef, res)
+}
+
+func getResourceCpuFactor(res corev1.ResourceRequirements) float64 {
+	if res.Requests.Cpu() != nil && res.Limits.Cpu() != nil {
+		if !res.Requests.Cpu().IsZero() && !res.Limits.Cpu().IsZero() {
+			return float64(res.Limits.Cpu().MilliValue()) / float64(res.Requests.Cpu().MilliValue())
+		}
+	}
+	return 1.0
+}
+
+func getResourceMemoryFactor(res corev1.ResourceRequirements) float64 {
+	if res.Requests.Memory() != nil && res.Limits.Memory() != nil {
+		if !res.Requests.Memory().IsZero() && !res.Limits.Memory().IsZero() {
+			return float64(res.Limits.Memory().Value()) / float64(res.Requests.Memory().Value())
+		}
+	}
+	return 1.0
+}
+
+func getUtilizationPercentage(val int32, factor float64) int32 {
+	return int32(float64(val) * factor)
 }
