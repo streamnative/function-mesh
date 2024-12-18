@@ -1217,7 +1217,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"-Dpulsar.function.log.file=" + fmt.Sprintf("%s-${%s}", name, EnvShardID),
 		"-Dpulsar.allocator.exit_on_oom=true",
 		setLogLevel,
-		"-XX:MaxRAMPercentage=40",
+		"-XX:MaxRAMPercentage=70",
 		"-XX:+UseG1GC",
 		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-XX:HeapDumpPath=/pulsar/tmp/heapdump-%p.hprof",
