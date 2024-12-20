@@ -39,6 +39,7 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -436,13 +437,13 @@ func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Cont
 }
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, extraDependenciesDir, uid string,
-	javaOpts []string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
+	memory *resource.Quantity, javaOpts []string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
-			extraDependenciesDir, uid, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
+			extraDependenciesDir, uid, memory, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
 			authConfig, maxPendingAsyncRequests, logConfigFileName), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
@@ -1184,7 +1185,7 @@ func setShardIDEnvironmentVariableCommand() string {
 }
 
 func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, extraDependenciesDir, uid string,
-	javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
+	memory *resource.Quantity, javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
@@ -1206,6 +1207,8 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 			},
 			" ")
 	}
+	// maxDirectMemory takes 20% of the total memory, while MaxRamPercentage is 70%, the rest 10% is for misc usage
+	maxDirectMemory := resource.NewScaledQuantity(memory.Value()/5, 0)
 	args := []string{
 		"exec",
 		"java",
@@ -1218,6 +1221,7 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"-Dpulsar.allocator.exit_on_oom=true",
 		setLogLevel,
 		"-XX:MaxRAMPercentage=70",
+		"-XX:MaxDirectMemorySize=" + getDecimalSIMemory(maxDirectMemory),
 		"-XX:+UseG1GC",
 		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-XX:HeapDumpPath=/pulsar/tmp/heapdump-%p.hprof",
@@ -2025,6 +2029,14 @@ func getPythonSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef) []str
 		}
 	}
 	return ret
+}
+
+// Java command requires memory values in resource.DecimalSI format
+func getDecimalSIMemory(quantity *resource.Quantity) string {
+	if quantity.Format == resource.DecimalSI {
+		return quantity.String()
+	}
+	return resource.NewQuantity(quantity.Value(), resource.DecimalSI).String()
 }
 
 func getGenericSecretProviderArgs(secretMaps map[string]v1alpha1.SecretRef, language string) []string {
