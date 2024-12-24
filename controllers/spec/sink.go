@@ -40,7 +40,7 @@ func MakeSinkHPA(sink *v1alpha1.Sink) *autov2.HorizontalPodAutoscaler {
 		Name:       sink.Name,
 		APIVersion: sink.APIVersion,
 	}
-	return MakeHPA(objectMeta, targetRef, sink.Spec.MinReplicas, sink.Spec.MaxReplicas, sink.Spec.Pod)
+	return MakeHPA(objectMeta, targetRef, sink.Spec.MinReplicas, sink.Spec.MaxReplicas, sink.Spec.Pod, sink.Spec.Resources)
 }
 
 func MakeSinkService(sink *v1alpha1.Sink) *corev1.Service {
