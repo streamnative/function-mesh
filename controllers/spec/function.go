@@ -237,6 +237,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generateFunctionDetailsInJSON(function),
 				spec.Java.ExtraDependenciesDir,
 				string(function.UID),
+				spec.Resources.Limits.Memory(),
 				spec.Java.JavaOpts, hasPulsarctl, hasWget,
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 				spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig,
