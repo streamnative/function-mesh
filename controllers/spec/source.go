@@ -20,9 +20,6 @@ package spec
 import (
 	"context"
 	"fmt"
-	"regexp"
-	"strings"
-
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
@@ -30,6 +27,7 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -174,16 +172,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		hasWget = true
 	}
 
-	mountPath := spec.Java.Jar
-	if utils.EnableInitContainers {
-		// for relative path, volume should be mounted to the WorkDir
-		// and path also should be under the $WorkDir dir
-		if !strings.HasPrefix(spec.Java.Jar, "/") {
-			mountPath = WorkDir + spec.Java.Jar
-		} else if !strings.HasPrefix(spec.Java.Jar, WorkDir) {
-			mountPath = strings.Replace(spec.Java.Jar, "/", WorkDir, 1)
-		}
-	}
+	mountPath := extractMountPath(spec.Java.Jar)
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, mountPath,
 		spec.Name, spec.ClusterName,
 		GenerateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
