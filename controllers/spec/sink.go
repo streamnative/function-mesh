@@ -20,6 +20,7 @@ package spec
 import (
 	"context"
 	"regexp"
+	"strings"
 
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -106,7 +107,7 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	allowPrivilegeEscalation := false
 	mounts := makeSinkVolumeMounts(sink, sink.Spec.Pulsar.AuthConfig)
 	if utils.EnableInitContainers {
-		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(sink.Spec.Java, nil, nil)...)
+		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(sink.Spec.Java, nil, nil, nil)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -225,7 +226,17 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		hasPulsarctl = true
 		hasWget = true
 	}
-	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+	mountPath := spec.Java.Jar
+	if utils.EnableInitContainers {
+		// for relative path, volume should be mounted to the WorkDir
+		// and path also should be under the $WorkDir dir
+		if !strings.HasPrefix(spec.Java.Jar, "/") {
+			mountPath = WorkDir + spec.Java.Jar
+		} else if !strings.HasPrefix(spec.Java.Jar, WorkDir) {
+			mountPath = strings.Replace(spec.Java.Jar, "/", WorkDir, 1)
+		}
+	}
+	return MakeJavaFunctionCommand(spec.Java.JarLocation, mountPath,
 		spec.Name, spec.ClusterName,
 		GenerateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
 		parseJavaLogLevel(spec.Java),

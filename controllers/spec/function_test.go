@@ -21,6 +21,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/streamnative/function-mesh/utils"
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 
 	"gotest.tools/assert"
@@ -92,4 +95,55 @@ func makeFunctionSample(functionName string) *v1alpha1.Function {
 			},
 		},
 	}
+}
+
+func makeFunctionSamplePackageUrl(functionName string) *v1alpha1.Function {
+	f := makeFunctionSample(functionName)
+	f.Spec.Java.JarLocation = "function://public/default/java-function"
+	f.Spec.Java.Jar = "/tmp/java-function.jar"
+	return f
+}
+
+func TestInitContainerDownloader(t *testing.T) {
+	utils.EnableInitContainers = true
+	function := makeFunctionSamplePackageUrl("test")
+
+	objectMeta := MakeFunctionObjectMeta(function)
+
+	runnerImagePullSecrets := getFunctionRunnerImagePullSecret()
+	for _, mapSecret := range runnerImagePullSecrets {
+		if value, ok := mapSecret["name"]; ok {
+			function.Spec.Pod.ImagePullSecrets = append(function.Spec.Pod.ImagePullSecrets, corev1.LocalObjectReference{Name: value})
+		}
+	}
+	runnerImagePullPolicy := getFunctionRunnerImagePullPolicy()
+	function.Spec.ImagePullPolicy = runnerImagePullPolicy
+
+	labels := makeFunctionLabels(function)
+	statefulSet := MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
+		makeFunctionContainer(function), makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), labels, function.Spec.Pod,
+		function.Spec.Pulsar.AuthConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
+		function.Spec.Pulsar.TLSSecret, function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.Pod.Env, function.Name,
+		function.Spec.LogTopic, function.Spec.FilebeatImage, function.Spec.LogTopicAgent, function.Spec.VolumeMounts,
+		function.Spec.VolumeClaimTemplates, function.Spec.PersistentVolumeClaimRetentionPolicy)
+
+	assert.Assert(t, statefulSet != nil, "statefulSet should not be nil")
+	assert.Assert(t, len(statefulSet.Spec.Template.Spec.InitContainers) == 1, "init container should be 1 but got %d", len(statefulSet.Spec.Template.Spec.InitContainers))
+	assert.Assert(t, statefulSet.Spec.Template.Spec.InitContainers[0].Name == "downloader", "init container name should be downloader but got %s", statefulSet.Spec.Template.Spec.InitContainers[0].Name)
+	downloaderCommands := statefulSet.Spec.Template.Spec.InitContainers[0].Command
+	functionCommands := makeFunctionCommand(function)
+	assert.Assert(t, len(downloaderCommands) == 3, "downloader commands should be 3 but got %d", len(downloaderCommands))
+	assert.Assert(t, len(functionCommands) == 3, "function commands should be 3 but got %d", len(functionCommands))
+	assert.Assert(t, len(statefulSet.Spec.Template.Spec.InitContainers[0].VolumeMounts) == 1, "volume mounts should be 1 but got %d", len(statefulSet.Spec.Template.Spec.InitContainers[0].VolumeMounts))
+	assert.Assert(t, len(statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts) == 1, "volume mounts should be 1 but got %d", len(statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts))
+	startDownloadCommands := downloaderCommands[2]
+	downloadVolumeMount := statefulSet.Spec.Template.Spec.InitContainers[0].VolumeMounts[0]
+	assert.Assert(t, downloadVolumeMount.Name == "downloader-volume", "volume mount name should be download-volume but got %s", downloadVolumeMount.Name)
+	assert.Assert(t, downloadVolumeMount.MountPath == "/pulsar/download", "volume mount path should be /pulsar/download but got %s", downloadVolumeMount.MountPath)
+	startFunctionCommands := functionCommands[2]
+	functionVolumeMount := statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts[0]
+	assert.Assert(t, functionVolumeMount.Name == "downloader-volume", "volume mount name should be downloader-volume but got %s", functionVolumeMount.Name)
+	assert.Assert(t, functionVolumeMount.MountPath == "/pulsar/tmp", "volume mount path should be /pulsar/tmp but got %s", functionVolumeMount.MountPath)
+	assert.Assert(t, strings.Contains(startDownloadCommands, "/pulsar/download/java-function.jar"), "download command should contain /pulsar/download/java-function.jar: %s", startDownloadCommands)
+	assert.Assert(t, strings.Contains(startFunctionCommands, "/pulsar/tmp/java-function.jar"), "function command should contain /pulsar/tmp/java-function.jar: %s", startFunctionCommands)
 }
