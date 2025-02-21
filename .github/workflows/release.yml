@@ -13,13 +13,20 @@ jobs:
     name: Upload Release files
     runs-on: ubuntu-latest
     steps:
-      - name: clean disk
-        run: |
-          sudo swapoff -a
-          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
-          sudo apt clean
-          docker rmi $(docker images -q) -f
-          df -h
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@v1.3.0
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: false
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
 
       - name: checkout
         uses: actions/checkout@v2

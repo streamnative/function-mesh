@@ -38,13 +38,20 @@ jobs:
           - name: integration test with downloader
             e2e: ".ci/tests/integration-oauth2/e2e_with_downloader.yaml"
     steps:
-      - name: clean disk
-        run: |
-          sudo swapoff -a
-          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
-          sudo apt clean
-          docker rmi $(docker images -q) -f
-          df -h
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@v1.3.0
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: false
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
 
       # the runner machine has a disk /dev/sdb1 which mounted to /mnt, and it has more free disk than /dev/sda1.
       # we can use it to save docker's data to avoid bookie error due to lack of disk.
