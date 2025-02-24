@@ -97,7 +97,7 @@ func makeFunctionSample(functionName string) *v1alpha1.Function {
 	}
 }
 
-func makeFunctionSamplePackageUrl(functionName string) *v1alpha1.Function {
+func makeFunctionSamplePackageURL(functionName string) *v1alpha1.Function {
 	f := makeFunctionSample(functionName)
 	f.Spec.Java.JarLocation = "function://public/default/java-function"
 	f.Spec.Java.Jar = "/tmp/java-function.jar"
@@ -106,7 +106,7 @@ func makeFunctionSamplePackageUrl(functionName string) *v1alpha1.Function {
 
 func TestInitContainerDownloader(t *testing.T) {
 	utils.EnableInitContainers = true
-	function := makeFunctionSamplePackageUrl("test")
+	function := makeFunctionSamplePackageURL("test")
 
 	objectMeta := MakeFunctionObjectMeta(function)
 

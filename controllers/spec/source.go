@@ -20,6 +20,8 @@ package spec
 import (
 	"context"
 	"fmt"
+	"regexp"
+
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
@@ -27,7 +29,6 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
