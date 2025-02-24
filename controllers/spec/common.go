@@ -1801,7 +1801,7 @@ func generateDownloaderVolumeMountsForDownloader(javaRuntime *v1alpha1.JavaRunti
 }
 
 func generateDownloaderVolumeMountsForRuntime(javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
-	goRuntime *v1alpha1.GoRuntime) []corev1.VolumeMount {
+	goRuntime *v1alpha1.GoRuntime, genericRuntime *v1alpha1.GenericRuntime) []corev1.VolumeMount {
 	downloadPath := ""
 	if javaRuntime != nil && javaRuntime.JarLocation != "" {
 		downloadPath = javaRuntime.Jar
@@ -1809,6 +1809,8 @@ func generateDownloaderVolumeMountsForRuntime(javaRuntime *v1alpha1.JavaRuntime,
 		downloadPath = pythonRuntime.Py
 	} else if goRuntime != nil && goRuntime.GoLocation != "" {
 		downloadPath = goRuntime.Go
+	} else if genericRuntime != nil && genericRuntime.FunctionFile != "" {
+		downloadPath = genericRuntime.FunctionFile
 	}
 
 	if downloadPath != "" {
@@ -1830,9 +1832,10 @@ func generateDownloaderVolumeMountsForRuntime(javaRuntime *v1alpha1.JavaRuntime,
 				SubPath:   subPath,
 			}}
 		}
+		idx := strings.LastIndex(mountPath, "/")
 		return []corev1.VolumeMount{{
 			Name:      DownloaderVolume,
-			MountPath: mountPath[:len(mountPath)-len(subPath)],
+			MountPath: mountPath[:idx],
 		}}
 	}
 	return nil

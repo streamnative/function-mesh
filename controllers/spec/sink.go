@@ -21,12 +21,13 @@ import (
 	"context"
 	"regexp"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/streamnative/function-mesh/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	autov2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -106,7 +107,7 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	allowPrivilegeEscalation := false
 	mounts := makeSinkVolumeMounts(sink, sink.Spec.Pulsar.AuthConfig)
 	if utils.EnableInitContainers {
-		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(sink.Spec.Java, nil, nil)...)
+		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(sink.Spec.Java, nil, nil, nil)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -225,7 +226,8 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		hasPulsarctl = true
 		hasWget = true
 	}
-	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+	mountPath := extractMountPath(spec.Java.Jar)
+	return MakeJavaFunctionCommand(spec.Java.JarLocation, mountPath,
 		spec.Name, spec.ClusterName,
 		GenerateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
 		parseJavaLogLevel(spec.Java),

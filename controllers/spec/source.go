@@ -102,7 +102,7 @@ func makeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 	allowPrivilegeEscalation := false
 	mounts := makeSourceVolumeMounts(source, source.Spec.Pulsar.AuthConfig)
 	if utils.EnableInitContainers {
-		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(source.Spec.Java, nil, nil)...)
+		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(source.Spec.Java, nil, nil, nil)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -172,7 +172,9 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		hasPulsarctl = true
 		hasWget = true
 	}
-	return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+
+	mountPath := extractMountPath(spec.Java.Jar)
+	return MakeJavaFunctionCommand(spec.Java.JarLocation, mountPath,
 		spec.Name, spec.ClusterName,
 		GenerateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
 		parseJavaLogLevel(spec.Java),

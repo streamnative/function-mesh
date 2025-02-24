@@ -20,6 +20,7 @@ package spec
 import (
 	"context"
 	"regexp"
+	"strings"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/utils"
@@ -177,7 +178,7 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	mounts := makeFunctionVolumeMounts(function, function.Spec.Pulsar.AuthConfig)
 	if utils.EnableInitContainers {
 		mounts = append(mounts,
-			generateDownloaderVolumeMountsForRuntime(function.Spec.Java, function.Spec.Python, function.Spec.Golang)...)
+			generateDownloaderVolumeMountsForRuntime(function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.GenericRuntime)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -230,7 +231,8 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 	}
 	if spec.Java != nil {
 		if spec.Java.Jar != "" {
-			return MakeJavaFunctionCommand(spec.Java.JarLocation, spec.Java.Jar,
+			mountPath := extractMountPath(spec.Java.Jar)
+			return MakeJavaFunctionCommand(spec.Java.JarLocation, mountPath,
 				spec.Name, spec.ClusterName,
 				GenerateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
 				parseJavaLogLevel(spec.Java),
@@ -246,7 +248,8 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {
-			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
+			mountPath := extractMountPath(spec.Python.Py)
+			return MakePythonFunctionCommand(spec.Python.PyLocation, mountPath,
 				spec.Name, spec.ClusterName,
 				generatePythonLogConfigCommand(spec.Name, spec.Python, spec.LogTopicAgent),
 				generateFunctionDetailsInJSON(function), string(function.UID), hasPulsarctl, hasWget,
@@ -255,11 +258,13 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {
-			return MakeGoFunctionCommand(spec.Golang.GoLocation, spec.Golang.Go, function)
+			mountPath := extractMountPath(spec.Golang.Go)
+			return MakeGoFunctionCommand(spec.Golang.GoLocation, mountPath, function)
 		}
 	} else if spec.GenericRuntime != nil {
 		if spec.GenericRuntime.FunctionFile != "" {
-			return MakeGenericFunctionCommand(spec.GenericRuntime.FunctionFileLocation, spec.GenericRuntime.FunctionFile,
+			mountPath := extractMountPath(spec.GenericRuntime.FunctionFile)
+			return MakeGenericFunctionCommand(spec.GenericRuntime.FunctionFileLocation, mountPath,
 				spec.GenericRuntime.Language, spec.ClusterName,
 				generateFunctionDetailsInJSON(function), string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
@@ -279,4 +284,19 @@ func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {
 	}
 	log.Info(string(json))
 	return string(json)
+}
+
+func extractMountPath(p string) string {
+	if utils.EnableInitContainers {
+		mountPath := p
+		// for relative path, volume should be mounted to the WorkDir
+		// and path also should be under the $WorkDir dir
+		if !strings.HasPrefix(p, "/") {
+			mountPath = WorkDir + p
+		} else if !strings.HasPrefix(p, WorkDir) {
+			mountPath = strings.Replace(p, "/", WorkDir, 1)
+		}
+		return mountPath
+	}
+	return p
 }
