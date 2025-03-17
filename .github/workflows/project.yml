@@ -51,7 +51,7 @@ jobs:
 
       - name: InstallTool
         run: |
-          wget -O - -q https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.57.2
+          wget -O - -q https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.64
           ./bin/golangci-lint --version
 
       - name: validate controller-gen
