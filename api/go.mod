@@ -1,6 +1,6 @@
 module github.com/streamnative/function-mesh/api
 
-go 1.23.0
+go 1.23.7
 
 require (
 	k8s.io/api v0.30.9
