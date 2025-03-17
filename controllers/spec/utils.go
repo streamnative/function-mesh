@@ -169,7 +169,7 @@ func generateInputSpec(sourceConf v1alpha1.InputConf) map[string]*proto.Consumer
 		}
 	}
 
-	if sourceConf.SourceSpecs != nil && len(sourceConf.SourceSpecs) > 0 {
+	if len(sourceConf.SourceSpecs) > 0 {
 		for topicName, conf := range sourceConf.SourceSpecs {
 			var receiverQueueSize *proto.ConsumerSpec_ReceiverQueueSize
 			if conf.ReceiverQueueSize != nil {

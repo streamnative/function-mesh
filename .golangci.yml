@@ -7,19 +7,19 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - deadcode
+#     - deadcode
     - goimports
-    - golint
+#     - golint
     - gosimple
     - govet
     - ineffassign
-    - interfacer
+#     - interfacer
     - misspell
     - staticcheck
-    - structcheck
+#     - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
-    - varcheck
+#     - varcheck
     - prealloc
