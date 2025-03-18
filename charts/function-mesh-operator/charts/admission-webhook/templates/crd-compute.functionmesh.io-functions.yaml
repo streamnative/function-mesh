@@ -3838,7 +3838,11 @@ spec:
                     properties:
                       action:
                         type: string
+                      apiVersion:
+                        type: string
                       condition:
+                        type: string
+                      kind:
                         type: string
                       status:
                         type: string

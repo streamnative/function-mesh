@@ -3813,6 +3813,32 @@ spec:
                       type: object
                   type: object
                 type: array
+              genericResources:
+                items:
+                  properties:
+                    apiVersion:
+                      type: string
+                    kind:
+                      type: string
+                    name:
+                      type: string
+                    readyFields:
+                      items:
+                        type: string
+                      type: array
+                    spec:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    specFieldName:
+                      type: string
+                    statusFieldName:
+                      type: string
+                  required:
+                  - apiVersion
+                  - kind
+                  - name
+                  type: object
+                type: array
               sinks:
                 items:
                   properties:
@@ -10803,7 +10829,11 @@ spec:
                 properties:
                   action:
                     type: string
+                  apiVersion:
+                    type: string
                   condition:
+                    type: string
+                  kind:
                     type: string
                   status:
                     type: string
@@ -10813,7 +10843,26 @@ spec:
                   properties:
                     action:
                       type: string
+                    apiVersion:
+                      type: string
                     condition:
+                      type: string
+                    kind:
+                      type: string
+                    status:
+                      type: string
+                  type: object
+                type: object
+              genericResourceConditions:
+                additionalProperties:
+                  properties:
+                    action:
+                      type: string
+                    apiVersion:
+                      type: string
+                    condition:
+                      type: string
+                    kind:
                       type: string
                     status:
                       type: string
@@ -10827,7 +10876,11 @@ spec:
                   properties:
                     action:
                       type: string
+                    apiVersion:
+                      type: string
                     condition:
+                      type: string
+                    kind:
                       type: string
                     status:
                       type: string
@@ -10838,7 +10891,11 @@ spec:
                   properties:
                     action:
                       type: string
+                    apiVersion:
+                      type: string
                     condition:
+                      type: string
+                    kind:
                       type: string
                     status:
                       type: string

@@ -24,6 +24,7 @@ import (
 	"github.com/streamnative/function-mesh/controllers/spec"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -40,6 +41,10 @@ func (r *FunctionMeshReconciler) ObserveFunctionMesh(ctx context.Context, req ct
 	}
 
 	if err := r.observeSinks(ctx, mesh); err != nil {
+		return err
+	}
+
+	if err := r.observeGenericResources(ctx, mesh); err != nil {
 		return err
 	}
 
@@ -231,6 +236,89 @@ func (r *FunctionMeshReconciler) observeSinks(ctx context.Context, mesh *v1alpha
 	return nil
 }
 
+func (r *FunctionMeshReconciler) observeGenericResources(ctx context.Context, mesh *v1alpha1.FunctionMesh) error {
+	orphanedResources := map[string]bool{}
+	if len(mesh.Status.GenericResourceConditions) > 0 {
+		for name := range mesh.Status.GenericResourceConditions {
+			orphanedResources[name] = true
+		}
+	}
+
+	for _, resource := range mesh.Spec.GenericResources {
+		delete(orphanedResources, resource.Name)
+
+		// present the original name to use in Status, but underlying use the complete-name
+		condition, ok := mesh.Status.GenericResourceConditions[resource.Name]
+		if !ok {
+			mesh.Status.GenericResourceConditions[resource.Name] = v1alpha1.ResourceCondition{
+				Condition:  v1alpha1.GenericResourceReady,
+				Status:     metav1.ConditionFalse,
+				Action:     v1alpha1.Create,
+				APIVersion: resource.APIVersion,
+				Kind:       resource.Kind,
+			}
+			continue
+		}
+		obj := &unstructured.Unstructured{}
+		obj.SetAPIVersion(resource.APIVersion)
+		obj.SetKind(resource.Kind)
+		obj.SetName(resource.Name)
+		obj.SetNamespace(mesh.Namespace)
+
+		err := r.Get(ctx, types.NamespacedName{
+			Namespace: mesh.Namespace,
+			Name:      makeComponentName(mesh.Name, resource.Name),
+		}, obj)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				r.Log.Info(resource.Kind+" is not ready", "name", resource.Name)
+				condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.Create, metav1.ConditionFalse)
+				mesh.Status.GenericResourceConditions[resource.Name] = condition
+				continue
+			}
+			return err
+		}
+
+		// check whether the resource is ready or not
+		if len(resource.ReadyFields) > 0 {
+			statusFieldName := "status"
+			if resource.StatusFieldName != "" {
+				statusFieldName = resource.StatusFieldName
+			}
+			status, found, err := unstructured.NestedMap(obj.Object, statusFieldName)
+			// if status field is not present, we consider the resource is ready
+			if err != nil || !found {
+				condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.NoAction, metav1.ConditionTrue)
+			}
+
+			componentReady := true
+			for _, readyField := range resource.ReadyFields {
+				readyValue, ok := status[readyField].(metav1.ConditionStatus)
+				if !ok || readyValue != metav1.ConditionTrue {
+					componentReady = false
+					break
+				}
+			}
+			if componentReady {
+				condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.NoAction, metav1.ConditionTrue)
+			} else {
+				condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.Wait, metav1.ConditionFalse)
+			}
+		} else { // if `readyFields` is not set, we assume the resource is ready
+			condition.SetCondition(v1alpha1.GenericResourceReady, v1alpha1.NoAction, metav1.ConditionTrue)
+		}
+	}
+
+	for resourceName, isOrphaned := range orphanedResources {
+		if isOrphaned {
+			if condition, ok := mesh.Status.GenericResourceConditions[resourceName]; ok {
+				condition.SetCondition(v1alpha1.Orphaned, v1alpha1.Delete, metav1.ConditionTrue)
+			}
+		}
+	}
+	return nil
+}
+
 func (r *FunctionMeshReconciler) observeMeshes(mesh *v1alpha1.FunctionMesh) {
 	for _, cond := range mesh.Status.FunctionConditions {
 		if cond.Condition == v1alpha1.FunctionReady && cond.Status == metav1.ConditionTrue {
@@ -250,6 +338,14 @@ func (r *FunctionMeshReconciler) observeMeshes(mesh *v1alpha1.FunctionMesh) {
 
 	for _, cond := range mesh.Status.SourceConditions {
 		if cond.Condition == v1alpha1.SourceReady && cond.Status == metav1.ConditionTrue {
+			continue
+		}
+		mesh.Status.Condition.SetCondition(v1alpha1.MeshReady, v1alpha1.Wait, metav1.ConditionFalse)
+		return
+	}
+
+	for _, cond := range mesh.Status.GenericResourceConditions {
+		if cond.Condition == v1alpha1.GenericResourceReady && cond.Status == metav1.ConditionTrue {
 			continue
 		}
 		mesh.Status.Condition.SetCondition(v1alpha1.MeshReady, v1alpha1.Wait, metav1.ConditionFalse)
@@ -309,6 +405,24 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 		sink := spec.MakeSinkComponent(makeComponentName(mesh.Name, sinkSpec.Name), mesh, &sinkSpec)
 		if err := r.CreateOrUpdateSink(ctx, sink, sink.Spec); err != nil {
 			r.Log.Error(err, "failed to handle sink", "name", sinkSpec.Name, "action", condition.Action)
+			return err
+		}
+	}
+
+	for _, genericResource := range mesh.Spec.GenericResources {
+		condition := mesh.Status.SourceConditions[genericResource.Name]
+		if !newGeneration &&
+			condition.Status == metav1.ConditionTrue &&
+			condition.Action == v1alpha1.NoAction {
+			continue
+		}
+		obj := spec.MakeGenericResourceComponent(makeComponentName(mesh.Name, genericResource.Name), mesh, &genericResource)
+
+		// Create or update the resource
+		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, obj, func() error {
+			return nil
+		}); err != nil {
+			r.Log.Error(err, "failed to handle "+genericResource.Kind, "name", genericResource.Name, "action", "createOrUpdate")
 			return err
 		}
 	}
@@ -385,6 +499,33 @@ func (r *FunctionMeshReconciler) UpdateFunctionMesh(ctx context.Context, req ctr
 					return err
 				}
 				delete(mesh.Status.SinkConditions, sinkName)
+			}
+		}
+	}
+
+	if len(mesh.Spec.GenericResources) != len(mesh.Status.GenericResourceConditions) {
+		for resourceName, resourceCondition := range mesh.Status.GenericResourceConditions {
+			if resourceCondition.Condition == v1alpha1.Orphaned {
+				// clean up the orphaned generic resource
+				obj := &unstructured.Unstructured{}
+				obj.SetAPIVersion(resourceCondition.APIVersion)
+				obj.SetKind(resourceCondition.Kind)
+				if err := r.Get(ctx, types.NamespacedName{
+					Namespace: mesh.Namespace,
+					Name:      makeComponentName(mesh.Name, resourceName),
+				}, obj); err != nil {
+					if errors.IsNotFound(err) {
+						delete(mesh.Status.GenericResourceConditions, resourceName)
+						continue
+					}
+					r.Log.Error(err, "failed to get orphaned generic resource", "name", resourceName)
+					return err
+				}
+				if err := r.Delete(ctx, obj); err != nil && !errors.IsNotFound(err) {
+					r.Log.Error(err, "failed to delete orphaned generic resource", "name", resourceName)
+					return err
+				}
+				delete(mesh.Status.GenericResourceConditions, resourceName)
 			}
 		}
 	}
