@@ -1,3 +1,13 @@
+# Function Mesh v0.24.0 Release Notes
+
+## v0.24.0 What's New
+
+* [CRD] Change field processingGuarantee to processingGuarantees for WindowConfig ([#794](https://github.com/streamnative/function-mesh/pull/794))
+* [Controller] Making hpa utilization with factor ([#795](https://github.com/streamnative/function-mesh/pull/795))
+* [Controller] Update MaxRAMPercentage to 70 ([#797](https://github.com/streamnative/function-mesh/pull/797)
+* [Controller] make function path consistency when initContainer downloader enabled ([#798](https://github.com/streamnative/function-mesh/pull/798))
+* [Image] Fix CVEs ([#800](https://github.com/streamnative/function-mesh/pull/800))
+
 # Function Mesh v0.23.0 Release Notes
 
 ## v0.23.0 What's New
