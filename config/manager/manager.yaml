@@ -22,7 +22,7 @@ spec:
   template:
     metadata:
       annotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: '9443'
+        traffic.sidecar.istio.io/excludeInboundPorts: '9443,8443'
       labels:
         control-plane: controller-manager
         app: function-mesh-operator
