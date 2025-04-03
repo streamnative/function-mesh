@@ -27,6 +27,7 @@ import (
 	"github.com/streamnative/function-mesh/pkg/monitoring"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/go-logr/logr"
@@ -77,7 +78,8 @@ func main() {
 	var globalBackendConfig string
 	var globalBackendConfigNamespace string
 	var namespacedBackendConfig string
-	flag.StringVar(&metricsAddr, "metrics-addr", lookupEnvOrString("METRICS_ADDR", ":8080"),
+	var secureMetrics bool
+	flag.StringVar(&metricsAddr, "metrics-addr", lookupEnvOrString("METRICS_ADDR", ":8443"),
 		"The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id",
 		lookupEnvOrString("LEADER_ELECTION_ID", "a3f45fce.functionmesh.io"),
@@ -108,6 +110,8 @@ func main() {
 		"The namespace of the global backend config name used for all functions&sinks&sources")
 	flag.StringVar(&namespacedBackendConfig, "namespaced-backend-config", lookupEnvOrString("NAMESPACED_BACKEND_CONFIG", "backend-config"),
 		"The backend config name used for functions&sinks&sources in the same namespace")
+	flag.BoolVar(&secureMetrics, "metrics-secure", true, "If set, the metrics endpoint is served securely via HTTPS."+
+		" Use --metrics-secure=false to use HTTP instead.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
@@ -133,11 +137,18 @@ func main() {
 		}
 	}
 
+	metricOpts := server.Options{
+		BindAddress:   metricsAddr,
+		SecureServing: secureMetrics,
+	}
+
+	if secureMetrics {
+		metricOpts.FilterProvider = filters.WithAuthenticationAndAuthorization
+	}
+
 	options := ctrl.Options{
-		Scheme: scheme,
-		Metrics: server.Options{
-			BindAddress: metricsAddr,
-		},
+		Scheme:                  scheme,
+		Metrics:                 metricOpts,
 		HealthProbeBindAddress:  healthProbeAddr,
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
