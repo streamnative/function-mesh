@@ -5,7 +5,7 @@ metadata:
     alm-examples: '[]'
     capabilities: Full Lifecycle
     categories: Streaming & Messaging
-    containerImage: streamnative/function-mesh-operator:v0.0.0
+    containerImage: docker-proxy.streamnative.io/streamnative/function-mesh-operator:v0.0.0
     description: The Function Mesh Operator manages the Pulsar Functions and Connectors
       deployed on a Kubernetes cluster.
     operatorhub.io/ui-metadata-max-k8s-version: "1.26"
@@ -77,8 +77,6 @@ spec:
     name: StreamNative
     url: https://streamnative.io
   relatedImages:
-  - image: streamnative/function-mesh-operator:v0.0.0
+  - image: docker-proxy.streamnative.io/streamnative/function-mesh-operator:v0.0.0
     name: function-mesh
-  - image: docker.cloudsmith.io/streamnative/mirrors/gcr.io/kubebuilder/kube-rbac-proxy@sha256:67ecb332573384515406ebd71816781366b70adb0eb66345e5980e92603373e1
-    name: kube-rbac-proxy
   version: 0.0.0
