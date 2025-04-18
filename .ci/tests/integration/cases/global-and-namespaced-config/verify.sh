@@ -92,7 +92,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify tolerations
-verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function-0 '[{"effect":"NoExecute","key":"disktype","operator":"Exists","tolerationSeconds":600},{"effect":"NoExecute","key":"disktype","operator":"Exists","tolerationSeconds":300}]' 2>&1)
+verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function '[{"effect":"NoExecute","key":"disktype","operator":"Exists","tolerationSeconds":600},{"effect":"NoExecute","key":"disktype","operator":"Exists","tolerationSeconds":300}]' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_tolerations_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -101,7 +101,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify affinity
-verify_affinity_result=$(ci::verify_tolerations function-sample-env-function-0 '{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"preference":{"matchExpressions":[{"key":"disktype","operator":"In","values":["ssd"]}]}}]}}' 2>&1)
+verify_affinity_result=$(ci::ci::verify_affinity function-sample-env-function-0 '{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"preference":{"matchExpressions":[{"key":"disktype","operator":"In","values":["ssd"]}]}}]}}' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_affinity_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -197,7 +197,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify affinity
-verify_affinity_result=$(ci::verify_tolerations function-sample-env-function-0 '{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"preference":{"matchExpressions":[{"key":"disktype","operator":"In","values":["hdd"]}]}}]}}' 2>&1)
+verify_affinity_result=$(ci::ci::verify_affinity function-sample-env-function-0 '{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"preference":{"matchExpressions":[{"key":"disktype","operator":"In","values":["hdd"]}]}}]}}' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_affinity_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -206,7 +206,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify tolerations
-verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function-0 '[{"effect":"NoExecute","key":"disktype","operator":"Exists","tolerationSeconds":600}]' 2>&1)
+verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function '[{"effect":"NoExecute","key":"disktype","operator":"Exists","tolerationSeconds":600}]' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_tolerations_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -250,7 +250,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify tolerations
-verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function-0 '' 2>&1)
+verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function '' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_tolerations_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -259,7 +259,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify affinity
-verify_affinity_result=$(ci::verify_tolerations function-sample-env-function-0 '' 2>&1)
+verify_affinity_result=$(ci::ci::verify_affinity function-sample-env-function-0 '' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_affinity_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -313,7 +313,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify tolerations
-verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function-0 '' 2>&1)
+verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function '' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_tolerations_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -322,7 +322,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify affinity
-verify_affinity_result=$(ci::verify_tolerations function-sample-env-function-0 '' 2>&1)
+verify_affinity_result=$(ci::ci::verify_affinity function-sample-env-function-0 '' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_affinity_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1

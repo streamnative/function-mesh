@@ -661,9 +661,9 @@ function ci::verify_label() {
 }
 
 function ci::verify_tolerations() {
-  pod=$1
+  sts=$1
   expected=$2
-  result=$(kubectl get pod $pod -o jsonpath='{.spec.tolerations}')
+  result=$(kubectl get statefulset $sts -o jsonpath='{.spec.template.spec.tolerations}')
   echo "tolerations is $result"
   if [[ "$result" != "$expected" ]]; then
     echo "failed"
