@@ -646,3 +646,40 @@ function ci::verify_liveness_probe() {
   fi
   echo "succeeded"
 }
+
+function ci::verify_label() {
+  pod=$1
+  label=$2
+  expected=$3
+  result=$(kubectl get pod $pod -o jsonpath="{.metadata.labels['$label']}")
+  echo "value of $lable is $result"
+  if [[ "$result" != "$expected" ]]; then
+    echo "failed"
+    return 1
+  fi
+  echo "succeeded"
+}
+
+function ci::verify_tolerations() {
+  pod=$1
+  expected=$2
+  result=$(kubectl get pod $pod -o jsonpath='{.spec.tolerations}')
+  echo "tolerations is $result"
+  if [[ "$result" != "$expected" ]]; then
+    echo "failed"
+    return 1
+  fi
+  echo "succeeded"
+}
+
+function ci::verify_affinity() {
+  pod=$1
+  expected=$2
+  result=$(kubectl get pod $pod -o jsonpath='{.spec.affinity}')
+  echo "affinity is $result"
+  if [[ "$result" != "$expected" ]]; then
+    echo "failed"
+    return 1
+  fi
+  echo "succeeded"
+}

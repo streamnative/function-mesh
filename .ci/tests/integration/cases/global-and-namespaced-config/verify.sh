@@ -82,6 +82,33 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# verify label
+verify_label_result=$(ci::verify_label "function-sample-env-function-0" from namespace-backendconfig 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_label_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# verify tolerations
+verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function-0 '[{"effect":"NoExecute","key":"disktype","operator":"Exists","tolerationSeconds":600},{"effect":"NoExecute","key":"disktype","operator":"Exists","tolerationSeconds":300}]' 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_tolerations_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# verify affinity
+verify_affinity_result=$(ci::verify_tolerations function-sample-env-function-0 '{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"preference":{"matchExpressions":[{"key":"disktype","operator":"In","values":["ssd"]}]}}]}}' 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_affinity_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
 # verify liveness config
 verify_liveness_result=$(ci::verify_liveness_probe function-sample-env-function-0 '{"failureThreshold":3,"httpGet":{"path":"/","port":9094,"scheme":"HTTP"},"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":10}' 2>&1)
 if [ $? -ne 0 ]; then
@@ -110,6 +137,19 @@ sleep 30
 verify_liveness_result=$(ci::verify_liveness_probe function-sample-env-function-0 '{"failureThreshold":3,"httpGet":{"path":"/","port":9094,"scheme":"HTTP"},"initialDelaySeconds":20,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":10}' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_liveness_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# the labels should also be updated
+kubectl patch BackendConfig backend-config --type='json' -p='[{"op": "replace", "path": "/spec/pod/labels/from", "value": "new_label"}]' > /dev/null 2>&1
+sleep 30
+
+# verify label
+verify_label_result=$(ci::verify_label "function-sample-env-function-0" from "new_label" 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_label_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
@@ -147,6 +187,33 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# verify label
+verify_label_result=$(ci::verify_label "function-sample-env-function-0" from global-backendconfig 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_label_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# verify affinity
+verify_affinity_result=$(ci::verify_tolerations function-sample-env-function-0 '{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"preference":{"matchExpressions":[{"key":"disktype","operator":"In","values":["hdd"]}]}}]}}' 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_affinity_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# verify tolerations
+verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function-0 '[{"effect":"NoExecute","key":"disktype","operator":"Exists","tolerationSeconds":600}]' 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_tolerations_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
 # it should use liveness config from global config
 verify_liveness_result=$(ci::verify_liveness_probe function-sample-env-function-0 '{"failureThreshold":3,"httpGet":{"path":"/","port":9094,"scheme":"HTTP"},"initialDelaySeconds":10,"periodSeconds":30,"successThreshold":1,"timeoutSeconds":30}' 2>&1)
 if [ $? -ne 0 ]; then
@@ -169,6 +236,33 @@ fi
 verify_env_result=$(ci::verify_env "function-sample-env-function-0" global1 "" 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_env_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# verify label
+verify_label_result=$(ci::verify_label "function-sample-env-function-0" from "" 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_label_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# verify tolerations
+verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function-0 '' 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_tolerations_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# verify affinity
+verify_affinity_result=$(ci::verify_tolerations function-sample-env-function-0 '' 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_affinity_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
@@ -205,6 +299,33 @@ if [ $? -eq 0 ]; then
   echo "e2e-test: ok" | yq eval -
 else
   echo "$verify_env_result"
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# verify label
+verify_label_result=$(ci::verify_label "function-sample-env-function-0" from "" 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_label_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# verify tolerations
+verify_tolerations_result=$(ci::verify_tolerations function-sample-env-function-0 '' 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_tolerations_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
+  kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  exit 1
+fi
+
+# verify affinity
+verify_affinity_result=$(ci::verify_tolerations function-sample-env-function-0 '' 2>&1)
+if [ $? -ne 0 ]; then
+  echo "$verify_affinity_result"
+  kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi

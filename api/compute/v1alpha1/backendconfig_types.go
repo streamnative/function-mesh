@@ -18,6 +18,7 @@
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -43,8 +44,39 @@ type BackendConfigSpec struct {
 }
 
 // BackendConfigPodPolicy defines the policy for the pod
-// TODO: Support more fields from PodPolicy
 type BackendConfigPodPolicy struct {
+	// Labels specify the labels to attach to pod the operator creates for the cluster.
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// NodeSelector specifies a map of key-value pairs. For a pod to be eligible to run
+	// on a node, the node must have each of the indicated key-value pairs as labels.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Affinity specifies the scheduling constraints of a pod
+	Affinity *v1.Affinity `json:"affinity,omitempty"`
+
+	// Tolerations specifies the tolerations of a Pod
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+
+	// Annotations specifies the annotations to attach to pods the operator creates
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// SecurityContext specifies the security context for the entire pod
+	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context
+	SecurityContext *v1.PodSecurityContext `json:"securityContext,omitempty"`
+
+	// TerminationGracePeriodSeconds is the amount of time that kubernetes will give
+	// for a pod before terminating it.
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
+
+	// ImagePullSecrets is an optional list of references to secrets in the same
+	// namespace to use for pulling any of the images used by this PodSpec.
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
+	// ServiceAccountName is the name of the ServiceAccount to use to run this pod.
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	Liveness *Liveness `json:"liveness,omitempty"`
 }

@@ -12,3 +12,21 @@ spec:
     liveness:
       initialDelaySeconds: 50
       periodSeconds: 60
+    labels:
+      from: other-namespace-backendconfig
+    tolerations:
+      - key: disktype
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 300
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: disktype
+                    operator: In
+                    values:
+                      - other-ssd

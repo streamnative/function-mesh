@@ -8,3 +8,21 @@ spec:
     liveness:
       initialDelaySeconds: 10
       periodSeconds: 30
+    labels:
+      from: global-backendconfig
+    tolerations:
+      - key: disktype
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 600
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: disktype
+                    operator: In
+                    values:
+                      - hdd
