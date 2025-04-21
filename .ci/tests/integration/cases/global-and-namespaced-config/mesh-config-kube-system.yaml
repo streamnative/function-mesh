@@ -22,11 +22,10 @@ spec:
     affinity:
       nodeAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: disktype
-                    operator: In
-                    values:
-                      - other-ssd
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: disktype
+                  operator: In
+                  values:
+                    - ssd
