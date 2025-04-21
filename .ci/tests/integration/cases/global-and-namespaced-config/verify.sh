@@ -101,7 +101,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify affinity
-verify_affinity_result=$(ci::verify_affinity function-sample-env-function-0 '{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"preference":{"matchExpressions":[{"key":"disktype","operator":"In","values":["ssd"]}]}}]}}' 2>&1)
+verify_affinity_result=$(ci::verify_affinity function-sample-env-function-0 '{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"preference":{"matchExpressions":[{"key":"disktype","operator":"In","values":["ssd"]}]},"weight":100}]}}' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_affinity_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
@@ -197,7 +197,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify affinity
-verify_affinity_result=$(ci::verify_affinity function-sample-env-function-0 '{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"preference":{"matchExpressions":[{"key":"disktype","operator":"In","values":["hdd"]}]}}]}}' 2>&1)
+verify_affinity_result=$(ci::verify_affinity function-sample-env-function-0 '{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"preference":{"matchExpressions":[{"key":"disktype","operator":"In","values":["hdd"]}]},"weight":100}]}}' 2>&1)
 if [ $? -ne 0 ]; then
   echo "$verify_affinity_result"
   kubectl delete -f "${mesh_config_file}" > /dev/null 2>&1
