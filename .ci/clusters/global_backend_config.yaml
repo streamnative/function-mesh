@@ -27,4 +27,4 @@ spec:
                 - key: disktype
                   operator: In
                   values:
-                    - ssd
+                    - hdd
