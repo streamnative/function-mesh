@@ -295,7 +295,7 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 	globalBackendConfigVersion := ""
 	namespacedBackendConfigVersion := ""
 	envData := make(map[string]string)
-	var podPolicy *v1alpha1.BackendConfigPodPolicy = nil
+	var podPolicy *v1alpha1.PodPolicy = nil
 
 	if utils.GlobalBackendConfig != "" && utils.GlobalBackendConfigNamespace != "" {
 		globalBackendConfig := &v1alpha1.BackendConfig{}
@@ -392,7 +392,7 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 	return globalBackendConfigVersion, namespacedBackendConfigVersion, nil
 }
 
-func mergePodPolicy(sourcePolicy *v1alpha1.BackendConfigPodPolicy, targetPolicy *v1alpha1.BackendConfigPodPolicy) *v1alpha1.BackendConfigPodPolicy {
+func mergePodPolicy(sourcePolicy *v1alpha1.PodPolicy, targetPolicy *v1alpha1.PodPolicy) *v1alpha1.PodPolicy {
 	if sourcePolicy == nil {
 		return targetPolicy
 	}
