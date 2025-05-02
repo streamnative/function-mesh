@@ -42,8 +42,6 @@ setup:
       command: |
         kubectl create -n ${FUNCTION_MESH_NAMESPACE} -f .ci/clusters/global_backend_config.yaml
 
-
-
     - name: install pulsar cluster
       command: |
         helm repo add streamnative https://charts.streamnative.io

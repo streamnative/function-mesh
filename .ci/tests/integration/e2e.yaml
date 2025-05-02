@@ -24,6 +24,17 @@ setup:
           label-selector: app=cert-manager
           for: condition=Ready
 
+    - name: setup vpa
+      command: |
+        helm repo add cowboysysop https://cowboysysop.github.io/charts/
+        helm repo update
+        helm install vpa cowboysysop/vertical-pod-autoscaler --version 6.0.3
+      wait:
+        - namespace: default
+          resource: pod
+          label-selector: app.kubernetes.io/name=vertical-pod-autoscaler
+          for: condition=Ready
+
     - name: install function-mesh operator
       command: |
         make generate
@@ -38,16 +49,6 @@ setup:
           label-selector: app.kubernetes.io/name=function-mesh-operator
           for: condition=Ready
 
-    - name: setup vpa
-      command: |
-        helm repo add cowboysysop https://cowboysysop.github.io/charts/
-        helm repo update
-        helm install vpa cowboysysop/vertical-pod-autoscaler --version 6.0.3
-      wait:
-        - namespace: default
-          resource: pod
-          label-selector: app.kubernetes.io/name=vertical-pod-autoscaler
-          for: condition=Ready
 
     - name: install pulsar cluster
       command: |
