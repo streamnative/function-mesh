@@ -42,7 +42,7 @@ setup:
       command: |
         helm repo add cowboysysop https://cowboysysop.github.io/charts/
         helm repo update
-        helm install vpa cowboysysop/vertical-pod-autoscaler
+        helm install vpa cowboysysop/vertical-pod-autoscaler --version 6.0.3
       wait:
         - namespace: default
           resource: pod
