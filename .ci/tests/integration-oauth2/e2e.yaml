@@ -24,6 +24,23 @@ setup:
           label-selector: app=cert-manager
           for: condition=Ready
 
+    - name: install function-mesh operator
+      command: |
+        make manager
+        make helm-crds
+        image="function-mesh:latest"
+        docker build --platform linux/amd64 -f operator.Dockerfile -t $image .
+        kind load docker-image ${image}
+        helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --set controllerManager.globalBackendConfig=global-backend-config --set controllerManager.globalBackendConfigNamespace=${FUNCTION_MESH_NAMESPACE} --set controllerManager.namespacedBackendConfig=backend-config --create-namespace charts/function-mesh-operator
+      wait:
+        - namespace: function-mesh
+          resource: pod
+          label-selector: app.kubernetes.io/name=function-mesh-operator
+          for: condition=Ready
+    - name: apply global env config map
+      command: |
+        kubectl create -n ${FUNCTION_MESH_NAMESPACE} -f .ci/clusters/global_backend_config_without_env.yaml
+
     - name: Update values file
       command: |
         sed -i "s/CLIENT_SECRET/${AZURE_CLIENT_SECRET}/g" .ci/clusters/values_skywalking_e2e_cluster_with_oauth.yaml
@@ -94,22 +111,6 @@ setup:
       command: |
         sed -i "s/GCP_KEY_DATA/${GSA_CREDENTIAL}/g" .ci/tests/integration-oauth2/cases/google-pubsub-source/manifests.yaml
 
-    - name: install function-mesh operator
-      command: |
-        make manager
-        make helm-crds
-        image="function-mesh:latest"
-        docker build --platform linux/amd64 -f operator.Dockerfile -t $image .
-        kind load docker-image ${image}
-        helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --set controllerManager.globalBackendConfig=global-backend-config --set controllerManager.globalBackendConfigNamespace=${FUNCTION_MESH_NAMESPACE} --set controllerManager.namespacedBackendConfig=backend-config --create-namespace charts/function-mesh-operator
-      wait:
-        - namespace: function-mesh
-          resource: pod
-          label-selector: app.kubernetes.io/name=function-mesh-operator
-          for: condition=Ready
-    - name: apply global env config map
-      command: |
-        kubectl create -n ${FUNCTION_MESH_NAMESPACE} -f .ci/clusters/global_backend_config_without_env.yaml
   timeout: 60m
 
 cleanup:
