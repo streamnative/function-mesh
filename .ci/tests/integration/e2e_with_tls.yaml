@@ -24,6 +24,24 @@ setup:
           label-selector: app=cert-manager
           for: condition=Ready
 
+    - name: install function-mesh operator
+      command: |
+        make generate
+        make helm-crds
+        image="function-mesh-operator:latest"
+        IMG=${image} make docker-build-skip-test
+        kind load docker-image ${image}
+        helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --set controllerManager.globalBackendConfig=global-backend-config --set controllerManager.globalBackendConfigNamespace=${FUNCTION_MESH_NAMESPACE} --set controllerManager.namespacedBackendConfig=backend-config --create-namespace charts/function-mesh-operator
+      wait:
+        - namespace: function-mesh
+          resource: pod
+          label-selector: app.kubernetes.io/name=function-mesh-operator
+          for: condition=Ready
+
+    - name: apply global env config map
+      command: |
+        kubectl create -n ${FUNCTION_MESH_NAMESPACE} -f .ci/clusters/global_backend_config.yaml
+
     - name: install pulsar cluster
       command: |
         helm repo add streamnative https://charts.streamnative.io
@@ -80,24 +98,6 @@ setup:
         sed -i "s/certSecretKey: \"\"/certSecretKey: ca.crt/" .ci/tests/integration/cases/*/*.yaml
         sed -i "s/http:\/\/sn-platform-pulsar-broker.default.svc.cluster.local:8080/https:\/\/sn-platform-pulsar-broker.default.svc.cluster.local:8443/" .ci/tests/integration/cases/*/*.yaml
         sed -i "s/pulsar:\/\/sn-platform-pulsar-broker.default.svc.cluster.local:6650/pulsar+ssl:\/\/sn-platform-pulsar-broker.default.svc.cluster.local:6651/" .ci/tests/integration/cases/*/*.yaml
-
-    - name: install function-mesh operator
-      command: |
-        make generate
-        make helm-crds
-        image="function-mesh-operator:latest"
-        IMG=${image} make docker-build-skip-test
-        kind load docker-image ${image}
-        helm install ${FUNCTION_MESH_RELEASE_NAME} -n ${FUNCTION_MESH_NAMESPACE} --set operatorImage=${image} --set controllerManager.globalBackendConfig=global-backend-config --set controllerManager.globalBackendConfigNamespace=${FUNCTION_MESH_NAMESPACE} --set controllerManager.namespacedBackendConfig=backend-config --create-namespace charts/function-mesh-operator
-      wait:
-        - namespace: function-mesh
-          resource: pod
-          label-selector: app.kubernetes.io/name=function-mesh-operator
-          for: condition=Ready
-
-    - name: apply global env config map
-      command: |
-        kubectl create -n ${FUNCTION_MESH_NAMESPACE} -f .ci/clusters/global_backend_config.yaml
 
   timeout: 60m
 
