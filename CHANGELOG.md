@@ -1,3 +1,9 @@
+# Function Mesh v0.24.1 Release Notes
+
+## v0.24.1 What's New
+
+* [CVE] Fix CVE-2025-22872 and CVE-2025-22871 ([#805](https://github.com/streamnative/function-mesh/pull/805))
+
 # Function Mesh v0.24.0 Release Notes
 
 ## v0.24.0 What's New
