@@ -295,7 +295,7 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 	globalBackendConfigVersion := ""
 	namespacedBackendConfigVersion := ""
 	envData := make(map[string]string)
-	var liveness *v1alpha1.Liveness = nil
+	var podPolicy *v1alpha1.PodPolicy = nil
 
 	if utils.GlobalBackendConfig != "" && utils.GlobalBackendConfigNamespace != "" {
 		globalBackendConfig := &v1alpha1.BackendConfig{}
@@ -314,9 +314,7 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 				envData[key] = val
 			}
 			if globalBackendConfig.Spec.Pod != nil {
-				if globalBackendConfig.Spec.Pod.Liveness != nil {
-					liveness = globalBackendConfig.Spec.Pod.Liveness
-				}
+				podPolicy = globalBackendConfig.Spec.Pod
 			}
 		}
 	}
@@ -339,9 +337,7 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 				envData[key] = val
 			}
 			if namespacedBackendConfig.Spec.Pod != nil {
-				if namespacedBackendConfig.Spec.Pod.Liveness != nil {
-					liveness = namespacedBackendConfig.Spec.Pod.Liveness
-				}
+				podPolicy = mergePodPolicy(podPolicy, namespacedBackendConfig.Spec.Pod)
 			}
 		}
 	}
@@ -364,15 +360,66 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 		switch container.Name {
 		case FunctionContainerName, SinkContainerName, SourceContainerName:
 			// set liveness probe if it's not set
-			if container.LivenessProbe == nil && liveness != nil {
-				container.LivenessProbe = MakeLivenessProbe(liveness)
+			if container.LivenessProbe == nil && podPolicy != nil && podPolicy.Liveness != nil {
+				container.LivenessProbe = MakeLivenessProbe(podPolicy.Liveness)
 			}
 		default:
 			// No action needed for other containers
 		}
 	}
 
+	// overwrite the statefulset
+	if podPolicy != nil {
+		statefulSet.Spec.Template.Labels = mergeMaps(podPolicy.Labels, statefulSet.Spec.Template.Labels)
+		statefulSet.Spec.Template.Spec.NodeSelector = mergeMaps(podPolicy.NodeSelector, statefulSet.Spec.Template.Spec.NodeSelector)
+		if statefulSet.Spec.Template.Spec.Affinity == nil {
+			statefulSet.Spec.Template.Spec.Affinity = podPolicy.Affinity
+		}
+		statefulSet.Spec.Template.Spec.Tolerations = append(podPolicy.Tolerations, statefulSet.Spec.Template.Spec.Tolerations...)
+		statefulSet.Spec.Template.Annotations = mergeMaps(podPolicy.Annotations, statefulSet.Spec.Template.Annotations)
+		if statefulSet.Spec.Template.Spec.SecurityContext == nil {
+			statefulSet.Spec.Template.Spec.SecurityContext = podPolicy.SecurityContext
+		}
+		if statefulSet.Spec.Template.Spec.TerminationGracePeriodSeconds == nil {
+			statefulSet.Spec.Template.Spec.TerminationGracePeriodSeconds = podPolicy.TerminationGracePeriodSeconds
+		}
+		statefulSet.Spec.Template.Spec.ImagePullSecrets = append(podPolicy.ImagePullSecrets, statefulSet.Spec.Template.Spec.ImagePullSecrets...)
+		if statefulSet.Spec.Template.Spec.ServiceAccountName == "" {
+			statefulSet.Spec.Template.Spec.ServiceAccountName = podPolicy.ServiceAccountName
+		}
+	}
+
 	return globalBackendConfigVersion, namespacedBackendConfigVersion, nil
+}
+
+func mergePodPolicy(sourcePolicy *v1alpha1.PodPolicy, targetPolicy *v1alpha1.PodPolicy) *v1alpha1.PodPolicy {
+	if sourcePolicy == nil {
+		return targetPolicy
+	}
+	if targetPolicy == nil {
+		return sourcePolicy
+	}
+	sourcePolicy.Labels = mergeMaps(sourcePolicy.Labels, targetPolicy.Labels)
+	sourcePolicy.NodeSelector = mergeMaps(sourcePolicy.NodeSelector, targetPolicy.NodeSelector)
+	if targetPolicy.Affinity != nil {
+		sourcePolicy.Affinity = targetPolicy.Affinity
+	}
+	sourcePolicy.Tolerations = append(sourcePolicy.Tolerations, targetPolicy.Tolerations...)
+	sourcePolicy.Annotations = mergeMaps(sourcePolicy.Annotations, targetPolicy.Annotations)
+	if targetPolicy.SecurityContext != nil {
+		sourcePolicy.SecurityContext = targetPolicy.SecurityContext
+	}
+	if targetPolicy.TerminationGracePeriodSeconds != nil {
+		sourcePolicy.TerminationGracePeriodSeconds = targetPolicy.TerminationGracePeriodSeconds
+	}
+	sourcePolicy.ImagePullSecrets = append(sourcePolicy.ImagePullSecrets, targetPolicy.ImagePullSecrets...)
+	if targetPolicy.ServiceAccountName != "" {
+		sourcePolicy.ServiceAccountName = targetPolicy.ServiceAccountName
+	}
+	if targetPolicy.Liveness != nil {
+		sourcePolicy.Liveness = targetPolicy.Liveness
+	}
+	return sourcePolicy
 }
 
 func MakeStatefulSetSpec(replicas *int32, container *corev1.Container, filebeatContainer *corev1.Container,
@@ -418,7 +465,7 @@ func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Cont
 	}
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:      mergeLabels(labels, Configs.ResourceLabels, policy.Labels),
+			Labels:      mergeMaps(labels, Configs.ResourceLabels, policy.Labels),
 			Annotations: generateAnnotations(Configs.ResourceAnnotations, policy.Annotations),
 		},
 		Spec: corev1.PodSpec{
@@ -1901,7 +1948,7 @@ func GeneratePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.Produ
 	return volumes
 }
 
-func mergeLabels(labels ...map[string]string) map[string]string {
+func mergeMaps(labels ...map[string]string) map[string]string {
 	merged := make(map[string]string)
 
 	for _, m := range labels {
