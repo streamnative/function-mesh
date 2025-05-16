@@ -642,7 +642,31 @@ func MakeAgentFunctionSpec(functionSpec v1alpha1.FunctionSpec) *AgentFunctionSpe
 		}
 	}
 
-	inputSpecs := make(map[string]PulsarConsumerSpec, len(functionSpec.Input.SourceSpecs))
+	// get input specs
+	inputSpecs := make(map[string]PulsarConsumerSpec)
+	for _, topic := range functionSpec.Input.Topics {
+		inputSpecs[topic] = PulsarConsumerSpec{
+			IsRegexSubscription: false,
+		}
+	}
+	if functionSpec.Input.TopicPattern != "" {
+		inputSpecs[functionSpec.Input.TopicPattern] = PulsarConsumerSpec{
+			IsRegexSubscription: true,
+		}
+	}
+	for topic, customSerde := range functionSpec.Input.CustomSerdeSources {
+		inputSpecs[topic] = PulsarConsumerSpec{
+			SerdeClassName:      customSerde,
+			IsRegexSubscription: false,
+		}
+	}
+	for topic, customSchema := range functionSpec.Input.CustomSchemaSources {
+		inputSpecs[topic] = PulsarConsumerSpec{
+			SchemaType:          customSchema,
+			IsRegexSubscription: false,
+		}
+	}
+
 	for topic, consumerConfig := range functionSpec.Input.SourceSpecs {
 		inputSpecs[topic] = PulsarConsumerSpec{
 			SchemaType:          consumerConfig.SchemaType,
