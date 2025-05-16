@@ -27,6 +27,60 @@ spec:
             type: object
           spec:
             properties:
+              agentRuntime:
+                properties:
+                  agentFile:
+                    type: string
+                  agentFileLocation:
+                    type: string
+                  log:
+                    properties:
+                      format:
+                        enum:
+                        - json
+                        - text
+                        type: string
+                      javaLog4JConfigFileType:
+                        enum:
+                        - yaml
+                        - xml
+                        - ini
+                        type: string
+                      level:
+                        enum:
+                        - "off"
+                        - trace
+                        - debug
+                        - info
+                        - warn
+                        - error
+                        - fatal
+                        - all
+                        - panic
+                        type: string
+                      logConfig:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                      rotatePolicy:
+                        enum:
+                        - TimedPolicyWithDaily
+                        - TimedPolicyWithWeekly
+                        - TimedPolicyWithMonthly
+                        - SizedPolicyWith10MB
+                        - SizedPolicyWith50MB
+                        - SizedPolicyWith100MB
+                        type: string
+                    type: object
+                required:
+                - agentFile
+                type: object
               batchSourceConfig:
                 properties:
                   discoveryTriggererClassName:

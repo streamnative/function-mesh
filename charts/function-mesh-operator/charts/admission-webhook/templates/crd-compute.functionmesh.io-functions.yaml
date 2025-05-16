@@ -6,7 +6,7 @@ metadata:
     {{- if eq .Values.admissionWebhook.certificate.provider "cert-manager" }}
       {{- include "function-mesh-operator.certManager.annotation" . | nindent 4 -}}
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.9.2
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: functions.compute.functionmesh.io
 spec:
   conversion:
@@ -48,6 +48,60 @@ spec:
               type: object
             spec:
               properties:
+                agentRuntime:
+                  properties:
+                    agentFile:
+                      type: string
+                    agentFileLocation:
+                      type: string
+                    log:
+                      properties:
+                        format:
+                          enum:
+                            - json
+                            - text
+                          type: string
+                        javaLog4JConfigFileType:
+                          enum:
+                            - yaml
+                            - xml
+                            - ini
+                          type: string
+                        level:
+                          enum:
+                            - "off"
+                            - trace
+                            - debug
+                            - info
+                            - warn
+                            - error
+                            - fatal
+                            - all
+                            - panic
+                          type: string
+                        logConfig:
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                          required:
+                            - key
+                            - name
+                          type: object
+                        rotatePolicy:
+                          enum:
+                            - TimedPolicyWithDaily
+                            - TimedPolicyWithWeekly
+                            - TimedPolicyWithMonthly
+                            - SizedPolicyWith10MB
+                            - SizedPolicyWith50MB
+                            - SizedPolicyWith100MB
+                          type: string
+                      type: object
+                  required:
+                    - agentFile
+                  type: object
                 autoAck:
                   type: boolean
                 className:

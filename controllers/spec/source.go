@@ -102,7 +102,7 @@ func makeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 	allowPrivilegeEscalation := false
 	mounts := makeSourceVolumeMounts(source, source.Spec.Pulsar.AuthConfig)
 	if utils.EnableInitContainers {
-		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(source.Spec.Java, nil, nil, nil)...)
+		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(source.Spec.Java, nil, nil, nil, nil)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -149,7 +149,7 @@ func makeSourceVolumes(source *v1alpha1.Source, authConfig *v1alpha1.AuthConfig)
 		nil,
 		source.Spec.Pulsar.TLSConfig,
 		authConfig,
-		GetRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang),
+		GetRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang, nil),
 		source.Spec.LogTopicAgent)
 }
 
@@ -160,7 +160,7 @@ func makeSourceVolumeMounts(source *v1alpha1.Source, authConfig *v1alpha1.AuthCo
 		nil,
 		source.Spec.Pulsar.TLSConfig,
 		authConfig,
-		GetRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang),
+		GetRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang, nil),
 		source.Spec.LogTopicAgent)
 }
 

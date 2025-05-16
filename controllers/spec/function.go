@@ -154,7 +154,7 @@ func makeFunctionVolumes(function *v1alpha1.Function, authConfig *v1alpha1.AuthC
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
 		authConfig,
-		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
+		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.AgentRuntime),
 		function.Spec.LogTopicAgent)
 }
 
@@ -164,7 +164,7 @@ func makeFunctionVolumeMounts(function *v1alpha1.Function, authConfig *v1alpha1.
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
 		authConfig,
-		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
+		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.AgentRuntime),
 		function.Spec.LogTopicAgent)
 }
 
@@ -178,7 +178,8 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	mounts := makeFunctionVolumeMounts(function, function.Spec.Pulsar.AuthConfig)
 	if utils.EnableInitContainers {
 		mounts = append(mounts,
-			generateDownloaderVolumeMountsForRuntime(function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.GenericRuntime)...)
+			generateDownloaderVolumeMountsForRuntime(function.Spec.Java, function.Spec.Python, function.Spec.Golang,
+				function.Spec.GenericRuntime, function.Spec.AgentRuntime)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -269,6 +270,14 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				generateFunctionDetailsInJSON(function), string(function.UID),
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
 				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
+		}
+	} else if spec.AgentRuntime != nil {
+		if spec.AgentRuntime.AgentFile != "" {
+			logCommand := generatePythonLogConfigCommand(spec.Name, &v1alpha1.PythonRuntime{
+				Log: spec.AgentRuntime.Log,
+			}, spec.LogTopicAgent)
+			mountPath := extractMountPath(spec.AgentRuntime.AgentFile)
+			return MakeAgentFunctionCommand(spec, spec.AgentRuntime.AgentFileLocation, mountPath, logCommand)
 		}
 	}
 

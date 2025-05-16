@@ -234,6 +234,7 @@ type Runtime struct {
 	Python         *PythonRuntime  `json:"python,omitempty"`
 	Golang         *GoRuntime      `json:"golang,omitempty"`
 	GenericRuntime *GenericRuntime `json:"genericRuntime,omitempty"`
+	AgentRuntime   *AgentRuntime   `json:"agentRuntime,omitempty"`
 }
 
 // JavaRuntime contains the java runtime configs
@@ -273,6 +274,16 @@ type GenericRuntime struct {
 	// +kubebuilder:validation:Required
 	Language             string `json:"language"`
 	FunctionFileLocation string `json:"functionFileLocation,omitempty"`
+}
+
+// AgentRuntime contains the agent runtime configs
+// +kubebuilder:validation:Optional
+type AgentRuntime struct {
+	// +kubebuilder:validation:Required
+	AgentFile string `json:"agentFile"`
+
+	AgentFileLocation string            `json:"agentFileLocation,omitempty"`
+	Log               *RuntimeLogConfig `json:"log,omitempty"`
 }
 
 type SecretRef struct {

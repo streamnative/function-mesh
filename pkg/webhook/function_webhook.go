@@ -189,7 +189,7 @@ func (webhook *FunctionWebhook) ValidateCreate(ctx context.Context, obj runtime.
 		allErrs = append(allErrs, field.Invalid(field.NewPath("name"), r.Name, "function name is not provided"))
 	}
 
-	if r.Spec.Runtime.Java == nil && r.Spec.Runtime.Python == nil && r.Spec.Runtime.Golang == nil && r.Spec.GenericRuntime == nil {
+	if r.Spec.Runtime.Java == nil && r.Spec.Runtime.Python == nil && r.Spec.Runtime.Golang == nil && r.Spec.GenericRuntime == nil && r.Spec.AgentRuntime == nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "java"), r.Spec.Runtime.Java,
 			"runtime cannot be empty"))
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "python"), r.Spec.Runtime.Python,
@@ -197,6 +197,8 @@ func (webhook *FunctionWebhook) ValidateCreate(ctx context.Context, obj runtime.
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "golang"), r.Spec.Runtime.Golang,
 			"runtime cannot be empty"))
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "genericRuntime"), r.Spec.Runtime.GenericRuntime,
+			"runtime cannot be empty"))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("runtime", "agentRuntime"), r.Spec.Runtime.AgentRuntime,
 			"runtime cannot be empty"))
 	}
 
@@ -221,6 +223,16 @@ func (webhook *FunctionWebhook) ValidateCreate(ctx context.Context, obj runtime.
 	fieldErrs = validateGolangRuntime(r.Spec.Golang)
 	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
+	}
+
+	if r.Spec.AgentRuntime != nil {
+		if r.Spec.FuncConfig == nil {
+			_, ok := r.Spec.FuncConfig.Data["agentPath"]
+			if !ok {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("funcConfig"), r.Spec.FuncConfig, "agentPath is required in FuncConfig"))
+			}
+
+		}
 	}
 
 	fieldErrs = validateReplicasAndMinReplicasAndMaxReplicas(r.Spec.Replicas, r.Spec.MinReplicas, r.Spec.MaxReplicas)

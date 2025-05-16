@@ -107,7 +107,7 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	allowPrivilegeEscalation := false
 	mounts := makeSinkVolumeMounts(sink, sink.Spec.Pulsar.AuthConfig)
 	if utils.EnableInitContainers {
-		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(sink.Spec.Java, nil, nil, nil)...)
+		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(sink.Spec.Java, nil, nil, nil, nil)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -203,7 +203,7 @@ func makeSinkVolumes(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) []cor
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
 		authConfig,
-		GetRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
+		GetRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, nil),
 		sink.Spec.LogTopicAgent)
 }
 
@@ -214,7 +214,7 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) 
 		sink.Spec.Input.SourceSpecs,
 		sink.Spec.Pulsar.TLSConfig,
 		authConfig,
-		GetRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
+		GetRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, nil),
 		sink.Spec.LogTopicAgent)
 }
 

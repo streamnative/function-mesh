@@ -48,6 +48,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	yaml "sigs.k8s.io/yaml/goyaml.v3"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
 	"github.com/streamnative/function-mesh/controllers/proto"
@@ -67,6 +68,7 @@ const (
 	DefaultGenericNodejsRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-nodejs-runner:" + DefaultGenericRunnerTag
 	DefaultGenericPythonRunnerImage = DefaultRunnerPrefix + "pulsar-functions-generic-python-runner:" + DefaultGenericRunnerTag
 	DefaultGenericRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-generic-base-runner:" + DefaultGenericRunnerTag
+	DefaultAgentRunnerImage         = "jiangpch/pulsar-functions-agent-python-runner:v1"
 	PulsarAdminExecutableFile       = "/pulsar/bin/pulsar-admin"
 	WorkDir                         = "/pulsar/"
 
@@ -116,14 +118,18 @@ const (
 	OAuth2AuthenticationPlugin = "org.apache.pulsar.client.impl.auth.oauth2.AuthenticationOAuth2"
 	TokenAuthenticationPlugin  = "org.apache.pulsar.client.impl.auth.AuthenticationToken"
 
-	JavaLogConfigDirectory       = "/pulsar/conf/java-log/"
-	JavaLogConfigFileXML         = "java_instance_log4j.xml"
-	JavaLogConfigFileYAML        = "java_instance_log4j.yaml"
-	DefaultJavaLogConfigPath     = JavaLogConfigDirectory + JavaLogConfigFileXML
-	DefaultJavaLogConfigPathYAML = JavaLogConfigDirectory + JavaLogConfigFileYAML
-	PythonLogConifgDirectory     = "/pulsar/conf/python-log/"
-	PythonLogConfigFile          = "python_instance_logging.ini"
-	DefaultPythonLogConfigPath   = PythonLogConifgDirectory + PythonLogConfigFile
+	JavaLogConfigDirectory          = "/pulsar/conf/java-log/"
+	JavaLogConfigFileXML            = "java_instance_log4j.xml"
+	JavaLogConfigFileYAML           = "java_instance_log4j.yaml"
+	DefaultJavaLogConfigPath        = JavaLogConfigDirectory + JavaLogConfigFileXML
+	DefaultJavaLogConfigPathYAML    = JavaLogConfigDirectory + JavaLogConfigFileYAML
+	PythonLogConifgDirectory        = "/pulsar/conf/python-log/"
+	PythonLogConfigFile             = "python_instance_logging.ini"
+	DefaultPythonLogConfigPath      = PythonLogConifgDirectory + PythonLogConfigFile
+	AgentFunctionConfigDirectory    = "/pulsar/conf/agent/"
+	AgentFunctionInstanceConfigFile = AgentFunctionConfigDirectory + "instance.yaml"
+	AgentFunctionFunctionSpecFile   = AgentFunctionConfigDirectory + "function.yaml"
+	AgentFunctionDirectory          = "/tmp/agent/"
 
 	DefaultFilebeatConfig = "/usr/share/filebeat/config/filebeat.yaml"
 	DefaultFilebeatImage  = "streamnative/filebeat:v0.6.0"
@@ -550,7 +556,159 @@ func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterNam
 			tlsProvided, tlsConfig, authConfig), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
-	return []string{"sh", "-c", processCommand}
+	return []string{"bash", "-c", processCommand}
+}
+
+func MakeAgentFunctionCommand(spec v1alpha1.FunctionSpec, downloadPath, functionFile, generateLogConfigCommand string) []string {
+	// TODO: the agent runtime is using Python runtime for now, we may extent it in the future
+	logLevel := parsePythonLogLevel(&v1alpha1.PythonRuntime{
+		Log: spec.AgentRuntime.Log,
+	})
+	instanceConfig := MakeAgentFunctionInstanceConfig(spec.Name, logLevel, spec.ClusterName, spec.StateConfig,
+		spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
+	funcSpec := MakeAgentFunctionSpec(spec)
+	agentPath := spec.FuncConfig.Data["agentPath"].(string)
+
+	processCommand := generateLogConfigCommand + strings.Join(getProcessAgentRuntimeArgs(instanceConfig, funcSpec, functionFile, agentPath), " ")
+	if downloadPath != "" && !utils.EnableInitContainers {
+		// prepend download command if the downPath is provided
+		downloadCommand := strings.Join(GetDownloadCommand(downloadPath, functionFile, true, true,
+			false, false, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig), " ")
+		processCommand = downloadCommand + " && " + processCommand
+	}
+	return []string{"bash", "-c", processCommand}
+}
+
+func MakeAgentFunctionInstanceConfig(name, logLevel, clusterName string, state *v1alpha1.Stateful, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) *InstanceConfig {
+	instanceConfig := &InstanceConfig{
+		MaxBufferedTuples: 1000,
+		Logging: &LoggingConfig{
+			Directory:  WorkDir + "logs/functions",
+			FilePrefix: name,
+			Level:      logLevel,
+			ConfigFile: DefaultPythonLogConfigPath,
+		},
+		SecretsProvider: &SecretsProviderConfig{
+			Provider: "secretsprovider.EnvironmentBasedSecretsProvider",
+		},
+		PulsarCluster: &PulsarClusterConfig{
+			ClusterName: clusterName,
+			TLS: &AgentTLSConfig{
+				UseTLS:                      tlsConfig.IsEnabled(),
+				TlsAllowInsecureConnection:  parseBool(tlsConfig.AllowInsecureConnection()),
+				TlsTrustCertPath:            getTLSTrustCertPath(tlsConfig, tlsConfig.SecretKey()),
+				HostnameVerificationEnabled: parseBool(tlsConfig.EnableHostnameVerification()),
+			},
+		},
+		Server: &ServerConfig{
+			Port:                        GRPCPort.ContainerPort,
+			MetricsPort:                 MetricsPort.ContainerPort,
+			ExpectedHealthcheckInterval: -1, // TurnOff BuiltIn HealthCheck to avoid instance exit
+		},
+	}
+	if authConfig != nil {
+		if authConfig.OAuth2Config != nil {
+			instanceConfig.PulsarCluster.Authentication = &AuthenticationConfig{
+				AuthPlugin: OAuth2AuthenticationPlugin,
+				AuthParams: authConfig.OAuth2Config.AuthenticationParameters(),
+			}
+		} else if authConfig.GenericAuth != nil {
+			instanceConfig.PulsarCluster.Authentication = &AuthenticationConfig{
+				AuthPlugin: authConfig.GenericAuth.ClientAuthenticationPlugin,
+				AuthParams: authConfig.GenericAuth.ClientAuthenticationParameters,
+			}
+		}
+	}
+	if state != nil {
+		instanceConfig.StateStorage = &StateStorageConfig{
+			ServiceUrl: state.Pulsar.ServiceURL,
+		}
+	}
+	return instanceConfig
+}
+
+func MakeAgentFunctionSpec(functionSpec v1alpha1.FunctionSpec) *AgentFunctionSpec {
+	logTopic := functionSpec.LogTopic
+	// for sidecar mode, shouldn't pass the log topic to the instance
+	if functionSpec.LogTopicAgent == v1alpha1.SIDECAR {
+		logTopic = ""
+	}
+	description := fmt.Sprintf("Agent %s/%s/%s", functionSpec.Tenant, functionSpec.Namespace, functionSpec.Name)
+	if functionSpec.FuncConfig != nil {
+		desc := functionSpec.FuncConfig.Data["description"].(string)
+		if desc != "" {
+			description = desc
+		}
+	}
+
+	inputSpecs := make(map[string]PulsarConsumerSpec, len(functionSpec.Input.SourceSpecs))
+	for topic, consumerConfig := range functionSpec.Input.SourceSpecs {
+		inputSpecs[topic] = PulsarConsumerSpec{
+			SchemaType:          consumerConfig.SchemaType,
+			SerdeClassName:      consumerConfig.SerdeClassName,
+			IsRegexSubscription: consumerConfig.IsRegexPattern,
+			ReceiverQueueSize:   consumerConfig.ReceiverQueueSize,
+			SchemaProperties:    consumerConfig.SchemaProperties,
+			ConsumerProperties:  consumerConfig.ConsumerProperties,
+		}
+	}
+	producerSpec := PulsarProducerSpec{
+		SchemaType:     functionSpec.Output.SinkSchemaType,
+		SerdeClassName: functionSpec.Output.SinkSerdeClassName,
+	}
+	if functionSpec.Output.ProducerConf != nil {
+		producerSpec.MaxPendingMessages = &functionSpec.Output.ProducerConf.MaxPendingMessages
+		producerSpec.MaxPendingMessagesAcrossPartitions = &functionSpec.Output.ProducerConf.MaxPendingMessagesAcrossPartitions
+		producerSpec.UseThreadLocalProducers = &functionSpec.Output.ProducerConf.UseThreadLocalProducers
+		producerSpec.BatchBuilder = functionSpec.Output.ProducerConf.BatchBuilder
+		producerSpec.CompressionType = functionSpec.Output.ProducerConf.CompressionType
+	}
+
+	return &AgentFunctionSpec{
+		Meta: MetaSpec{
+			Name:        functionSpec.Name,
+			Description: description,
+		},
+		Runtime: RuntimeSpec{
+			Tenant:              functionSpec.Tenant,
+			Namespace:           functionSpec.Namespace,
+			Language:            "python", // TODO
+			UserConfig:          functionSpec.FuncConfig.Data,
+			SecretsMap:          functionSpec.SecretsMap,
+			LogTopic:            logTopic,
+			Parallelism:         1, // we use k8s replicas to control the parallelism, so it should always be 1 there
+			ProcessingGuarantee: functionSpec.ProcessingGuarantee,
+		},
+		Source: SourceSpec{
+			Pulsar: &PulsarSourceSpec{
+				SubscriptionName: functionSpec.SubscriptionName,
+				SubscriptionType: GetSubscriptionType(functionSpec.RetainOrdering, functionSpec.RetainKeyOrdering,
+					functionSpec.ProcessingGuarantee).String(),
+				TimeoutMs:           functionSpec.Timeout,
+				CleanUpSubscription: functionSpec.CleanupSubscription,
+				SkipToLatest:        functionSpec.SkipToLatest,
+				InputSpecs:          inputSpecs,
+			},
+		},
+		Sink: SinkSpec{
+			Pulsar: &PulsarSinkSpec{
+				OutputSpecs: map[string]PulsarProducerSpec{
+					functionSpec.Output.Topic: producerSpec,
+				},
+			},
+		},
+	}
+}
+
+func parseBool(val string) bool {
+	if val == "" {
+		return false
+	}
+	b, err := strconv.ParseBool(val)
+	if err != nil {
+		return false
+	}
+	return b
 }
 
 func MakeLivenessProbe(liveness *v1alpha1.Liveness) *corev1.Probe {
@@ -1367,6 +1525,44 @@ func getProcessGenericRuntimeArgs(language, functionFile, clusterName, details, 
 	return args
 }
 
+func getProcessAgentRuntimeArgs(instanceConfig *InstanceConfig, spec *AgentFunctionSpec, functionFile, agentPath string) []string {
+	// 1. dump the instance as a yaml file
+	instanceConfigData, _ := yaml.Marshal(&instanceConfig)
+	args := []string{
+		"mkdir", "-p", AgentFunctionConfigDirectory, "&&",
+		"echo", fmt.Sprintf("\"%s\"", string(instanceConfigData)), ">", AgentFunctionInstanceConfigFile,
+		"&&",
+	}
+
+	// 2. dump the function spec as a yaml file
+	functionSpecData, _ := yaml.Marshal(&spec)
+	args = append(args, []string{
+		"echo", fmt.Sprintf("\"%s\"", string(functionSpecData)), ">", AgentFunctionFunctionSpecFile,
+		"&&",
+	}...)
+
+	// 3. unzip the function file
+	args = append(args, []string{
+		"mkdir", "-p", AgentFunctionDirectory, "&&",
+		"unzip", functionFile, "-d", AgentFunctionDirectory,
+		"&&",
+	}...)
+
+	// 4. run the agent
+	args = append(args, []string{
+		"exec",
+		"agent-engine-cli",
+		"--instance-config",
+		AgentFunctionInstanceConfigFile,
+		"run",
+		"agents",
+		"--function-spec",
+		AgentFunctionFunctionSpecFile,
+		AgentFunctionDirectory + agentPath,
+	}...)
+	return args
+}
+
 // This method is suitable for Java and Python runtime, not include Go runtime.
 func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
@@ -1685,6 +1881,25 @@ func generateContainerVolumesFromLogConfigs(confs map[int32]*v1alpha1.RuntimeLog
 			}
 			volumes = append(volumes, *pythonLogConfigVolume)
 		}
+		if conf, exist := confs[agentRuntimeLog]; exist {
+			agentLogConfigVolume := &corev1.Volume{
+				Name: generateVolumeNameFromLogConfigs(conf.LogConfig.Name, "agent"),
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: conf.LogConfig.Name,
+						},
+						Items: []corev1.KeyToPath{
+							{
+								Key:  conf.LogConfig.Key,
+								Path: PythonLogConfigFile,
+							},
+						},
+					},
+				},
+			}
+			volumes = append(volumes, *agentLogConfigVolume)
+		}
 	}
 	return volumes
 }
@@ -1790,6 +2005,13 @@ func generateVolumeMountFromLogConfigs(confs map[int32]*v1alpha1.RuntimeLogConfi
 			}
 			volumeMounts = append(volumeMounts, *pythonLogConfigVolumeMount)
 		}
+		if conf, exist := confs[agentRuntimeLog]; exist {
+			agentLogConfigVolumeMount := &corev1.VolumeMount{
+				Name:      generateVolumeNameFromLogConfigs(conf.LogConfig.Name, "agent"),
+				MountPath: PythonLogConifgDirectory,
+			}
+			volumeMounts = append(volumeMounts, *agentLogConfigVolumeMount)
+		}
 	}
 	return volumeMounts
 }
@@ -1848,7 +2070,7 @@ func generateDownloaderVolumeMountsForDownloader(javaRuntime *v1alpha1.JavaRunti
 }
 
 func generateDownloaderVolumeMountsForRuntime(javaRuntime *v1alpha1.JavaRuntime, pythonRuntime *v1alpha1.PythonRuntime,
-	goRuntime *v1alpha1.GoRuntime, genericRuntime *v1alpha1.GenericRuntime) []corev1.VolumeMount {
+	goRuntime *v1alpha1.GoRuntime, genericRuntime *v1alpha1.GenericRuntime, agentRuntime *v1alpha1.AgentRuntime) []corev1.VolumeMount {
 	downloadPath := ""
 	if javaRuntime != nil && javaRuntime.JarLocation != "" {
 		downloadPath = javaRuntime.Jar
@@ -1858,6 +2080,8 @@ func generateDownloaderVolumeMountsForRuntime(javaRuntime *v1alpha1.JavaRuntime,
 		downloadPath = goRuntime.Go
 	} else if genericRuntime != nil && genericRuntime.FunctionFile != "" {
 		downloadPath = genericRuntime.FunctionFile
+	} else if agentRuntime != nil && agentRuntime.AgentFile != "" {
+		downloadPath = agentRuntime.AgentFile
 	}
 
 	if downloadPath != "" {
@@ -1998,6 +2222,8 @@ func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
 		return Configs.RunnerImages.Go
 	} else if runtime.GenericRuntime != nil && runtime.GenericRuntime.Language != "" {
 		return Configs.RunnerImages.GenericRuntime[runtime.GenericRuntime.Language]
+	} else if runtime.AgentRuntime != nil {
+		return Configs.RunnerImages.AgentRuntime
 	}
 	return DefaultRunnerImage
 }
@@ -2115,10 +2341,11 @@ const (
 	javaRuntimeLog = iota
 	pythonRuntimeLog
 	golangRuntimeLog
+	agentRuntimeLog
 )
 
 func GetRuntimeLogConfigNames(java *v1alpha1.JavaRuntime, python *v1alpha1.PythonRuntime,
-	golang *v1alpha1.GoRuntime) map[int32]*v1alpha1.RuntimeLogConfig {
+	golang *v1alpha1.GoRuntime, agent *v1alpha1.AgentRuntime) map[int32]*v1alpha1.RuntimeLogConfig {
 
 	var configs = map[int32]*v1alpha1.RuntimeLogConfig{}
 
@@ -2130,6 +2357,9 @@ func GetRuntimeLogConfigNames(java *v1alpha1.JavaRuntime, python *v1alpha1.Pytho
 	}
 	if golang != nil && golang.Log != nil && golang.Log.LogConfig != nil {
 		configs[golangRuntimeLog] = golang.Log
+	}
+	if agent != nil && agent.Log != nil && agent.Log.LogConfig != nil {
+		configs[agentRuntimeLog] = agent.Log
 	}
 	return configs
 }

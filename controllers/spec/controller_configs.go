@@ -29,6 +29,7 @@ type RunnerImages struct {
 	Python         string            `yaml:"python,omitempty"`
 	Go             string            `yaml:"go,omitempty"`
 	GenericRuntime map[string]string `yaml:"genericRuntime,omitempty"`
+	AgentRuntime   string            `yaml:"agentRuntime,omitempty"`
 }
 
 type ControllerConfigs struct {
@@ -53,6 +54,7 @@ func DefaultConfigs() *ControllerConfigs {
 				"executable": DefaultGenericRunnerImage,
 				"wasm":       DefaultGenericRunnerImage,
 			},
+			AgentRuntime: DefaultAgentRunnerImage,
 		},
 	}
 }
