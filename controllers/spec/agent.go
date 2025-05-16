@@ -53,7 +53,7 @@ type LoggingConfig struct {
 	Directory  string `yaml:"directory,omitempty"`
 	FilePrefix string `yaml:"file_prefix,omitempty"`
 	Level      string `yaml:"level,omitempty"`
-	ConfigFile string `yaml:"configFile,omitempty"`
+	ConfigFile string `yaml:"config_file,omitempty"`
 }
 
 type StateStorageConfig struct {
