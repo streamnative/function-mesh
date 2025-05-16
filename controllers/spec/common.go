@@ -562,14 +562,13 @@ func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterNam
 func MakeAgentFunctionCommand(spec v1alpha1.FunctionSpec, downloadPath, functionFile, generateLogConfigCommand string) []string {
 	// TODO: the agent runtime is using Python runtime for now, we may extent it in the future
 	logLevel := parsePythonLogLevel(&v1alpha1.PythonRuntime{
-		Log: spec.AgentRuntime.Log,
+		Log: spec.Agent.Log,
 	})
 	instanceConfig := MakeAgentFunctionInstanceConfig(spec.Name, logLevel, spec.ClusterName, spec.StateConfig,
 		spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
 	funcSpec := MakeAgentFunctionSpec(spec)
-	agentPath := spec.FuncConfig.Data["agentPath"].(string)
 
-	processCommand := generateLogConfigCommand + strings.Join(getProcessAgentRuntimeArgs(instanceConfig, funcSpec, functionFile, agentPath), " ")
+	processCommand := generateLogConfigCommand + strings.Join(getProcessAgentRuntimeArgs(instanceConfig, funcSpec, functionFile, spec.ClassName), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(GetDownloadCommand(downloadPath, functionFile, true, true,
@@ -2222,7 +2221,7 @@ func getFunctionRunnerImage(spec *v1alpha1.FunctionSpec) string {
 		return Configs.RunnerImages.Go
 	} else if runtime.GenericRuntime != nil && runtime.GenericRuntime.Language != "" {
 		return Configs.RunnerImages.GenericRuntime[runtime.GenericRuntime.Language]
-	} else if runtime.AgentRuntime != nil {
+	} else if runtime.Agent != nil {
 		return Configs.RunnerImages.AgentRuntime
 	}
 	return DefaultRunnerImage

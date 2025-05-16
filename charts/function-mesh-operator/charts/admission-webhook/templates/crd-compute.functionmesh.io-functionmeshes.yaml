@@ -29,7 +29,7 @@ spec:
                 functions:
                   items:
                     properties:
-                      agentRuntime:
+                      agent:
                         properties:
                           agentFile:
                             type: string
@@ -4039,7 +4039,7 @@ spec:
                 sinks:
                   items:
                     properties:
-                      agentRuntime:
+                      agent:
                         properties:
                           agentFile:
                             type: string
@@ -7756,7 +7756,7 @@ spec:
                 sources:
                   items:
                     properties:
-                      agentRuntime:
+                      agent:
                         properties:
                           agentFile:
                             type: string

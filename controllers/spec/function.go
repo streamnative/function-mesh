@@ -154,7 +154,7 @@ func makeFunctionVolumes(function *v1alpha1.Function, authConfig *v1alpha1.AuthC
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
 		authConfig,
-		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.AgentRuntime),
+		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.Agent),
 		function.Spec.LogTopicAgent)
 }
 
@@ -164,7 +164,7 @@ func makeFunctionVolumeMounts(function *v1alpha1.Function, authConfig *v1alpha1.
 		function.Spec.Input.SourceSpecs,
 		function.Spec.Pulsar.TLSConfig,
 		authConfig,
-		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.AgentRuntime),
+		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.Agent),
 		function.Spec.LogTopicAgent)
 }
 
@@ -179,7 +179,7 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	if utils.EnableInitContainers {
 		mounts = append(mounts,
 			generateDownloaderVolumeMountsForRuntime(function.Spec.Java, function.Spec.Python, function.Spec.Golang,
-				function.Spec.GenericRuntime, function.Spec.AgentRuntime)...)
+				function.Spec.GenericRuntime, function.Spec.Agent)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -271,13 +271,13 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
 				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
 		}
-	} else if spec.AgentRuntime != nil {
-		if spec.AgentRuntime.AgentFile != "" {
+	} else if spec.Agent != nil {
+		if spec.Agent.AgentFile != "" {
 			logCommand := generatePythonLogConfigCommand(spec.Name, &v1alpha1.PythonRuntime{
-				Log: spec.AgentRuntime.Log,
+				Log: spec.Agent.Log,
 			}, spec.LogTopicAgent)
-			mountPath := extractMountPath(spec.AgentRuntime.AgentFile)
-			return MakeAgentFunctionCommand(spec, spec.AgentRuntime.AgentFileLocation, mountPath, logCommand)
+			mountPath := extractMountPath(spec.Agent.AgentFile)
+			return MakeAgentFunctionCommand(spec, spec.Agent.AgentFileLocation, mountPath, logCommand)
 		}
 	}
 

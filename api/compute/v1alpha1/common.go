@@ -234,7 +234,7 @@ type Runtime struct {
 	Python         *PythonRuntime  `json:"python,omitempty"`
 	Golang         *GoRuntime      `json:"golang,omitempty"`
 	GenericRuntime *GenericRuntime `json:"genericRuntime,omitempty"`
-	AgentRuntime   *AgentRuntime   `json:"agentRuntime,omitempty"`
+	Agent          *AgentRuntime   `json:"agent,omitempty"`
 }
 
 // JavaRuntime contains the java runtime configs

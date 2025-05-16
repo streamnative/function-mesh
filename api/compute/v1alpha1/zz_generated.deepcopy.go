@@ -1086,8 +1086,8 @@ func (in *Runtime) DeepCopyInto(out *Runtime) {
 		*out = new(GenericRuntime)
 		**out = **in
 	}
-	if in.AgentRuntime != nil {
-		in, out := &in.AgentRuntime, &out.AgentRuntime
+	if in.Agent != nil {
+		in, out := &in.Agent, &out.Agent
 		*out = new(AgentRuntime)
 		(*in).DeepCopyInto(*out)
 	}
