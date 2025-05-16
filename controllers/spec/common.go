@@ -662,6 +662,10 @@ func MakeAgentFunctionSpec(functionSpec v1alpha1.FunctionSpec) *AgentFunctionSpe
 		producerSpec.BatchBuilder = functionSpec.Output.ProducerConf.BatchBuilder
 		producerSpec.CompressionType = functionSpec.Output.ProducerConf.CompressionType
 	}
+	var userConfig map[string]interface{}
+	if functionSpec.FuncConfig != nil {
+		userConfig = functionSpec.FuncConfig.Data
+	}
 
 	return &AgentFunctionSpec{
 		Meta: MetaSpec{
@@ -672,7 +676,7 @@ func MakeAgentFunctionSpec(functionSpec v1alpha1.FunctionSpec) *AgentFunctionSpe
 			Tenant:              functionSpec.Tenant,
 			Namespace:           functionSpec.Namespace,
 			Language:            "python", // TODO
-			UserConfig:          functionSpec.FuncConfig.Data,
+			UserConfig:          userConfig,
 			SecretsMap:          functionSpec.SecretsMap,
 			LogTopic:            logTopic,
 			Parallelism:         1, // we use k8s replicas to control the parallelism, so it should always be 1 there
