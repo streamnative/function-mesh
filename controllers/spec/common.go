@@ -592,6 +592,8 @@ func MakeAgentFunctionInstanceConfig(name, logLevel, clusterName string, state *
 		},
 		PulsarCluster: &PulsarClusterConfig{
 			ClusterName: clusterName,
+			ServiceUrl:  "$brokerServiceURL",
+			AdminUrl:    "$webServiceURL",
 			TLS: &AgentTLSConfig{
 				UseTLS:                      tlsConfig.IsEnabled(),
 				TlsAllowInsecureConnection:  parseBool(tlsConfig.AllowInsecureConnection()),
