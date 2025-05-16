@@ -688,7 +688,9 @@ func MakeAgentFunctionSpec(functionSpec v1alpha1.FunctionSpec) *AgentFunctionSpe
 		producerSpec.BatchBuilder = functionSpec.Output.ProducerConf.BatchBuilder
 		producerSpec.CompressionType = functionSpec.Output.ProducerConf.CompressionType
 	}
-	var userConfig map[string]interface{}
+	userConfig := map[string]interface{}{
+		"agent": AgentFunctionDirectory + functionSpec.ClassName,
+	}
 	if functionSpec.FuncConfig != nil {
 		userConfig = functionSpec.FuncConfig.Data
 	}
