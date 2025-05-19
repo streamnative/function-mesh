@@ -156,7 +156,7 @@ type RuntimeSpec struct {
 	SecretsMap  map[string]v1alpha1.SecretRef `yaml:"secrets_map,omitempty"`
 	LogTopic    string                        `yaml:"log_topic,omitempty"`
 	Parallelism int                           `yaml:"parallelism,omitempty"`
-	Processing  *ProcessingSpec               `yaml:"processing_spec,omitempty"`
+	Processing  *ProcessingSpec               `yaml:"processing,omitempty"`
 }
 
 type MetaSpec struct {
