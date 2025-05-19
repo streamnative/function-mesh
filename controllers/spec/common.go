@@ -165,6 +165,12 @@ var MetricsPort = corev1.ContainerPort{
 	Protocol:      corev1.ProtocolTCP,
 }
 
+var AgentProcessGuaranteeMap = map[v1alpha1.ProcessGuarantee]string{
+	v1alpha1.AtleastOnce:     "at_least_once",
+	v1alpha1.AtmostOnce:      "at_most_once",
+	v1alpha1.EffectivelyOnce: "exactly_once",
+}
+
 type TLSConfig interface {
 	IsEnabled() bool
 	AllowInsecureConnection() string
@@ -605,7 +611,7 @@ func MakeAgentFunctionInstanceConfig(name, logLevel, clusterName string, state *
 		if authConfig.OAuth2Config != nil {
 			instanceConfig.PulsarCluster.Authentication = &AuthenticationConfig{
 				AuthPlugin: OAuth2AuthenticationPlugin,
-				AuthParams: authConfig.OAuth2Config.AuthenticationParameters(),
+				AuthParams: authConfig.OAuth2Config.AuthenticationParametersWithoutSingleQuote(),
 			}
 		} else if authConfig.GenericAuth != nil {
 			instanceConfig.PulsarCluster.Authentication = &AuthenticationConfig{
@@ -706,20 +712,27 @@ func MakeAgentFunctionSpec(functionSpec v1alpha1.FunctionSpec) *AgentFunctionSpe
 			Description: description,
 		},
 		Runtime: RuntimeSpec{
-			Tenant:              functionSpec.Tenant,
-			Namespace:           functionSpec.Namespace,
-			Language:            "python", // TODO
-			UserConfig:          userConfig,
-			SecretsMap:          functionSpec.SecretsMap,
-			LogTopic:            logTopic,
-			Parallelism:         1, // we use k8s replicas to control the parallelism, so it should always be 1 there
-			ProcessingGuarantee: functionSpec.ProcessingGuarantee,
+			Tenant:      functionSpec.Tenant,
+			Namespace:   functionSpec.Namespace,
+			Language:    "python", // TODO
+			UserConfig:  userConfig,
+			SecretsMap:  functionSpec.SecretsMap,
+			LogTopic:    logTopic,
+			Parallelism: 1, // we use k8s replicas to control the parallelism, so it should always be 1 there
+			Processing: &ProcessingSpec{
+				ProcessingGuarantee: getAgentProcessingGuarantee(functionSpec.ProcessingGuarantee),
+				MaxRetries:          functionSpec.MaxMessageRetry,
+				DeadLetterTopic:     functionSpec.DeadLetterTopic,
+				RetainOrdering:      functionSpec.RetainOrdering,
+				RetainKeyOrdering:   functionSpec.RetainKeyOrdering,
+				SubscribePosition:   string(functionSpec.SubscriptionPosition),
+			},
 		},
 		Source: SourceSpec{
 			Pulsar: &PulsarSourceSpec{
 				SubscriptionName: functionSpec.SubscriptionName,
-				SubscriptionType: GetSubscriptionType(functionSpec.RetainOrdering, functionSpec.RetainKeyOrdering,
-					functionSpec.ProcessingGuarantee).String(),
+				SubscriptionType: strings.ToLower(GetSubscriptionType(functionSpec.RetainOrdering, functionSpec.RetainKeyOrdering,
+					functionSpec.ProcessingGuarantee).String()),
 				TimeoutMs:           functionSpec.Timeout,
 				CleanUpSubscription: functionSpec.CleanupSubscription,
 				SkipToLatest:        functionSpec.SkipToLatest,
@@ -2748,4 +2761,11 @@ func CreateDiff(orj, modified *appsv1.StatefulSet) (string, error) {
 		return "", fmt.Errorf("create diff %w", err)
 	}
 	return string(patch), nil
+}
+
+func getAgentProcessingGuarantee(processGuarantee v1alpha1.ProcessGuarantee) string {
+	if v, ok := AgentProcessGuaranteeMap[processGuarantee]; ok {
+		return v
+	}
+	return "at_least_once"
 }

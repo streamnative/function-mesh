@@ -130,6 +130,10 @@ func (o *OAuth2Config) AuthenticationParameters() string {
 	return fmt.Sprintf(`'{"credentials_url":"file://%s","privateKey":"%s","private_key":"%s","issuerUrl":"%s","issuer_url":"%s","audience":"%s","scope":"%s"}'`, o.GetMountFile(), o.GetMountFile(), o.GetMountFile(), o.IssuerURL, o.IssuerURL, o.Audience, o.Scope)
 }
 
+func (o *OAuth2Config) AuthenticationParametersWithoutSingleQuote() string {
+	return fmt.Sprintf(`{"credentials_url":"file://%s","privateKey":"%s","private_key":"%s","issuerUrl":"%s","issuer_url":"%s","audience":"%s","scope":"%s"}`, o.GetMountFile(), o.GetMountFile(), o.GetMountFile(), o.IssuerURL, o.IssuerURL, o.Audience, o.Scope)
+}
+
 type GenericAuth struct {
 	ClientAuthenticationPlugin     string `json:"clientAuthenticationPlugin"`
 	ClientAuthenticationParameters string `json:"clientAuthenticationParameters"`

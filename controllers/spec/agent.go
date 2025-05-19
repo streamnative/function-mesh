@@ -116,7 +116,7 @@ type PulsarProducerSpec struct {
 type PulsarSourceSpec struct {
 	Configs                      map[string]interface{}        `yaml:"configs,omitempty"`
 	SubscriptionName             string                        `yaml:"subscriptionName,omitempty"`
-	SubscriptionType             string                        `yaml:"subscriptionType,omitempty"`
+	SubscriptionType             string                        `yaml:"subscription_type,omitempty"`
 	InputSpecs                   map[string]PulsarConsumerSpec `yaml:"input_specs,omitempty"`
 	TimeoutMs                    int32                         `yaml:"timeout_ms,omitempty"`
 	CleanUpSubscription          bool                          `yaml:"cleanup_subscription,omitempty"`
@@ -139,15 +139,24 @@ type SinkSpec struct {
 	Pulsar *PulsarSinkSpec `yaml:"pulsar,omitempty"`
 }
 
+type ProcessingSpec struct {
+	ProcessingGuarantee string `yaml:"processing_guarantee,omitempty"`
+	MaxRetries          int32  `yaml:"max_retries,omitempty"`
+	DeadLetterTopic     string `yaml:"dead_letter_topic,omitempty"`
+	RetainOrdering      bool   `yaml:"retain_ordering,omitempty"`
+	RetainKeyOrdering   bool   `yaml:"retain_key_ordering,omitempty"`
+	SubscribePosition   string `yaml:"subscribe_position,omitempty"`
+}
+
 type RuntimeSpec struct {
-	Tenant              string                        `yaml:"tenant,omitempty"`
-	Namespace           string                        `yaml:"namespace,omitempty"`
-	Language            string                        `yaml:"language,omitempty"`
-	UserConfig          map[string]interface{}        `yaml:"user_config,omitempty"`
-	SecretsMap          map[string]v1alpha1.SecretRef `yaml:"secrets_map,omitempty"`
-	LogTopic            string                        `yaml:"log_topic,omitempty"`
-	Parallelism         int                           `yaml:"parallelism,omitempty"`
-	ProcessingGuarantee v1alpha1.ProcessGuarantee     `json:"processingGuarantee,omitempty"`
+	Tenant      string                        `yaml:"tenant,omitempty"`
+	Namespace   string                        `yaml:"namespace,omitempty"`
+	Language    string                        `yaml:"language,omitempty"`
+	UserConfig  map[string]interface{}        `yaml:"user_config,omitempty"`
+	SecretsMap  map[string]v1alpha1.SecretRef `yaml:"secrets_map,omitempty"`
+	LogTopic    string                        `yaml:"log_topic,omitempty"`
+	Parallelism int                           `yaml:"parallelism,omitempty"`
+	Processing  *ProcessingSpec               `yaml:"processing_spec,omitempty"`
 }
 
 type MetaSpec struct {
