@@ -594,12 +594,6 @@ func MakeAgentFunctionInstanceConfig(name, logLevel, clusterName string, state *
 			ClusterName: clusterName,
 			ServiceUrl:  "$brokerServiceURL",
 			AdminUrl:    "$webServiceURL",
-			TLS: &AgentTLSConfig{
-				UseTLS:                      tlsConfig.IsEnabled(),
-				TlsAllowInsecureConnection:  parseBool(tlsConfig.AllowInsecureConnection()),
-				TlsTrustCertPath:            getTLSTrustCertPath(tlsConfig, tlsConfig.SecretKey()),
-				HostnameVerificationEnabled: parseBool(tlsConfig.EnableHostnameVerification()),
-			},
 		},
 		Server: &ServerConfig{
 			Port:                        GRPCPort.ContainerPort,
@@ -619,6 +613,17 @@ func MakeAgentFunctionInstanceConfig(name, logLevel, clusterName string, state *
 				AuthParams: authConfig.GenericAuth.ClientAuthenticationParameters,
 			}
 		}
+	}
+	if !reflect.ValueOf(tlsConfig).IsNil() {
+		agentTLSConfig := &AgentTLSConfig{
+			UseTLS:                      tlsConfig.IsEnabled(),
+			TlsAllowInsecureConnection:  parseBool(tlsConfig.AllowInsecureConnection()),
+			HostnameVerificationEnabled: parseBool(tlsConfig.EnableHostnameVerification()),
+		}
+		if tlsConfig.HasSecretVolume() {
+			agentTLSConfig.TlsTrustCertPath = getTLSTrustCertPath(tlsConfig, tlsConfig.SecretKey())
+		}
+		instanceConfig.PulsarCluster.TLS = agentTLSConfig
 	}
 	if state != nil {
 		instanceConfig.StateStorage = &StateStorageConfig{
