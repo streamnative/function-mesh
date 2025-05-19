@@ -611,7 +611,7 @@ func MakeAgentFunctionInstanceConfig(name, logLevel, clusterName string, state *
 		if authConfig.OAuth2Config != nil {
 			instanceConfig.PulsarCluster.Authentication = &AuthenticationConfig{
 				AuthPlugin: OAuth2AuthenticationPlugin,
-				AuthParams: authConfig.OAuth2Config.AuthenticationParametersWithoutSingleQuote(),
+				AuthParams: authConfig.OAuth2Config.AuthenticationParametersWithEscape(),
 			}
 		} else if authConfig.GenericAuth != nil {
 			instanceConfig.PulsarCluster.Authentication = &AuthenticationConfig{
