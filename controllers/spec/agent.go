@@ -115,7 +115,7 @@ type PulsarProducerSpec struct {
 
 type PulsarSourceSpec struct {
 	Configs                      map[string]interface{}        `yaml:"configs,omitempty"`
-	SubscriptionName             string                        `yaml:"subscriptionName,omitempty"`
+	SubscriptionName             string                        `yaml:"subscription_name,omitempty"`
 	SubscriptionType             string                        `yaml:"subscription_type,omitempty"`
 	InputSpecs                   map[string]PulsarConsumerSpec `yaml:"input_specs,omitempty"`
 	TimeoutMs                    int32                         `yaml:"timeout_ms,omitempty"`
@@ -145,7 +145,7 @@ type ProcessingSpec struct {
 	DeadLetterTopic     string `yaml:"dead_letter_topic,omitempty"`
 	RetainOrdering      bool   `yaml:"retain_ordering,omitempty"`
 	RetainKeyOrdering   bool   `yaml:"retain_key_ordering,omitempty"`
-	SubscribePosition   string `yaml:"subscribe_position,omitempty"`
+	SubscribePosition   string `yaml:"subscription_position,omitempty"`
 }
 
 type RuntimeSpec struct {
