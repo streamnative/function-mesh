@@ -647,10 +647,17 @@ func MakeAgentFunctionSpec(functionSpec v1alpha1.FunctionSpec) *AgentFunctionSpe
 	}
 	description := fmt.Sprintf("Agent %s/%s/%s", functionSpec.Tenant, functionSpec.Namespace, functionSpec.Name)
 	if functionSpec.FuncConfig != nil {
-		desc := functionSpec.FuncConfig.Data["description"].(string)
-		if desc != "" {
-			description = desc
+		val, ok := functionSpec.FuncConfig.Data["description"]
+		if ok {
+			desc := val.(string)
+			if desc != "" {
+				description = desc
+			}
 		}
+	}
+	subscriptionName := functionSpec.SubscriptionName
+	if subscriptionName == "" {
+		subscriptionName = fmt.Sprintf("%s/%s/%s", functionSpec.Tenant, functionSpec.Namespace, functionSpec.Name)
 	}
 
 	// get input specs
@@ -730,7 +737,7 @@ func MakeAgentFunctionSpec(functionSpec v1alpha1.FunctionSpec) *AgentFunctionSpe
 		},
 		Source: SourceSpec{
 			Pulsar: &PulsarSourceSpec{
-				SubscriptionName: functionSpec.SubscriptionName,
+				SubscriptionName: subscriptionName,
 				SubscriptionType: strings.ToLower(GetSubscriptionType(functionSpec.RetainOrdering, functionSpec.RetainKeyOrdering,
 					functionSpec.ProcessingGuarantee).String()),
 				TimeoutMs:           functionSpec.Timeout,
