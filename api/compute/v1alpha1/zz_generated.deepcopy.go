@@ -770,10 +770,7 @@ func (in *McpSseConfig) DeepCopyInto(out *McpSseConfig) {
 	*out = *in
 	if in.Headers != nil {
 		in, out := &in.Headers, &out.Headers
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+		*out = (*in).DeepCopy()
 	}
 }
 

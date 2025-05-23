@@ -92,8 +92,6 @@ spec:
                           sse:
                             properties:
                               headers:
-                                additionalProperties:
-                                  type: string
                                 type: object
                               sseReadTimeout:
                                 format: int32
