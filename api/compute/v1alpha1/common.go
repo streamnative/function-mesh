@@ -605,8 +605,8 @@ func (rc *ResourceCondition) SetCondition(condition ResourceConditionType, actio
 type McpSseConfig struct {
 	Url            string  `json:"url,omitempty" yaml:"url,omitempty"`
 	Headers        *Config `json:"headers,omitempty" yaml:"headers,omitempty"`
-	Timeout        int32   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
-	SseReadTimeout int32   `json:"sseReadTimeout,omitempty" yaml:"sse_read_timeout,omitempty"`
+	Timeout        *int32  `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	SseReadTimeout *int32  `json:"sseReadTimeout,omitempty" yaml:"sse_read_timeout,omitempty"`
 }
 
 type McpConfig struct {
