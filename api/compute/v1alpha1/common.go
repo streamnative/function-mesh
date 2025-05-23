@@ -288,6 +288,8 @@ type AgentRuntime struct {
 
 	AgentFileLocation string            `json:"agentFileLocation,omitempty"`
 	Log               *RuntimeLogConfig `json:"log,omitempty"`
+	// +kubebuilder:validation:Optional
+	Tools *ToolsConfig `json:"tools,omitempty"`
 }
 
 type SecretRef struct {
@@ -598,4 +600,22 @@ func (rc *ResourceCondition) SetCondition(condition ResourceConditionType, actio
 	rc.Condition = condition
 	rc.Action = action
 	rc.Status = status
+}
+
+type McpSseConfig struct {
+	Url            string            `json:"url,omitempty" yaml:"url,omitempty"`
+	Headers        map[string]string `json:"headers,omitempty" yaml:"headers,omitempty"`
+	Timeout        int32             `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	SseReadTimeout int32             `json:"sseReadTimeout,omitempty" yaml:"sse_read_timeout,omitempty"`
+}
+
+type McpConfig struct {
+	Sse McpSseConfig `json:"sse,omitempty" yaml:"sse,omitempty"`
+}
+
+type ToolsConfig struct {
+	// +kubebuilder:validation:Optional
+	Mcp             *McpConfig `json:"mcp,omitempty" yaml:"mcp,omitempty"`
+	IncludeTools    []string   `json:"includeTools,omitempty" yaml:"include_tools,omitempty"`
+	IncludePatterns []string   `json:"includePatterns,omitempty" yaml:"include_patterns,omitempty"`
 }

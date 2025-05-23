@@ -83,6 +83,8 @@ type InstanceConfig struct {
 	PulsarCluster *PulsarClusterConfig `yaml:"pulsar_cluster,omitempty"`
 
 	Server *ServerConfig `yaml:"server,omitempty"`
+
+	Tools *v1alpha1.ToolsConfig `yaml:"tools,omitempty"`
 }
 
 type PulsarConsumerSpec struct {

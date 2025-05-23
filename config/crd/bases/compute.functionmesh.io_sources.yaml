@@ -77,6 +77,35 @@ spec:
                         - SizedPolicyWith100MB
                         type: string
                     type: object
+                  tools:
+                    properties:
+                      includePatterns:
+                        items:
+                          type: string
+                        type: array
+                      includeTools:
+                        items:
+                          type: string
+                        type: array
+                      mcp:
+                        properties:
+                          sse:
+                            properties:
+                              headers:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              sseReadTimeout:
+                                format: int32
+                                type: integer
+                              timeout:
+                                format: int32
+                                type: integer
+                              url:
+                                type: string
+                            type: object
+                        type: object
+                    type: object
                 required:
                 - agentFile
                 type: object

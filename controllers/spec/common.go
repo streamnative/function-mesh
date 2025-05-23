@@ -571,7 +571,7 @@ func MakeAgentFunctionCommand(spec v1alpha1.FunctionSpec, downloadPath, function
 		Log: spec.Agent.Log,
 	})
 	instanceConfig := MakeAgentFunctionInstanceConfig(spec.Name, logLevel, spec.ClusterName, spec.StateConfig,
-		spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
+		spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, spec.Runtime.Agent)
 	funcSpec := MakeAgentFunctionSpec(spec)
 
 	processCommand := generateLogConfigCommand + strings.Join(getProcessAgentRuntimeArgs(instanceConfig, funcSpec, functionFile, spec.ClassName), " ")
@@ -584,7 +584,7 @@ func MakeAgentFunctionCommand(spec v1alpha1.FunctionSpec, downloadPath, function
 	return []string{"bash", "-c", processCommand}
 }
 
-func MakeAgentFunctionInstanceConfig(name, logLevel, clusterName string, state *v1alpha1.Stateful, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) *InstanceConfig {
+func MakeAgentFunctionInstanceConfig(name, logLevel, clusterName string, state *v1alpha1.Stateful, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, agent *v1alpha1.AgentRuntime) *InstanceConfig {
 	instanceConfig := &InstanceConfig{
 		MaxBufferedTuples: 1000,
 		Logging: &LoggingConfig{
@@ -635,6 +635,9 @@ func MakeAgentFunctionInstanceConfig(name, logLevel, clusterName string, state *
 		instanceConfig.StateStorage = &StateStorageConfig{
 			ServiceUrl: state.Pulsar.ServiceURL,
 		}
+	}
+	if agent != nil && agent.Tools != nil {
+		instanceConfig.Tools = agent.Tools
 	}
 	return instanceConfig
 }
