@@ -167,9 +167,14 @@ type MetaSpec struct {
 	Description string `yaml:"description,omitempty"`
 }
 
+type FunctionSpec struct {
+	Funcs []string `yaml:"funcs"`
+}
+
 type AgentFunctionSpec struct {
-	Meta    MetaSpec    `yaml:"meta,omitempty"`
-	Runtime RuntimeSpec `yaml:"runtime,omitempty"`
-	Source  SourceSpec  `yaml:"source,omitempty"`
-	Sink    SinkSpec    `yaml:"sink,omitempty"`
+	Meta     MetaSpec     `yaml:"meta,omitempty"`
+	Runtime  RuntimeSpec  `yaml:"runtime,omitempty"`
+	Function FunctionSpec `yaml:"function,omitempty"`
+	Source   SourceSpec   `yaml:"source,omitempty"`
+	Sink     SinkSpec     `yaml:"sink,omitempty"`
 }

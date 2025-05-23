@@ -139,6 +139,8 @@ const (
 	FunctionContainerName = "pulsar-function"
 	SinkContainerName     = "pulsar-sink"
 	SourceContainerName   = "pulsar-source"
+
+	DefaultAgentFunction = "streamnative.functions.agents.adk_agent.ADKAgent"
 )
 
 //go:embed template/java-runtime-log4j.xml.tmpl
@@ -737,6 +739,9 @@ func MakeAgentFunctionSpec(functionSpec v1alpha1.FunctionSpec) *AgentFunctionSpe
 				RetainKeyOrdering:   functionSpec.RetainKeyOrdering,
 				SubscribePosition:   string(functionSpec.SubscriptionPosition),
 			},
+		},
+		Function: FunctionSpec{
+			Funcs: []string{DefaultAgentFunction},
 		},
 		Source: SourceSpec{
 			Pulsar: &PulsarSourceSpec{
