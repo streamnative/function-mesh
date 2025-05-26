@@ -58,7 +58,7 @@ WORKDIR /pulsar
 
 # Copy the kinesis_producer native executable compiled for Alpine musl to the pulsar-all image
 # This is required to support the Pulsar IO Kinesis sink connector
-COPY --from=pulsar /opt/amazon-kinesis-producer/bin/kinesis_producer /opt/amazon-kinesis-producer/bin/.os_info /opt/amazon-kinesis-producer/bin/.build_time /opt/amazon-kinesis-producer/bin/.revision /opt/amazon-kinesis-producer/bin/.system_info /opt/amazon-kinesis-producer/bin/.version /opt/amazon-kinesis-producer/bin/
+COPY --from=pulsar --chown=$UID:$GID /opt/amazon-kinesis-produce* /opt/amazon-kinesis-producer
 # Set the environment variable to point to the kinesis_producer native executable
 ENV PULSAR_IO_KINESIS_KPL_PATH=/opt/amazon-kinesis-producer/bin/kinesis_producer
 # Install the required dependencies for the kinesis_producer native executable
