@@ -46,7 +46,7 @@ RUN echo "VERSION_TAG=${VERSION_TAG}" && \
         export JRE_PACKAGE_NAME='openjdk17 gcompat'; \
     else \
         echo "Pulsar version is not in the list, use java 21 instead" && \
-        export JRE_PACKAGE_NAME='openjdk17 gcompat'; \
+        export JRE_PACKAGE_NAME='openjdk21 gcompat'; \
     fi && \
     apk update && apk add --no-cache $JRE_PACKAGE_NAME bash
 
