@@ -25,9 +25,12 @@ RUN echo "VERSION_TAG=${VERSION_TAG}" && \
     elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 11 ]; then \
         echo "Pulsar version is 2.11, use java 17" && \
         export JRE_PACKAGE_NAME='openjdk17 gcompat'; \
-    else \
-        echo "Pulsar version is not in the list, use java 17 instead" && \
+    elif [ $VERSION_MAJOR -eq 3 ]; then \
+        echo "Pulsar version is 3.x, use java 17" && \
         export JRE_PACKAGE_NAME='openjdk17 gcompat'; \
+    else \
+        echo "Pulsar version is not in the list, use java 21 instead" && \
+        export JRE_PACKAGE_NAME='openjdk21 gcompat'; \
     fi && \
     apk update && apk add --no-cache $JRE_PACKAGE_NAME
 
