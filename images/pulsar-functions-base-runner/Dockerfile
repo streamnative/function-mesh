@@ -1,7 +1,8 @@
 ARG PULSAR_IMAGE
 ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
-FROM alpine:3.20 as functions-runner
+FROM apachepulsar/pulsar-io-kinesis-sink-kinesis_producer:0.15.12 as pulsar-io-kinesis-sink-kinesis_producer
+FROM alpine:3.21 as functions-runner
 
 ENV GID=10001
 ENV UID=10000
@@ -69,7 +70,7 @@ ENV java.io.tmpdir=/pulsar/tmp/
 
 # Copy the kinesis_producer native executable compiled for Alpine musl to the runner image
 # This is required to support the Pulsar IO Kinesis sink connector
-COPY --from=pulsar --chown=$UID:$GID /opt/amazon-kinesis-produce* /opt/amazon-kinesis-producer
+COPY --from=pulsar-io-kinesis-sink-kinesis_producer --chown=$UID:$GID /opt/amazon-kinesis-producer/bin/kinesis_producer /opt/amazon-kinesis-producer/bin/.os_info /opt/amazon-kinesis-producer/bin/.build_time /opt/amazon-kinesis-producer/bin/.revision /opt/amazon-kinesis-producer/bin/.system_info /opt/amazon-kinesis-producer/bin/.version /opt/amazon-kinesis-producer/bin/
 # Set the environment variable to point to the kinesis_producer native executable
 ENV PULSAR_IO_KINESIS_KPL_PATH=/opt/amazon-kinesis-producer/bin/kinesis_producer
 # Install the required dependencies for the kinesis_producer native executable

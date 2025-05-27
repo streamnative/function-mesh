@@ -1,4 +1,4 @@
-FROM alpine:3.20 as functions-runner
+FROM alpine:3.21 as functions-runner
 
 ENV GID=10001
 ENV UID=10000
