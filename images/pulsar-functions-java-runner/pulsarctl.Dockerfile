@@ -57,7 +57,7 @@ ENV java.io.tmpdir=/pulsar/tmp/
 
 WORKDIR /pulsar
 
-# Copy the kinesis_producer native executable compiled for Alpine musl to the pulsar-all image
+# Copy the kinesis_producer native executable compiled for Alpine musl to the image
 # This is required to support the Pulsar IO Kinesis sink connector
 COPY --from=pulsar-io-kinesis-sink-kinesis_producer --chown=$UID:$GID /opt/amazon-kinesis-producer/bin/kinesis_producer /opt/amazon-kinesis-producer/bin/.os_info /opt/amazon-kinesis-producer/bin/.build_time /opt/amazon-kinesis-producer/bin/.revision /opt/amazon-kinesis-producer/bin/.system_info /opt/amazon-kinesis-producer/bin/.version /opt/amazon-kinesis-producer/bin/
 # Set the environment variable to point to the kinesis_producer native executable
