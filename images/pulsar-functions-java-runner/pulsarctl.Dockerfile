@@ -1,6 +1,7 @@
 ARG PULSAR_IMAGE
 ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
+FROM apachepulsar/pulsar-io-kinesis-sink-kinesis_producer:0.15.12 as pulsar-io-kinesis-sink-kinesis_producer
 FROM pulsar-functions-pulsarctl-runner-base:latest
 
 ARG PULSAR_IMAGE_TAG
@@ -25,9 +26,12 @@ RUN echo "VERSION_TAG=${VERSION_TAG}" && \
     elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 11 ]; then \
         echo "Pulsar version is 2.11, use java 17" && \
         export JRE_PACKAGE_NAME='openjdk17 gcompat'; \
-    else \
-        echo "Pulsar version is not in the list, use java 17 instead" && \
+    elif [ $VERSION_MAJOR -eq 3 ]; then \
+        echo "Pulsar version is 3.x, use java 17" && \
         export JRE_PACKAGE_NAME='openjdk17 gcompat'; \
+    else \
+        echo "Pulsar version is not in the list, use java 21 instead" && \
+        export JRE_PACKAGE_NAME='openjdk21 gcompat'; \
     fi && \
     apk update && apk add --no-cache $JRE_PACKAGE_NAME
 
@@ -52,5 +56,27 @@ ENV PULSAR_ROOT_LOGGER=INFO,CONSOLE
 ENV java.io.tmpdir=/pulsar/tmp/
 
 WORKDIR /pulsar
+
+# Copy the kinesis_producer native executable compiled for Alpine musl to the image
+# This is required to support the Pulsar IO Kinesis sink connector
+COPY --from=pulsar-io-kinesis-sink-kinesis_producer --chown=$UID:$GID /opt/amazon-kinesis-producer/bin/kinesis_producer /opt/amazon-kinesis-producer/bin/.os_info /opt/amazon-kinesis-producer/bin/.build_time /opt/amazon-kinesis-producer/bin/.revision /opt/amazon-kinesis-producer/bin/.system_info /opt/amazon-kinesis-producer/bin/.version /opt/amazon-kinesis-producer/bin/
+# Set the environment variable to point to the kinesis_producer native executable
+ENV PULSAR_IO_KINESIS_KPL_PATH=/opt/amazon-kinesis-producer/bin/kinesis_producer
+# Install the required dependencies for the kinesis_producer native executable
+USER 0
+RUN apk update && apk add --no-cache \
+    brotli-libs \
+    c-ares \
+    libcrypto3 \
+    libcurl \
+    libgcc \
+    libidn2 \
+    libpsl \
+    libssl3 \
+    libunistring \
+    nghttp2-libs \
+    zlib \
+    zstd-libs \
+    libuuid
 
 USER $USER
