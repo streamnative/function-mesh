@@ -994,7 +994,7 @@ func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime, agent v1a
 	return tpl.String(), nil
 }
 
-func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime, agent v1alpha1.LogTopicAgent) string {
+func GeneratePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime, agent v1alpha1.LogTopicAgent) string {
 	commands := "sed -i.bak 's/^  Log.setLevel/#&/' /pulsar/instances/python-instance/log.py && "
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return commands
