@@ -1,6 +1,6 @@
 # function-mesh-operator
 
-![Version: 0.2.31](https://img.shields.io/badge/Version-0.2.31-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.24.0](https://img.shields.io/badge/AppVersion-0.24.0-informational?style=flat-square)
+![Version: 0.2.32](https://img.shields.io/badge/Version-0.2.32-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.25.0-rc.1](https://img.shields.io/badge/AppVersion-0.25.0--rc.1-informational?style=flat-square)
 
 function mesh operator Helm chart for Kubernetes
 
@@ -20,7 +20,7 @@ function mesh operator Helm chart for Kubernetes
 
 | Repository | Name | Version |
 |------------|------|---------|
-|  | admission-webhook | 0.2.31 |
+|  | admission-webhook | 0.2.32 |
 
 ## Values
 
@@ -36,7 +36,7 @@ function mesh operator Helm chart for Kubernetes
 | controllerManager.globalBackendConfig | string | `"global-backend-config"` |  |
 | controllerManager.globalBackendConfigNamespace | string | `"default"` |  |
 | controllerManager.healthProbe.port | int | `8000` |  |
-| controllerManager.metrics.port | int | `8080` |  |
+| controllerManager.metrics.port | int | `8443` |  |
 | controllerManager.namespacedBackendConfig | string | `"backend-config"` |  |
 | controllerManager.nodeSelector | object | `{}` |  |
 | controllerManager.pprof.enable | bool | `false` |  |
@@ -50,7 +50,7 @@ function mesh operator Helm chart for Kubernetes
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | imagePullSecrets | list | `[]` |  |
 | installation.namespace | string | `"function-mesh-system"` |  |
-| operatorImage | string | `"streamnative/function-mesh:v0.24.0"` |  |
+| operatorImage | string | `"streamnative/function-mesh:v0.25.0-rc.1"` |  |
 | rbac.create | bool | `true` |  |
 
 ----------------------------------------------
