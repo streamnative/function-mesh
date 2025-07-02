@@ -497,7 +497,7 @@ func GenerateAffinity(affinity *corev1.Affinity, labels map[string]string) *core
 
 	// add default pod anti-affinity rules to ensure replica pods doesn't run on the same node
 	if affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-		affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution = []corev1.PodAffinityTerm{}
+		affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution = []corev1.PodAffinityTerm{}
 	}
 	affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(
 		affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution,
