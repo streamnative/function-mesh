@@ -57,9 +57,9 @@ spec:
         args:
           - --enable-leader-election={{ .Values.controllerManager.enableLeaderElection }}
           - --enable-pprof={{ .Values.controllerManager.pprof.enable }}
-          - --metrics-addr={{ .Values.controllerManager.metrics.port }}
-          - --health-probe-addr={{ .Values.controllerManager.healthProbe.port }}
-          - --pprof-addr={{ .Values.controllerManager.pprof.port }}
+          - --metrics-addr=:{{ .Values.controllerManager.metrics.port }}
+          - --health-probe-addr=:{{ .Values.controllerManager.healthProbe.port }}
+          - --pprof-addr=:{{ .Values.controllerManager.pprof.port }}
           - --config-file={{ .Values.controllerManager.configFile }}
           - --enable-init-containers={{ .Values.controllerManager.enableInitContainers }}
           - --global-backend-config={{ .Values.controllerManager.globalBackendConfig }}
