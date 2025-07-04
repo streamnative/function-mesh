@@ -7,7 +7,7 @@ This Docker environment contains the tools and environment required to generate 
 - protoc: v3.17.3
 - protoc-gen-go: v1.25.0
 - protoc-gen-go-grpc: v1.0.0
-- Go: 1.24.2+
+- Go: 1.24.4+
 
 **Note**: This image uses a Debian base (not Alpine) to ensure compatibility with the protoc x86_64 binary, which is compiled for glibc rather than musl libc.
 
@@ -53,7 +53,7 @@ You can verify tool versions inside the container:
 
 ```bash
 protoc --version              # Should show libprotoc 3.17.3
-go version                   # Should show go1.24.2+
+go version                   # Should show go1.24.4+
 ```
 
 ## Troubleshooting
