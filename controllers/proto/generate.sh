@@ -55,5 +55,6 @@ fi
 protoFiles="${protoDefinitions}/*.proto"
 
 protoc \
-	--go_out=import_path=${pkg},plugins=grpc:. \
-	--proto_path="${protoDefinitions}" ${protoFiles}
+  --proto_path="${protoDefinitions}" \
+  --go_out=. \
+	${protoFiles}

@@ -315,6 +315,16 @@ type ProducerConfig struct {
 	CryptoConfig                       *CryptoConfig   `json:"cryptoConfig,omitempty"`
 	BatchBuilder                       string          `json:"batchBuilder,omitempty"`
 	CompressionType                    CompressionType `json:"compressionType,omitempty"`
+	BatchingConfig                     *BatchingConfig `json:"batchingConfig,omitempty"`
+}
+
+type BatchingConfig struct {
+	Enabled                                          bool   `json:"enabled,omitempty"`
+	BatchingMaxPublishDelayMs                        int32  `json:"batchingMaxPublishDelayMs,omitempty"`
+	RoundRobinRouterBatchingPartitionSwitchFrequency int32  `json:"roundRobinRouterBatchingPartitionSwitchFrequency,omitempty"`
+	BatchingMaxMessages                              int32  `json:"batchingMaxMessages,omitempty"`
+	BatchingMaxBytes                                 int32  `json:"batchingMaxBytes,omitempty"`
+	BatchBuilder                                     string `json:"batchBuilder,omitempty"`
 }
 
 type CryptoConfig struct {

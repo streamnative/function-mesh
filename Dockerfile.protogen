@@ -1,0 +1,42 @@
+# Build environment for protobuf generation
+# Requirements: protoc 3.17.3, protoc-gen-go v1.3.5
+# Using Debian base to avoid musl/glibc compatibility issues with protoc x86_64 binaries
+FROM golang:1.24.2
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    bash \
+    curl \
+    unzip \
+    git \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV PROTOC_VERSION=3.17.3
+ENV PROTOC_GEN_GO_VERSION=v1.3.5
+
+# Install protoc 3.17.3
+RUN set -eux; \
+    PROTOC_ZIP="protoc-${PROTOC_VERSION}-linux-x86_64.zip"; \
+    curl -OL "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}"; \
+    unzip -o "$PROTOC_ZIP" -d /usr/local; \
+    rm -f "$PROTOC_ZIP"
+
+# Install protoc-gen-go 1.25.0
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+# Verify installations
+RUN protoc --version
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy the entire project
+COPY . .
+
+# Make sure generate.sh is executable
+RUN chmod +x controllers/proto/generate.sh
+
+# Default command: run the generate script
+CMD ["/workspace/controllers/proto/generate.sh", "/workspace"]
