@@ -32,3 +32,9 @@ nodes:
         # optional: set the protocol to one of TCP, UDP, SCTP.
         # TCP is the default
         protocol: TCP
+
+  - role: worker
+    image: kindest/node:v1.23.17
+
+  - role: worker
+    image: kindest/node:v1.23.17
