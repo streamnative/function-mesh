@@ -49,10 +49,10 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set up GO 1.24.2
+      - name: Set up GO 1.24.4
         uses: actions/setup-go@v1
         with:
-          go-version: 1.24.2
+          go-version: 1.24.4
         id: go
 
       - name: InstallKubebuilder
@@ -180,10 +180,10 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set up GO 1.24.2
+      - name: Set up GO 1.24.4
         uses: actions/setup-go@v1
         with:
-          go-version: 1.24.2
+          go-version: 1.24.4
         id: go
 
       - name: InstallKubebuilder
