@@ -65,6 +65,7 @@ spec:
           - --global-backend-config={{ .Values.controllerManager.globalBackendConfig }}
           - --global-backend-config-namespace={{ .Values.controllerManager.globalBackendConfigNamespace }}
           - --namespaced-backend-config={{ .Values.controllerManager.namespacedBackendConfig }}
+          - --add-default-affinity={{ .Values.controllerManager.addDefaultAffinity }}
         env:
           - name: NAMESPACE
             valueFrom:

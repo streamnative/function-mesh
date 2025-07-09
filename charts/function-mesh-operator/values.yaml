@@ -73,6 +73,7 @@ controllerManager:
   globalBackendConfig: global-backend-config
   globalBackendConfigNamespace: default
   namespacedBackendConfig: backend-config
+  addDefaultAffinity: true
 
 admissionWebhook:
   enabled: true
