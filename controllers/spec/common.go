@@ -475,7 +475,7 @@ func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Cont
 			TerminationGracePeriodSeconds: policy.TerminationGracePeriodSeconds,
 			Volumes:                       volumes,
 			NodeSelector:                  policy.NodeSelector,
-			Affinity:                      GenerateAffinity(policy.Affinity, mergedLabels),
+			Affinity:                      GenerateAffinity(policy.Affinity, mergedLabels, policy.DisableDefaultAffinity),
 			Tolerations:                   policy.Tolerations,
 			SecurityContext:               podSecurityContext,
 			ImagePullSecrets:              policy.ImagePullSecrets,
@@ -484,8 +484,8 @@ func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Cont
 	}
 }
 
-func GenerateAffinity(affinity *corev1.Affinity, labels map[string]string) *corev1.Affinity {
-	if !utils.AddDefaultAffinity {
+func GenerateAffinity(affinity *corev1.Affinity, labels map[string]string, disableDefaultAffinity bool) *corev1.Affinity {
+	if !utils.AddDefaultAffinity || disableDefaultAffinity {
 		return affinity
 	}
 	if affinity == nil {
@@ -495,21 +495,7 @@ func GenerateAffinity(affinity *corev1.Affinity, labels map[string]string) *core
 		affinity.PodAntiAffinity = &corev1.PodAntiAffinity{}
 	}
 
-	// add default pod anti-affinity rules to ensure replica pods doesn't run on the same node
-	if affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-		affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution = []corev1.PodAffinityTerm{}
-	}
-	affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(
-		affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution,
-		corev1.PodAffinityTerm{
-			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			TopologyKey: "kubernetes.io/hostname",
-		},
-	)
-
-	// add default pod anti-affinity rules to ensure replica pods prefer running in different zones
+	// add default pod anti-affinity rules to ensure replica pods prefer running on different node
 	if affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution == nil {
 		affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.WeightedPodAffinityTerm{}
 	}
@@ -521,7 +507,7 @@ func GenerateAffinity(affinity *corev1.Affinity, labels map[string]string) *core
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: labels,
 				},
-				TopologyKey: "topology.kubernetes.io/zone",
+				TopologyKey: "kubernetes.io/hostname",
 			},
 		},
 	)
