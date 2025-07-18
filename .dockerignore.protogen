@@ -1,0 +1,50 @@
+# Git files
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Build artifacts
+bin/
+artifacts/
+dist/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (except the ones we need)
+Dockerfile
+*.dockerfile
+.dockerignore
+
+# Test files
+*_test.go
+testdata/
+
+# CI/CD
+.github/
+.travis.yml
+.circleci/
+
+# Other unnecessary files for protobuf generation
+charts/
+config/
+hack/
+images/
+manifests/
+mesh-worker-service/
+tools/
+LICENSE
+install.sh
+bump_version.sh
+*.sh
+!controllers/proto/generate.sh 
