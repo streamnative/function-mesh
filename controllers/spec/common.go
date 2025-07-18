@@ -463,9 +463,10 @@ func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Cont
 	if filebeatContainer != nil {
 		containers = append(containers, *filebeatContainer)
 	}
+	mergedLabels := mergeMaps(labels, Configs.ResourceLabels, policy.Labels)
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:      mergeMaps(labels, Configs.ResourceLabels, policy.Labels),
+			Labels:      mergedLabels,
 			Annotations: generateAnnotations(Configs.ResourceAnnotations, policy.Annotations),
 		},
 		Spec: corev1.PodSpec{
@@ -474,13 +475,43 @@ func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Cont
 			TerminationGracePeriodSeconds: policy.TerminationGracePeriodSeconds,
 			Volumes:                       volumes,
 			NodeSelector:                  policy.NodeSelector,
-			Affinity:                      policy.Affinity,
+			Affinity:                      GenerateAffinity(policy.Affinity, mergedLabels, policy.DisableDefaultAffinity),
 			Tolerations:                   policy.Tolerations,
 			SecurityContext:               podSecurityContext,
 			ImagePullSecrets:              policy.ImagePullSecrets,
 			ServiceAccountName:            policy.ServiceAccountName,
 		},
 	}
+}
+
+func GenerateAffinity(affinity *corev1.Affinity, labels map[string]string, disableDefaultAffinity bool) *corev1.Affinity {
+	if !utils.AddDefaultAffinity || disableDefaultAffinity {
+		return affinity
+	}
+	if affinity == nil {
+		affinity = &corev1.Affinity{}
+	}
+	if affinity.PodAntiAffinity == nil {
+		affinity.PodAntiAffinity = &corev1.PodAntiAffinity{}
+	}
+
+	// add default pod anti-affinity rules to ensure replica pods prefer running on different node
+	if affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution == nil {
+		affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.WeightedPodAffinityTerm{}
+	}
+	affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(
+		affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
+		corev1.WeightedPodAffinityTerm{
+			Weight: 100,
+			PodAffinityTerm: corev1.PodAffinityTerm{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: labels,
+				},
+				TopologyKey: "kubernetes.io/hostname",
+			},
+		},
+	)
+	return affinity
 }
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, extraDependenciesDir, uid string,

@@ -227,6 +227,8 @@ type PodPolicy struct {
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	Liveness *Liveness `json:"liveness,omitempty"`
+
+	DisableDefaultAffinity bool `json:"disableDefaultAffinity,omitempty"`
 }
 
 type Runtime struct {
