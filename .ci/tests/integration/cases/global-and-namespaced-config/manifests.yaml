@@ -16,6 +16,7 @@ spec:
       - persistent://public/default/input-java-topic
     typeClassName: java.lang.String
   pod:
+    disableDefaultAffinity: true
     env:
       - name: "podenv"
         value: "podvalue"

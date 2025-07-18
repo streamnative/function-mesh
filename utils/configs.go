@@ -22,3 +22,4 @@ var EnableInitContainers = false
 var GlobalBackendConfig = ""
 var GlobalBackendConfigNamespace = "default"
 var NamespacedBackendConfig = ""
+var AddDefaultAffinity = true

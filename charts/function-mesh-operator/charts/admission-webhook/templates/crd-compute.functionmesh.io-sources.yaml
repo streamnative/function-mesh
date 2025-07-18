@@ -1062,6 +1062,8 @@ spec:
                       items:
                         type: string
                       type: array
+                    disableDefaultAffinity:
+                      type: boolean
                     env:
                       items:
                         properties:

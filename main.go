@@ -79,6 +79,7 @@ func main() {
 	var globalBackendConfigNamespace string
 	var namespacedBackendConfig string
 	var secureMetrics bool
+	var addDefaultAffinity bool
 	flag.StringVar(&metricsAddr, "metrics-addr", lookupEnvOrString("METRICS_ADDR", ":8443"),
 		"The address the metric endpoint binds to.")
 	flag.StringVar(&leaderElectionID, "leader-election-id",
@@ -112,6 +113,8 @@ func main() {
 		"The backend config name used for functions&sinks&sources in the same namespace")
 	flag.BoolVar(&secureMetrics, "metrics-secure", true, "If set, the metrics endpoint is served securely via HTTPS."+
 		" Use --metrics-secure=false to use HTTP instead.")
+	flag.BoolVar(&addDefaultAffinity, "add-default-affinity", lookupEnvOrBool("ADD_DEFAULT_AFFINITY", true), "If set, the generated pod will add one default podAntiAffinity:"+
+		" make pods prefer not be scheduled on the same node (soft rule).")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
@@ -119,6 +122,7 @@ func main() {
 	utils.GlobalBackendConfig = globalBackendConfig
 	utils.GlobalBackendConfigNamespace = globalBackendConfigNamespace
 	utils.NamespacedBackendConfig = namespacedBackendConfig
+	utils.AddDefaultAffinity = addDefaultAffinity
 
 	// enable pprof
 	if enablePprof {

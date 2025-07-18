@@ -72,7 +72,7 @@ test-ginkgo: generate fmt vet manifests envtest
 
 .PHONY: envtest
 envtest:
-	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20240320141353-395cfc7486e6
+	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20250630142431-4c2e9cec2954
 
 # Build manager binary
 manager: generate fmt vet
