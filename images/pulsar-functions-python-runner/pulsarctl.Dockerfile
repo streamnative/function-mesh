@@ -64,6 +64,10 @@ RUN rm -rf /pulsar/instances/python-instance/pulsar/ \
 WORKDIR /pulsar
 
 USER $USER
-RUN pip3 install protobuf==6.31.1 --user
+# a temp solution from https://github.com/apache/pulsar/pull/15846 to fix python protobuf version error
+RUN pip3 install protobuf==3.20.2 --user
+# a temporary fix for https://github.com/apache/pulsar/pull/24544, it requires the protobuf version to be 6.31.1
+RUN grep -q 'from google.protobuf import runtime_version as _runtime_version' /pulsar/instances/python-instance/Function_pb2.py && \
+    pip install protobuf==6.31.1 || true
 # to make the python runner could print json logs
 RUN pip3 install python-json-logger --user
