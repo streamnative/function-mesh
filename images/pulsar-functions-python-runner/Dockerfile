@@ -42,6 +42,6 @@ RUN rm -rf /pulsar/instances/python-instance/pulsar/ \
 
 
 USER $USER
-RUN pip3 install protobuf --upgrade --user
+RUN pip3 install protobuf==6.31.1 --user
 # to make the python runner could print json logs
 RUN pip3 install python-json-logger --user
