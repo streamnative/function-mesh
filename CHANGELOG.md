@@ -1,3 +1,12 @@
+# Function Mesh v0.25.0 Release Notes
+
+## v0.25.0 What's New
+
+* [Dependency] Upgrade go to 1.24.4 ([#813](https://github.com/streamnative/function-mesh/pull/813))
+* [CRD] Add default anti affinity ([#810](https://github.com/streamnative/function-mesh/pull/810))
+* [Runtime] Use java21 for pulsar 4.0+ ([#809](https://github.com/streamnative/function-mesh/pull/809))
+* [Controller] Add more fields to BackendConfig ([#804](https://github.com/streamnative/function-mesh/pull/804))
+
 # Function Mesh v0.24.0 Release Notes
 
 ## v0.24.0 What's New
