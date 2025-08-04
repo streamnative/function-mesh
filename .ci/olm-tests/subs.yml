@@ -6,6 +6,6 @@ metadata:
 spec:
   channel: alpha
   name: function-mesh
-  startingCSV: function-mesh.v0.24.0
+  startingCSV: function-mesh.v0.25.0
   source: my-test-catalog
   sourceNamespace: olm
