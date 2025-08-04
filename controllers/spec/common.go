@@ -2514,3 +2514,22 @@ func CreateDiff(orj, modified *appsv1.StatefulSet) (string, error) {
 	}
 	return string(patch), nil
 }
+
+func convertBatchingConfig(batchingConfig *v1alpha1.BatchingConfig) *proto.BatchingSpec {
+	if batchingConfig == nil {
+		// to keep the backward compatibility, when batchingSpec is null or empty
+		// the batching is enabled by default, and the default max publish delay is 10ms
+		return &proto.BatchingSpec{
+			Enabled:                   true,
+			BatchingMaxPublishDelayMs: 10,
+		}
+	}
+	return &proto.BatchingSpec{
+		Enabled:                   batchingConfig.Enabled,
+		BatchingMaxPublishDelayMs: batchingConfig.BatchingMaxPublishDelayMs,
+		RoundRobinRouterBatchingPartitionSwitchFrequency: batchingConfig.RoundRobinRouterBatchingPartitionSwitchFrequency,
+		BatchingMaxMessages: batchingConfig.BatchingMaxMessages,
+		BatchingMaxBytes:    batchingConfig.BatchingMaxBytes,
+		BatchBuilder:        batchingConfig.BatchBuilder,
+	}
+}

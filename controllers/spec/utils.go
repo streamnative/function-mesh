@@ -242,6 +242,7 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 			CryptoSpec:                         generateCryptoSpec(function.Spec.Output.ProducerConf.CryptoConfig),
 			BatchBuilder:                       function.Spec.Output.ProducerConf.BatchBuilder,
 			CompressionType:                    convertCompressionType(function.Spec.Output.ProducerConf.CompressionType),
+			BatchingSpec:                       convertBatchingConfig(function.Spec.Output.ProducerConf.BatchingConfig),
 		}
 
 		sinkSpec.ProducerSpec = producerConfig
@@ -306,6 +307,7 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 			CryptoSpec:                         cryptoSpec,
 			BatchBuilder:                       source.Spec.Output.ProducerConf.BatchBuilder,
 			CompressionType:                    convertCompressionType(source.Spec.Output.ProducerConf.CompressionType),
+			BatchingSpec:                       convertBatchingConfig(source.Spec.Output.ProducerConf.BatchingConfig),
 		}
 	}
 	var forward = true
