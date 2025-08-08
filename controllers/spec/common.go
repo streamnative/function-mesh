@@ -2407,8 +2407,8 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 		Name:  "logTopic",
 		Value: logTopic,
 	}, corev1.EnvVar{
-		Name:  "logName",
-		Value: name,
+		Name:      "POD_NAME",
+		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
 	})
 
 	if authConfig != nil {
