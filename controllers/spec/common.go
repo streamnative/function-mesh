@@ -218,11 +218,11 @@ func MakeHeadlessServiceName(serviceName string) string {
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderImage string, container *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, authConfig *v1alpha1.AuthConfig,
 	tlsConfig TLSConfig, pulsarConfig, authSecret, tlsSecret string, javaRuntime *v1alpha1.JavaRuntime,
-	pythonRuntime *v1alpha1.PythonRuntime, goRuntime *v1alpha1.GoRuntime, env []corev1.EnvVar, name, logTopic, filebeatImage string,
+	pythonRuntime *v1alpha1.PythonRuntime, goRuntime *v1alpha1.GoRuntime, env []corev1.EnvVar, logTopic, filebeatImage string,
 	logTopicAgent v1alpha1.LogTopicAgent, definedVolumeMounts []corev1.VolumeMount, volumeClaimTemplates []corev1.PersistentVolumeClaim,
 	persistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy) *appsv1.StatefulSet {
 
-	filebeatContainer := makeFilebeatContainer(definedVolumeMounts, env, name, logTopic, logTopicAgent, tlsConfig, authConfig, pulsarConfig, tlsSecret, authSecret, filebeatImage)
+	filebeatContainer := makeFilebeatContainer(definedVolumeMounts, env, logTopic, logTopicAgent, tlsConfig, authConfig, pulsarConfig, tlsSecret, authSecret, filebeatImage)
 
 	volumeMounts := generateDownloaderVolumeMountsForDownloader(javaRuntime, pythonRuntime, goRuntime)
 	var downloaderContainer *corev1.Container
@@ -2387,7 +2387,7 @@ func getSubscriptionNameOrDefault(subscription, tenant, namespace, name string) 
 	return subscription
 }
 
-func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.EnvVar, name string, logTopic string,
+func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.EnvVar, logTopic string,
 	agent v1alpha1.LogTopicAgent, tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	pulsarConfig string, authSecret string, tlsSecret string, image string) *corev1.Container {
 	if logTopic == "" || agent != v1alpha1.SIDECAR {
@@ -2407,8 +2407,8 @@ func makeFilebeatContainer(volumeMounts []corev1.VolumeMount, envVar []corev1.En
 		Name:  "logTopic",
 		Value: logTopic,
 	}, corev1.EnvVar{
-		Name:  "logName",
-		Value: name,
+		Name:      "POD_NAME",
+		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
 	})
 
 	if authConfig != nil {

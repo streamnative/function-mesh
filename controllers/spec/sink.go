@@ -65,7 +65,7 @@ func MakeSinkStatefulSet(ctx context.Context, cli client.Client, sink *v1alpha1.
 	statefulSet := MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, makeSinkContainer(sink),
 		makeSinkVolumes(sink, sink.Spec.Pulsar.AuthConfig), makeSinkLabels(sink), sink.Spec.Pod, sink.Spec.Pulsar.AuthConfig,
 		sink.Spec.Pulsar.TLSConfig, sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret, sink.Spec.Pulsar.TLSSecret,
-		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.Pod.Env, sink.Name, sink.Spec.LogTopic, sink.Spec.FilebeatImage,
+		sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang, sink.Spec.Pod.Env, sink.Spec.LogTopic, sink.Spec.FilebeatImage,
 		sink.Spec.LogTopicAgent, sink.Spec.VolumeMounts, nil, nil)
 
 	globalBackendConfigVersion, namespacedBackendConfigVersion, err := PatchStatefulSet(ctx, cli, sink.Namespace, statefulSet)
