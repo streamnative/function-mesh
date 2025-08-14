@@ -65,7 +65,7 @@ func MakeSourceStatefulSet(ctx context.Context, cli client.Client, source *v1alp
 	statefulSet := MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, makeSourceContainer(source),
 		makeSourceVolumes(source, source.Spec.Pulsar.AuthConfig), makeSourceLabels(source), source.Spec.Pod, source.Spec.Pulsar.AuthConfig,
 		source.Spec.Pulsar.TLSConfig, source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret, source.Spec.Pulsar.TLSSecret,
-		source.Spec.Java, source.Spec.Python, source.Spec.Golang, source.Spec.Pod.Env, source.Name, source.Spec.LogTopic, source.Spec.FilebeatImage,
+		source.Spec.Java, source.Spec.Python, source.Spec.Golang, source.Spec.Pod.Env, source.Spec.LogTopic, source.Spec.FilebeatImage,
 		source.Spec.LogTopicAgent, source.Spec.VolumeMounts, nil, nil)
 
 	globalBackendConfigVersion, namespacedBackendConfigVersion, err := PatchStatefulSet(ctx, cli, source.Namespace, statefulSet)
