@@ -6,7 +6,7 @@ output.pulsar:
   fast_fail: true
   url: \${brokerServiceURL}
   topic: \${logTopic}
-  name: \${logName}
+  name: \${POD_NAME}
   token: \${clientAuthenticationParameters:""}
   oauth2:
     enabled: \${oauth2Enabled:false}
