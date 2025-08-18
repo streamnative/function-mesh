@@ -1,3 +1,9 @@
+# Function Mesh v0.25.1 Release Notes
+
+## v0.25.1 What's New
+
+* [Runtime] Use POD_NAME as the name for filebeat sidecar container ([#817](https://github.com/streamnative/function-mesh/pull/817))
+
 # Function Mesh v0.25.0 Release Notes
 
 ## v0.25.0 What's New
