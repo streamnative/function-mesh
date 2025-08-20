@@ -237,7 +237,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 		if spec.Python.Py != "" {
 			return MakePythonFunctionCommand(spec.Python.PyLocation, spec.Python.Py,
 				spec.Name, spec.ClusterName,
-				generatePythonLogConfigCommand(spec.Name, spec.Python, spec.LogTopicAgent),
+				GeneratePythonLogConfigCommand(spec.Name, spec.Python, spec.LogTopicAgent),
 				generateFunctionDetailsInJSON(function), string(function.UID), hasPulsarctl, hasWget,
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
 				spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
