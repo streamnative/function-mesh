@@ -426,7 +426,7 @@ const (
 type Config struct {
 	// Data holds the configuration keys and values.
 	// This field exists to work around https://github.com/kubernetes-sigs/kubebuilder/issues/528
-	Data map[string]interface{} `json:"-"`
+	Data map[string]interface{} `json:"-" yaml:"-"`
 }
 
 // NewConfig constructs a Config with the given unstructured configuration data.
