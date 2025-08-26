@@ -2,6 +2,7 @@ ARG PULSAR_IMAGE
 ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
 FROM apachepulsar/pulsar-io-kinesis-sink-kinesis_producer:0.15.12 as pulsar-io-kinesis-sink-kinesis_producer
+FROM apachepulsar/pulsar-io-kinesis-sink-kinesis_producer:1.0.4 as pulsar-io-kinesis-sink-kinesis_producer-1.0
 FROM alpine:3.21 as functions-runner
 
 ENV GID=10001
@@ -73,6 +74,10 @@ ENV java.io.tmpdir=/pulsar/tmp/
 COPY --from=pulsar-io-kinesis-sink-kinesis_producer --chown=$UID:$GID /opt/amazon-kinesis-producer/bin/kinesis_producer /opt/amazon-kinesis-producer/bin/.os_info /opt/amazon-kinesis-producer/bin/.build_time /opt/amazon-kinesis-producer/bin/.revision /opt/amazon-kinesis-producer/bin/.system_info /opt/amazon-kinesis-producer/bin/.version /opt/amazon-kinesis-producer/bin/
 # Set the environment variable to point to the kinesis_producer native executable
 ENV PULSAR_IO_KINESIS_KPL_PATH=/opt/amazon-kinesis-producer/bin/kinesis_producer
+# Copy the 1.0 version of the kinesis_producer native executable
+COPY --from=pulsar-io-kinesis-sink-kinesis_producer-1.0 --chown=$UID:$GID /opt/amazon-kinesis-producer/bin/kinesis_producer /opt/amazon-kinesis-producer/bin/.os_info /opt/amazon-kinesis-producer/bin/.build_time /opt/amazon-kinesis-producer/bin/.revision /opt/amazon-kinesis-producer/bin/.system_info /opt/amazon-kinesis-producer/bin/.version /opt/amazon-kinesis-producer-1.0/bin/
+# Set the environment variable to point to the 1.0 version of the kinesis_producer native executable
+ENV PULSAR_IO_KINESIS_KPL_1_0_PATH=/opt/amazon-kinesis-producer-1.0/bin/kinesis_producer
 # Install the required dependencies for the kinesis_producer native executable
 USER 0
 RUN apk update && apk add --no-cache \
