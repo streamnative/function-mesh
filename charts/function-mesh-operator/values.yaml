@@ -64,6 +64,7 @@ controllerManager:
   enableLeaderElection: true
   metrics:
     port: 8443
+    scheme: https
   healthProbe:
     port: 8000
   pprof:
