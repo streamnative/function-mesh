@@ -26,6 +26,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
         prometheus.io/port: "{{ .Values.controllerManager.metrics.port }}"
+        prometheus.io/scheme: "{{ .Values.controllerManager.metrics.scheme }}"
         traffic.sidecar.istio.io/excludeInboundPorts: '9443,8443'
     spec:
     {{- if .Values.controllerManager.serviceAccount }}
