@@ -1102,3 +1102,215 @@ func TestGenerateContainerVolumeMounts(t *testing.T) {
 		})
 	}
 }
+
+func TestRenderINI_Default_Text_NoRolling(t *testing.T) {
+	textFormat := v1alpha1.TEXT
+	rt := &v1alpha1.PythonRuntime{
+		Log: &v1alpha1.RuntimeLogConfig{
+			Level:  "INFO",
+			Format: &textFormat,
+			// RotatePolicy: nil
+		},
+	}
+	got, err := renderPythonInstanceLoggingINITemplate("demo", rt, v1alpha1.RUNTIME)
+	if err != nil {
+		t.Fatalf("render error: %v", err)
+	}
+
+	// handlers
+	if !strings.Contains(got, "[handlers]\nkeys=stream_handler") {
+		t.Fatalf("handlers keys invalid:\n%s", got)
+	}
+	// only stream handler should exist (no rotating/timed section)
+	if strings.Contains(got, "[handler_rotating_file_handler]") || strings.Contains(got, "[handler_timed_rotating_file_handler]") {
+		t.Fatalf("unexpected rolling sections:\n%s", got)
+	}
+
+	// stream handler basics
+	if !strings.Contains(got, "[handler_stream_handler]") ||
+		!strings.Contains(got, "class=logging.StreamHandler") ||
+		!strings.Contains(got, "formatter=formatter") {
+		t.Fatalf("stream handler invalid:\n%s", got)
+	}
+
+	// formatter (text)
+	if !strings.Contains(got, "[formatter_formatter]") ||
+		!strings.Contains(got, "format=[%(asctime)s] [%(levelname)s] %(filename)s:%(lineno)d %(message)s") {
+		t.Fatalf("text formatter invalid:\n%s", got)
+	}
+}
+
+func TestRenderINI_JSON_NoRolling(t *testing.T) {
+	jsonFormat := v1alpha1.JSON
+	rt := &v1alpha1.PythonRuntime{
+		Log: &v1alpha1.RuntimeLogConfig{
+			Level:  "DEBUG",
+			Format: &jsonFormat,
+		},
+	}
+	got, err := renderPythonInstanceLoggingINITemplate("demo", rt, v1alpha1.RUNTIME)
+	if err != nil {
+		t.Fatalf("render error: %v", err)
+	}
+
+	// handlers
+	if !strings.Contains(got, "[handlers]\nkeys=stream_handler") {
+		t.Fatalf("handlers keys invalid:\n%s", got)
+	}
+
+	// formatter (json)
+	if !strings.Contains(got, "[formatter_formatter]") ||
+		!strings.Contains(got, "class=pythonjsonlogger.jsonlogger.JsonFormatter") ||
+		!strings.Contains(got, "format=%(message)s") {
+		t.Fatalf("json formatter invalid:\n%s", got)
+	}
+}
+
+func TestRenderINI_SizeRolling_10MB(t *testing.T) {
+	textFormat := v1alpha1.TEXT
+	rotatePolicy := v1alpha1.SizedPolicyWith10MB
+	rt := &v1alpha1.PythonRuntime{
+		Log: &v1alpha1.RuntimeLogConfig{
+			Level:        "INFO",
+			Format:       &textFormat,
+			RotatePolicy: &rotatePolicy,
+		},
+	}
+	got, err := renderPythonInstanceLoggingINITemplate("demo", rt, v1alpha1.RUNTIME)
+	if err != nil {
+		t.Fatalf("render error: %v", err)
+	}
+
+	if !strings.Contains(got, "[handlers]\nkeys=stream_handler,rotating_file_handler") {
+		t.Fatalf("handlers keys invalid for size rolling:\n%s", got)
+	}
+	if !strings.Contains(got, "[handler_rotating_file_handler]") ||
+		!strings.Contains(got, "class=logging.handlers.RotatingFileHandler") ||
+		!strings.Contains(got, "formatter=formatter") {
+		t.Fatalf("rotating handler invalid:\n%s", got)
+	}
+	// args: ('logs/functions/demo.log', 'a', 10485760, 5)
+	if !strings.Contains(got, "args=('logs/functions/demo.log', 'a', 10485760, 5)") {
+		t.Fatalf("rotating handler args invalid:\n%s", got)
+	}
+}
+
+func TestRenderINI_SizeRolling_50MB_100MB(t *testing.T) {
+	tests := []struct {
+		policy v1alpha1.TriggeringPolicy
+		size   string // as string to match directly
+	}{
+		{v1alpha1.SizedPolicyWith50MB, "52428800"},
+		{v1alpha1.SizedPolicyWith100MB, "104857600"},
+	}
+	textFormat := v1alpha1.TEXT
+	for _, tc := range tests {
+		rt := &v1alpha1.PythonRuntime{
+			Log: &v1alpha1.RuntimeLogConfig{
+				Level:        "INFO",
+				Format:       &textFormat,
+				RotatePolicy: &tc.policy,
+			},
+		}
+		got, err := renderPythonInstanceLoggingINITemplate("demo", rt, v1alpha1.RUNTIME)
+		if err != nil {
+			t.Fatalf("render error: %v", err)
+		}
+		if !strings.Contains(got, "[handlers]\nkeys=stream_handler,rotating_file_handler") {
+			t.Fatalf("handlers keys invalid for size rolling:\n%s", got)
+		}
+		if !strings.Contains(got, "[handler_rotating_file_handler]") ||
+			!strings.Contains(got, "class=logging.handlers.RotatingFileHandler") {
+			t.Fatalf("rotating handler invalid:\n%s", got)
+		}
+		if !strings.Contains(got, "args=('logs/functions/demo.log', 'a', "+tc.size+", 5)") {
+			t.Fatalf("rotating handler size invalid (expect %s):\n%s", tc.size, got)
+		}
+	}
+}
+
+func TestRenderINI_TimedRolling_Daily_Weekly_Monthly(t *testing.T) {
+	tests := []struct {
+		name     string
+		policy   v1alpha1.TriggeringPolicy
+		when     string
+		interval string
+	}{
+		{"daily", v1alpha1.TimedPolicyWithDaily, "D", "1"},
+		{"weekly", v1alpha1.TimedPolicyWithWeekly, "W0", "1"},
+		{"monthly", v1alpha1.TimedPolicyWithMonthly, "D", "30"},
+	}
+
+	jsonFormat := v1alpha1.JSON
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			rt := &v1alpha1.PythonRuntime{
+				Log: &v1alpha1.RuntimeLogConfig{
+					Level:        "INFO",
+					Format:       &jsonFormat,
+					RotatePolicy: &tc.policy,
+				},
+			}
+			got, err := renderPythonInstanceLoggingINITemplate("demo", rt, v1alpha1.RUNTIME)
+			if err != nil {
+				t.Fatalf("render error: %v", err)
+			}
+
+			if !strings.Contains(got, "[handlers]\nkeys=stream_handler,timed_rotating_file_handler") {
+				t.Fatalf("handlers keys invalid for timed rolling:\n%s", got)
+			}
+			if !strings.Contains(got, "[handler_timed_rotating_file_handler]") ||
+				!strings.Contains(got, "class=logging.handlers.TimedRotatingFileHandler") ||
+				!strings.Contains(got, "formatter=formatter") {
+				t.Fatalf("timed handler invalid:\n%s", got)
+			}
+			// args: ('file', 'WHEN', INTERVAL, 5)
+			if !strings.Contains(got, "args=('logs/functions/demo.log', '"+tc.when+"', "+tc.interval+", 5)") {
+				t.Fatalf("timed handler args invalid (expect when=%s interval=%s):\n%s", tc.when, tc.interval, got)
+			}
+
+			// json formatter selected
+			if !strings.Contains(got, "class=pythonjsonlogger.jsonlogger.JsonFormatter") {
+				t.Fatalf("json formatter not selected:\n%s", got)
+			}
+		})
+	}
+}
+
+func TestRenderINI_Sidecar_DefaultSizeRolling(t *testing.T) {
+	textFormat := v1alpha1.TEXT
+	rt := &v1alpha1.PythonRuntime{
+		Log: &v1alpha1.RuntimeLogConfig{
+			Level:  "INFO",
+			Format: &textFormat,
+		},
+	}
+	got, err := renderPythonInstanceLoggingINITemplate("demo", rt, v1alpha1.SIDECAR)
+	if err != nil {
+		t.Fatalf("render error: %v", err)
+	}
+
+	if !strings.Contains(got, "[handlers]\nkeys=stream_handler,rotating_file_handler") {
+		t.Fatalf("handlers keys invalid for sidecar:\n%s", got)
+	}
+	if !strings.Contains(got, "args=('logs/functions/demo.log', 'a', 10485760, 5)") {
+		t.Fatalf("sidecar default size rolling args invalid:\n%s", got)
+	}
+}
+
+func TestRenderINI_NoAccidentalHandlerPrefixInKeys(t *testing.T) {
+	textFormat := v1alpha1.TEXT
+	rt := &v1alpha1.PythonRuntime{
+		Log: &v1alpha1.RuntimeLogConfig{
+			Level:  "INFO",
+			Format: &textFormat,
+		},
+	}
+	got, err := renderPythonInstanceLoggingINITemplate("demo", rt, v1alpha1.RUNTIME)
+	if err != nil {
+		t.Fatalf("render error: %v", err)
+	}
+	if strings.Contains(got, "keys=handler_stream_handler") {
+		t.Fatalf("should not contain 'handler_stream_handler' in keys:\n%s", got)
+	}
+}
