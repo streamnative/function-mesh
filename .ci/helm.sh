@@ -588,7 +588,6 @@ function ci::verify_log_topic() {
 
   sleep "$timesleep"
   MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${logTopic}")
-  echo "$MESSAGE"
   if [[ "$MESSAGE" == *"$message"* ]]; then
     return 0
   fi
