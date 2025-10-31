@@ -5,36 +5,40 @@ keys=root
 keys={{ .Handlers }}
 
 [formatters]
-{{ if .Format | eq "json" }}
-keys=json
-{{ else }}
 keys=formatter
-{{ end }}
 
 [logger_root]
 level={{ .Level }}
 handlers={{ .Handlers }}
 
-{{- if .RollingEnabled }}
-{{ .Policy }}
+{{- /* ---- Rolling handlers (optional) ---- */ -}}
+{{- if .Rolling.Enabled }}
+{{- if eq .Rolling.Type "size" }}
+[handler_rotating_file_handler]
+class=logging.handlers.RotatingFileHandler
+level={{ .Level }}
+formatter=formatter
+args=('{{ .Rolling.File }}', 'a', {{ .Rolling.MaxBytes }}, {{ .Rolling.Backups }})
+{{- else if eq .Rolling.Type "time" }}
+[handler_timed_rotating_file_handler]
+class=logging.handlers.TimedRotatingFileHandler
+level={{ .Level }}
+formatter=formatter
+args=('{{ .Rolling.File }}', '{{ .Rolling.When }}', {{ .Rolling.Interval }}, {{ .Rolling.Backups }})
+{{- end }}
 {{- end }}
 
 [handler_stream_handler]
-class=StreamHandler
+class=logging.StreamHandler
 level={{ .Level }}
-{{ if .Format | eq "json" }}
-formatter=json
-{{ else }}
 formatter=formatter
-{{ end }}
 args=(sys.stdout,)
 
-{{ if .Format | eq "json" }}
-[formatter_json]
-format = %(message)s
-class = pythonjsonlogger.jsonlogger.JsonFormatter
-{{ else }}
 [formatter_formatter]
-format=[%(asctime)s] [%(levelname)s] %(filename)s: %(message)s
+{{- if eq .Format "json" }}
+class=pythonjsonlogger.jsonlogger.JsonFormatter
+format=%(message)s
+{{- else }}
+format=[%(asctime)s] [%(levelname)s] %(filename)s:%(lineno)d %(message)s
 datefmt=%Y-%m-%d %H:%M:%S %z
-{{ end }}
+{{- end }}
