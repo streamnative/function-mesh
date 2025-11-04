@@ -118,9 +118,9 @@ func TestGenerateFunctionInputSpecWithConnector(t *testing.T) {
 		},
 	}
 	function.Spec.SourceConfig = &v1alpha1.SourceConnectorSpec{
-		Archive:   "builtin://kafka",
-		ClassName: "org.apache.pulsar.io.kafka.KafkaSource",
-		Configs:   configs,
+		SourceType: "kafka",
+		ClassName:  "org.apache.pulsar.io.kafka.KafkaSource",
+		Configs:    configs,
 	}
 
 	sourceSpec := generateFunctionInputSpec(function)
@@ -148,4 +148,45 @@ func TestGenerateFunctionOutputSpecWithConnector(t *testing.T) {
 	assert.Equal(t, "kafka", sinkSpec.Builtin)
 	assert.Equal(t, "org.apache.pulsar.io.kafka.KafkaSink", sinkSpec.ClassName)
 	assert.Equal(t, `{"bootstrapServers":"kafka:9092","sinkType":"kafka","topic":"kafka-output"}`, sinkSpec.Configs)
+}
+
+func TestBuildSourceConnectorDetailsFromConfig(t *testing.T) {
+	connectorConfig := v1alpha1.NewConfig(map[string]interface{}{
+		"archive":       "builtin://filesystem",
+		"className":     "org.apache.pulsar.io.fs.FileSource",
+		"typeClassName": "java.lang.String",
+		"configs": map[string]interface{}{
+			"inputDirectory": "/var/data",
+			"recurse":        true,
+		},
+	})
+
+	details := buildSourceConnectorDetails(&v1alpha1.SourceConnectorSpec{
+		Configs: &connectorConfig,
+	})
+
+	assert.NotNil(t, details)
+	assert.Equal(t, "filesystem", details.builtin)
+	assert.Equal(t, "org.apache.pulsar.io.fs.FileSource", details.className)
+	assert.Equal(t, "java.lang.String", details.typeClassName)
+	assert.Equal(t, `{"inputDirectory":"/var/data","recurse":true}`, details.configs)
+}
+
+func TestBuildSinkConnectorDetailsFromConfig(t *testing.T) {
+	connectorConfig := v1alpha1.NewConfig(map[string]interface{}{
+		"archive":   "builtin://jms",
+		"className": "org.apache.pulsar.io.jms.JMSSink",
+		"configs": map[string]interface{}{
+			"queueName": "demo-queue",
+		},
+	})
+
+	details := buildSinkConnectorDetails(&v1alpha1.SinkConnectorSpec{
+		Configs: &connectorConfig,
+	})
+
+	assert.NotNil(t, details)
+	assert.Equal(t, "jms", details.builtin)
+	assert.Equal(t, "org.apache.pulsar.io.jms.JMSSink", details.className)
+	assert.Equal(t, `{"queueName":"demo-queue","sinkType":"jms"}`, details.configs)
 }

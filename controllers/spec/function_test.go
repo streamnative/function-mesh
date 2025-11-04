@@ -173,7 +173,7 @@ func TestJavaFunctionCommandWithConnectorOverrides(t *testing.T) {
 		"initialPositionInStream":  "TRIM_HORIZON",
 	})
 	function.Spec.SourceConfig = &v1alpha1.SourceConnectorSpec{
-		Archive:       "builtin://kinesis",
+		SourceType:    "kinesis",
 		Configs:       &sourceConfigs,
 		TypeClassName: "java.lang.Object",
 	}

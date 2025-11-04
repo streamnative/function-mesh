@@ -118,25 +118,123 @@ func encodeConnectorConfigs(config *v1alpha1.Config) string {
 	return payload
 }
 
+func stringFromConfig(config *v1alpha1.Config, key string) string {
+	if config == nil || config.Data == nil {
+		return ""
+	}
+	if val, ok := config.Data[key]; ok && val != nil {
+		switch typed := val.(type) {
+		case string:
+			return typed
+		default:
+			return fmt.Sprint(typed)
+		}
+	}
+	return ""
+}
+
+func addConfigEntries(dst map[string]interface{}, value interface{}) {
+	switch typed := value.(type) {
+	case map[string]interface{}:
+		for k, v := range typed {
+			if k == "" || v == nil {
+				continue
+			}
+			dst[k] = v
+		}
+	case map[interface{}]interface{}:
+		for k, v := range typed {
+			if k == nil || v == nil {
+				continue
+			}
+			key := fmt.Sprint(k)
+			if key == "" {
+				continue
+			}
+			dst[key] = v
+		}
+	}
+}
+
+func extractConnectorConfigs(config *v1alpha1.Config, reservedKeys map[string]struct{}) map[string]interface{} {
+	if config == nil || config.Data == nil {
+		return nil
+	}
+
+	result := make(map[string]interface{})
+	if nested, ok := config.Data["configs"]; ok {
+		addConfigEntries(result, nested)
+	}
+	for key, value := range config.Data {
+		if value == nil || key == "configs" {
+			continue
+		}
+		if reservedKeys != nil {
+			if _, skip := reservedKeys[key]; skip {
+				continue
+			}
+		}
+		result[key] = value
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+func resolveBuiltinFromConfig(config *v1alpha1.Config) string {
+	if builtin := stringFromConfig(config, "builtin"); builtin != "" {
+		return builtin
+	}
+	if archive := stringFromConfig(config, "archive"); strings.HasPrefix(archive, builtinURLPrefix) {
+		return strings.TrimPrefix(archive, builtinURLPrefix)
+	}
+	return ""
+}
+
 func buildSourceConnectorDetails(cfg *v1alpha1.SourceConnectorSpec) *connectorConfigDetails {
 	if cfg == nil {
 		return nil
 	}
 
-	details := &connectorConfigDetails{
-		className:     cfg.ClassName,
-		typeClassName: cfg.TypeClassName,
+	details := &connectorConfigDetails{}
+
+	className := cfg.ClassName
+	if className == "" {
+		className = stringFromConfig(cfg.Configs, "className")
+	}
+	if className != "" {
+		details.className = className
 	}
 
-	builtin := cfg.Builtin
+	typeClassName := cfg.TypeClassName
+	if typeClassName == "" {
+		typeClassName = stringFromConfig(cfg.Configs, "typeClassName")
+	}
+	if typeClassName != "" {
+		details.typeClassName = typeClassName
+	}
+
+	builtin := cfg.SourceType
 	if builtin == "" {
-		if archive := cfg.Archive; strings.HasPrefix(archive, builtinURLPrefix) {
-			builtin = strings.TrimPrefix(archive, builtinURLPrefix)
-		}
+		builtin = resolveBuiltinFromConfig(cfg.Configs)
 	}
-	details.builtin = builtin
+	if builtin != "" {
+		details.builtin = builtin
+	}
 
-	if configsJSON := encodeConnectorConfigs(cfg.Configs); configsJSON != "" {
+	configMap := extractConnectorConfigs(cfg.Configs, map[string]struct{}{
+		"archive":       {},
+		"builtin":       {},
+		"className":     {},
+		"typeClassName": {},
+	})
+	if len(configMap) > 0 {
+		tmp := v1alpha1.NewConfig(configMap)
+		if configsJSON := encodeConnectorConfigs(&tmp); configsJSON != "" {
+			details.configs = configsJSON
+		}
+	} else if configsJSON := encodeConnectorConfigs(cfg.Configs); configsJSON != "" {
 		details.configs = configsJSON
 	}
 
@@ -151,39 +249,54 @@ func buildSinkConnectorDetails(cfg *v1alpha1.SinkConnectorSpec) *connectorConfig
 		return nil
 	}
 
-	details := &connectorConfigDetails{
-		className:     cfg.ClassName,
-		typeClassName: cfg.TypeClassName,
+	details := &connectorConfigDetails{}
+
+	className := cfg.ClassName
+	if className == "" {
+		className = stringFromConfig(cfg.Configs, "className")
+	}
+	if className != "" {
+		details.className = className
 	}
 
-	builtin := cfg.Builtin
+	typeClassName := cfg.TypeClassName
+	if typeClassName == "" {
+		typeClassName = stringFromConfig(cfg.Configs, "typeClassName")
+	}
+	if typeClassName != "" {
+		details.typeClassName = typeClassName
+	}
+
+	builtin := cfg.SinkType
 	if builtin == "" {
-		if archive := cfg.Archive; strings.HasPrefix(archive, builtinURLPrefix) {
-			builtin = strings.TrimPrefix(archive, builtinURLPrefix)
-		} else if sinkType := cfg.SinkType; sinkType != "" {
-			builtin = sinkType
+		builtin = resolveBuiltinFromConfig(cfg.Configs)
+	}
+	if builtin != "" {
+		details.builtin = builtin
+	}
+
+	configMap := extractConnectorConfigs(cfg.Configs, map[string]struct{}{
+		"archive":       {},
+		"builtin":       {},
+		"className":     {},
+		"typeClassName": {},
+	})
+	if builtin != "" {
+		if configMap == nil {
+			configMap = map[string]interface{}{}
+		}
+		if _, ok := configMap["sinkType"]; !ok {
+			configMap["sinkType"] = builtin
 		}
 	}
-	details.builtin = builtin
 
-	if cfg.Configs != nil || cfg.SinkType != "" {
-		merged := map[string]interface{}{}
-		if cfg.Configs != nil && cfg.Configs.Data != nil {
-			for k, v := range cfg.Configs.Data {
-				merged[k] = v
-			}
+	if len(configMap) > 0 {
+		tmp := v1alpha1.NewConfig(configMap)
+		if configsJSON := encodeConnectorConfigs(&tmp); configsJSON != "" {
+			details.configs = configsJSON
 		}
-		if cfg.SinkType != "" {
-			if _, ok := merged["sinkType"]; !ok {
-				merged["sinkType"] = cfg.SinkType
-			}
-		}
-		if len(merged) > 0 {
-			tmp := v1alpha1.NewConfig(merged)
-			if configsJSON := encodeConnectorConfigs(&tmp); configsJSON != "" {
-				details.configs = configsJSON
-			}
-		}
+	} else if configsJSON := encodeConnectorConfigs(cfg.Configs); configsJSON != "" {
+		details.configs = configsJSON
 	}
 
 	if details.builtin == "" && details.className == "" && details.typeClassName == "" && details.configs == "" {
