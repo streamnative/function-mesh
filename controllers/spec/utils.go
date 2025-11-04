@@ -98,6 +98,140 @@ func fetchClassName(function *v1alpha1.Function) string {
 	return function.Spec.ClassName
 }
 
+const builtinURLPrefix = "builtin://"
+
+type connectorConfigDetails struct {
+	builtin       string
+	className     string
+	typeClassName string
+	configs       string
+}
+
+func encodeConnectorConfigs(config *v1alpha1.Config) string {
+	if config == nil {
+		return ""
+	}
+	payload := getUserConfig(config)
+	if payload == "" || payload == "null" {
+		return ""
+	}
+	return payload
+}
+
+func buildSourceConnectorDetails(cfg *v1alpha1.SourceConnectorSpec) *connectorConfigDetails {
+	if cfg == nil {
+		return nil
+	}
+
+	details := &connectorConfigDetails{
+		className:     cfg.ClassName,
+		typeClassName: cfg.TypeClassName,
+	}
+
+	builtin := cfg.Builtin
+	if builtin == "" {
+		if archive := cfg.Archive; strings.HasPrefix(archive, builtinURLPrefix) {
+			builtin = strings.TrimPrefix(archive, builtinURLPrefix)
+		}
+	}
+	details.builtin = builtin
+
+	if configsJSON := encodeConnectorConfigs(cfg.Configs); configsJSON != "" {
+		details.configs = configsJSON
+	}
+
+	if details.builtin == "" && details.className == "" && details.typeClassName == "" && details.configs == "" {
+		return nil
+	}
+	return details
+}
+
+func buildSinkConnectorDetails(cfg *v1alpha1.SinkConnectorSpec) *connectorConfigDetails {
+	if cfg == nil {
+		return nil
+	}
+
+	details := &connectorConfigDetails{
+		className:     cfg.ClassName,
+		typeClassName: cfg.TypeClassName,
+	}
+
+	builtin := cfg.Builtin
+	if builtin == "" {
+		if archive := cfg.Archive; strings.HasPrefix(archive, builtinURLPrefix) {
+			builtin = strings.TrimPrefix(archive, builtinURLPrefix)
+		} else if sinkType := cfg.SinkType; sinkType != "" {
+			builtin = sinkType
+		}
+	}
+	details.builtin = builtin
+
+	if cfg.Configs != nil || cfg.SinkType != "" {
+		merged := map[string]interface{}{}
+		if cfg.Configs != nil && cfg.Configs.Data != nil {
+			for k, v := range cfg.Configs.Data {
+				merged[k] = v
+			}
+		}
+		if cfg.SinkType != "" {
+			if _, ok := merged["sinkType"]; !ok {
+				merged["sinkType"] = cfg.SinkType
+			}
+		}
+		if len(merged) > 0 {
+			tmp := v1alpha1.NewConfig(merged)
+			if configsJSON := encodeConnectorConfigs(&tmp); configsJSON != "" {
+				details.configs = configsJSON
+			}
+		}
+	}
+
+	if details.builtin == "" && details.className == "" && details.typeClassName == "" && details.configs == "" {
+		return nil
+	}
+	return details
+}
+
+func applyFunctionConnectorSourceSpec(function *v1alpha1.Function, spec *proto.SourceSpec) {
+	details := buildSourceConnectorDetails(function.Spec.SourceConfig)
+	if details == nil {
+		return
+	}
+
+	if details.builtin != "" {
+		spec.Builtin = details.builtin
+	}
+	if details.className != "" {
+		spec.ClassName = details.className
+	}
+	if spec.TypeClassName == "" && details.typeClassName != "" {
+		spec.TypeClassName = details.typeClassName
+	}
+	if details.configs != "" {
+		spec.Configs = details.configs
+	}
+}
+
+func applyFunctionConnectorSinkSpec(function *v1alpha1.Function, spec *proto.SinkSpec) {
+	details := buildSinkConnectorDetails(function.Spec.SinkConfig)
+	if details == nil {
+		return
+	}
+
+	if details.builtin != "" {
+		spec.Builtin = details.builtin
+	}
+	if details.className != "" {
+		spec.ClassName = details.className
+	}
+	if spec.TypeClassName == "" && details.typeClassName != "" {
+		spec.TypeClassName = details.typeClassName
+	}
+	if details.configs != "" {
+		spec.Configs = details.configs
+	}
+}
+
 func convertGoFunctionConfs(function *v1alpha1.Function) *GoFunctionConf {
 	deadLetterTopic := getDeadLetterTopicOrDefault(function.Spec.DeadLetterTopic, function.Spec.SubscriptionName,
 		function.Spec.Tenant, function.Spec.Namespace, function.Spec.Name, function.Spec.MaxMessageRetry)
@@ -195,7 +329,7 @@ func generateInputSpec(sourceConf v1alpha1.InputConf) map[string]*proto.Consumer
 func generateFunctionInputSpec(function *v1alpha1.Function) *proto.SourceSpec {
 	inputSpecs := generateInputSpec(function.Spec.Input)
 
-	return &proto.SourceSpec{
+	sourceSpec := &proto.SourceSpec{
 		ClassName:     "",
 		Configs:       "",
 		TypeClassName: function.Spec.Input.TypeClassName,
@@ -210,6 +344,9 @@ func generateFunctionInputSpec(function *v1alpha1.Function) *proto.SourceSpec {
 		NegativeAckRedeliveryDelayMs: uint64(function.Spec.Timeout),
 		SkipToLatest:                 function.Spec.SkipToLatest,
 	}
+
+	applyFunctionConnectorSourceSpec(function, sourceSpec)
+	return sourceSpec
 }
 
 func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
@@ -247,6 +384,7 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 		sinkSpec.ProducerSpec = producerConfig
 	}
 
+	applyFunctionConnectorSinkSpec(function, sinkSpec)
 	return sinkSpec
 }
 

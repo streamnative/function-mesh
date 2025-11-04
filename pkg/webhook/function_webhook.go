@@ -280,7 +280,10 @@ func (webhook *FunctionWebhook) ValidateCreate(ctx context.Context, obj runtime.
 		allErrs = append(allErrs, fieldErr)
 	}
 
-	fieldErrs = validateInputOutput(&r.Spec.Input, &r.Spec.Output)
+	skipInputValidation := r.Spec.SourceConfig != nil
+	skipOutputValidation := r.Spec.SinkConfig != nil
+
+	fieldErrs = validateInputOutput(&r.Spec.Input, &r.Spec.Output, skipInputValidation, skipOutputValidation)
 	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}

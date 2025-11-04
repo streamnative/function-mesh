@@ -69,6 +69,7 @@ const (
 	DefaultGenericRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-generic-base-runner:" + DefaultGenericRunnerTag
 	PulsarAdminExecutableFile       = "/pulsar/bin/pulsar-admin"
 	WorkDir                         = "/pulsar/"
+	DefaultConnectorsDirectory      = WorkDir + "connectors"
 
 	RunnerImageHasPulsarctl = "pulsar-functions-(pulsarctl|sn|generic)-(java|python|go|nodejs|base)-runner"
 
@@ -167,25 +168,6 @@ type TLSConfig interface {
 	SecretKey() string
 	HasSecretVolume() bool
 	GetMountPath() string
-}
-
-type RollingCfg struct {
-	Enabled bool
-	Type    string // "size" or "time"
-	File    string
-	// size-based
-	MaxBytes int
-	Backups  int
-	// time-based
-	When     string // e.g. "D", "W0"
-	Interval int
-}
-
-type LogCfg struct {
-	Level    string // INFO/DEBUG/...
-	Format   string // "json" or "text"
-	Handlers string // computed: "stream_handler[,rotating_file_handler|,timed_rotating_file_handler]"
-	Rolling  RollingCfg
 }
 
 func IsManaged(object metav1.Object) bool {
@@ -533,14 +515,14 @@ func GenerateAffinity(affinity *corev1.Affinity, labels map[string]string, disab
 	return affinity
 }
 
-func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, extraDependenciesDir, uid string,
+func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, extraDependenciesDir, connectorsDirectory, uid string,
 	memory *resource.Quantity, javaOpts []string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
-			extraDependenciesDir, uid, memory, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
+			extraDependenciesDir, connectorsDirectory, uid, memory, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
 			authConfig, maxPendingAsyncRequests, logConfigFileName), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
@@ -1123,89 +1105,88 @@ func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime
 
 func renderPythonInstanceLoggingINITemplate(name string, runtime *v1alpha1.PythonRuntime, agent v1alpha1.LogTopicAgent) (string, error) {
 	tmpl := template.Must(template.New("spec").Parse(pythonLoggingINITemplate))
-
-	lc := LogCfg{
-		Level:  "INFO",
-		Format: "text",
-		Rolling: RollingCfg{
-			Enabled: false,
-			Backups: 5,
-		},
+	var tpl bytes.Buffer
+	type logConfig struct {
+		RollingEnabled bool
+		Level          string
+		Policy         template.HTML
+		Handlers       string
+		Format         string
 	}
-
-	// level
+	lc := &logConfig{}
+	lc.Level = "INFO"
+	lc.Format = "text"
+	lc.Handlers = "stream_handler"
 	if runtime.Log != nil && runtime.Log.Level != "" {
 		if level := parsePythonLogLevel(runtime); level != "" {
 			lc.Level = level
 		}
 	}
-	// format
-	if runtime.Log != nil && runtime.Log.Format != nil && strings.ToLower(string(*runtime.Log.Format)) == "json" {
-		lc.Format = "json"
+	if runtime.Log != nil && runtime.Log.Format != nil {
+		lc.Format = string(*runtime.Log.Format)
 	}
-
-	// default handler
-	lc.Handlers = "stream_handler"
-
-	// log file path
-	logFile := fmt.Sprintf("logs/functions/%s.log", name)
-
-	// rolling policy
 	if runtime.Log != nil && runtime.Log.RotatePolicy != nil {
-		lc.Rolling.Enabled = true
+		lc.RollingEnabled = true
+		logFile := fmt.Sprintf("logs/functions/%s-${%s}.log", name, EnvShardID)
 		switch *runtime.Log.RotatePolicy {
-		case v1alpha1.SizedPolicyWith10MB:
-			lc.Rolling.Type = "size"
-			lc.Rolling.File = logFile
-			lc.Rolling.MaxBytes = 10 * 1024 * 1024
-			lc.Handlers = "stream_handler,rotating_file_handler"
-		case v1alpha1.SizedPolicyWith50MB:
-			lc.Rolling.Type = "size"
-			lc.Rolling.File = logFile
-			lc.Rolling.MaxBytes = 50 * 1024 * 1024
-			lc.Handlers = "stream_handler,rotating_file_handler"
-		case v1alpha1.SizedPolicyWith100MB:
-			lc.Rolling.Type = "size"
-			lc.Rolling.File = logFile
-			lc.Rolling.MaxBytes = 100 * 1024 * 1024
-			lc.Handlers = "stream_handler,rotating_file_handler"
 		case v1alpha1.TimedPolicyWithDaily:
-			lc.Rolling.Type = "time"
-			lc.Rolling.File = logFile
-			lc.Rolling.When = "D"
-			lc.Rolling.Interval = 1
 			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+args=(\"%s\", 'D', 1, 5,)
+class=handlers.TimedRotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
 		case v1alpha1.TimedPolicyWithWeekly:
-			lc.Rolling.Type = "time"
-			lc.Rolling.File = logFile
-			lc.Rolling.When = "W0" // every monday
-			lc.Rolling.Interval = 1
 			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+args=(\"%s\", 'W0', 1, 5,)
+class=handlers.TimedRotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
 		case v1alpha1.TimedPolicyWithMonthly:
-			lc.Rolling.Type = "time"
-			lc.Rolling.File = logFile
-			lc.Rolling.When = "D" // day
-			lc.Rolling.Interval = 30
 			lc.Handlers = "stream_handler,timed_rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_timed_rotating_file_handler]
+args=(\"%s\", 'D', 30, 5,)
+class=handlers.TimedRotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.SizedPolicyWith10MB:
+			lc.Handlers = "stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(\"%s\", 'a', 10485760, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.SizedPolicyWith50MB:
+			lc.Handlers = "handler_stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(%s, 'a', 52428800, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
+		case v1alpha1.SizedPolicyWith100MB:
+			lc.Handlers = "handler_stream_handler,rotating_file_handler"
+			lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(%s, 'a', 104857600, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
 		}
-	} else if agent == v1alpha1.SIDECAR {
-		// sidecar mode enables rolling by default, using size policy with 10MB
-		lc.Rolling = RollingCfg{
-			Enabled:  true,
-			Type:     "size",
-			File:     logFile,
-			MaxBytes: 10 * 1024 * 1024,
-			Backups:  5,
-		}
+	} else if agent == v1alpha1.SIDECAR { // sidecar mode needs the rotated log file
+		lc.RollingEnabled = true
+		logFile := fmt.Sprintf("logs/functions/%s-${%s}.log", name, EnvShardID)
 		lc.Handlers = "stream_handler,rotating_file_handler"
+		lc.Policy = template.HTML(fmt.Sprintf(`[handler_rotating_file_handler]
+args=(\"%s\", 'a', 10485760, 5,)
+class=handlers.RotatingFileHandler
+level=%s
+formatter=formatter`, logFile, lc.Level))
 	}
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, &lc); err != nil {
+	if err := tmpl.Execute(&tpl, lc); err != nil {
 		log.Error(err, "failed to render python instance logging template")
 		return "", err
 	}
-	return buf.String(), nil
+	return tpl.String(), nil
 }
 
 func parseJavaLogLevel(runtime *v1alpha1.JavaRuntime) string {
@@ -1282,7 +1263,7 @@ func setShardIDEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
-func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, extraDependenciesDir, uid string,
+func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, extraDependenciesDir, connectorsDirectory, uid string,
 	memory *resource.Quantity, javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
@@ -1332,6 +1313,9 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 	}
 	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig)
 	args = append(args, sharedArgs...)
+	if connectorsDirectory != "" {
+		args = append(args, "--connectors_directory", connectorsDirectory)
+	}
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getJavaSecretProviderArgs(secretMaps)
 		args = append(args, secretProviderArgs...)

@@ -3707,8 +3707,38 @@ spec:
                 type: object
               showPreciseParallelism:
                 type: boolean
+              sinkConfig:
+                properties:
+                  archive:
+                    type: string
+                  builtin:
+                    type: string
+                  className:
+                    type: string
+                  configs:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  sinkType:
+                    type: string
+                  typeClassName:
+                    type: string
+                type: object
               skipToLatest:
                 type: boolean
+              sourceConfig:
+                properties:
+                  archive:
+                    type: string
+                  builtin:
+                    type: string
+                  className:
+                    type: string
+                  configs:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  typeClassName:
+                    type: string
+                type: object
               statefulConfig:
                 properties:
                   pulsar:

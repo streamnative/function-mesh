@@ -104,3 +104,48 @@ func TestBatchSource(t *testing.T) {
 	assert.Equal(t, v1alpha1.BatchSourceClass, sourceSpec.ClassName)
 	assert.Equal(t, `{"__BATCHSOURCECLASSNAME__":"org.apache.pulsar.ecosystem.io.bigquery.BigQuerySource","__BATCHSOURCECONFIGS__":"{\"discoveryTriggererClassName\":\"test-trigger-class\",\"discoveryTriggererConfig\":{\"test-key\":\"test-value\"}}","tableName":"test-table"}`, sourceSpec.Configs)
 }
+
+func TestGenerateFunctionInputSpecWithConnector(t *testing.T) {
+	function := makeFunctionSample("connector-source")
+	function.Spec.Input.Topics = nil
+	function.Spec.Input.CustomSerdeSources = nil
+	function.Spec.Input.CustomSchemaSources = nil
+	function.Spec.Input.SourceSpecs = nil
+	configs := &v1alpha1.Config{
+		Data: map[string]interface{}{
+			"bootstrapServers": "kafka:9092",
+			"groupId":          "test-consumer",
+		},
+	}
+	function.Spec.SourceConfig = &v1alpha1.SourceConnectorSpec{
+		Archive:   "builtin://kafka",
+		ClassName: "org.apache.pulsar.io.kafka.KafkaSource",
+		Configs:   configs,
+	}
+
+	sourceSpec := generateFunctionInputSpec(function)
+	assert.Equal(t, "kafka", sourceSpec.Builtin)
+	assert.Equal(t, "org.apache.pulsar.io.kafka.KafkaSource", sourceSpec.ClassName)
+	assert.Equal(t, `{"bootstrapServers":"kafka:9092","groupId":"test-consumer"}`, sourceSpec.Configs)
+}
+
+func TestGenerateFunctionOutputSpecWithConnector(t *testing.T) {
+	function := makeFunctionSample("connector-sink")
+	function.Spec.Output.Topic = ""
+	configs := &v1alpha1.Config{
+		Data: map[string]interface{}{
+			"bootstrapServers": "kafka:9092",
+			"topic":            "kafka-output",
+		},
+	}
+	function.Spec.SinkConfig = &v1alpha1.SinkConnectorSpec{
+		SinkType:  "kafka",
+		ClassName: "org.apache.pulsar.io.kafka.KafkaSink",
+		Configs:   configs,
+	}
+
+	sinkSpec := generateFunctionOutputSpec(function)
+	assert.Equal(t, "kafka", sinkSpec.Builtin)
+	assert.Equal(t, "org.apache.pulsar.io.kafka.KafkaSink", sinkSpec.ClassName)
+	assert.Equal(t, `{"bootstrapServers":"kafka:9092","sinkType":"kafka","topic":"kafka-output"}`, sinkSpec.Configs)
+}

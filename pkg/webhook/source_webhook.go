@@ -214,7 +214,7 @@ func (webhook *SourceWebhook) ValidateCreate(ctx context.Context, obj runtime.Ob
 		allErrs = append(allErrs, fieldErr)
 	}
 
-	fieldErrs = validateInputOutput(nil, &r.Spec.Output)
+	fieldErrs = validateInputOutput(nil, &r.Spec.Output, true, false)
 	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}

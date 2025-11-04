@@ -7590,8 +7590,21 @@ spec:
                       showPreciseParallelism:
                         type: boolean
                       sinkConfig:
+                        properties:
+                          archive:
+                            type: string
+                          builtin:
+                            type: string
+                          className:
+                            type: string
+                          configs:
+                            additionalProperties: {}
+                            type: object
+                          sinkType:
+                            type: string
+                          typeClassName:
+                            type: string
                         type: object
-                        x-kubernetes-preserve-unknown-fields: true
                       sinkType:
                         type: string
                       statefulConfig:
@@ -11246,8 +11259,19 @@ spec:
                       showPreciseParallelism:
                         type: boolean
                       sourceConfig:
+                        properties:
+                          archive:
+                            type: string
+                          builtin:
+                            type: string
+                          className:
+                            type: string
+                          configs:
+                            additionalProperties: {}
+                            type: object
+                          typeClassName:
+                            type: string
                         type: object
-                        x-kubernetes-preserve-unknown-fields: true
                       sourceType:
                         type: string
                       statefulConfig:

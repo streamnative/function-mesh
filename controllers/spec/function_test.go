@@ -18,6 +18,8 @@
 package spec
 
 import (
+	"encoding/json"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -25,6 +27,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
+	"github.com/streamnative/function-mesh/controllers/proto"
+
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"gotest.tools/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,6 +62,7 @@ func makeFunctionSample(functionName string) *v1alpha1.Function {
 			Name:        functionName,
 			ClassName:   "org.apache.pulsar.functions.api.examples.ExclamationFunction",
 			Tenant:      "public",
+			Namespace:   "default",
 			ClusterName: TestClusterName,
 			Input: v1alpha1.InputConf{
 				Topics: []string{
@@ -146,4 +152,82 @@ func TestInitContainerDownloader(t *testing.T) {
 	assert.Assert(t, functionVolumeMount.MountPath == "/pulsar/tmp", "volume mount path should be /pulsar/tmp but got %s", functionVolumeMount.MountPath)
 	assert.Assert(t, strings.Contains(startDownloadCommands, "/pulsar/download/java-function.jar"), "download command should contain /pulsar/download/java-function.jar: %s", startDownloadCommands)
 	assert.Assert(t, strings.Contains(startFunctionCommands, "/pulsar/tmp/java-function.jar"), "function command should contain /pulsar/tmp/java-function.jar: %s", startFunctionCommands)
+}
+
+func TestJavaFunctionCommandWithConnectorOverrides(t *testing.T) {
+	function := makeFunctionSample("connector-test")
+	function.Spec.Input = v1alpha1.InputConf{}
+	function.Spec.Output = v1alpha1.OutputConf{}
+	function.Spec.LogTopic = ""
+	function.Spec.StateConfig = nil
+
+	sourceConfigs := v1alpha1.NewConfig(map[string]interface{}{
+		"awsEndpoint":              "http://localstack:4566",
+		"cloudwatchEndpoint":       "http://localstack:4566",
+		"dynamoEndpoint":           "http://localstack:4566",
+		"awsRegion":                "us-east-1",
+		"awsKinesisStreamName":     "demo-stream",
+		"awsCredentialPluginParam": `{"accessKey":"test","secretKey":"test"}`,
+		"useEnhancedFanOut":        false,
+		"applicationName":          "pulsar-kinesis-demo",
+		"initialPositionInStream":  "TRIM_HORIZON",
+	})
+	function.Spec.SourceConfig = &v1alpha1.SourceConnectorSpec{
+		Archive:       "builtin://kinesis",
+		Configs:       &sourceConfigs,
+		TypeClassName: "java.lang.Object",
+	}
+
+	sinkConfigs := v1alpha1.NewConfig(map[string]interface{}{
+		"bootstrapServers": "kafka:9092",
+		"acks":             "all",
+		"topic":            "kinesis-demo",
+		"producerConfigProperties": map[string]interface{}{
+			"enable.idempotence": true,
+		},
+	})
+	function.Spec.SinkConfig = &v1alpha1.SinkConnectorSpec{
+		SinkType:      "kafka",
+		Configs:       &sinkConfigs,
+		TypeClassName: "java.lang.Object",
+	}
+
+	commands := makeFunctionCommand(function)
+	assert.Assert(t, len(commands) == 3, "commands should be 3 but got %d", len(commands))
+
+	startCommand := commands[2]
+	assert.Assert(t, strings.Contains(startCommand, "--connectors_directory "+DefaultConnectorsDirectory),
+		"start command should include connectors directory but got %s", startCommand)
+	re := regexp.MustCompile(`--function_details '([^']+)'`)
+	matches := re.FindStringSubmatch(startCommand)
+	assert.Assert(t, len(matches) == 2, "unable to locate function details in command: %s", startCommand)
+
+	functionDetailsJSON := matches[1]
+	details := &proto.FunctionDetails{}
+	err := protojson.Unmarshal([]byte(functionDetailsJSON), details)
+	assert.NilError(t, err)
+
+	assert.Equal(t, details.GetTenant(), "public")
+	assert.Equal(t, details.GetNamespace(), "default")
+	assert.Equal(t, details.GetName(), "connector-test")
+
+	sourceSpec := details.GetSource()
+	assert.Equal(t, sourceSpec.GetBuiltin(), "kinesis")
+	assert.Equal(t, sourceSpec.GetTypeClassName(), "java.lang.Object")
+	sourceConfigsMap := map[string]interface{}{}
+	err = json.Unmarshal([]byte(sourceSpec.GetConfigs()), &sourceConfigsMap)
+	assert.NilError(t, err)
+	assert.Equal(t, sourceConfigsMap["awsEndpoint"], "http://localstack:4566")
+	assert.Equal(t, sourceConfigsMap["awsKinesisStreamName"], "demo-stream")
+	assert.Equal(t, sourceConfigsMap["initialPositionInStream"], "TRIM_HORIZON")
+
+	sinkSpec := details.GetSink()
+	sinkConfigsMap := map[string]interface{}{}
+	err = json.Unmarshal([]byte(sinkSpec.GetConfigs()), &sinkConfigsMap)
+	assert.NilError(t, err)
+	assert.Equal(t, sinkConfigsMap["sinkType"], "kafka")
+	assert.Equal(t, sinkConfigsMap["bootstrapServers"], "kafka:9092")
+	assert.Equal(t, sinkConfigsMap["acks"], "all")
+	producerConfig := sinkConfigsMap["producerConfigProperties"].(map[string]interface{})
+	assert.Equal(t, producerConfig["enable.idempotence"], true)
 }

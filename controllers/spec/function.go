@@ -223,6 +223,11 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	spec := function.Spec
 
+	connectorsDirectory := ""
+	if spec.SourceConfig != nil || spec.SinkConfig != nil {
+		connectorsDirectory = DefaultConnectorsDirectory
+	}
+
 	hasPulsarctl := function.Spec.ImageHasPulsarctl
 	hasWget := function.Spec.ImageHasWget
 	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, function.Spec.Image); match {
@@ -238,6 +243,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				parseJavaLogLevel(spec.Java),
 				generateFunctionDetailsInJSON(function),
 				spec.Java.ExtraDependenciesDir,
+				connectorsDirectory,
 				string(function.UID),
 				spec.Resources.Limits.Memory(),
 				spec.Java.JavaOpts, hasPulsarctl, hasWget,

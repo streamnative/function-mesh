@@ -62,7 +62,11 @@ type FunctionSpec struct {
 	FilebeatImage string        `json:"filebeatImage,omitempty"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
-	FuncConfig   *Config                     `json:"funcConfig,omitempty"`
+	FuncConfig *Config `json:"funcConfig,omitempty"`
+	// +kubebuilder:validation:Optional
+	SourceConfig *SourceConnectorSpec `json:"sourceConfig,omitempty"`
+	// +kubebuilder:validation:Optional
+	SinkConfig   *SinkConnectorSpec          `json:"sinkConfig,omitempty"`
 	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
 	SecretsMap   map[string]SecretRef        `json:"secretsMap,omitempty"`
 	VolumeMounts []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
@@ -150,6 +154,51 @@ type FunctionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Function `json:"items"`
+}
+
+// SourceConnectorSpec describes configurable fields when a function overrides its source implementation.
+type SourceConnectorSpec struct {
+	// Archive points to a nar archive containing the connector. It can reference built-in connectors using the
+	// builtin:// scheme.
+	// +kubebuilder:validation:Optional
+	Archive string `json:"archive,omitempty"`
+	// Builtin holds the resolved name of a built-in source connector.
+	// +kubebuilder:validation:Optional
+	Builtin string `json:"builtin,omitempty"`
+	// ClassName is the fully qualified source implementation class.
+	// +kubebuilder:validation:Optional
+	ClassName string `json:"className,omitempty"`
+	// TypeClassName overrides the expected message type.
+	// +kubebuilder:validation:Optional
+	TypeClassName string `json:"typeClassName,omitempty"`
+	// Configs contains connector specific options.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Configs *Config `json:"configs,omitempty"`
+}
+
+// SinkConnectorSpec describes configurable fields when a function overrides its sink implementation.
+type SinkConnectorSpec struct {
+	// Archive points to a nar archive containing the connector. It can reference built-in connectors using the
+	// builtin:// scheme.
+	// +kubebuilder:validation:Optional
+	Archive string `json:"archive,omitempty"`
+	// Builtin holds the resolved name of a built-in sink connector.
+	// +kubebuilder:validation:Optional
+	Builtin string `json:"builtin,omitempty"`
+	// SinkType refers to the built-in sink identifier when using connectors packaged with Pulsar.
+	// +kubebuilder:validation:Optional
+	SinkType string `json:"sinkType,omitempty"`
+	// ClassName is the fully qualified sink implementation class.
+	// +kubebuilder:validation:Optional
+	ClassName string `json:"className,omitempty"`
+	// TypeClassName overrides the message type for the sink.
+	// +kubebuilder:validation:Optional
+	TypeClassName string `json:"typeClassName,omitempty"`
+	// Configs contains connector specific options.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Configs *Config `json:"configs,omitempty"`
 }
 
 func init() {
