@@ -3712,10 +3712,6 @@ spec:
                       type: boolean
                     sinkConfig:
                       properties:
-                        archive:
-                          type: string
-                        builtin:
-                          type: string
                         className:
                           type: string
                         configs:
@@ -3730,15 +3726,23 @@ spec:
                       type: boolean
                     sourceConfig:
                       properties:
-                        archive:
-                          type: string
-                        builtin:
-                          type: string
+                        batchSourceConfig:
+                          properties:
+                            discoveryTriggererClassName:
+                              type: string
+                            discoveryTriggererConfig:
+                              type: object
+                              x-kubernetes-preserve-unknown-fields: true
+                          required:
+                          - discoveryTriggererClassName
+                          type: object
                         className:
                           type: string
                         configs:
                           type: object
                           x-kubernetes-preserve-unknown-fields: true
+                        sourceType:
+                          type: string
                         typeClassName:
                           type: string
                       type: object

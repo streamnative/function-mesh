@@ -161,10 +161,10 @@ type SourceConnectorSpec struct {
 	// Archive points to a nar archive containing the connector. It can reference built-in connectors using the
 	// builtin:// scheme.
 	// +kubebuilder:validation:Optional
-	Archive string `json:"archive,omitempty"`
+	SourceType string `json:"sourceType,omitempty"` // refer to `--source-type` as builtin connector
 	// Builtin holds the resolved name of a built-in source connector.
 	// +kubebuilder:validation:Optional
-	Builtin string `json:"builtin,omitempty"`
+	BatchSourceConfig *BatchSourceConfig `json:"batchSourceConfig,omitempty"`
 	// ClassName is the fully qualified source implementation class.
 	// +kubebuilder:validation:Optional
 	ClassName string `json:"className,omitempty"`
@@ -179,13 +179,6 @@ type SourceConnectorSpec struct {
 
 // SinkConnectorSpec describes configurable fields when a function overrides its sink implementation.
 type SinkConnectorSpec struct {
-	// Archive points to a nar archive containing the connector. It can reference built-in connectors using the
-	// builtin:// scheme.
-	// +kubebuilder:validation:Optional
-	Archive string `json:"archive,omitempty"`
-	// Builtin holds the resolved name of a built-in sink connector.
-	// +kubebuilder:validation:Optional
-	Builtin string `json:"builtin,omitempty"`
 	// SinkType refers to the built-in sink identifier when using connectors packaged with Pulsar.
 	// +kubebuilder:validation:Optional
 	SinkType string `json:"sinkType,omitempty"`
