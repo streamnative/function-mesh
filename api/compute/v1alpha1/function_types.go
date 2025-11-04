@@ -87,10 +87,8 @@ type FunctionSpec struct {
 
 	WindowConfig *WindowConfig `json:"windowConfig,omitempty"`
 
-	// +kubebuilder:validation:Required
 	Messaging `json:",inline"`
 
-	// +kubebuilder:validation:Required
 	Runtime `json:",inline"`
 
 	// Image is the container image used to run function pods.
