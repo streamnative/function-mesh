@@ -124,7 +124,11 @@ spec:
                 type: string
               java:
                 properties:
+                  entryClass:
+                    type: string
                   extraDependenciesDir:
+                    type: string
+                  instancePath:
                     type: string
                   jar:
                     type: string

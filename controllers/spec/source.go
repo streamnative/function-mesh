@@ -174,6 +174,14 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 	}
 
 	mountPath := extractMountPath(spec.Java.Jar)
+	instancePath := DefaultPulsarFunctionsJavaInstancePath
+	if spec.Java.InstancePath != nil && *spec.Java.InstancePath != "" {
+		instancePath = *spec.Java.InstancePath
+	}
+	entryClass := DefaultPulsarFunctionsJavaInstanceEntryClass
+	if spec.Java.EntryClass != nil && *spec.Java.EntryClass != "" {
+		entryClass = *spec.Java.EntryClass
+	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, mountPath,
 		spec.Name, spec.ClusterName,
 		GenerateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
@@ -185,7 +193,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		spec.Resources.Limits.Memory(),
 		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
-		GenerateJavaLogConfigFileName(spec.Java))
+		GenerateJavaLogConfigFileName(spec.Java), instancePath, entryClass)
 }
 
 func generateSourceDetailsInJSON(source *v1alpha1.Source) string {

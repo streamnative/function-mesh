@@ -195,7 +195,11 @@ spec:
                 type: object
               java:
                 properties:
+                  entryClass:
+                    type: string
                   extraDependenciesDir:
+                    type: string
+                  instancePath:
                     type: string
                   jar:
                     type: string
