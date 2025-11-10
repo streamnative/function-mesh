@@ -1,5 +1,5 @@
 ARG PULSAR_IMAGE_TAG
-FROM golang:1.24.6-bullseye as builder
+FROM golang:1.24.10-bullseye as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
