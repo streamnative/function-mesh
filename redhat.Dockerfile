@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.24.10-bullseye as builder
+FROM golang:1.24.10-trixie as builder
 
 WORKDIR /workspace/api
 COPY api/ .
