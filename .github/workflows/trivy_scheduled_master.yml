@@ -2,17 +2,17 @@ name: Scheduled master branch scan security vulnerabilities
 on:
   pull_request:
     branches:
-      - 'master'
+      - "master"
     paths-ignore:
-      - 'docs/**'
-      - 'README.md'
-      - 'CHANGELOG.md'
-      - 'PROJECT'
-      - 'LICENSE'
-      - 'mesh-worker-service/README.md'
-      - 'tools/README.md'
+      - "docs/**"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "PROJECT"
+      - "LICENSE"
+      - "mesh-worker-service/README.md"
+      - "tools/README.md"
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
 
 permissions:
   pull-requests: write
@@ -45,10 +45,10 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Set up GO 1.24.6
+      - name: Set up GO 1.24.10
         uses: actions/setup-go@v1
         with:
-          go-version: 1.24.6
+          go-version: 1.24.10
         id: go
 
       - name: InstallKubebuilder
@@ -79,9 +79,9 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'function-mesh-operator:latest'
-          format: 'table'
-          exit-code: '1'
+          image-ref: "function-mesh-operator:latest"
+          format: "table"
+          exit-code: "1"
 
       - name: Build runner images
         run: |
@@ -91,82 +91,82 @@ jobs:
         id: scan-java-runner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'pulsar-functions-java-runner:latest'
-          format: 'table'
-          exit-code: '0'
+          image-ref: "pulsar-functions-java-runner:latest"
+          format: "table"
+          exit-code: "0"
 
       - name: Run Trivy vulnerability scanner for python
         id: scan-python-runner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'pulsar-functions-python-runner:latest'
-          format: 'table'
-          exit-code: '0'
+          image-ref: "pulsar-functions-python-runner:latest"
+          format: "table"
+          exit-code: "0"
 
       - name: Run Trivy vulnerability scanner for go
         id: scan-go-runner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'pulsar-functions-go-runner:latest'
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'trivy-results-go.sarif'
-          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
-          exit-code: '0'
+          image-ref: "pulsar-functions-go-runner:latest"
+          format: "template"
+          template: "@/contrib/sarif.tpl"
+          output: "trivy-results-go.sarif"
+          severity: "LOW,MEDIUM,HIGH,CRITICAL"
+          exit-code: "0"
 
       - name: Run Trivy vulnerability scanner for java with pulsarctl
         id: scan-java-pulsarctl-runner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'pulsar-functions-pulsarctl-java-runner:latest'
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'trivy-results.sarif'
-          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
-          exit-code: '0'
+          image-ref: "pulsar-functions-pulsarctl-java-runner:latest"
+          format: "template"
+          template: "@/contrib/sarif.tpl"
+          output: "trivy-results.sarif"
+          severity: "LOW,MEDIUM,HIGH,CRITICAL"
+          exit-code: "0"
 
       - name: Run Trivy vulnerability scanner for python with pulsarctl
         id: scan-python-pulsarctl-runner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'pulsar-functions-pulsarctl-python-runner:latest'
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'trivy-results-python.sarif'
-          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
-          exit-code: '0'
+          image-ref: "pulsar-functions-pulsarctl-python-runner:latest"
+          format: "template"
+          template: "@/contrib/sarif.tpl"
+          output: "trivy-results-python.sarif"
+          severity: "LOW,MEDIUM,HIGH,CRITICAL"
+          exit-code: "0"
 
       - name: Run Trivy vulnerability scanner for go with pulsarctl
         id: scan-go-pulsarctl-runner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'pulsar-functions-pulsarctl-go-runner:latest'
-          format: 'template'
-          exit-code: '0'
-          template: '@/contrib/sarif.tpl'
-          output: 'trivy-results-pulsarctl.sarif'
-          severity: 'LOW,MEDIUM,HIGH,CRITICAL'
+          image-ref: "pulsar-functions-pulsarctl-go-runner:latest"
+          format: "template"
+          exit-code: "0"
+          template: "@/contrib/sarif.tpl"
+          output: "trivy-results-pulsarctl.sarif"
+          severity: "LOW,MEDIUM,HIGH,CRITICAL"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: 'trivy-results.sarif'
-          category: 'Default'
+          sarif_file: "trivy-results.sarif"
+          category: "Default"
 
       - name: Upload Trivy go scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: 'trivy-results-go.sarif'
-          category: 'Golang'
+          sarif_file: "trivy-results-go.sarif"
+          category: "Golang"
 
       - name: Upload Trivy pulsarctl scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: 'trivy-results-pulsarctl.sarif'
-          category: 'Pulsarctl'
+          sarif_file: "trivy-results-pulsarctl.sarif"
+          category: "Pulsarctl"
 
       - name: Upload Trivy python scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: 'trivy-results-python.sarif'
-          category: 'Python'
+          sarif_file: "trivy-results-python.sarif"
+          category: "Python"

@@ -2,15 +2,15 @@ name: Precommit - OLM verify
 on:
   pull_request:
     branches:
-      - '*'
+      - "*"
     paths-ignore:
-      - 'docs/**'
-      - 'README.md'
-      - 'CHANGELOG.md'
-      - 'PROJECT'
-      - 'LICENSE'
-      - 'mesh-worker-service/README.md'
-      - 'tools/README.md'
+      - "docs/**"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "PROJECT"
+      - "LICENSE"
+      - "mesh-worker-service/README.md"
+      - "tools/README.md"
 jobs:
   olm-verify:
     name: Verify OLM bundle
@@ -34,10 +34,10 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: Set up GO 1.24.6
+      - name: Set up GO 1.24.10
         uses: actions/setup-go@v1
         with:
-          go-version: 1.24.6
+          go-version: 1.24.10
         id: go
 
       - name: InstallKubebuilder
@@ -69,7 +69,7 @@ jobs:
           CATALOG_BRANCH_TAG: latest
         run: |
           echo $VERSION
-          make redhat-certificated-image-build redhat-certificated-image-push redhat-certificated-bundle redhat-certificated-bundle-build redhat-certificated-bundle-push catalog-build catalog-push 
+          make redhat-certificated-image-build redhat-certificated-image-push redhat-certificated-bundle redhat-certificated-bundle-build redhat-certificated-bundle-push catalog-build catalog-push
 
       - name: Install the Operator Lifecycle Manager
         run: |
