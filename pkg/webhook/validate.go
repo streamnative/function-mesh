@@ -230,42 +230,45 @@ func validateSecretsMap(secrets map[string]v1alpha1.SecretRef) *field.Error {
 	return nil
 }
 
-func validateInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf) []*field.Error {
+func validateInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
+	skipInputValidation bool, skipOutputValidation bool) []*field.Error {
 	var allErrs field.ErrorList
 	allInputTopics := []string{}
 	if input != nil {
 		allInputTopics = collectAllInputTopics(*input)
-		if len(allInputTopics) == 0 {
-			e := field.Invalid(field.NewPath("spec").Child("input"), *input,
-				"No input topic(s) specified for the function")
-			allErrs = append(allErrs, e)
-		}
-
-		for _, topic := range allInputTopics {
-			err := isValidTopicName(topic)
-			if err != nil {
+		if !skipInputValidation {
+			if len(allInputTopics) == 0 {
 				e := field.Invalid(field.NewPath("spec").Child("input"), *input,
-					fmt.Sprintf("Input topic %s is invalid", topic))
-				allErrs = append(allErrs, e)
-			}
-		}
-
-		for topicName, conf := range input.SourceSpecs {
-			if conf.ReceiverQueueSize != nil && *conf.ReceiverQueueSize < 0 {
-				e := field.Invalid(field.NewPath("spec").Child("input", "sourceSpecs"),
-					input.SourceSpecs, fmt.Sprintf("%s receiver queue size should be >= zero", topicName))
+					"No input topic(s) specified for the function")
 				allErrs = append(allErrs, e)
 			}
 
-			if conf.CryptoConfig != nil && conf.CryptoConfig.CryptoKeyReaderClassName == "" {
-				e := field.Invalid(field.NewPath("spec").Child("input", "sourceSpecs"),
-					input.SourceSpecs, fmt.Sprintf("%s cryptoKeyReader class name required", topicName))
-				allErrs = append(allErrs, e)
+			for _, topic := range allInputTopics {
+				err := isValidTopicName(topic)
+				if err != nil {
+					e := field.Invalid(field.NewPath("spec").Child("input"), *input,
+						fmt.Sprintf("Input topic %s is invalid", topic))
+					allErrs = append(allErrs, e)
+				}
+			}
+
+			for topicName, conf := range input.SourceSpecs {
+				if conf.ReceiverQueueSize != nil && *conf.ReceiverQueueSize < 0 {
+					e := field.Invalid(field.NewPath("spec").Child("input", "sourceSpecs"),
+						input.SourceSpecs, fmt.Sprintf("%s receiver queue size should be >= zero", topicName))
+					allErrs = append(allErrs, e)
+				}
+
+				if conf.CryptoConfig != nil && conf.CryptoConfig.CryptoKeyReaderClassName == "" {
+					e := field.Invalid(field.NewPath("spec").Child("input", "sourceSpecs"),
+						input.SourceSpecs, fmt.Sprintf("%s cryptoKeyReader class name required", topicName))
+					allErrs = append(allErrs, e)
+				}
 			}
 		}
 	}
 
-	if output != nil {
+	if output != nil && !skipOutputValidation {
 		if output.Topic != "" {
 			err := isValidTopicName(output.Topic)
 			if err != nil {

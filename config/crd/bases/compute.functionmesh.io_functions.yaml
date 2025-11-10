@@ -195,7 +195,11 @@ spec:
                 type: object
               java:
                 properties:
+                  entryClass:
+                    type: string
                   extraDependenciesDir:
+                    type: string
+                  instancePath:
                     type: string
                   jar:
                     type: string
@@ -3707,8 +3711,42 @@ spec:
                 type: object
               showPreciseParallelism:
                 type: boolean
+              sinkConfig:
+                properties:
+                  className:
+                    type: string
+                  configs:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  sinkType:
+                    type: string
+                  typeClassName:
+                    type: string
+                type: object
               skipToLatest:
                 type: boolean
+              sourceConfig:
+                properties:
+                  batchSourceConfig:
+                    properties:
+                      discoveryTriggererClassName:
+                        type: string
+                      discoveryTriggererConfig:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                    required:
+                    - discoveryTriggererClassName
+                    type: object
+                  className:
+                    type: string
+                  configs:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  sourceType:
+                    type: string
+                  typeClassName:
+                    type: string
+                type: object
               statefulConfig:
                 properties:
                   pulsar:

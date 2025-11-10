@@ -219,7 +219,7 @@ func (webhook *SinkWebhook) ValidateCreate(ctx context.Context, obj runtime.Obje
 		allErrs = append(allErrs, fieldErr)
 	}
 
-	fieldErrs = validateInputOutput(&r.Spec.Input, nil)
+	fieldErrs = validateInputOutput(&r.Spec.Input, nil, false, true)
 	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}

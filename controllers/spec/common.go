@@ -69,6 +69,7 @@ const (
 	DefaultGenericRunnerImage       = DefaultRunnerPrefix + "pulsar-functions-generic-base-runner:" + DefaultGenericRunnerTag
 	PulsarAdminExecutableFile       = "/pulsar/bin/pulsar-admin"
 	WorkDir                         = "/pulsar/"
+	DefaultConnectorsDirectory      = WorkDir + "connectors"
 
 	RunnerImageHasPulsarctl = "pulsar-functions-(pulsarctl|sn|generic)-(java|python|go|nodejs|base)-runner"
 
@@ -133,6 +134,9 @@ const (
 	FunctionContainerName = "pulsar-function"
 	SinkContainerName     = "pulsar-sink"
 	SourceContainerName   = "pulsar-source"
+
+	DefaultPulsarFunctionsJavaInstancePath       = "/pulsar/instances/java-instance.jar"
+	DefaultPulsarFunctionsJavaInstanceEntryClass = "org.apache.pulsar.functions.instance.JavaInstanceMain"
 )
 
 //go:embed template/java-runtime-log4j.xml.tmpl
@@ -533,15 +537,15 @@ func GenerateAffinity(affinity *corev1.Affinity, labels map[string]string, disab
 	return affinity
 }
 
-func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, extraDependenciesDir, uid string,
+func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, extraDependenciesDir, connectorsDirectory, uid string,
 	memory *resource.Quantity, javaOpts []string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
+	maxPendingAsyncRequests *int32, logConfigFileName, instancePath, entryClass string) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
 		strings.Join(getProcessJavaRuntimeArgs(name, packageFile, clusterName, logLevel, details,
-			extraDependenciesDir, uid, memory, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
-			authConfig, maxPendingAsyncRequests, logConfigFileName), " ")
+			extraDependenciesDir, connectorsDirectory, uid, memory, javaOpts, authProvided, tlsProvided, secretMaps, state, tlsConfig,
+			authConfig, maxPendingAsyncRequests, logConfigFileName, instancePath, entryClass), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(GetDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget,
@@ -1282,12 +1286,12 @@ func setShardIDEnvironmentVariableCommand() string {
 	return fmt.Sprintf("%s=${POD_NAME##*-} && echo shardId=${%s}", EnvShardID, EnvShardID)
 }
 
-func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, extraDependenciesDir, uid string,
+func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details, extraDependenciesDir, connectorsDirectory, uid string,
 	memory *resource.Quantity, javaOpts []string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
-	maxPendingAsyncRequests *int32, logConfigFileName string) []string {
-	classPath := "/pulsar/instances/java-instance.jar:$(echo /pulsar/lib/com.fasterxml.jackson.dataformat-jackson-dataformat-yaml-*.jar):$(echo /pulsar/lib/org.yaml-snakeyaml-*.jar)"
+	maxPendingAsyncRequests *int32, logConfigFileName, instancePath, entryClass string) []string {
+	classPath := fmt.Sprintf("%s:$(echo /pulsar/lib/com.fasterxml.jackson.dataformat-jackson-dataformat-yaml-*.jar):$(echo /pulsar/lib/org.yaml-snakeyaml-*.jar)", instancePath)
 	javaLogConfigPath := logConfigFileName
 	if javaLogConfigPath == "" {
 		javaLogConfigPath = DefaultJavaLogConfigPath
@@ -1326,12 +1330,15 @@ func getProcessJavaRuntimeArgs(name, packageName, clusterName, logLevel, details
 		"-XX:+ExitOnOutOfMemoryError",
 		"-Xlog:gc*:file=/pulsar/logs/gc.log:time,level,tags:filecount=5,filesize=10M",
 		strings.Join(javaOpts, " "),
-		"org.apache.pulsar.functions.instance.JavaInstanceMain",
+		entryClass,
 		"--jar",
 		packageName,
 	}
 	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig)
 	args = append(args, sharedArgs...)
+	if connectorsDirectory != "" {
+		args = append(args, "--connectors_directory", connectorsDirectory)
+	}
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getJavaSecretProviderArgs(secretMaps)
 		args = append(args, secretProviderArgs...)

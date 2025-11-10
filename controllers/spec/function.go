@@ -223,6 +223,11 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	spec := function.Spec
 
+	connectorsDirectory := ""
+	if spec.SourceConfig != nil || spec.SinkConfig != nil {
+		connectorsDirectory = DefaultConnectorsDirectory
+	}
+
 	hasPulsarctl := function.Spec.ImageHasPulsarctl
 	hasWget := function.Spec.ImageHasWget
 	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, function.Spec.Image); match {
@@ -232,19 +237,28 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 	if spec.Java != nil {
 		if spec.Java.Jar != "" {
 			mountPath := extractMountPath(spec.Java.Jar)
+			instancePath := DefaultPulsarFunctionsJavaInstancePath
+			if spec.Java.InstancePath != nil && *spec.Java.InstancePath != "" {
+				instancePath = *spec.Java.InstancePath
+			}
+			entryClass := DefaultPulsarFunctionsJavaInstanceEntryClass
+			if spec.Java.EntryClass != nil && *spec.Java.EntryClass != "" {
+				entryClass = *spec.Java.EntryClass
+			}
 			return MakeJavaFunctionCommand(spec.Java.JarLocation, mountPath,
 				spec.Name, spec.ClusterName,
 				GenerateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
 				parseJavaLogLevel(spec.Java),
 				generateFunctionDetailsInJSON(function),
 				spec.Java.ExtraDependenciesDir,
+				connectorsDirectory,
 				string(function.UID),
 				spec.Resources.Limits.Memory(),
 				spec.Java.JavaOpts, hasPulsarctl, hasWget,
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 				spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig,
 				spec.Pulsar.AuthConfig, spec.MaxPendingAsyncRequests,
-				GenerateJavaLogConfigFileName(function.Spec.Java))
+				GenerateJavaLogConfigFileName(function.Spec.Java), instancePath, entryClass)
 		}
 	} else if spec.Python != nil {
 		if spec.Python.Py != "" {

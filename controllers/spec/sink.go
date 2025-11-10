@@ -227,16 +227,26 @@ func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 		hasWget = true
 	}
 	mountPath := extractMountPath(spec.Java.Jar)
+	instancePath := DefaultPulsarFunctionsJavaInstancePath
+	if spec.Java.InstancePath != nil && *spec.Java.InstancePath != "" {
+		instancePath = *spec.Java.InstancePath
+	}
+	entryClass := DefaultPulsarFunctionsJavaInstanceEntryClass
+	if spec.Java.EntryClass != nil && *spec.Java.EntryClass != "" {
+		entryClass = *spec.Java.EntryClass
+	}
 	return MakeJavaFunctionCommand(spec.Java.JarLocation, mountPath,
 		spec.Name, spec.ClusterName,
 		GenerateJavaLogConfigCommand(spec.Java, spec.LogTopicAgent),
 		parseJavaLogLevel(spec.Java),
 		generateSinkDetailsInJSON(sink),
-		spec.Java.ExtraDependenciesDir, string(sink.UID),
+		spec.Java.ExtraDependenciesDir,
+		"",
+		string(sink.UID),
 		spec.Resources.Limits.Memory(),
 		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
-		GenerateJavaLogConfigFileName(spec.Java))
+		GenerateJavaLogConfigFileName(spec.Java), instancePath, entryClass)
 }
 
 func generateSinkDetailsInJSON(sink *v1alpha1.Sink) string {
