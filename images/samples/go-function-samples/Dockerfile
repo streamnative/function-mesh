@@ -1,5 +1,5 @@
 ARG PULSAR_IMAGE_TAG
-FROM golang:1.24.10-trixie as builder
+FROM golang:1.24.11-trixie as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
