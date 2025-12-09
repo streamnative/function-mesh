@@ -85,7 +85,7 @@ jobs:
 
       - name: Set up GO 1.24.11
         if: steps.list-changed.outputs.changed == 'true'
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v5
         with:
           go-version: 1.24.11
         id: go

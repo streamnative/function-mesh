@@ -36,7 +36,7 @@ jobs:
           swap-storage: true
 
       - name: Set up Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
         id: go
