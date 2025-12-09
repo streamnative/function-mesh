@@ -27,6 +27,29 @@ jobs:
       TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
       TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@v1.3.0
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: false
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      # the runner machine has a disk /dev/sdb1 which mounted to /mnt, and it has more free disk than /dev/sda1.
+      # we can use it to save docker's data to avoid bookie error due to lack of disk.
+      - name: change docker data dir
+        run: |
+          sudo service docker stop
+          echo '{ "exec-opts": ["native.cgroupdriver=cgroupfs"], "cgroup-parent": "/actions_job", "data-root": "/mnt/docker" }' | sudo tee /etc/docker/daemon.json
+          sudo service docker start
+          
       - name: Checkout
         uses: actions/checkout@v3
         with:
