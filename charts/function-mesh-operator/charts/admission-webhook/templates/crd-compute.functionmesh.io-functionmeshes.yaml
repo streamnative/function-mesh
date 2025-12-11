@@ -198,7 +198,11 @@ spec:
                         type: object
                       java:
                         properties:
+                          entryClass:
+                            type: string
                           extraDependenciesDir:
+                            type: string
+                          instancePath:
                             type: string
                           jar:
                             type: string
@@ -3710,8 +3714,42 @@ spec:
                         type: object
                       showPreciseParallelism:
                         type: boolean
+                      sinkConfig:
+                        properties:
+                          className:
+                            type: string
+                          configs:
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                          sinkType:
+                            type: string
+                          typeClassName:
+                            type: string
+                        type: object
                       skipToLatest:
                         type: boolean
+                      sourceConfig:
+                        properties:
+                          batchSourceConfig:
+                            properties:
+                              discoveryTriggererClassName:
+                                type: string
+                              discoveryTriggererConfig:
+                                type: object
+                                x-kubernetes-preserve-unknown-fields: true
+                            required:
+                              - discoveryTriggererClassName
+                            type: object
+                          className:
+                            type: string
+                          configs:
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                          sourceType:
+                            type: string
+                          typeClassName:
+                            type: string
+                        type: object
                       statefulConfig:
                         properties:
                           pulsar:
@@ -4151,7 +4189,11 @@ spec:
                         type: object
                       java:
                         properties:
+                          entryClass:
+                            type: string
                           extraDependenciesDir:
+                            type: string
+                          instancePath:
                             type: string
                           jar:
                             type: string
@@ -7590,21 +7632,8 @@ spec:
                       showPreciseParallelism:
                         type: boolean
                       sinkConfig:
-                        properties:
-                          archive:
-                            type: string
-                          builtin:
-                            type: string
-                          className:
-                            type: string
-                          configs:
-                            additionalProperties: {}
-                            type: object
-                          sinkType:
-                            type: string
-                          typeClassName:
-                            type: string
                         type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       sinkType:
                         type: string
                       statefulConfig:
@@ -7763,7 +7792,11 @@ spec:
                         type: string
                       java:
                         properties:
+                          entryClass:
+                            type: string
                           extraDependenciesDir:
+                            type: string
+                          instancePath:
                             type: string
                           jar:
                             type: string
@@ -11259,19 +11292,8 @@ spec:
                       showPreciseParallelism:
                         type: boolean
                       sourceConfig:
-                        properties:
-                          archive:
-                            type: string
-                          builtin:
-                            type: string
-                          className:
-                            type: string
-                          configs:
-                            additionalProperties: {}
-                            type: object
-                          typeClassName:
-                            type: string
                         type: object
+                        x-kubernetes-preserve-unknown-fields: true
                       sourceType:
                         type: string
                       statefulConfig:
