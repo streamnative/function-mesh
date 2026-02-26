@@ -1,6 +1,6 @@
 module github.com/streamnative/function-mesh
 
-go 1.24.11
+go 1.24.13
 
 require (
 	github.com/apache/pulsar-client-go v0.17.0

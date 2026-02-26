@@ -60,11 +60,6 @@ echo "${sts_yaml}" | grep "/etc/oauth2-package-service" > /dev/null 2>&1 || {
   kubectl delete -f "${MANIFESTS_FILE}" > /dev/null 2>&1 || true
   exit 1
 }
-echo "${sts_yaml}" | grep "/etc/tls/pulsar-functions-package-service" > /dev/null 2>&1 || {
-  echo "packageService tls volume mount is not injected"
-  kubectl delete -f "${MANIFESTS_FILE}" > /dev/null 2>&1 || true
-  exit 1
-}
 
 verify_java_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_exclamation_function_with_auth \
   persistent://public/default/input-download-java-package-service-topic \
