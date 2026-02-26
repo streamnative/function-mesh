@@ -312,6 +312,10 @@ func (webhook *FunctionWebhook) ValidateCreate(ctx context.Context, obj runtime.
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)
 	}
+	fieldErr = validatePackageService(r.Spec.PackageService)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
 
 	fieldErr = validateBuiltinHPARules(r.Spec.Pod.BuiltinAutoscaler)
 	if fieldErr != nil {

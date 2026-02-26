@@ -78,6 +78,9 @@ const (
 	DownloaderVolume        = "downloader-volume"
 	DownloaderImage         = DefaultRunnerPrefix + "pulsarctl:2.10.2.3"
 	DownloadDir             = "/pulsar/download"
+	PackageServiceEnvPrefix = "PACKAGE_"
+	PackageOAuth2MountPath  = "/etc/oauth2-package-service"
+	PackageTLSMountPath     = "/etc/tls/pulsar-functions-package-service"
 
 	CleanupContainerName = "cleanup"
 
@@ -173,6 +176,115 @@ type TLSConfig interface {
 	GetMountPath() string
 }
 
+type tlsConfigWithCustomMountPath struct {
+	TLSConfig
+	mountPath string
+}
+
+func (t *tlsConfigWithCustomMountPath) GetMountPath() string {
+	return t.mountPath
+}
+
+type downloadCommandEnvNames struct {
+	webServiceURL              string
+	clientAuthenticationPlugin string
+	clientAuthenticationParams string
+	tlsAllowInsecure           string
+	tlsHostnameVerification    string
+	tlsTrustCertsFilePath      string
+}
+
+func defaultDownloadCommandEnvNames() downloadCommandEnvNames {
+	return downloadCommandEnvNames{
+		webServiceURL:              "webServiceURL",
+		clientAuthenticationPlugin: "clientAuthenticationPlugin",
+		clientAuthenticationParams: "clientAuthenticationParameters",
+		tlsAllowInsecure:           "tlsAllowInsecureConnection",
+		tlsHostnameVerification:    "tlsHostnameVerificationEnable",
+		tlsTrustCertsFilePath:      "tlsTrustCertsFilePath",
+	}
+}
+
+func prefixedDownloadCommandEnvNames(prefix string) downloadCommandEnvNames {
+	return downloadCommandEnvNames{
+		webServiceURL:              prefix + "webServiceURL",
+		clientAuthenticationPlugin: prefix + "clientAuthenticationPlugin",
+		clientAuthenticationParams: prefix + "clientAuthenticationParameters",
+		tlsAllowInsecure:           prefix + "tlsAllowInsecureConnection",
+		tlsHostnameVerification:    prefix + "tlsHostnameVerificationEnable",
+		tlsTrustCertsFilePath:      prefix + "tlsTrustCertsFilePath",
+	}
+}
+
+type downloadServiceConfig struct {
+	pulsar      *v1alpha1.PulsarMessaging
+	envPrefix   string
+	envNames    downloadCommandEnvNames
+	oauth2Mount string
+	tlsMount    string
+}
+
+func newDownloadServiceConfig(packageService, messaging *v1alpha1.PulsarMessaging) downloadServiceConfig {
+	if packageService != nil {
+		return downloadServiceConfig{
+			pulsar:      packageService,
+			envPrefix:   PackageServiceEnvPrefix,
+			envNames:    prefixedDownloadCommandEnvNames(PackageServiceEnvPrefix),
+			oauth2Mount: PackageOAuth2MountPath,
+			tlsMount:    PackageTLSMountPath,
+		}
+	}
+	return downloadServiceConfig{
+		pulsar:      messaging,
+		envNames:    defaultDownloadCommandEnvNames(),
+		oauth2Mount: "",
+		tlsMount:    "",
+	}
+}
+
+func (d downloadServiceConfig) authProvided() bool {
+	return d.pulsar != nil && d.pulsar.AuthSecret != ""
+}
+
+func (d downloadServiceConfig) tlsProvided() bool {
+	return d.pulsar != nil && d.pulsar.TLSSecret != ""
+}
+
+func (d downloadServiceConfig) authConfig() *v1alpha1.AuthConfig {
+	if d.pulsar == nil {
+		return nil
+	}
+	return d.pulsar.AuthConfig
+}
+
+func (d downloadServiceConfig) tlsConfig() TLSConfig {
+	if d.pulsar == nil || d.pulsar.TLSConfig == nil {
+		return nil
+	}
+	if d.tlsMount == "" {
+		return d.pulsar.TLSConfig
+	}
+	return &tlsConfigWithCustomMountPath{
+		TLSConfig: d.pulsar.TLSConfig,
+		mountPath: d.tlsMount,
+	}
+}
+
+func (d downloadServiceConfig) envFrom() []corev1.EnvFromSource {
+	if d.pulsar == nil {
+		return nil
+	}
+	return GenerateContainerEnvFromWithPrefix(d.pulsar.PulsarConfig, d.pulsar.AuthSecret, d.pulsar.TLSSecret, d.envPrefix)
+}
+
+func isNilTLSConfig(tlsConfig TLSConfig) bool {
+	if tlsConfig == nil {
+		return true
+	}
+	value := reflect.ValueOf(tlsConfig)
+	return value.Kind() == reflect.Ptr && value.IsNil()
+}
+
 type RollingCfg struct {
 	Enabled bool
 	Type    string // "size" or "time"
@@ -239,13 +351,25 @@ func MakeHeadlessServiceName(serviceName string) string {
 }
 
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderImage string, container *corev1.Container,
-	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, authConfig *v1alpha1.AuthConfig,
-	tlsConfig TLSConfig, pulsarConfig, authSecret, tlsSecret string, javaRuntime *v1alpha1.JavaRuntime,
+	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, runtimeMessaging *v1alpha1.PulsarMessaging,
+	downloadConfig downloadServiceConfig,
+	javaRuntime *v1alpha1.JavaRuntime,
 	pythonRuntime *v1alpha1.PythonRuntime, goRuntime *v1alpha1.GoRuntime, env []corev1.EnvVar, logTopic, filebeatImage string,
 	logTopicAgent v1alpha1.LogTopicAgent, definedVolumeMounts []corev1.VolumeMount, volumeClaimTemplates []corev1.PersistentVolumeClaim,
 	persistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy) *appsv1.StatefulSet {
 
-	filebeatContainer := makeFilebeatContainer(definedVolumeMounts, env, logTopic, logTopicAgent, tlsConfig, authConfig, pulsarConfig, tlsSecret, authSecret, filebeatImage)
+	var runtimeTLSConfig TLSConfig = nil
+	var runtimeAuthConfig *v1alpha1.AuthConfig = nil
+	var runtimePulsarConfig, runtimeAuthSecret, runtimeTLSSecret string
+	if runtimeMessaging != nil {
+		runtimeTLSConfig = runtimeMessaging.TLSConfig
+		runtimeAuthConfig = runtimeMessaging.AuthConfig
+		runtimePulsarConfig = runtimeMessaging.PulsarConfig
+		runtimeAuthSecret = runtimeMessaging.AuthSecret
+		runtimeTLSSecret = runtimeMessaging.TLSSecret
+	}
+
+	filebeatContainer := makeFilebeatContainer(definedVolumeMounts, env, logTopic, logTopicAgent, runtimeTLSConfig, runtimeAuthConfig, runtimePulsarConfig, runtimeTLSSecret, runtimeAuthSecret, filebeatImage)
 
 	volumeMounts := generateDownloaderVolumeMountsForDownloader(javaRuntime, pythonRuntime, goRuntime)
 	var downloaderContainer *corev1.Container
@@ -266,12 +390,19 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 
 		// mount auth and tls related VolumeMounts when download package from pulsar
 		if !hasHTTPPrefix(downloadPath) {
-			if authConfig != nil && authConfig.OAuth2Config != nil {
-				volumeMounts = append(volumeMounts, generateVolumeMountFromOAuth2Config(authConfig.OAuth2Config))
+			if authConfig := downloadConfig.authConfig(); authConfig != nil && authConfig.OAuth2Config != nil {
+				oauth2MountPath := authConfig.OAuth2Config.GetMountPath()
+				if downloadConfig.oauth2Mount != "" {
+					oauth2MountPath = downloadConfig.oauth2Mount
+				}
+				volumeMounts = appendVolumeMountIfNotExists(volumeMounts, generateVolumeMountFromOAuth2ConfigWithMountPath(authConfig.OAuth2Config, oauth2MountPath))
+				podVolumes = appendVolumeIfNotExists(podVolumes, generateVolumeFromOAuth2Config(authConfig.OAuth2Config))
 			}
 
-			if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
-				volumeMounts = append(volumeMounts, generateVolumeMountFromTLSConfig(tlsConfig))
+			tlsConfig := downloadConfig.tlsConfig()
+			if !isNilTLSConfig(tlsConfig) && tlsConfig.HasSecretVolume() {
+				volumeMounts = appendVolumeMountIfNotExists(volumeMounts, generateVolumeMountFromTLSConfig(tlsConfig))
+				podVolumes = appendVolumeIfNotExists(podVolumes, generateVolumeFromTLSConfig(tlsConfig))
 			}
 		}
 		volumeMounts = append(volumeMounts, definedVolumeMounts...)
@@ -287,17 +418,18 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 			Name:  DownloaderName,
 			Image: image,
 			Command: []string{"sh", "-c",
-				strings.Join(GetDownloadCommand(downloadPath, componentPackage, true, true,
-					authSecret != "", tlsSecret != "", tlsConfig, authConfig), " ")},
+				strings.Join(GetDownloadCommandWithEnv(downloadPath, componentPackage, true, true,
+					downloadConfig.authProvided(), downloadConfig.tlsProvided(), downloadConfig.tlsConfig(),
+					downloadConfig.authConfig(), downloadConfig.envNames, downloadConfig.oauth2Mount), " ")},
 			VolumeMounts:    volumeMounts,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Env: []corev1.EnvVar{{
 				Name:  "HOME",
 				Value: "/tmp",
 			}},
-			EnvFrom: GenerateContainerEnvFrom(pulsarConfig, authSecret, tlsSecret),
+			EnvFrom: downloadConfig.envFrom(),
 		}
-		podVolumes = append(podVolumes, corev1.Volume{
+		podVolumes = appendVolumeIfNotExists(podVolumes, corev1.Volume{
 			Name: DownloaderVolume,
 		})
 	}
@@ -538,7 +670,8 @@ func GenerateAffinity(affinity *corev1.Affinity, labels map[string]string, disab
 }
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, extraDependenciesDir, connectorsDirectory, uid string,
-	memory *resource.Quantity, javaOpts []string, hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
+	memory *resource.Quantity, javaOpts []string, hasPulsarctl, hasWget bool, downloadConfig downloadServiceConfig,
+	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
 	maxPendingAsyncRequests *int32, logConfigFileName, instancePath, entryClass string) []string {
@@ -548,15 +681,16 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 			authConfig, maxPendingAsyncRequests, logConfigFileName, instancePath, entryClass), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(GetDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget,
-			authProvided, tlsProvided, tlsConfig, authConfig), " ")
+		downloadCommand := strings.Join(GetDownloadCommandWithEnv(downloadPath, packageFile, hasPulsarctl, hasWget,
+			downloadConfig.authProvided(), downloadConfig.tlsProvided(), downloadConfig.tlsConfig(),
+			downloadConfig.authConfig(), downloadConfig.envNames, downloadConfig.oauth2Mount), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"bash", "-c", processCommand}
 }
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
-	hasPulsarctl, hasWget, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
+	hasPulsarctl, hasWget bool, downloadConfig downloadServiceConfig, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
@@ -564,15 +698,16 @@ func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, gen
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(GetDownloadCommand(downloadPath, packageFile, hasPulsarctl, hasWget,
-			authProvided,
-			tlsProvided, tlsConfig, authConfig), " ")
+		downloadCommand := strings.Join(GetDownloadCommandWithEnv(downloadPath, packageFile, hasPulsarctl, hasWget,
+			downloadConfig.authProvided(),
+			downloadConfig.tlsProvided(), downloadConfig.tlsConfig(), downloadConfig.authConfig(),
+			downloadConfig.envNames, downloadConfig.oauth2Mount), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"bash", "-c", processCommand}
 }
 
-func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alpha1.Function) []string {
+func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alpha1.Function, downloadConfig downloadServiceConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
@@ -583,15 +718,16 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 			hasPulsarctl = true
 			hasWget = true
 		}
-		downloadCommand := strings.Join(GetDownloadCommand(downloadPath, goExecFilePath,
-			hasPulsarctl, hasWget, function.Spec.Pulsar.AuthSecret != "",
-			function.Spec.Pulsar.TLSSecret != "", function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig), " ")
+		downloadCommand := strings.Join(GetDownloadCommandWithEnv(downloadPath, goExecFilePath,
+			hasPulsarctl, hasWget, downloadConfig.authProvided(),
+			downloadConfig.tlsProvided(), downloadConfig.tlsConfig(), downloadConfig.authConfig(),
+			downloadConfig.envNames, downloadConfig.oauth2Mount), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"bash", "-c", processCommand}
 }
 
-func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterName, details, uid string, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
+func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterName, details, uid string, downloadConfig downloadServiceConfig, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
@@ -599,9 +735,10 @@ func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterNam
 			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
-		downloadCommand := strings.Join(GetDownloadCommand(downloadPath, functionFile, true, true,
-			authProvided,
-			tlsProvided, tlsConfig, authConfig), " ")
+		downloadCommand := strings.Join(GetDownloadCommandWithEnv(downloadPath, functionFile, true, true,
+			downloadConfig.authProvided(),
+			downloadConfig.tlsProvided(), downloadConfig.tlsConfig(), downloadConfig.authConfig(),
+			downloadConfig.envNames, downloadConfig.oauth2Mount), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"sh", "-c", processCommand}
@@ -684,12 +821,37 @@ func TriggerCleanup(ctx context.Context, k8sclient client.Client, restClient res
 	return nil
 }
 
+func getOAuth2MountFile(authConfig *v1alpha1.OAuth2Config, mountPath string) string {
+	if authConfig == nil {
+		return ""
+	}
+	if mountPath == "" {
+		return authConfig.GetMountFile()
+	}
+	return fmt.Sprintf("%s/%s", mountPath, authConfig.KeySecretKey)
+}
+
+func makeOAuth2AuthenticationParameters(authConfig *v1alpha1.OAuth2Config, mountPath string) string {
+	if authConfig == nil {
+		return ""
+	}
+	credentialsFile := getOAuth2MountFile(authConfig, mountPath)
+	return fmt.Sprintf(`'{"credentials_url":"file://%s","privateKey":"%s","private_key":"%s","issuerUrl":"%s","issuer_url":"%s","audience":"%s","scope":"%s"}'`,
+		credentialsFile, credentialsFile, credentialsFile, authConfig.IssuerURL, authConfig.IssuerURL, authConfig.Audience, authConfig.Scope)
+}
+
 func getPulsarAdminCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 	authConfig *v1alpha1.AuthConfig) []string {
+	return getPulsarAdminCommandWithEnv(authProvided, tlsProvided, tlsConfig, authConfig,
+		defaultDownloadCommandEnvNames(), "")
+}
+
+func getPulsarAdminCommandWithEnv(authProvided, tlsProvided bool, tlsConfig TLSConfig,
+	authConfig *v1alpha1.AuthConfig, envNames downloadCommandEnvNames, oauth2MountPath string) []string {
 	args := []string{
 		PulsarAdminExecutableFile,
 		"--admin-url",
-		"$webServiceURL",
+		"$" + envNames.webServiceURL,
 	}
 	if authConfig != nil {
 		if authConfig.OAuth2Config != nil {
@@ -697,7 +859,7 @@ func getPulsarAdminCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 				"--auth-plugin",
 				OAuth2AuthenticationPlugin,
 				"--auth-params",
-				authConfig.OAuth2Config.AuthenticationParameters(),
+				makeOAuth2AuthenticationParameters(authConfig.OAuth2Config, oauth2MountPath),
 			}...)
 		} else if authConfig.GenericAuth != nil {
 			args = append(args, []string{
@@ -710,19 +872,19 @@ func getPulsarAdminCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 	} else if authProvided {
 		args = append(args, []string{
 			"--auth-plugin",
-			"$clientAuthenticationPlugin",
+			"$" + envNames.clientAuthenticationPlugin,
 			"--auth-params",
-			"$clientAuthenticationParameters"}...)
+			"$" + envNames.clientAuthenticationParams}...)
 	}
 
 	// Use traditional way
-	if reflect.ValueOf(tlsConfig).IsNil() {
+	if isNilTLSConfig(tlsConfig) {
 		if tlsProvided {
 			args = append(args, []string{
 				"--tls-allow-insecure",
 				"--tls-enable-hostname-verification",
 				"--tls-trust-cert-path",
-				"$tlsTrustCertsFilePath",
+				"$" + envNames.tlsTrustCertsFilePath,
 			}...)
 		}
 	} else {
@@ -749,11 +911,17 @@ func getPulsarAdminCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 
 func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 	authConfig *v1alpha1.AuthConfig) []string {
+	return getPulsarctlCommandWithEnv(authProvided, tlsProvided, tlsConfig, authConfig,
+		defaultDownloadCommandEnvNames(), "")
+}
+
+func getPulsarctlCommandWithEnv(authProvided, tlsProvided bool, tlsConfig TLSConfig,
+	authConfig *v1alpha1.AuthConfig, envNames downloadCommandEnvNames, oauth2MountPath string) []string {
 	args := []string{
 		"export PATH=$PATH:/pulsar/bin && ",
 		PulsarctlExecutableFile,
 		"--admin-service-url",
-		"$webServiceURL",
+		"$" + envNames.webServiceURL,
 	}
 	// activate oauth2 for pulsarctl
 	if authConfig != nil {
@@ -765,13 +933,13 @@ func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 				"set",
 				"downloader",
 				"--admin-service-url",
-				"$webServiceURL",
+				"$" + envNames.webServiceURL,
 				"--issuer-endpoint",
 				authConfig.OAuth2Config.IssuerURL,
 				"--audience",
 				authConfig.OAuth2Config.Audience,
 				"--key-file",
-				authConfig.OAuth2Config.GetMountFile(),
+				getOAuth2MountFile(authConfig.OAuth2Config, oauth2MountPath),
 			}
 			if authConfig.OAuth2Config.Scope != "" {
 				args = append(args, []string{
@@ -800,7 +968,7 @@ func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 				"--auth-params",
 				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'",
 				"--admin-service-url",
-				"$webServiceURL",
+				"$" + envNames.webServiceURL,
 			}
 		}
 	} else if authProvided {
@@ -810,26 +978,26 @@ func getPulsarctlCommand(authProvided, tlsProvided bool, tlsConfig TLSConfig,
 			"oauth2",
 			"activate",
 			"--auth-params",
-			"$clientAuthenticationParameters || true",
+			"$" + envNames.clientAuthenticationParams + " || true",
 			") &&",
 			PulsarctlExecutableFile,
 			"--auth-plugin",
-			"$clientAuthenticationPlugin",
+			"$" + envNames.clientAuthenticationPlugin,
 			"--auth-params",
-			"$clientAuthenticationParameters",
+			"$" + envNames.clientAuthenticationParams,
 			"--admin-service-url",
-			"$webServiceURL",
+			"$" + envNames.webServiceURL,
 		}
 	}
 
 	// Use traditional way
-	if reflect.ValueOf(tlsConfig).IsNil() {
+	if isNilTLSConfig(tlsConfig) {
 		if tlsProvided {
 			args = append(args, []string{
-				"--tls-allow-insecure=${tlsAllowInsecureConnection:-" + DefaultForAllowInsecure + "}",
-				"--tls-enable-hostname-verification=${tlsHostnameVerificationEnable:-" + DefaultForEnableHostNameVerification + "}",
+				"--tls-allow-insecure=${" + envNames.tlsAllowInsecure + ":-" + DefaultForAllowInsecure + "}",
+				"--tls-enable-hostname-verification=${" + envNames.tlsHostnameVerification + ":-" + DefaultForEnableHostNameVerification + "}",
 				"--tls-trust-cert-path",
-				"$tlsTrustCertsFilePath",
+				"$" + envNames.tlsTrustCertsFilePath,
 			}...)
 		}
 	} else {
@@ -925,15 +1093,21 @@ func getCleanUpCommand(hasPulsarctl, authProvided, tlsProvided bool, tlsConfig T
 func GetDownloadCommand(downloadPath, componentPackage string, hasPulsarctl, hasWget, authProvided, tlsProvided bool,
 	tlsConfig TLSConfig,
 	authConfig *v1alpha1.AuthConfig) []string {
+	return GetDownloadCommandWithEnv(downloadPath, componentPackage, hasPulsarctl, hasWget, authProvided, tlsProvided, tlsConfig, authConfig,
+		defaultDownloadCommandEnvNames(), "")
+}
+
+func GetDownloadCommandWithEnv(downloadPath, componentPackage string, hasPulsarctl, hasWget, authProvided, tlsProvided bool,
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, envNames downloadCommandEnvNames, oauth2MountPath string) []string {
 	var args []string
 	if hasHTTPPrefix(downloadPath) && hasWget {
 		args = append(args, "wget", downloadPath, "-O", componentPackage)
 		return args
 	}
 	if hasPulsarctl {
-		args = getPulsarctlCommand(authProvided, tlsProvided, tlsConfig, authConfig)
+		args = getPulsarctlCommandWithEnv(authProvided, tlsProvided, tlsConfig, authConfig, envNames, oauth2MountPath)
 	} else {
-		args = getPulsarAdminCommand(authProvided, tlsProvided, tlsConfig, authConfig)
+		args = getPulsarAdminCommandWithEnv(authProvided, tlsProvided, tlsConfig, authConfig, envNames, oauth2MountPath)
 	}
 	if hasPackageNamePrefix(downloadPath) {
 		args = append(args, []string{
@@ -1474,7 +1648,7 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 	}
 
 	// Use traditional way
-	if reflect.ValueOf(tlsConfig).IsNil() {
+	if isNilTLSConfig(tlsConfig) {
 		if tlsProvided {
 			args = append(args, []string{
 				"--use_tls",
@@ -1663,9 +1837,14 @@ func generateBasicContainerEnv(secrets map[string]v1alpha1.SecretRef, env []core
 }
 
 func GenerateContainerEnvFrom(messagingConfig string, authSecret string, tlsSecret string) []corev1.EnvFromSource {
+	return GenerateContainerEnvFromWithPrefix(messagingConfig, authSecret, tlsSecret, "")
+}
+
+func GenerateContainerEnvFromWithPrefix(messagingConfig string, authSecret string, tlsSecret string, prefix string) []corev1.EnvFromSource {
 	var envs []corev1.EnvFromSource
 	if messagingConfig != "" {
 		envs = append(envs, corev1.EnvFromSource{
+			Prefix: prefix,
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{Name: messagingConfig},
 			},
@@ -1674,6 +1853,7 @@ func GenerateContainerEnvFrom(messagingConfig string, authSecret string, tlsSecr
 
 	if authSecret != "" {
 		envs = append(envs, corev1.EnvFromSource{
+			Prefix: prefix,
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{Name: authSecret},
 			},
@@ -1682,6 +1862,7 @@ func GenerateContainerEnvFrom(messagingConfig string, authSecret string, tlsSecr
 
 	if tlsSecret != "" {
 		envs = append(envs, corev1.EnvFromSource{
+			Prefix: prefix,
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{Name: tlsSecret},
 			},
@@ -1867,10 +2048,53 @@ func generateVolumeMountFromTLSConfig(tlsConfig TLSConfig) corev1.VolumeMount {
 }
 
 func generateVolumeMountFromOAuth2Config(config *v1alpha1.OAuth2Config) corev1.VolumeMount {
+	return generateVolumeMountFromOAuth2ConfigWithMountPath(config, config.GetMountPath())
+}
+
+func generateVolumeMountFromOAuth2ConfigWithMountPath(config *v1alpha1.OAuth2Config, mountPath string) corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      generateVolumeNameFromOAuth2Config(config),
-		MountPath: config.GetMountPath(),
+		MountPath: mountPath,
 	}
+}
+
+func appendPackageServiceVolumes(volumes []corev1.Volume, packageService *v1alpha1.PulsarMessaging) []corev1.Volume {
+	if packageService == nil {
+		return volumes
+	}
+	if packageService.TLSConfig != nil {
+		packageTLSConfig := &tlsConfigWithCustomMountPath{
+			TLSConfig: packageService.TLSConfig,
+			mountPath: PackageTLSMountPath,
+		}
+		if packageTLSConfig.HasSecretVolume() {
+			volumes = appendVolumeIfNotExists(volumes, generateVolumeFromTLSConfig(packageTLSConfig))
+		}
+	}
+	if packageService.AuthConfig != nil && packageService.AuthConfig.OAuth2Config != nil {
+		volumes = appendVolumeIfNotExists(volumes, generateVolumeFromOAuth2Config(packageService.AuthConfig.OAuth2Config))
+	}
+	return volumes
+}
+
+func appendPackageServiceVolumeMounts(mounts []corev1.VolumeMount, packageService *v1alpha1.PulsarMessaging) []corev1.VolumeMount {
+	if packageService == nil {
+		return mounts
+	}
+	if packageService.TLSConfig != nil {
+		packageTLSConfig := &tlsConfigWithCustomMountPath{
+			TLSConfig: packageService.TLSConfig,
+			mountPath: PackageTLSMountPath,
+		}
+		if packageTLSConfig.HasSecretVolume() {
+			mounts = appendVolumeMountIfNotExists(mounts, generateVolumeMountFromTLSConfig(packageTLSConfig))
+		}
+	}
+	if packageService.AuthConfig != nil && packageService.AuthConfig.OAuth2Config != nil {
+		mounts = appendVolumeMountIfNotExists(mounts, generateVolumeMountFromOAuth2ConfigWithMountPath(
+			packageService.AuthConfig.OAuth2Config, PackageOAuth2MountPath))
+	}
+	return mounts
 }
 
 func generateContainerVolumeMountsFromConsumerConfigs(confs map[string]v1alpha1.ConsumerConfig) []corev1.VolumeMount {
@@ -1969,7 +2193,7 @@ func GenerateContainerVolumeMounts(volumeMounts []corev1.VolumeMount, producerCo
 			MountPath: "/pulsar/logs/functions",
 		})
 	}
-	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
+	if !isNilTLSConfig(tlsConfig) && tlsConfig.HasSecretVolume() {
 		mounts = append(mounts, generateVolumeMountFromTLSConfig(tlsConfig))
 	}
 	if authConfig != nil {
@@ -1992,7 +2216,7 @@ func GeneratePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.Produ
 	if agent == v1alpha1.SIDECAR {
 		volumes = append(volumes, generateFilebeatVolumes()...)
 	}
-	if !reflect.ValueOf(tlsConfig).IsNil() && tlsConfig.HasSecretVolume() {
+	if !isNilTLSConfig(tlsConfig) && tlsConfig.HasSecretVolume() {
 		volumes = append(volumes, generateVolumeFromTLSConfig(tlsConfig))
 	}
 	if authConfig != nil {
@@ -2004,6 +2228,24 @@ func GeneratePodVolumes(podVolumes []corev1.Volume, producerConf *v1alpha1.Produ
 	volumes = append(volumes, generateContainerVolumesFromConsumerConfigs(consumerConfs)...)
 	volumes = append(volumes, generateContainerVolumesFromLogConfigs(logConfigs)...)
 	return volumes
+}
+
+func appendVolumeIfNotExists(volumes []corev1.Volume, volume corev1.Volume) []corev1.Volume {
+	for _, existing := range volumes {
+		if existing.Name == volume.Name {
+			return volumes
+		}
+	}
+	return append(volumes, volume)
+}
+
+func appendVolumeMountIfNotExists(mounts []corev1.VolumeMount, mount corev1.VolumeMount) []corev1.VolumeMount {
+	for _, existing := range mounts {
+		if existing.Name == mount.Name && existing.MountPath == mount.MountPath && existing.SubPath == mount.SubPath {
+			return mounts
+		}
+	}
+	return append(mounts, mount)
 }
 
 func mergeMaps(labels ...map[string]string) map[string]string {

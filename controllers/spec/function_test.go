@@ -126,10 +126,10 @@ func TestInitContainerDownloader(t *testing.T) {
 	function.Spec.ImagePullPolicy = runnerImagePullPolicy
 
 	labels := makeFunctionLabels(function)
+	downloadConfig := newDownloadServiceConfig(function.Spec.PackageService, function.Spec.Pulsar)
 	statefulSet := MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		makeFunctionContainer(function), makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), labels, function.Spec.Pod,
-		function.Spec.Pulsar.AuthConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
-		function.Spec.Pulsar.TLSSecret, function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.Pod.Env,
+		function.Spec.Pulsar, downloadConfig, function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.Pod.Env,
 		function.Spec.LogTopic, function.Spec.FilebeatImage, function.Spec.LogTopicAgent, function.Spec.VolumeMounts,
 		function.Spec.VolumeClaimTemplates, function.Spec.PersistentVolumeClaimRetentionPolicy)
 
@@ -230,4 +230,82 @@ func TestJavaFunctionCommandWithConnectorOverrides(t *testing.T) {
 	assert.Equal(t, sinkConfigsMap["acks"], "all")
 	producerConfig := sinkConfigsMap["producerConfigProperties"].(map[string]interface{})
 	assert.Equal(t, producerConfig["enable.idempotence"], true)
+}
+
+func TestFunctionPackageServiceDownloadCommandAndPodWiring(t *testing.T) {
+	previous := utils.EnableInitContainers
+	defer func() {
+		utils.EnableInitContainers = previous
+	}()
+	utils.EnableInitContainers = false
+	function := makeFunctionSamplePackageURL("package-service-test")
+	function.Spec.Pulsar.PulsarConfig = "runtime-pulsar"
+	function.Spec.Pulsar.AuthSecret = "runtime-auth"
+	function.Spec.Pulsar.TLSSecret = "runtime-tls"
+	function.Spec.PackageService = &v1alpha1.PulsarMessaging{
+		PulsarConfig: "package-pulsar",
+		AuthSecret:   "package-auth",
+		TLSSecret:    "package-tls",
+		AuthConfig: &v1alpha1.AuthConfig{
+			OAuth2Config: &v1alpha1.OAuth2Config{
+				Audience:      "package-audience",
+				IssuerURL:     "https://issuer.example",
+				KeySecretName: "package-oauth",
+				KeySecretKey:  "auth.json",
+			},
+		},
+		TLSConfig: &v1alpha1.PulsarTLSConfig{
+			Enabled:              true,
+			AllowInsecure:        true,
+			HostnameVerification: false,
+			CertSecretName:       "package-certs",
+			CertSecretKey:        "ca.crt",
+		},
+	}
+
+	command := makeFunctionCommand(function)
+	assert.Assert(t, len(command) == 3, "commands should be 3 but got %d", len(command))
+	assert.Assert(t, strings.Contains(command[2], "$PACKAGE_webServiceURL"),
+		"download command should use package service env, got %s", command[2])
+	assert.Assert(t, !strings.Contains(command[2], "$webServiceURL packages download"),
+		"download command should not use runtime messaging env, got %s", command[2])
+
+	container := makeFunctionContainer(function)
+	assert.Assert(t, len(container.EnvFrom) > 0, "envFrom should not be empty")
+
+	hasPackageEnvPrefix := false
+	for _, source := range container.EnvFrom {
+		if source.Prefix == PackageServiceEnvPrefix {
+			hasPackageEnvPrefix = true
+		}
+	}
+	assert.Assert(t, hasPackageEnvPrefix, "container should include package service envFrom with prefix")
+
+	hasPackageTLSMount := false
+	hasPackageOAuthMount := false
+	for _, mount := range container.VolumeMounts {
+		if mount.MountPath == PackageTLSMountPath {
+			hasPackageTLSMount = true
+		}
+		if mount.MountPath == PackageOAuth2MountPath {
+			hasPackageOAuthMount = true
+		}
+	}
+	assert.Assert(t, hasPackageTLSMount, "container should include package service tls mount")
+	assert.Assert(t, hasPackageOAuthMount, "container should include package service oauth2 mount")
+}
+
+func TestFunctionPackageServiceDownloadFallbackToMessaging(t *testing.T) {
+	previous := utils.EnableInitContainers
+	defer func() {
+		utils.EnableInitContainers = previous
+	}()
+	utils.EnableInitContainers = false
+	function := makeFunctionSamplePackageURL("package-service-fallback-test")
+	command := makeFunctionCommand(function)
+	assert.Assert(t, len(command) == 3, "commands should be 3 but got %d", len(command))
+	assert.Assert(t, strings.Contains(command[2], "$webServiceURL"),
+		"download command should fallback to messaging env, got %s", command[2])
+	assert.Assert(t, !strings.Contains(command[2], "$PACKAGE_webServiceURL"),
+		"download command should not use package service env without package service, got %s", command[2])
 }

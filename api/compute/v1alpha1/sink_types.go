@@ -86,6 +86,9 @@ type SinkSpec struct {
 
 	// +kubebuilder:validation:Required
 	Messaging `json:",inline"`
+	// PackageService is used for package download when specified.
+	// If empty, the package download falls back to Messaging.Pulsar.
+	PackageService *PulsarMessaging `json:"packageService,omitempty"`
 	// +kubebuilder:validation:Required
 	Runtime `json:",inline"`
 

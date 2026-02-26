@@ -536,6 +536,11 @@ func (in *FunctionSpec) DeepCopyInto(out *FunctionSpec) {
 		(*in).DeepCopyInto(*out)
 	}
 	in.Messaging.DeepCopyInto(&out.Messaging)
+	if in.PackageService != nil {
+		in, out := &in.PackageService, &out.PackageService
+		*out = new(PulsarMessaging)
+		(*in).DeepCopyInto(*out)
+	}
 	in.Runtime.DeepCopyInto(&out.Runtime)
 	if in.StateConfig != nil {
 		in, out := &in.StateConfig, &out.StateConfig
@@ -1271,6 +1276,11 @@ func (in *SinkSpec) DeepCopyInto(out *SinkSpec) {
 	}
 	in.Pod.DeepCopyInto(&out.Pod)
 	in.Messaging.DeepCopyInto(&out.Messaging)
+	if in.PackageService != nil {
+		in, out := &in.PackageService, &out.PackageService
+		*out = new(PulsarMessaging)
+		(*in).DeepCopyInto(*out)
+	}
 	in.Runtime.DeepCopyInto(&out.Runtime)
 	if in.StateConfig != nil {
 		in, out := &in.StateConfig, &out.StateConfig
@@ -1444,6 +1454,11 @@ func (in *SourceSpec) DeepCopyInto(out *SourceSpec) {
 	}
 	in.Pod.DeepCopyInto(&out.Pod)
 	in.Messaging.DeepCopyInto(&out.Messaging)
+	if in.PackageService != nil {
+		in, out := &in.PackageService, &out.PackageService
+		*out = new(PulsarMessaging)
+		(*in).DeepCopyInto(*out)
+	}
 	in.Runtime.DeepCopyInto(&out.Runtime)
 	if in.StateConfig != nil {
 		in, out := &in.StateConfig, &out.StateConfig

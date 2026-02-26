@@ -404,6 +404,17 @@ func validateMessaging(messaging *v1alpha1.Messaging) *field.Error {
 	return nil
 }
 
+func validatePackageService(packageService *v1alpha1.PulsarMessaging) *field.Error {
+	if packageService == nil {
+		return nil
+	}
+	if packageService.PulsarConfig == "" {
+		return field.Invalid(field.NewPath("spec").Child("packageService"), packageService,
+			"packageService.pulsarConfig needs to be set")
+	}
+	return nil
+}
+
 func validateBuiltinHPARules(rules []v1alpha1.BuiltinHPARule) *field.Error {
 	isCPURuleExists := false
 	isMemoryRuleExists := false

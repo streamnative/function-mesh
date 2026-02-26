@@ -3430,7 +3430,11 @@ spec:
                       type: object
                     java:
                       properties:
+                        entryClass:
+                          type: string
                         extraDependenciesDir:
+                          type: string
+                        instancePath:
                           type: string
                         jar:
                           type: string
@@ -3578,6 +3582,90 @@ spec:
                         topic:
                           type: string
                         typeClassName:
+                          type: string
+                      type: object
+                    packageService:
+                      properties:
+                        authConfig:
+                          properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
+                        authSecret:
+                          type: string
+                        cleanupAuthConfig:
+                          properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
+                        pulsarConfig:
+                          type: string
+                        tlsConfig:
+                          properties:
+                            allowInsecure:
+                              type: boolean
+                            certSecretKey:
+                              type: string
+                            certSecretName:
+                              type: string
+                            enabled:
+                              type: boolean
+                            hostnameVerification:
+                              type: boolean
+                          type: object
+                        tlsSecret:
                           type: string
                       type: object
                     persistentVolumeClaimRetentionPolicy:
@@ -7417,7 +7505,11 @@ spec:
                       type: object
                     java:
                       properties:
+                        entryClass:
+                          type: string
                         extraDependenciesDir:
+                          type: string
+                        instancePath:
                           type: string
                         jar:
                           type: string
@@ -7500,6 +7592,90 @@ spec:
                     negativeAckRedeliveryDelayMs:
                       format: int32
                       type: integer
+                    packageService:
+                      properties:
+                        authConfig:
+                          properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
+                        authSecret:
+                          type: string
+                        cleanupAuthConfig:
+                          properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
+                        pulsarConfig:
+                          type: string
+                        tlsConfig:
+                          properties:
+                            allowInsecure:
+                              type: boolean
+                            certSecretKey:
+                              type: string
+                            certSecretName:
+                              type: string
+                            enabled:
+                              type: boolean
+                            hostnameVerification:
+                              type: boolean
+                          type: object
+                        tlsSecret:
+                          type: string
+                      type: object
                     pod:
                       properties:
                         affinity:
@@ -11016,7 +11192,11 @@ spec:
                       type: string
                     java:
                       properties:
+                        entryClass:
+                          type: string
                         extraDependenciesDir:
+                          type: string
+                        instancePath:
                           type: string
                         jar:
                           type: string
@@ -11158,6 +11338,90 @@ spec:
                         topic:
                           type: string
                         typeClassName:
+                          type: string
+                      type: object
+                    packageService:
+                      properties:
+                        authConfig:
+                          properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
+                        authSecret:
+                          type: string
+                        cleanupAuthConfig:
+                          properties:
+                            genericAuth:
+                              properties:
+                                clientAuthenticationParameters:
+                                  type: string
+                                clientAuthenticationPlugin:
+                                  type: string
+                              required:
+                              - clientAuthenticationParameters
+                              - clientAuthenticationPlugin
+                              type: object
+                            oauth2Config:
+                              properties:
+                                audience:
+                                  type: string
+                                issuerUrl:
+                                  type: string
+                                keySecretKey:
+                                  type: string
+                                keySecretName:
+                                  type: string
+                                scope:
+                                  type: string
+                              required:
+                              - audience
+                              - issuerUrl
+                              - keySecretKey
+                              - keySecretName
+                              type: object
+                          type: object
+                        pulsarConfig:
+                          type: string
+                        tlsConfig:
+                          properties:
+                            allowInsecure:
+                              type: boolean
+                            certSecretKey:
+                              type: string
+                            certSecretName:
+                              type: string
+                            enabled:
+                              type: boolean
+                            hostnameVerification:
+                              type: boolean
+                          type: object
+                        tlsSecret:
                           type: string
                       type: object
                     pod:
@@ -14825,7 +15089,11 @@ spec:
                 type: object
               java:
                 properties:
+                  entryClass:
+                    type: string
                   extraDependenciesDir:
+                    type: string
+                  instancePath:
                     type: string
                   jar:
                     type: string
@@ -14973,6 +15241,90 @@ spec:
                   topic:
                     type: string
                   typeClassName:
+                    type: string
+                type: object
+              packageService:
+                properties:
+                  authConfig:
+                    properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
+                  authSecret:
+                    type: string
+                  cleanupAuthConfig:
+                    properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
+                  pulsarConfig:
+                    type: string
+                  tlsConfig:
+                    properties:
+                      allowInsecure:
+                        type: boolean
+                      certSecretKey:
+                        type: string
+                      certSecretName:
+                        type: string
+                      enabled:
+                        type: boolean
+                      hostnameVerification:
+                        type: boolean
+                    type: object
+                  tlsSecret:
                     type: string
                 type: object
               persistentVolumeClaimRetentionPolicy:
@@ -18891,7 +19243,11 @@ spec:
                 type: object
               java:
                 properties:
+                  entryClass:
+                    type: string
                   extraDependenciesDir:
+                    type: string
+                  instancePath:
                     type: string
                   jar:
                     type: string
@@ -18974,6 +19330,90 @@ spec:
               negativeAckRedeliveryDelayMs:
                 format: int32
                 type: integer
+              packageService:
+                properties:
+                  authConfig:
+                    properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
+                  authSecret:
+                    type: string
+                  cleanupAuthConfig:
+                    properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
+                  pulsarConfig:
+                    type: string
+                  tlsConfig:
+                    properties:
+                      allowInsecure:
+                        type: boolean
+                      certSecretKey:
+                        type: string
+                      certSecretName:
+                        type: string
+                      enabled:
+                        type: boolean
+                      hostnameVerification:
+                        type: boolean
+                    type: object
+                  tlsSecret:
+                    type: string
+                type: object
               pod:
                 properties:
                   affinity:
@@ -22569,7 +23009,11 @@ spec:
                 type: string
               java:
                 properties:
+                  entryClass:
+                    type: string
                   extraDependenciesDir:
+                    type: string
+                  instancePath:
                     type: string
                   jar:
                     type: string
@@ -22711,6 +23155,90 @@ spec:
                   topic:
                     type: string
                   typeClassName:
+                    type: string
+                type: object
+              packageService:
+                properties:
+                  authConfig:
+                    properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
+                  authSecret:
+                    type: string
+                  cleanupAuthConfig:
+                    properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                    type: object
+                  pulsarConfig:
+                    type: string
+                  tlsConfig:
+                    properties:
+                      allowInsecure:
+                        type: boolean
+                      certSecretKey:
+                        type: string
+                      certSecretName:
+                        type: string
+                      enabled:
+                        type: boolean
+                      hostnameVerification:
+                        type: boolean
+                    type: object
+                  tlsSecret:
                     type: string
                 type: object
               pod:

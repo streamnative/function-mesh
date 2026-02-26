@@ -223,6 +223,10 @@ func (webhook *SourceWebhook) ValidateCreate(ctx context.Context, obj runtime.Ob
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)
 	}
+	fieldErr = validatePackageService(r.Spec.PackageService)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
 
 	if len(allErrs) == 0 {
 		return nil, nil

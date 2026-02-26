@@ -62,9 +62,10 @@ func MakeSourceStatefulSet(ctx context.Context, cli client.Client, source *v1alp
 	runnerImagePullPolicy := getSourceRunnerImagePullPolicy()
 	source.Spec.ImagePullPolicy = runnerImagePullPolicy
 
+	downloadConfig := newDownloadServiceConfig(source.Spec.PackageService, source.Spec.Pulsar)
 	statefulSet := MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, makeSourceContainer(source),
-		makeSourceVolumes(source, source.Spec.Pulsar.AuthConfig), makeSourceLabels(source), source.Spec.Pod, source.Spec.Pulsar.AuthConfig,
-		source.Spec.Pulsar.TLSConfig, source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret, source.Spec.Pulsar.TLSSecret,
+		makeSourceVolumes(source, source.Spec.Pulsar.AuthConfig), makeSourceLabels(source), source.Spec.Pod, source.Spec.Pulsar,
+		downloadConfig,
 		source.Spec.Java, source.Spec.Python, source.Spec.Golang, source.Spec.Pod.Env, source.Spec.LogTopic, source.Spec.FilebeatImage,
 		source.Spec.LogTopicAgent, source.Spec.VolumeMounts, nil, nil)
 
@@ -101,8 +102,15 @@ func makeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 	probe := MakeLivenessProbe(source.Spec.Pod.Liveness)
 	allowPrivilegeEscalation := false
 	mounts := makeSourceVolumeMounts(source, source.Spec.Pulsar.AuthConfig)
+	mounts = appendPackageServiceVolumeMounts(mounts, source.Spec.PackageService)
 	if utils.EnableInitContainers {
 		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(source.Spec.Java, nil, nil, nil)...)
+	}
+	envFrom := GenerateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret,
+		source.Spec.Pulsar.TLSSecret)
+	if source.Spec.PackageService != nil {
+		envFrom = append(envFrom, GenerateContainerEnvFromWithPrefix(source.Spec.PackageService.PulsarConfig,
+			source.Spec.PackageService.AuthSecret, source.Spec.PackageService.TLSSecret, PackageServiceEnvPrefix)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -113,10 +121,9 @@ func makeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 		Env:             generateBasicContainerEnv(source.Spec.SecretsMap, source.Spec.Pod.Env),
 		Resources:       source.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
-		EnvFrom: GenerateContainerEnvFrom(source.Spec.Pulsar.PulsarConfig, source.Spec.Pulsar.AuthSecret,
-			source.Spec.Pulsar.TLSSecret),
-		VolumeMounts:  mounts,
-		LivenessProbe: probe,
+		EnvFrom:         envFrom,
+		VolumeMounts:    mounts,
+		LivenessProbe:   probe,
 		SecurityContext: &corev1.SecurityContext{
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{"ALL"},
@@ -143,7 +150,7 @@ func makeSourceLabels(source *v1alpha1.Source) map[string]string {
 }
 
 func makeSourceVolumes(source *v1alpha1.Source, authConfig *v1alpha1.AuthConfig) []corev1.Volume {
-	return GeneratePodVolumes(
+	volumes := GeneratePodVolumes(
 		source.Spec.Pod.Volumes,
 		source.Spec.Output.ProducerConf,
 		nil,
@@ -151,6 +158,7 @@ func makeSourceVolumes(source *v1alpha1.Source, authConfig *v1alpha1.AuthConfig)
 		authConfig,
 		GetRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang),
 		source.Spec.LogTopicAgent)
+	return appendPackageServiceVolumes(volumes, source.Spec.PackageService)
 }
 
 func makeSourceVolumeMounts(source *v1alpha1.Source, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {
@@ -166,6 +174,7 @@ func makeSourceVolumeMounts(source *v1alpha1.Source, authConfig *v1alpha1.AuthCo
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
 	spec := source.Spec
+	downloadConfig := newDownloadServiceConfig(spec.PackageService, spec.Pulsar)
 	hasPulsarctl := source.Spec.ImageHasPulsarctl
 	hasWget := source.Spec.ImageHasWget
 	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, source.Spec.Image); match {
@@ -191,7 +200,7 @@ func makeSourceCommand(source *v1alpha1.Source) []string {
 		"",
 		string(source.UID),
 		spec.Resources.Limits.Memory(),
-		spec.Java.JavaOpts, hasPulsarctl, hasWget, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
+		spec.Java.JavaOpts, hasPulsarctl, hasWget, downloadConfig, spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
 		spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig, nil,
 		GenerateJavaLogConfigFileName(spec.Java), instancePath, entryClass)
 }
