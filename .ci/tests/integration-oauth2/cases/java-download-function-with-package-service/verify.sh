@@ -26,10 +26,11 @@ PULSAR_NAMESPACE=${PULSAR_NAMESPACE:-"default"}
 PULSAR_RELEASE_NAME=${PULSAR_RELEASE_NAME:-"sn-platform"}
 E2E_KUBECONFIG=${E2E_KUBECONFIG:-"/tmp/e2e-k8s.config"}
 MANIFESTS_FILE="${BASE_DIR}"/.ci/tests/integration-oauth2/cases/java-download-function-with-package-service/manifests.yaml
-FUNCTION_NAME=function-download-sample-package-service
-STS_NAME=${FUNCTION_NAME}-function
 
 source "${BASE_DIR}"/.ci/helm.sh
+
+FUNCTION_NAME=function-download-sample-package-service
+STS_NAME=${FUNCTION_NAME}-function
 
 if [ ! "$KUBECONFIG" ]; then
   export KUBECONFIG=${E2E_KUBECONFIG}
