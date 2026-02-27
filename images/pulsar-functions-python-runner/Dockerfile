@@ -23,12 +23,10 @@ RUN if [ -d "/tmp/pulsar/cpp-client" ]; then mv /tmp/pulsar/cpp-client /pulsar/c
 # Install some utilities
 RUN apk update \
      && apk add --no-cache python3 python3-dev tk-dev curl ca-certificates\
-     && mv /usr/lib/python3.*/EXTERNALLY-MANAGED  /tmp/EXTERNALLY-MANAGED.old
-
-RUN mkdir -p /etc/pki/tls/certs && cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
-
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-RUN python3 get-pip.py
+     && mkdir -p /etc/pki/tls/certs && cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt \
+     && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+     && mv /usr/lib/python3.*/EXTERNALLY-MANAGED  /tmp/EXTERNALLY-MANAGED.old \
+     && python3 get-pip.py && pip3 install --upgrade pip setuptools
 
 WORKDIR /pulsar
 
