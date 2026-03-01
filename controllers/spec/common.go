@@ -542,6 +542,10 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 		if statefulSet.Spec.Template.Spec.ServiceAccountName == "" {
 			statefulSet.Spec.Template.Spec.ServiceAccountName = podPolicy.ServiceAccountName
 		}
+		statefulSet.Spec.Template.Spec.TopologySpreadConstraints = append(
+			podPolicy.TopologySpreadConstraints,
+			statefulSet.Spec.Template.Spec.TopologySpreadConstraints...,
+		)
 	}
 
 	return globalBackendConfigVersion, namespacedBackendConfigVersion, nil
@@ -574,6 +578,7 @@ func mergePodPolicy(sourcePolicy *v1alpha1.PodPolicy, targetPolicy *v1alpha1.Pod
 	if targetPolicy.Liveness != nil {
 		sourcePolicy.Liveness = targetPolicy.Liveness
 	}
+	sourcePolicy.TopologySpreadConstraints = append(sourcePolicy.TopologySpreadConstraints, targetPolicy.TopologySpreadConstraints...)
 	return sourcePolicy
 }
 
@@ -635,6 +640,7 @@ func makePodTemplate(container *corev1.Container, filebeatContainer *corev1.Cont
 			SecurityContext:               podSecurityContext,
 			ImagePullSecrets:              policy.ImagePullSecrets,
 			ServiceAccountName:            policy.ServiceAccountName,
+			TopologySpreadConstraints:     policy.TopologySpreadConstraints,
 		},
 	}
 }
