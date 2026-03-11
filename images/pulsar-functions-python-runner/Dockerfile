@@ -1,7 +1,10 @@
 ARG PULSAR_IMAGE
 ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
-FROM pulsar-functions-runner-base:latest
+
+ARG BASE_IMAGE=pulsar-functions-runner-base:latest
+
+FROM ${BASE_IMAGE}
 
 COPY --from=pulsar --chown=$UID:$GID /pulsar/instances/python-instance /pulsar/instances/python-instance
 COPY --from=pulsar --chown=$UID:$GID /pulsar/instances/deps /pulsar/instances/deps
