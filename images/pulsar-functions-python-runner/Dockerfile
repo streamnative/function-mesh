@@ -1,6 +1,6 @@
+ARG BASE_IMAGE=pulsar-functions-runner-base:latest
 ARG PULSAR_IMAGE
 ARG PULSAR_IMAGE_TAG
-ARG BASE_IMAGE=pulsar-functions-runner-base:latest
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
 
 FROM ${BASE_IMAGE}
