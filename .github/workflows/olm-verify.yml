@@ -57,15 +57,14 @@ jobs:
           sudo chmod +x /usr/bin/yq
           yq --help
 
-      - name: Kubernetes KinD Cluster
-        uses: container-tools/kind-action@v1
-        with:
-          node_image: kindest/node:v1.23.17
+      - name: Create kind cluster
+        run: |
+          hack/kind-cluster-build.sh --name olm-verify -c 1 -v 10 --k8sVersion v1.23.17
 
       - name: Build RedHat certificated bundle And Publish to Quay
         env:
-          DOCKER_REPO: kind-registry:5000/streamnativeio
-          IMAGE_TAG_BASE: kind-registry:5000/streamnativeio/function-mesh
+          DOCKER_REPO: localhost:5000/streamnativeio
+          IMAGE_TAG_BASE: localhost:5000/streamnativeio/function-mesh
           CATALOG_BRANCH_TAG: latest
         run: |
           echo $VERSION
