@@ -1,11 +1,11 @@
-# Design: Separate Package Download Service (`PackageService`)
+# Design: Separate Package Download Service (`PulsarPackageService`)
 
 ## Summary
 
-This change adds optional `spec.packageService` support to `Function`, `Source`, and `Sink` so package download can use a dedicated Pulsar admin service configuration instead of reusing runtime `spec.pulsar` (`Messaging`).
+This change adds optional `spec.pulsarPackageService` support to `Function`, `Source`, and `Sink` so package download can use a dedicated Pulsar admin service configuration instead of reusing runtime `spec.pulsar` (`Messaging`).
 
-If `packageService` is set, package download uses it.
-If `packageService` is not set, behavior remains unchanged and falls back to `spec.pulsar`.
+If `pulsarPackageService` is set, package download uses it.
+If `pulsarPackageService` is not set, behavior remains unchanged and falls back to `spec.pulsar`.
 
 ## Motivation
 
@@ -39,12 +39,12 @@ Added to:
 
 Field:
 
-- `packageService *PulsarMessaging \`json:"packageService,omitempty"\``
+- `pulsarPackageService *PulsarMessaging \`json:"pulsarPackageService,omitempty"\``
 
 Validation:
 
-- `packageService` is optional.
-- When provided, `packageService.pulsarConfig` must be non-empty.
+- `pulsarPackageService` is optional.
+- When provided, `pulsarPackageService.pulsarConfig` must be non-empty.
 - Existing `spec.pulsar` validation remains required as before.
 
 ## Controller/Spec Design
@@ -53,7 +53,7 @@ Validation:
 
 A download service config is derived as:
 
-1. Use `spec.packageService` when non-nil.
+1. Use `spec.pulsarPackageService` when non-nil.
 2. Else use `spec.pulsar`.
 
 This selected config is used only for package download command/env/volume wiring.
@@ -70,7 +70,7 @@ Runtime messaging still uses `spec.pulsar`.
 
 ### Env Isolation
 
-To avoid conflicts when both runtime and package env refs are present in the same container, `packageService` envs use prefixed env names:
+To avoid conflicts when both runtime and package env refs are present in the same container, `pulsarPackageService` envs use prefixed env names:
 
 - Prefix: `PACKAGE_`
 - Examples: `PACKAGE_webServiceURL`, `PACKAGE_clientAuthenticationParameters`
@@ -79,7 +79,7 @@ Command generation for package download uses these prefixed env names.
 
 ### Volumes and VolumeMounts
 
-When `packageService` is provided, required TLS/OAuth2 mounts for package download are added with dedicated mount paths:
+When `pulsarPackageService` is provided, required TLS/OAuth2 mounts for package download are added with dedicated mount paths:
 
 - OAuth2: `/etc/oauth2-package-service`
 - TLS: `/etc/tls/pulsar-functions-package-service`
@@ -97,9 +97,9 @@ Both modes are supported:
 
 ## Backward Compatibility
 
-- Existing manifests without `packageService` behave exactly as before.
+- Existing manifests without `pulsarPackageService` behave exactly as before.
 - Existing required `spec.pulsar` contract remains unchanged.
-- Existing command paths and runtime behavior are preserved unless `packageService` is set.
+- Existing command paths and runtime behavior are preserved unless `pulsarPackageService` is set.
 
 ## Testing
 
@@ -108,7 +108,7 @@ Both modes are supported:
 Updated/added tests in `controllers/spec` for:
 
 - New signatures and fallback behavior
-- `packageService` download command env selection
+- `pulsarPackageService` download command env selection
 - Runtime container package-service env/mount injection
 
 ### Integration Tests
@@ -119,7 +119,7 @@ Added new oauth2 integration case:
 
 Coverage:
 
-- Deploy function with both `pulsar` and `packageService`.
+- Deploy function with both `pulsar` and `pulsarPackageService`.
 - Verify StatefulSet has package-service-specific env prefix and mounts.
 - Verify end-to-end message processing succeeds.
 - Reuses the same Pulsar cluster for package provider (no extra cluster).
@@ -150,8 +150,8 @@ Mitigation:
 
 ## Operational Notes
 
-- Users can migrate incrementally by adding `packageService` only where needed.
-- If `packageService` is removed, the system transparently falls back to `spec.pulsar`.
+- Users can migrate incrementally by adding `pulsarPackageService` only where needed.
+- If `pulsarPackageService` is removed, the system transparently falls back to `spec.pulsar`.
 
 ## Conclusion
 

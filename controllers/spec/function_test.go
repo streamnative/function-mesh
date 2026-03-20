@@ -126,7 +126,7 @@ func TestInitContainerDownloader(t *testing.T) {
 	function.Spec.ImagePullPolicy = runnerImagePullPolicy
 
 	labels := makeFunctionLabels(function)
-	downloadConfig := newDownloadServiceConfig(function.Spec.PackageService, function.Spec.Pulsar)
+	downloadConfig := newDownloadServiceConfig(function.Spec.PulsarPackageService, function.Spec.Pulsar)
 	statefulSet := MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		makeFunctionContainer(function), makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), labels, function.Spec.Pod,
 		function.Spec.Pulsar, downloadConfig, function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.Pod.Env,
@@ -232,7 +232,7 @@ func TestJavaFunctionCommandWithConnectorOverrides(t *testing.T) {
 	assert.Equal(t, producerConfig["enable.idempotence"], true)
 }
 
-func TestFunctionPackageServiceDownloadCommandAndPodWiring(t *testing.T) {
+func TestFunctionPulsarPackageServiceDownloadCommandAndPodWiring(t *testing.T) {
 	previous := utils.EnableInitContainers
 	defer func() {
 		utils.EnableInitContainers = previous
@@ -242,7 +242,7 @@ func TestFunctionPackageServiceDownloadCommandAndPodWiring(t *testing.T) {
 	function.Spec.Pulsar.PulsarConfig = "runtime-pulsar"
 	function.Spec.Pulsar.AuthSecret = "runtime-auth"
 	function.Spec.Pulsar.TLSSecret = "runtime-tls"
-	function.Spec.PackageService = &v1alpha1.PulsarMessaging{
+	function.Spec.PulsarPackageService = &v1alpha1.PulsarMessaging{
 		PulsarConfig: "package-pulsar",
 		AuthSecret:   "package-auth",
 		TLSSecret:    "package-tls",
@@ -295,7 +295,7 @@ func TestFunctionPackageServiceDownloadCommandAndPodWiring(t *testing.T) {
 	assert.Assert(t, hasPackageOAuthMount, "container should include package service oauth2 mount")
 }
 
-func TestFunctionPackageServiceDownloadFallbackToMessaging(t *testing.T) {
+func TestFunctionPulsarPackageServiceDownloadFallbackToMessaging(t *testing.T) {
 	previous := utils.EnableInitContainers
 	defer func() {
 		utils.EnableInitContainers = previous

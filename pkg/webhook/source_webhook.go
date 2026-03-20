@@ -223,7 +223,7 @@ func (webhook *SourceWebhook) ValidateCreate(ctx context.Context, obj runtime.Ob
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)
 	}
-	fieldErr = validatePackageService(r.Spec.PackageService)
+	fieldErr = validatePulsarPackageService(r.Spec.PulsarPackageService)
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)
 	}
