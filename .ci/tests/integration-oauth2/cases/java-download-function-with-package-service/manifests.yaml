@@ -46,7 +46,7 @@ spec:
         issuerUrl: https://auth.sncloud-stg.dev/
         keySecretName: sn-platform-oauth2-private-key
         keySecretKey: auth.json
-  pulsarpackageService:
+  pulsarPackageService:
     pulsarConfig: "test-pulsar-package-service"
     tlsConfig:
       enabled: false
