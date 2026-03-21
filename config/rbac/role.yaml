@@ -5,6 +5,21 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - pods
+  - pods/exec
+  - secrets
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - apps
   resources:
   - statefulsets
@@ -55,91 +70,9 @@ rules:
   - compute.functionmesh.io
   resources:
   - backendconfigs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - compute.functionmesh.io
-  resources:
   - functionmeshes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - compute.functionmesh.io
-  resources:
-  - functionmeshes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - compute.functionmesh.io
-  resources:
   - functions
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - compute.functionmesh.io
-  resources:
-  - functions/finalizers
-  verbs:
-  - get
-  - update
-- apiGroups:
-  - compute.functionmesh.io
-  resources:
-  - functions/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - compute.functionmesh.io
-  resources:
   - sinks
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - compute.functionmesh.io
-  resources:
-  - sinks/finalizers
-  verbs:
-  - get
-  - update
-- apiGroups:
-  - compute.functionmesh.io
-  resources:
-  - sinks/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - compute.functionmesh.io
-  resources:
   - sources
   verbs:
   - create
@@ -152,17 +85,22 @@ rules:
 - apiGroups:
   - compute.functionmesh.io
   resources:
-  - sources/finalizers
-  verbs:
-  - get
-  - update
-- apiGroups:
-  - compute.functionmesh.io
-  resources:
+  - functionmeshes/status
+  - functions/status
+  - sinks/status
   - sources/status
   verbs:
   - get
   - patch
+  - update
+- apiGroups:
+  - compute.functionmesh.io
+  resources:
+  - functions/finalizers
+  - sinks/finalizers
+  - sources/finalizers
+  verbs:
+  - get
   - update
 - apiGroups:
   - coordination.k8s.io
@@ -174,51 +112,3 @@ rules:
   - get
   - list
   - update
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/exec
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch

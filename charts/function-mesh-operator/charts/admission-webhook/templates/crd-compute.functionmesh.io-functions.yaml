@@ -6,7 +6,7 @@ metadata:
     {{- if eq .Values.admissionWebhook.certificate.provider "cert-manager" }}
       {{- include "function-mesh-operator.certManager.annotation" . | nindent 4 -}}
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: functions.compute.functionmesh.io
 spec:
   conversion:
@@ -1481,6 +1481,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -1587,6 +1588,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -1785,6 +1787,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -2256,6 +2259,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -2362,6 +2366,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -2560,6 +2565,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -4123,6 +4129,8 @@ spec:
                   required:
                     - actualWindowFunctionClassName
                   type: object
+              required:
+                - ""
               type: object
             status:
               properties:
