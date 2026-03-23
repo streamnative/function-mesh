@@ -19,6 +19,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -75,6 +76,8 @@ var skip = map[string]bool{
 }
 
 func TestLicense(t *testing.T) {
+	trackedFiles, trackedDirs := gitTrackedPaths()
+
 	err := filepath.Walk(".", func(path string, fi os.FileInfo, err error) error {
 		if skip[path] {
 			return nil
@@ -82,6 +85,25 @@ func TestLicense(t *testing.T) {
 
 		if err != nil {
 			return err
+		}
+
+		cleanPath := filepath.Clean(path)
+		if fi.IsDir() {
+			if cleanPath == "vendor" || cleanPath == ".git" {
+				return filepath.SkipDir
+			}
+			if len(trackedDirs) > 0 && cleanPath != "." {
+				if _, ok := trackedDirs[cleanPath]; !ok {
+					return filepath.SkipDir
+				}
+			}
+			return nil
+		}
+
+		if len(trackedFiles) > 0 {
+			if _, ok := trackedFiles[cleanPath]; !ok {
+				return nil
+			}
 		}
 
 		switch filepath.Ext(path) {
@@ -132,4 +154,38 @@ func TestLicense(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func gitTrackedPaths() (map[string]struct{}, map[string]struct{}) {
+	cmd := exec.Command("git", "ls-files", "-z")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, nil
+	}
+
+	files := make(map[string]struct{})
+	dirs := map[string]struct{}{
+		".": {},
+	}
+
+	for _, file := range strings.Split(string(output), "\x00") {
+		if file == "" {
+			continue
+		}
+
+		cleanFile := filepath.Clean(file)
+		files[cleanFile] = struct{}{}
+
+		dir := filepath.Dir(cleanFile)
+		for dir != "." && dir != string(filepath.Separator) {
+			dirs[dir] = struct{}{}
+			next := filepath.Dir(dir)
+			if next == dir {
+				break
+			}
+			dir = next
+		}
+	}
+
+	return files, dirs
 }

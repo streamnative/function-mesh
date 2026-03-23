@@ -6,7 +6,7 @@ metadata:
     {{- if eq .Values.admissionWebhook.certificate.provider "cert-manager" }}
       {{- include "function-mesh-operator.certManager.annotation" . | nindent 4 -}}
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: functions.compute.functionmesh.io
 spec:
   conversion:
@@ -369,90 +369,6 @@ spec:
                     topic:
                       type: string
                     typeClassName:
-                      type: string
-                  type: object
-                packageService:
-                  properties:
-                    authConfig:
-                      properties:
-                        genericAuth:
-                          properties:
-                            clientAuthenticationParameters:
-                              type: string
-                            clientAuthenticationPlugin:
-                              type: string
-                          required:
-                            - clientAuthenticationParameters
-                            - clientAuthenticationPlugin
-                          type: object
-                        oauth2Config:
-                          properties:
-                            audience:
-                              type: string
-                            issuerUrl:
-                              type: string
-                            keySecretKey:
-                              type: string
-                            keySecretName:
-                              type: string
-                            scope:
-                              type: string
-                          required:
-                            - audience
-                            - issuerUrl
-                            - keySecretKey
-                            - keySecretName
-                          type: object
-                      type: object
-                    authSecret:
-                      type: string
-                    cleanupAuthConfig:
-                      properties:
-                        genericAuth:
-                          properties:
-                            clientAuthenticationParameters:
-                              type: string
-                            clientAuthenticationPlugin:
-                              type: string
-                          required:
-                            - clientAuthenticationParameters
-                            - clientAuthenticationPlugin
-                          type: object
-                        oauth2Config:
-                          properties:
-                            audience:
-                              type: string
-                            issuerUrl:
-                              type: string
-                            keySecretKey:
-                              type: string
-                            keySecretName:
-                              type: string
-                            scope:
-                              type: string
-                          required:
-                            - audience
-                            - issuerUrl
-                            - keySecretKey
-                            - keySecretName
-                          type: object
-                      type: object
-                    pulsarConfig:
-                      type: string
-                    tlsConfig:
-                      properties:
-                        allowInsecure:
-                          type: boolean
-                        certSecretKey:
-                          type: string
-                        certSecretName:
-                          type: string
-                        enabled:
-                          type: boolean
-                        hostnameVerification:
-                          type: boolean
-                      type: object
-                    tlsSecret:
                       type: string
                   type: object
                 persistentVolumeClaimRetentionPolicy:
@@ -1565,6 +1481,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -1671,6 +1588,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -1869,6 +1787,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -2340,6 +2259,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -2446,6 +2366,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -2644,6 +2565,7 @@ spec:
                                     format: int32
                                     type: integer
                                   service:
+                                    default: ""
                                     type: string
                                 required:
                                   - port
@@ -3711,6 +3633,90 @@ spec:
                     tlsSecret:
                       type: string
                   type: object
+                pulsarPackageService:
+                  properties:
+                    authConfig:
+                      properties:
+                        genericAuth:
+                          properties:
+                            clientAuthenticationParameters:
+                              type: string
+                            clientAuthenticationPlugin:
+                              type: string
+                          required:
+                            - clientAuthenticationParameters
+                            - clientAuthenticationPlugin
+                          type: object
+                        oauth2Config:
+                          properties:
+                            audience:
+                              type: string
+                            issuerUrl:
+                              type: string
+                            keySecretKey:
+                              type: string
+                            keySecretName:
+                              type: string
+                            scope:
+                              type: string
+                          required:
+                            - audience
+                            - issuerUrl
+                            - keySecretKey
+                            - keySecretName
+                          type: object
+                      type: object
+                    authSecret:
+                      type: string
+                    cleanupAuthConfig:
+                      properties:
+                        genericAuth:
+                          properties:
+                            clientAuthenticationParameters:
+                              type: string
+                            clientAuthenticationPlugin:
+                              type: string
+                          required:
+                            - clientAuthenticationParameters
+                            - clientAuthenticationPlugin
+                          type: object
+                        oauth2Config:
+                          properties:
+                            audience:
+                              type: string
+                            issuerUrl:
+                              type: string
+                            keySecretKey:
+                              type: string
+                            keySecretName:
+                              type: string
+                            scope:
+                              type: string
+                          required:
+                            - audience
+                            - issuerUrl
+                            - keySecretKey
+                            - keySecretName
+                          type: object
+                      type: object
+                    pulsarConfig:
+                      type: string
+                    tlsConfig:
+                      properties:
+                        allowInsecure:
+                          type: boolean
+                        certSecretKey:
+                          type: string
+                        certSecretName:
+                          type: string
+                        enabled:
+                          type: boolean
+                        hostnameVerification:
+                          type: boolean
+                      type: object
+                    tlsSecret:
+                      type: string
+                  type: object
                 python:
                   properties:
                     log:
@@ -4123,6 +4129,8 @@ spec:
                   required:
                     - actualWindowFunctionClassName
                   type: object
+              required:
+                - ""
               type: object
             status:
               properties:

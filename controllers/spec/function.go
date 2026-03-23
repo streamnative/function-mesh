@@ -66,7 +66,7 @@ func MakeFunctionStatefulSet(ctx context.Context, cli client.Client, function *v
 	function.Spec.ImagePullPolicy = runnerImagePullPolicy
 
 	labels := makeFunctionLabels(function)
-	downloadConfig := newDownloadServiceConfig(function.Spec.PackageService, function.Spec.Pulsar)
+	downloadConfig := newDownloadServiceConfig(function.Spec.PulsarPackageService, function.Spec.Pulsar)
 	statefulSet := MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		makeFunctionContainer(function), makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), labels, function.Spec.Pod,
 		function.Spec.Pulsar, downloadConfig, function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.Pod.Env,
@@ -156,7 +156,7 @@ func makeFunctionVolumes(function *v1alpha1.Function, authConfig *v1alpha1.AuthC
 		authConfig,
 		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
 		function.Spec.LogTopicAgent)
-	return appendPackageServiceVolumes(volumes, function.Spec.PackageService)
+	return appendPackageServiceVolumes(volumes, function.Spec.PulsarPackageService)
 }
 
 func makeFunctionVolumeMounts(function *v1alpha1.Function, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {
@@ -177,16 +177,16 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	probe := MakeLivenessProbe(function.Spec.Pod.Liveness)
 	allowPrivilegeEscalation := false
 	mounts := makeFunctionVolumeMounts(function, function.Spec.Pulsar.AuthConfig)
-	mounts = appendPackageServiceVolumeMounts(mounts, function.Spec.PackageService)
+	mounts = appendPackageServiceVolumeMounts(mounts, function.Spec.PulsarPackageService)
 	if utils.EnableInitContainers {
 		mounts = append(mounts,
 			generateDownloaderVolumeMountsForRuntime(function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.GenericRuntime)...)
 	}
 	envFrom := GenerateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
 		function.Spec.Pulsar.TLSSecret)
-	if function.Spec.PackageService != nil {
-		envFrom = append(envFrom, GenerateContainerEnvFromWithPrefix(function.Spec.PackageService.PulsarConfig,
-			function.Spec.PackageService.AuthSecret, function.Spec.PackageService.TLSSecret, PackageServiceEnvPrefix)...)
+	if function.Spec.PulsarPackageService != nil {
+		envFrom = append(envFrom, GenerateContainerEnvFromWithPrefix(function.Spec.PulsarPackageService.PulsarConfig,
+			function.Spec.PulsarPackageService.AuthSecret, function.Spec.PulsarPackageService.TLSSecret, PackageServiceEnvPrefix)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -229,7 +229,7 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	spec := function.Spec
-	downloadConfig := newDownloadServiceConfig(spec.PackageService, spec.Pulsar)
+	downloadConfig := newDownloadServiceConfig(spec.PulsarPackageService, spec.Pulsar)
 
 	connectorsDirectory := ""
 	if spec.SourceConfig != nil || spec.SinkConfig != nil {

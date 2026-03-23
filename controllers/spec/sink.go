@@ -62,7 +62,7 @@ func MakeSinkStatefulSet(ctx context.Context, cli client.Client, sink *v1alpha1.
 	runnerImagePullPolicy := getSinkRunnerImagePullPolicy()
 	sink.Spec.ImagePullPolicy = runnerImagePullPolicy
 
-	downloadConfig := newDownloadServiceConfig(sink.Spec.PackageService, sink.Spec.Pulsar)
+	downloadConfig := newDownloadServiceConfig(sink.Spec.PulsarPackageService, sink.Spec.Pulsar)
 	statefulSet := MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, makeSinkContainer(sink),
 		makeSinkVolumes(sink, sink.Spec.Pulsar.AuthConfig), makeSinkLabels(sink), sink.Spec.Pod, sink.Spec.Pulsar,
 		downloadConfig,
@@ -107,15 +107,15 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	probe := MakeLivenessProbe(sink.Spec.Pod.Liveness)
 	allowPrivilegeEscalation := false
 	mounts := makeSinkVolumeMounts(sink, sink.Spec.Pulsar.AuthConfig)
-	mounts = appendPackageServiceVolumeMounts(mounts, sink.Spec.PackageService)
+	mounts = appendPackageServiceVolumeMounts(mounts, sink.Spec.PulsarPackageService)
 	if utils.EnableInitContainers {
 		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(sink.Spec.Java, nil, nil, nil)...)
 	}
 	envFrom := GenerateContainerEnvFrom(sink.Spec.Pulsar.PulsarConfig, sink.Spec.Pulsar.AuthSecret,
 		sink.Spec.Pulsar.TLSSecret)
-	if sink.Spec.PackageService != nil {
-		envFrom = append(envFrom, GenerateContainerEnvFromWithPrefix(sink.Spec.PackageService.PulsarConfig,
-			sink.Spec.PackageService.AuthSecret, sink.Spec.PackageService.TLSSecret, PackageServiceEnvPrefix)...)
+	if sink.Spec.PulsarPackageService != nil {
+		envFrom = append(envFrom, GenerateContainerEnvFromWithPrefix(sink.Spec.PulsarPackageService.PulsarConfig,
+			sink.Spec.PulsarPackageService.AuthSecret, sink.Spec.PulsarPackageService.TLSSecret, PackageServiceEnvPrefix)...)
 	}
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
@@ -212,7 +212,7 @@ func makeSinkVolumes(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) []cor
 		authConfig,
 		GetRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
 		sink.Spec.LogTopicAgent)
-	return appendPackageServiceVolumes(volumes, sink.Spec.PackageService)
+	return appendPackageServiceVolumes(volumes, sink.Spec.PulsarPackageService)
 }
 
 func makeSinkVolumeMounts(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {
@@ -228,7 +228,7 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) 
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
-	downloadConfig := newDownloadServiceConfig(spec.PackageService, spec.Pulsar)
+	downloadConfig := newDownloadServiceConfig(spec.PulsarPackageService, spec.Pulsar)
 	hasPulsarctl := sink.Spec.ImageHasPulsarctl
 	hasWget := sink.Spec.ImageHasWget
 	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, sink.Spec.Image); match {

@@ -80,13 +80,11 @@ type SourceSpec struct {
 	ForwardSourceMessageProperty *bool                       `json:"forwardSourceMessageProperty,omitempty"`
 	Pod                          PodPolicy                   `json:"pod,omitempty"`
 
-	// +kubebuilder:validation:Required
 	Messaging `json:",inline"`
-	// PackageService is used for package download when specified.
+	// PulsarPackageService is used for package download when specified.
 	// If empty, the package download falls back to Messaging.Pulsar.
-	PackageService *PulsarMessaging `json:"packageService,omitempty"`
+	PulsarPackageService *PulsarMessaging `json:"pulsarPackageService,omitempty"`
 
-	// +kubebuilder:validation:Required
 	Runtime `json:",inline"`
 
 	// Image is the container image used to run source pods.

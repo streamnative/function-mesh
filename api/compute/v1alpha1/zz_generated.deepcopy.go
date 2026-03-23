@@ -536,8 +536,8 @@ func (in *FunctionSpec) DeepCopyInto(out *FunctionSpec) {
 		(*in).DeepCopyInto(*out)
 	}
 	in.Messaging.DeepCopyInto(&out.Messaging)
-	if in.PackageService != nil {
-		in, out := &in.PackageService, &out.PackageService
+	if in.PulsarPackageService != nil {
+		in, out := &in.PulsarPackageService, &out.PulsarPackageService
 		*out = new(PulsarMessaging)
 		(*in).DeepCopyInto(*out)
 	}
@@ -1276,8 +1276,8 @@ func (in *SinkSpec) DeepCopyInto(out *SinkSpec) {
 	}
 	in.Pod.DeepCopyInto(&out.Pod)
 	in.Messaging.DeepCopyInto(&out.Messaging)
-	if in.PackageService != nil {
-		in, out := &in.PackageService, &out.PackageService
+	if in.PulsarPackageService != nil {
+		in, out := &in.PulsarPackageService, &out.PulsarPackageService
 		*out = new(PulsarMessaging)
 		(*in).DeepCopyInto(*out)
 	}
@@ -1454,8 +1454,8 @@ func (in *SourceSpec) DeepCopyInto(out *SourceSpec) {
 	}
 	in.Pod.DeepCopyInto(&out.Pod)
 	in.Messaging.DeepCopyInto(&out.Messaging)
-	if in.PackageService != nil {
-		in, out := &in.PackageService, &out.PackageService
+	if in.PulsarPackageService != nil {
+		in, out := &in.PulsarPackageService, &out.PulsarPackageService
 		*out = new(PulsarMessaging)
 		(*in).DeepCopyInto(*out)
 	}

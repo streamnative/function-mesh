@@ -84,13 +84,11 @@ type SinkSpec struct {
 
 	Pod PodPolicy `json:"pod,omitempty"`
 
-	// +kubebuilder:validation:Required
 	Messaging `json:",inline"`
-	// PackageService is used for package download when specified.
+	// PulsarPackageService is used for package download when specified.
 	// If empty, the package download falls back to Messaging.Pulsar.
-	PackageService *PulsarMessaging `json:"packageService,omitempty"`
-	// +kubebuilder:validation:Required
-	Runtime `json:",inline"`
+	PulsarPackageService *PulsarMessaging `json:"pulsarPackageService,omitempty"`
+	Runtime              `json:",inline"`
 
 	// Image is the container image used to run sink pods.
 	// default is streamnative/pulsar-functions-java-runner

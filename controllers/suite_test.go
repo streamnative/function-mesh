@@ -18,7 +18,10 @@
 package controllers
 
 import (
+	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -48,6 +51,7 @@ var sourceReconciler *SourceReconciler
 var sinkReconciler *SinkReconciler
 var funcReconciler *FunctionReconciler
 var testEnv *envtest.Environment
+var testVpaCRDDir string
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -59,12 +63,17 @@ var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
+	vpaCRDDir, err := vpaCRDDirectory()
+	Expect(err).ToNot(HaveOccurred())
+	testVpaCRDDir = vpaCRDDir
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "config", "crd", "bases"),
+			vpaCRDDir,
+		},
 		ErrorIfCRDPathMissing: true,
 	}
 
-	var err error
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
@@ -137,6 +146,9 @@ var _ = BeforeSuite(func(done Done) {
 		// kube-apiserver to return
 		err := testEnv.Stop()
 		Expect(err).ToNot(HaveOccurred())
+		if testVpaCRDDir != "" {
+			Expect(os.RemoveAll(testVpaCRDDir)).To(Succeed())
+		}
 	}()
 
 	k8sClient = k8sManager.GetClient()
@@ -144,3 +156,29 @@ var _ = BeforeSuite(func(done Done) {
 
 	close(done)
 }, 60)
+
+func vpaCRDDirectory() (string, error) {
+	cmd := exec.Command("go", "list", "-m", "-f", "{{.Dir}}", "k8s.io/autoscaler/vertical-pod-autoscaler")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	sourcePath := filepath.Join(strings.TrimSpace(string(output)), "deploy", "vpa-v1-crd-gen.yaml")
+	crdContents, err := os.ReadFile(sourcePath)
+	if err != nil {
+		return "", err
+	}
+
+	tempDir, err := os.MkdirTemp("", "function-mesh-vpa-crd-*")
+	if err != nil {
+		return "", err
+	}
+
+	if err := os.WriteFile(filepath.Join(tempDir, filepath.Base(sourcePath)), crdContents, 0o600); err != nil {
+		_ = os.RemoveAll(tempDir)
+		return "", err
+	}
+
+	return tempDir, nil
+}
