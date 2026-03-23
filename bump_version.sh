@@ -68,6 +68,9 @@ sed -i.bak -E "s/(operatorImage\: streamnative\/function\-mesh\:v)(.+)/\1$NEW_AP
 # change install.sh
 sed -i.bak -E "s/(local fm_version\=)(.+)/\1\"v$NEW_APP_VERSION\"/" install.sh
 
+# change root go.mod nested api module version
+sed -i.bak -E "s|(github\\.com/streamnative/function-mesh/api )v[^[:space:]]+|\\1v$NEW_APP_VERSION|" go.mod
+
 # change README.md
 sed -i.bak -E "s/(.+)v(.+)(\/install.sh)/\1v$NEW_APP_VERSION\3/" README.md
 
