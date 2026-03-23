@@ -33,6 +33,7 @@ index_build_*/
 
 *.bak
 .DS_Store
+.cache/
 config/crd/bases/vpa-v1-crd.yaml
 Listeners
 .tool-versions

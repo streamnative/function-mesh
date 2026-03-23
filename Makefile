@@ -47,6 +47,8 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 BUILD_DATETIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+GOCACHE ?= $(shell pwd)/.cache/go-build
+export GOCACHE
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
@@ -65,7 +67,21 @@ all: manager
 # Run tests
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 test: generate fmt vet manifests envtest
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn go test ./... -coverprofile cover.out
+	@assets="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)"; \
+	echo "mode: set" > cover.out; \
+	for pkg in $$(go list ./...); do \
+		gocache=$$(mktemp -d); \
+		has_tests=$$(go list -f '{{if or .TestGoFiles .XTestGoFiles}}yes{{end}}' "$$pkg"); \
+		if [ -n "$$has_tests" ]; then \
+			profile=$$(mktemp); \
+			KUBEBUILDER_ASSETS="$$assets" GOCACHE="$$gocache" GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn go test "$$pkg" -coverprofile "$$profile" || { rm -rf "$$gocache" "$$profile"; exit 1; }; \
+			tail -n +2 "$$profile" >> cover.out; \
+			rm -f "$$profile"; \
+		else \
+			KUBEBUILDER_ASSETS="$$assets" GOCACHE="$$gocache" GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn go test "$$pkg" || { rm -rf "$$gocache"; exit 1; }; \
+		fi; \
+		rm -rf "$$gocache"; \
+	done
 
 test-ginkgo: generate fmt vet manifests envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn go test ./controllers/ -v -ginkgo.v
