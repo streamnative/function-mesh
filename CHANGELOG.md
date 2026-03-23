@@ -1,3 +1,28 @@
+# Function Mesh v0.27.0 Release Notes
+
+## v0.27.0 What's New
+
+* [Runtime] feat: rename packageService to pulsarPackageService ([#832](https://github.com/streamnative/function-mesh/pull/832))
+* [CI] Update Trivy GitHub Action to v0.35.0 ([#833](https://github.com/streamnative/function-mesh/pull/833))
+* [Image] Add image args for build linux arm64 ([#830](https://github.com/streamnative/function-mesh/pull/830))
+* [Runtime] Support using separate Pulsar cluster as package service ([#829](https://github.com/streamnative/function-mesh/pull/829))
+
+# Function Mesh v0.26.1 Release Notes
+
+## v0.26.1 What's New
+
+* [Dependency] fix CVEs and bump go to 1.24.11 ([#825](https://github.com/streamnative/function-mesh/pull/825))
+
+# Function Mesh v0.26.0 Release Notes
+
+## v0.26.0 What's New
+
+* [Dependency] Upgrade go to 1.24.10 ([#824](https://github.com/streamnative/function-mesh/pull/824))
+* [Runtime] Support function with replace sink and source ([#823](https://github.com/streamnative/function-mesh/pull/823))
+* [Runtime] Fix python log config file ([#822](https://github.com/streamnative/function-mesh/pull/822))
+* [Runtime] Update controller manager metrics configuration to use HTTPS scheme ([#821](https://github.com/streamnative/function-mesh/pull/821))
+* [Image] Copy Kinesis KPL 1.0.4 binary into the image ([#820](https://github.com/streamnative/function-mesh/pull/820))
+
 # Function Mesh v0.25.1 Release Notes
 
 ## v0.25.1 What's New
