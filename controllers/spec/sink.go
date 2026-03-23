@@ -62,7 +62,7 @@ func MakeSinkStatefulSet(ctx context.Context, cli client.Client, sink *v1alpha1.
 	runnerImagePullPolicy := getSinkRunnerImagePullPolicy()
 	sink.Spec.ImagePullPolicy = runnerImagePullPolicy
 
-	downloadConfig := newDownloadServiceConfig(sink.Spec.PulsarPackageService, sink.Spec.Pulsar)
+	downloadConfig := NewDownloadServiceConfig(sink.Spec.PulsarPackageService, sink.Spec.Pulsar)
 	statefulSet := MakeStatefulSet(objectMeta, sink.Spec.Replicas, sink.Spec.DownloaderImage, makeSinkContainer(sink),
 		makeSinkVolumes(sink, sink.Spec.Pulsar.AuthConfig), makeSinkLabels(sink), sink.Spec.Pod, sink.Spec.Pulsar,
 		downloadConfig,
@@ -228,7 +228,7 @@ func makeSinkVolumeMounts(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) 
 
 func MakeSinkCommand(sink *v1alpha1.Sink) []string {
 	spec := sink.Spec
-	downloadConfig := newDownloadServiceConfig(spec.PulsarPackageService, spec.Pulsar)
+	downloadConfig := NewDownloadServiceConfig(spec.PulsarPackageService, spec.Pulsar)
 	hasPulsarctl := sink.Spec.ImageHasPulsarctl
 	hasWget := sink.Spec.ImageHasWget
 	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, sink.Spec.Image); match {

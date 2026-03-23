@@ -68,6 +68,9 @@ sed -i.bak -E "s/(operatorImage\: streamnative\/function\-mesh\:v)(.+)/\1$NEW_AP
 # change install.sh
 sed -i.bak -E "s/(local fm_version\=)(.+)/\1\"v$NEW_APP_VERSION\"/" install.sh
 
+# change root go.mod nested api module version
+sed -i.bak -E "s|(github\\.com/streamnative/function-mesh/api )v[^[:space:]]+|\\1v$NEW_APP_VERSION|" go.mod
+
 # change README.md
 sed -i.bak -E "s/(.+)v(.+)(\/install.sh)/\1v$NEW_APP_VERSION\3/" README.md
 
@@ -75,7 +78,7 @@ sed -i.bak -E "s/(.+)v(.+)(\/install.sh)/\1v$NEW_APP_VERSION\3/" README.md
 sed -i.bak -E "s/(version\: )(.+)/\1$NEW_CAHRT_VERSION/" charts/function-mesh-operator/Chart.yaml
 sed -i.bak -E "s/(version\: )(.+)/\1$NEW_CAHRT_VERSION/" charts/function-mesh-operator/charts/admission-webhook/Chart.yaml
 
-TEST_IMAGE=kind-registry:5000/streamnativeio/function-mesh-catalog:v${NEW_APP_VERSION} yq eval -i '.spec.image = strenv(TEST_IMAGE)' .ci/olm-tests/catalog.yml
+TEST_IMAGE=localhost:5000/streamnativeio/function-mesh-catalog:v${NEW_APP_VERSION} yq eval -i '.spec.image = strenv(TEST_IMAGE)' .ci/olm-tests/catalog.yml
 TEST_CSV=function-mesh.v${NEW_APP_VERSION} yq eval -i '.spec.startingCSV = strenv(TEST_CSV)' .ci/olm-tests/subs.yml
 
 pushd charts
