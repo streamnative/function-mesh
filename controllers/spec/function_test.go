@@ -126,7 +126,7 @@ func TestInitContainerDownloader(t *testing.T) {
 	function.Spec.ImagePullPolicy = runnerImagePullPolicy
 
 	labels := makeFunctionLabels(function)
-	downloadConfig := newDownloadServiceConfig(function.Spec.PulsarPackageService, function.Spec.Pulsar)
+	downloadConfig := NewDownloadServiceConfig(function.Spec.PulsarPackageService, function.Spec.Pulsar)
 	statefulSet := MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		makeFunctionContainer(function), makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), labels, function.Spec.Pod,
 		function.Spec.Pulsar, downloadConfig, function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.Pod.Env,

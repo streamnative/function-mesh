@@ -224,7 +224,7 @@ type downloadServiceConfig struct {
 	tlsMount    string
 }
 
-func newDownloadServiceConfig(packageService, messaging *v1alpha1.PulsarMessaging) downloadServiceConfig {
+func NewDownloadServiceConfig(packageService, messaging *v1alpha1.PulsarMessaging) downloadServiceConfig {
 	if packageService != nil {
 		return downloadServiceConfig{
 			pulsar:      packageService,

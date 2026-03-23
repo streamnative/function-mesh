@@ -62,7 +62,7 @@ func MakeSourceStatefulSet(ctx context.Context, cli client.Client, source *v1alp
 	runnerImagePullPolicy := getSourceRunnerImagePullPolicy()
 	source.Spec.ImagePullPolicy = runnerImagePullPolicy
 
-	downloadConfig := newDownloadServiceConfig(source.Spec.PulsarPackageService, source.Spec.Pulsar)
+	downloadConfig := NewDownloadServiceConfig(source.Spec.PulsarPackageService, source.Spec.Pulsar)
 	statefulSet := MakeStatefulSet(objectMeta, source.Spec.Replicas, source.Spec.DownloaderImage, makeSourceContainer(source),
 		makeSourceVolumes(source, source.Spec.Pulsar.AuthConfig), makeSourceLabels(source), source.Spec.Pod, source.Spec.Pulsar,
 		downloadConfig,
@@ -174,7 +174,7 @@ func makeSourceVolumeMounts(source *v1alpha1.Source, authConfig *v1alpha1.AuthCo
 
 func makeSourceCommand(source *v1alpha1.Source) []string {
 	spec := source.Spec
-	downloadConfig := newDownloadServiceConfig(spec.PulsarPackageService, spec.Pulsar)
+	downloadConfig := NewDownloadServiceConfig(spec.PulsarPackageService, spec.Pulsar)
 	hasPulsarctl := source.Spec.ImageHasPulsarctl
 	hasWget := source.Spec.ImageHasWget
 	if match, _ := regexp.MatchString(RunnerImageHasPulsarctl, source.Spec.Image); match {

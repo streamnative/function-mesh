@@ -66,7 +66,7 @@ func MakeFunctionStatefulSet(ctx context.Context, cli client.Client, function *v
 	function.Spec.ImagePullPolicy = runnerImagePullPolicy
 
 	labels := makeFunctionLabels(function)
-	downloadConfig := newDownloadServiceConfig(function.Spec.PulsarPackageService, function.Spec.Pulsar)
+	downloadConfig := NewDownloadServiceConfig(function.Spec.PulsarPackageService, function.Spec.Pulsar)
 	statefulSet := MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
 		makeFunctionContainer(function), makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), labels, function.Spec.Pod,
 		function.Spec.Pulsar, downloadConfig, function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.Pod.Env,
@@ -229,7 +229,7 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	spec := function.Spec
-	downloadConfig := newDownloadServiceConfig(spec.PulsarPackageService, spec.Pulsar)
+	downloadConfig := NewDownloadServiceConfig(spec.PulsarPackageService, spec.Pulsar)
 
 	connectorsDirectory := ""
 	if spec.SourceConfig != nil || spec.SinkConfig != nil {
