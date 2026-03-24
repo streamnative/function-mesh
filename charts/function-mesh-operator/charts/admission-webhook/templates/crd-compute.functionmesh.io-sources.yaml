@@ -3783,8 +3783,6 @@ spec:
                       - name
                     type: object
                   type: array
-              required:
-                - ""
               type: object
             status:
               properties:

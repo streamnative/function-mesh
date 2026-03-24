@@ -102,7 +102,7 @@ func makeSourceContainer(source *v1alpha1.Source) *corev1.Container {
 	probe := MakeLivenessProbe(source.Spec.Pod.Liveness)
 	allowPrivilegeEscalation := false
 	mounts := makeSourceVolumeMounts(source, source.Spec.Pulsar.AuthConfig)
-	mounts = appendPackageServiceVolumeMounts(mounts, source.Spec.PulsarPackageService)
+	mounts = AppendPackageServiceVolumeMounts(mounts, source.Spec.PulsarPackageService)
 	if utils.EnableInitContainers {
 		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(source.Spec.Java, nil, nil, nil)...)
 	}
@@ -158,7 +158,7 @@ func makeSourceVolumes(source *v1alpha1.Source, authConfig *v1alpha1.AuthConfig)
 		authConfig,
 		GetRuntimeLogConfigNames(source.Spec.Java, source.Spec.Python, source.Spec.Golang),
 		source.Spec.LogTopicAgent)
-	return appendPackageServiceVolumes(volumes, source.Spec.PulsarPackageService)
+	return AppendPackageServiceVolumes(volumes, source.Spec.PulsarPackageService)
 }
 
 func makeSourceVolumeMounts(source *v1alpha1.Source, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {

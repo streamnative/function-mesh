@@ -107,7 +107,7 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	probe := MakeLivenessProbe(sink.Spec.Pod.Liveness)
 	allowPrivilegeEscalation := false
 	mounts := makeSinkVolumeMounts(sink, sink.Spec.Pulsar.AuthConfig)
-	mounts = appendPackageServiceVolumeMounts(mounts, sink.Spec.PulsarPackageService)
+	mounts = AppendPackageServiceVolumeMounts(mounts, sink.Spec.PulsarPackageService)
 	if utils.EnableInitContainers {
 		mounts = append(mounts, generateDownloaderVolumeMountsForRuntime(sink.Spec.Java, nil, nil, nil)...)
 	}
@@ -212,7 +212,7 @@ func makeSinkVolumes(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) []cor
 		authConfig,
 		GetRuntimeLogConfigNames(sink.Spec.Java, sink.Spec.Python, sink.Spec.Golang),
 		sink.Spec.LogTopicAgent)
-	return appendPackageServiceVolumes(volumes, sink.Spec.PulsarPackageService)
+	return AppendPackageServiceVolumes(volumes, sink.Spec.PulsarPackageService)
 }
 
 func makeSinkVolumeMounts(sink *v1alpha1.Sink, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {

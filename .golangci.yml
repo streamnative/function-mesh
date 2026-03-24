@@ -2,7 +2,7 @@
 # https://github.com/golangci/golangci-lint#install
 # We can execute `golangci-lint run` for code checking.
 run:
-  deadline: 20m
+  timeout: 20m
 linters:
   disable-all: true
   enable:

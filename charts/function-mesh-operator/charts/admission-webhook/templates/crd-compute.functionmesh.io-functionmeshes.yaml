@@ -4110,8 +4110,6 @@ spec:
                         required:
                           - actualWindowFunctionClassName
                         type: object
-                    required:
-                      - ""
                     type: object
                   type: array
                 sinks:
@@ -7871,8 +7869,6 @@ spec:
                             - name
                           type: object
                         type: array
-                    required:
-                      - ""
                     type: object
                   type: array
                 sources:
@@ -11613,8 +11609,6 @@ spec:
                             - name
                           type: object
                         type: array
-                    required:
-                      - ""
                     type: object
                   type: array
               type: object

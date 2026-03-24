@@ -1,3 +1,9 @@
+# Function Mesh v0.27.1 Release Notes
+
+## v0.27.1 What's New
+
+* [Runtime] feat: export DownloadServiceConfig and GeneratePythonLogConfigCommand ([#835](https://github.com/streamnative/function-mesh/pull/835))
+
 # Function Mesh v0.27.0 Release Notes
 
 ## v0.27.0 What's New

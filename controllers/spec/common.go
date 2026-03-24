@@ -2058,7 +2058,7 @@ func generateVolumeMountFromOAuth2ConfigWithMountPath(config *v1alpha1.OAuth2Con
 	}
 }
 
-func appendPackageServiceVolumes(volumes []corev1.Volume, packageService *v1alpha1.PulsarMessaging) []corev1.Volume {
+func AppendPackageServiceVolumes(volumes []corev1.Volume, packageService *v1alpha1.PulsarMessaging) []corev1.Volume {
 	if packageService == nil {
 		return volumes
 	}
@@ -2077,7 +2077,7 @@ func appendPackageServiceVolumes(volumes []corev1.Volume, packageService *v1alph
 	return volumes
 }
 
-func appendPackageServiceVolumeMounts(mounts []corev1.VolumeMount, packageService *v1alpha1.PulsarMessaging) []corev1.VolumeMount {
+func AppendPackageServiceVolumeMounts(mounts []corev1.VolumeMount, packageService *v1alpha1.PulsarMessaging) []corev1.VolumeMount {
 	if packageService == nil {
 		return mounts
 	}
