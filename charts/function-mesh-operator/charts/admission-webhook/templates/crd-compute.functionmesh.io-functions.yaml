@@ -4129,8 +4129,6 @@ spec:
                   required:
                     - actualWindowFunctionClassName
                   type: object
-              required:
-                - ""
               type: object
             status:
               properties:
