@@ -52,7 +52,7 @@ function mesh operator Helm chart for Kubernetes
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | imagePullSecrets | list | `[]` |  |
 | installation.namespace | string | `"function-mesh-system"` |  |
-| operatorImage | string | `"streamnative/function-mesh:v0.27.1"` |  |
+| operatorImage | string | `"streamnative/function-mesh:v0.27.1-rc-4"` |  |
 | rbac.create | bool | `true` |  |
 
 ----------------------------------------------
