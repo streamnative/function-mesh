@@ -273,7 +273,7 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 			mountPath := extractMountPath(spec.Python.Py)
 			return MakePythonFunctionCommand(spec.Python.PyLocation, mountPath,
 				spec.Name, spec.ClusterName,
-				generatePythonLogConfigCommand(spec.Name, spec.Python, spec.LogTopicAgent),
+				GeneratePythonLogConfigCommand(spec.Name, spec.Python, spec.LogTopicAgent),
 				generateFunctionDetailsInJSON(function), string(function.UID), hasPulsarctl, hasWget, downloadConfig,
 				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
 				spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
