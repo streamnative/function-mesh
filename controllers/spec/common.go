@@ -216,7 +216,7 @@ func prefixedDownloadCommandEnvNames(prefix string) downloadCommandEnvNames {
 	}
 }
 
-type downloadServiceConfig struct {
+type DownloadServiceConfig struct {
 	pulsar      *v1alpha1.PulsarMessaging
 	envPrefix   string
 	envNames    downloadCommandEnvNames
@@ -224,9 +224,9 @@ type downloadServiceConfig struct {
 	tlsMount    string
 }
 
-func NewDownloadServiceConfig(packageService, messaging *v1alpha1.PulsarMessaging) downloadServiceConfig {
+func NewDownloadServiceConfig(packageService, messaging *v1alpha1.PulsarMessaging) DownloadServiceConfig {
 	if packageService != nil {
-		return downloadServiceConfig{
+		return DownloadServiceConfig{
 			pulsar:      packageService,
 			envPrefix:   PackageServiceEnvPrefix,
 			envNames:    prefixedDownloadCommandEnvNames(PackageServiceEnvPrefix),
@@ -234,7 +234,7 @@ func NewDownloadServiceConfig(packageService, messaging *v1alpha1.PulsarMessagin
 			tlsMount:    PackageTLSMountPath,
 		}
 	}
-	return downloadServiceConfig{
+	return DownloadServiceConfig{
 		pulsar:      messaging,
 		envNames:    defaultDownloadCommandEnvNames(),
 		oauth2Mount: "",
@@ -242,22 +242,22 @@ func NewDownloadServiceConfig(packageService, messaging *v1alpha1.PulsarMessagin
 	}
 }
 
-func (d downloadServiceConfig) authProvided() bool {
+func (d DownloadServiceConfig) AuthProvided() bool {
 	return d.pulsar != nil && d.pulsar.AuthSecret != ""
 }
 
-func (d downloadServiceConfig) tlsProvided() bool {
+func (d DownloadServiceConfig) TLSProvided() bool {
 	return d.pulsar != nil && d.pulsar.TLSSecret != ""
 }
 
-func (d downloadServiceConfig) authConfig() *v1alpha1.AuthConfig {
+func (d DownloadServiceConfig) AuthConfig() *v1alpha1.AuthConfig {
 	if d.pulsar == nil {
 		return nil
 	}
 	return d.pulsar.AuthConfig
 }
 
-func (d downloadServiceConfig) tlsConfig() TLSConfig {
+func (d DownloadServiceConfig) TLSConfig() TLSConfig {
 	if d.pulsar == nil || d.pulsar.TLSConfig == nil {
 		return nil
 	}
@@ -270,7 +270,7 @@ func (d downloadServiceConfig) tlsConfig() TLSConfig {
 	}
 }
 
-func (d downloadServiceConfig) envFrom() []corev1.EnvFromSource {
+func (d DownloadServiceConfig) EnvFrom() []corev1.EnvFromSource {
 	if d.pulsar == nil {
 		return nil
 	}
@@ -352,7 +352,7 @@ func MakeHeadlessServiceName(serviceName string) string {
 
 func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderImage string, container *corev1.Container,
 	volumes []corev1.Volume, labels map[string]string, policy v1alpha1.PodPolicy, runtimeMessaging *v1alpha1.PulsarMessaging,
-	downloadConfig downloadServiceConfig,
+	downloadConfig DownloadServiceConfig,
 	javaRuntime *v1alpha1.JavaRuntime,
 	pythonRuntime *v1alpha1.PythonRuntime, goRuntime *v1alpha1.GoRuntime, env []corev1.EnvVar, logTopic, filebeatImage string,
 	logTopicAgent v1alpha1.LogTopicAgent, definedVolumeMounts []corev1.VolumeMount, volumeClaimTemplates []corev1.PersistentVolumeClaim,
@@ -390,7 +390,7 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 
 		// mount auth and tls related VolumeMounts when download package from pulsar
 		if !hasHTTPPrefix(downloadPath) {
-			if authConfig := downloadConfig.authConfig(); authConfig != nil && authConfig.OAuth2Config != nil {
+			if authConfig := downloadConfig.AuthConfig(); authConfig != nil && authConfig.OAuth2Config != nil {
 				oauth2MountPath := authConfig.OAuth2Config.GetMountPath()
 				if downloadConfig.oauth2Mount != "" {
 					oauth2MountPath = downloadConfig.oauth2Mount
@@ -399,7 +399,7 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 				podVolumes = appendVolumeIfNotExists(podVolumes, generateVolumeFromOAuth2Config(authConfig.OAuth2Config))
 			}
 
-			tlsConfig := downloadConfig.tlsConfig()
+			tlsConfig := downloadConfig.TLSConfig()
 			if !isNilTLSConfig(tlsConfig) && tlsConfig.HasSecretVolume() {
 				volumeMounts = appendVolumeMountIfNotExists(volumeMounts, generateVolumeMountFromTLSConfig(tlsConfig))
 				podVolumes = appendVolumeIfNotExists(podVolumes, generateVolumeFromTLSConfig(tlsConfig))
@@ -419,15 +419,15 @@ func MakeStatefulSet(objectMeta *metav1.ObjectMeta, replicas *int32, downloaderI
 			Image: image,
 			Command: []string{"sh", "-c",
 				strings.Join(GetDownloadCommandWithEnv(downloadPath, componentPackage, true, true,
-					downloadConfig.authProvided(), downloadConfig.tlsProvided(), downloadConfig.tlsConfig(),
-					downloadConfig.authConfig(), downloadConfig.envNames, downloadConfig.oauth2Mount), " ")},
+					downloadConfig.AuthProvided(), downloadConfig.TLSProvided(), downloadConfig.TLSConfig(),
+					downloadConfig.AuthConfig(), downloadConfig.envNames, downloadConfig.oauth2Mount), " ")},
 			VolumeMounts:    volumeMounts,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Env: []corev1.EnvVar{{
 				Name:  "HOME",
 				Value: "/tmp",
 			}},
-			EnvFrom: downloadConfig.envFrom(),
+			EnvFrom: downloadConfig.EnvFrom(),
 		}
 		podVolumes = appendVolumeIfNotExists(podVolumes, corev1.Volume{
 			Name: DownloaderVolume,
@@ -670,7 +670,7 @@ func GenerateAffinity(affinity *corev1.Affinity, labels map[string]string, disab
 }
 
 func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, logLevel, details, extraDependenciesDir, connectorsDirectory, uid string,
-	memory *resource.Quantity, javaOpts []string, hasPulsarctl, hasWget bool, downloadConfig downloadServiceConfig,
+	memory *resource.Quantity, javaOpts []string, hasPulsarctl, hasWget bool, downloadConfig DownloadServiceConfig,
 	authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig,
@@ -682,15 +682,15 @@ func MakeJavaFunctionCommand(downloadPath, packageFile, name, clusterName, gener
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(GetDownloadCommandWithEnv(downloadPath, packageFile, hasPulsarctl, hasWget,
-			downloadConfig.authProvided(), downloadConfig.tlsProvided(), downloadConfig.tlsConfig(),
-			downloadConfig.authConfig(), downloadConfig.envNames, downloadConfig.oauth2Mount), " ")
+			downloadConfig.AuthProvided(), downloadConfig.TLSProvided(), downloadConfig.TLSConfig(),
+			downloadConfig.AuthConfig(), downloadConfig.envNames, downloadConfig.oauth2Mount), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"bash", "-c", processCommand}
 }
 
 func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, generateLogConfigCommand, details, uid string,
-	hasPulsarctl, hasWget bool, downloadConfig downloadServiceConfig, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
+	hasPulsarctl, hasWget bool, downloadConfig DownloadServiceConfig, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " + generateLogConfigCommand +
@@ -699,15 +699,15 @@ func MakePythonFunctionCommand(downloadPath, packageFile, name, clusterName, gen
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(GetDownloadCommandWithEnv(downloadPath, packageFile, hasPulsarctl, hasWget,
-			downloadConfig.authProvided(),
-			downloadConfig.tlsProvided(), downloadConfig.tlsConfig(), downloadConfig.authConfig(),
+			downloadConfig.AuthProvided(),
+			downloadConfig.TLSProvided(), downloadConfig.TLSConfig(), downloadConfig.AuthConfig(),
 			downloadConfig.envNames, downloadConfig.oauth2Mount), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
 	return []string{"bash", "-c", processCommand}
 }
 
-func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alpha1.Function, downloadConfig downloadServiceConfig) []string {
+func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alpha1.Function, downloadConfig DownloadServiceConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessGoRuntimeArgs(goExecFilePath, function), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
@@ -719,15 +719,15 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 			hasWget = true
 		}
 		downloadCommand := strings.Join(GetDownloadCommandWithEnv(downloadPath, goExecFilePath,
-			hasPulsarctl, hasWget, downloadConfig.authProvided(),
-			downloadConfig.tlsProvided(), downloadConfig.tlsConfig(), downloadConfig.authConfig(),
+			hasPulsarctl, hasWget, downloadConfig.AuthProvided(),
+			downloadConfig.TLSProvided(), downloadConfig.TLSConfig(), downloadConfig.AuthConfig(),
 			downloadConfig.envNames, downloadConfig.oauth2Mount), " ")
 		processCommand = downloadCommand + " && ls -al && pwd &&" + processCommand
 	}
 	return []string{"bash", "-c", processCommand}
 }
 
-func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterName, details, uid string, downloadConfig downloadServiceConfig, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
+func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterName, details, uid string, downloadConfig DownloadServiceConfig, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
@@ -736,8 +736,8 @@ func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterNam
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(GetDownloadCommandWithEnv(downloadPath, functionFile, true, true,
-			downloadConfig.authProvided(),
-			downloadConfig.tlsProvided(), downloadConfig.tlsConfig(), downloadConfig.authConfig(),
+			downloadConfig.AuthProvided(),
+			downloadConfig.TLSProvided(), downloadConfig.TLSConfig(), downloadConfig.AuthConfig(),
 			downloadConfig.envNames, downloadConfig.oauth2Mount), " ")
 		processCommand = downloadCommand + " && " + processCommand
 	}
@@ -1278,7 +1278,7 @@ func renderJavaInstanceLog4jXMLTemplate(runtime *v1alpha1.JavaRuntime, agent v1a
 	return tpl.String(), nil
 }
 
-func generatePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime, agent v1alpha1.LogTopicAgent) string {
+func GeneratePythonLogConfigCommand(name string, runtime *v1alpha1.PythonRuntime, agent v1alpha1.LogTopicAgent) string {
 	commands := "sed -i.bak 's/^  Log.setLevel/#&/' /pulsar/instances/python-instance/log.py && "
 	if runtime == nil || (runtime.Log != nil && runtime.Log.LogConfig != nil) {
 		return commands
