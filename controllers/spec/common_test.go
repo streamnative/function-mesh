@@ -205,11 +205,11 @@ func TestGetDownloadCommand(t *testing.T) {
 				"oauth2",
 				"activate",
 				"--auth-params",
-				"'auth-params'",
+				shellQuoteLiteral("auth-params"),
 				"|| true ) &&",
 				PulsarctlExecutableFile,
 				"--auth-plugin", "auth-plugin",
-				"--auth-params", "'auth-params'",
+				"--auth-params", shellQuoteLiteral("auth-params"),
 				"--admin-service-url", "$webServiceURL",
 				"--tls-allow-insecure=true",
 				"--tls-enable-hostname-verification=false",
@@ -239,7 +239,7 @@ func TestGetDownloadCommand(t *testing.T) {
 				PulsarAdminExecutableFile,
 				"--admin-url", "$webServiceURL",
 				"--auth-plugin", OAuth2AuthenticationPlugin,
-				"--auth-params", testOauth2.AuthenticationParameters(),
+				"--auth-params", shellQuoteLiteral(testOauth2.AuthenticationParameters()),
 				"packages", "download", "function://public/default/test@v1", "--path", "function-package.jar",
 			},
 			false,
@@ -252,7 +252,7 @@ func TestGetDownloadCommand(t *testing.T) {
 				PulsarAdminExecutableFile,
 				"--admin-url", "$webServiceURL",
 				"--auth-plugin", "auth-plugin",
-				"--auth-params", "'auth-params'",
+				"--auth-params", shellQuoteLiteral("auth-params"),
 				"packages", "download", "sink://public/default/test@v1", "--path", "sink-package.jar",
 			},
 			false,
@@ -333,6 +333,67 @@ func TestGetDownloadCommand(t *testing.T) {
 		actualResult := GetDownloadCommand(v.downloadPath, v.componentPackage, v.hasPulsarctl, v.hasPulsarctl, false, false, v.tlsConfig, &authConfig)
 		assert.Equal(t, v.expectedCommand, actualResult)
 	}
+}
+
+func TestShellQuoteLiteral(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "empty",
+			input:    "",
+			expected: "''",
+		},
+		{
+			name:     "plain",
+			input:    "auth-params",
+			expected: "'auth-params'",
+		},
+		{
+			name:     "embedded single quote",
+			input:    "a'b",
+			expected: `'a'"'"'b'`,
+		},
+		{
+			name:     "time partition pattern",
+			input:    "yyyy-MM-dd/HH'h'-mm'm'",
+			expected: `'yyyy-MM-dd/HH'"'"'h'"'"'-mm'"'"'m'"'"''`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, shellQuoteLiteral(tc.input))
+		})
+	}
+}
+
+func TestGetPulsarAdminCommandWithQuotedAuthParams(t *testing.T) {
+	authConfig := &v1alpha1.AuthConfig{
+		GenericAuth: &v1alpha1.GenericAuth{
+			ClientAuthenticationPlugin:     "auth-plugin",
+			ClientAuthenticationParameters: `{"token":"a'b"}`,
+		},
+	}
+
+	command := getPulsarAdminCommand(false, false, nil, authConfig)
+	assert.Equal(t, "auth-plugin", command[4])
+	assert.Equal(t, shellQuoteLiteral(`{"token":"a'b"}`), command[6])
+}
+
+func TestGetPulsarctlCommandWithQuotedAuthParams(t *testing.T) {
+	authConfig := &v1alpha1.AuthConfig{
+		GenericAuth: &v1alpha1.GenericAuth{
+			ClientAuthenticationPlugin:     "auth-plugin",
+			ClientAuthenticationParameters: `{"token":"a'b"}`,
+		},
+	}
+
+	command := getPulsarctlCommand(false, false, nil, authConfig)
+	assert.Equal(t, shellQuoteLiteral(`{"token":"a'b"}`), command[5])
+	assert.Equal(t, shellQuoteLiteral(`{"token":"a'b"}`), command[11])
 }
 
 func TestGetFunctionRunnerImage(t *testing.T) {
