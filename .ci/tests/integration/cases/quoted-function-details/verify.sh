@@ -26,13 +26,19 @@ PULSAR_NAMESPACE=${PULSAR_NAMESPACE:-"default"}
 PULSAR_RELEASE_NAME=${PULSAR_RELEASE_NAME:-"sn-platform"}
 E2E_KUBECONFIG=${E2E_KUBECONFIG:-"/tmp/e2e-k8s.config"}
 MANIFESTS_FILE="${BASE_DIR}"/.ci/tests/integration/cases/quoted-function-details/manifests.yaml
-FUNCTION_NAME=function-details-quoted-sample
-STS_NAME=${FUNCTION_NAME}-function
 
 source "${BASE_DIR}"/.ci/helm.sh
 
+FUNCTION_NAME=function-details-quoted-sample
+STS_NAME=${FUNCTION_NAME}-function
+
 if [ ! "$KUBECONFIG" ]; then
   export KUBECONFIG=${E2E_KUBECONFIG}
+fi
+
+if [ -z "${FUNCTION_NAME}" ]; then
+  echo "function name is empty"
+  exit 1
 fi
 
 cleanup() {
