@@ -831,12 +831,16 @@ func getOAuth2MountFile(authConfig *v1alpha1.OAuth2Config, mountPath string) str
 	return fmt.Sprintf("%s/%s", mountPath, authConfig.KeySecretKey)
 }
 
+func shellQuoteLiteral(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", `'"'"'`) + "'"
+}
+
 func makeOAuth2AuthenticationParameters(authConfig *v1alpha1.OAuth2Config, mountPath string) string {
 	if authConfig == nil {
 		return ""
 	}
 	credentialsFile := getOAuth2MountFile(authConfig, mountPath)
-	return fmt.Sprintf(`'{"credentials_url":"file://%s","privateKey":"%s","private_key":"%s","issuerUrl":"%s","issuer_url":"%s","audience":"%s","scope":"%s"}'`,
+	return fmt.Sprintf(`{"credentials_url":"file://%s","privateKey":"%s","private_key":"%s","issuerUrl":"%s","issuer_url":"%s","audience":"%s","scope":"%s"}`,
 		credentialsFile, credentialsFile, credentialsFile, authConfig.IssuerURL, authConfig.IssuerURL, authConfig.Audience, authConfig.Scope)
 }
 
@@ -859,14 +863,14 @@ func getPulsarAdminCommandWithEnv(authProvided, tlsProvided bool, tlsConfig TLSC
 				"--auth-plugin",
 				OAuth2AuthenticationPlugin,
 				"--auth-params",
-				makeOAuth2AuthenticationParameters(authConfig.OAuth2Config, oauth2MountPath),
+				shellQuoteLiteral(makeOAuth2AuthenticationParameters(authConfig.OAuth2Config, oauth2MountPath)),
 			}...)
 		} else if authConfig.GenericAuth != nil {
 			args = append(args, []string{
 				"--auth-plugin",
 				authConfig.GenericAuth.ClientAuthenticationPlugin,
 				"--auth-params",
-				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'",
+				shellQuoteLiteral(authConfig.GenericAuth.ClientAuthenticationParameters),
 			}...)
 		}
 	} else if authProvided {
@@ -960,13 +964,13 @@ func getPulsarctlCommandWithEnv(authProvided, tlsProvided bool, tlsConfig TLSCon
 				"oauth2",
 				"activate",
 				"--auth-params",
-				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'",
+				shellQuoteLiteral(authConfig.GenericAuth.ClientAuthenticationParameters),
 				"|| true ) &&",
 				PulsarctlExecutableFile,
 				"--auth-plugin",
 				authConfig.GenericAuth.ClientAuthenticationPlugin,
 				"--auth-params",
-				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'",
+				shellQuoteLiteral(authConfig.GenericAuth.ClientAuthenticationParameters),
 				"--admin-service-url",
 				"$" + envNames.webServiceURL,
 			}
@@ -1610,7 +1614,7 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 		"--function_version",
 		"0",
 		"--function_details",
-		"'" + details + "'", //in json format
+		shellQuoteLiteral(details), // in json format
 		"--pulsar_serviceurl",
 		"$brokerServiceURL",
 		"--max_buffered_tuples",
@@ -1631,13 +1635,13 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 				"--client_auth_plugin",
 				OAuth2AuthenticationPlugin,
 				"--client_auth_params",
-				authConfig.OAuth2Config.AuthenticationParameters()}...)
+				shellQuoteLiteral(authConfig.OAuth2Config.AuthenticationParameters())}...)
 		} else if authConfig.GenericAuth != nil {
 			args = append(args, []string{
 				"--client_auth_plugin",
 				authConfig.GenericAuth.ClientAuthenticationPlugin,
 				"--client_auth_params",
-				"'" + authConfig.GenericAuth.ClientAuthenticationParameters + "'"}...)
+				shellQuoteLiteral(authConfig.GenericAuth.ClientAuthenticationParameters)}...)
 		}
 	} else if authProvided {
 		args = append(args, []string{

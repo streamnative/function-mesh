@@ -37,3 +37,4 @@ index_build_*/
 config/crd/bases/vpa-v1-crd.yaml
 Listeners
 .tool-versions
+/tmp

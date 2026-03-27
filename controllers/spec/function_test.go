@@ -19,7 +19,6 @@ package spec
 
 import (
 	"encoding/json"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -198,11 +197,9 @@ func TestJavaFunctionCommandWithConnectorOverrides(t *testing.T) {
 	startCommand := commands[2]
 	assert.Assert(t, strings.Contains(startCommand, "--connectors_directory "+DefaultConnectorsDirectory),
 		"start command should include connectors directory but got %s", startCommand)
-	re := regexp.MustCompile(`--function_details '([^']+)'`)
-	matches := re.FindStringSubmatch(startCommand)
-	assert.Assert(t, len(matches) == 2, "unable to locate function details in command: %s", startCommand)
-
-	functionDetailsJSON := matches[1]
+	functionDetailsJSON := generateFunctionDetailsInJSON(function)
+	assert.Assert(t, strings.Contains(startCommand, "--function_details "+shellQuoteLiteral(functionDetailsJSON)),
+		"start command should include shell quoted function details but got %s", startCommand)
 	details := &proto.FunctionDetails{}
 	err := protojson.Unmarshal([]byte(functionDetailsJSON), details)
 	assert.NilError(t, err)
@@ -230,6 +227,116 @@ func TestJavaFunctionCommandWithConnectorOverrides(t *testing.T) {
 	assert.Equal(t, sinkConfigsMap["acks"], "all")
 	producerConfig := sinkConfigsMap["producerConfigProperties"].(map[string]interface{})
 	assert.Equal(t, producerConfig["enable.idempotence"], true)
+}
+
+func TestSinkCommandShellQuotesFunctionDetails(t *testing.T) {
+	replicas := int32(1)
+	trueVal := true
+	sinkConfig := v1alpha1.NewConfig(map[string]interface{}{
+		"partitionerType":       "time",
+		"timePartitionDuration": "1m",
+		"timePartitionPattern":  "yyyy-MM-dd/HH'h'-mm'm'",
+	})
+	sink := &v1alpha1.Sink{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Sink",
+			APIVersion: "compute.functionmesh.io/v1alpha1",
+		},
+		ObjectMeta: *makeSampleObjectMeta("time-pattern-sink"),
+		Spec: v1alpha1.SinkSpec{
+			Name:        "time-pattern-sink",
+			ClassName:   "org.apache.pulsar.io.jcloud.sink.CloudStorageGenericRecordSink",
+			Tenant:      "public",
+			Namespace:   "default",
+			ClusterName: TestClusterName,
+			Input: v1alpha1.InputConf{
+				Topics: []string{
+					"persistent://public/default/input",
+				},
+				TypeClassName: "org.apache.pulsar.client.api.schema.GenericRecord",
+			},
+			SinkConfig: &sinkConfig,
+			Replicas:   &replicas,
+			AutoAck:    &trueVal,
+			Messaging: v1alpha1.Messaging{
+				Pulsar: &v1alpha1.PulsarMessaging{
+					PulsarConfig: TestClusterName,
+				},
+			},
+			Runtime: v1alpha1.Runtime{
+				Java: &v1alpha1.JavaRuntime{
+					Jar:         "connectors/pulsar-io-cloud-storage.nar",
+					JarLocation: "",
+				},
+			},
+			Image: "streamnative/pulsar-io-cloud-storage:latest",
+		},
+	}
+
+	commands := MakeSinkCommand(sink)
+	assert.Assert(t, len(commands) == 3, "commands should be 3 but got %d", len(commands))
+
+	sinkDetailsJSON := generateSinkDetailsInJSON(sink)
+	assert.Assert(t, strings.Contains(commands[2], "--function_details "+shellQuoteLiteral(sinkDetailsJSON)),
+		"sink command should include shell quoted function details but got %s", commands[2])
+	assert.Assert(t, strings.Contains(commands[2], `'"'"'`),
+		"sink command should escape embedded single quotes but got %s", commands[2])
+}
+
+func TestSinkCommandShellQuotesClientAuthParams(t *testing.T) {
+	replicas := int32(1)
+	trueVal := true
+	authParams := `{"token":"a'b"}`
+	sink := &v1alpha1.Sink{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Sink",
+			APIVersion: "compute.functionmesh.io/v1alpha1",
+		},
+		ObjectMeta: *makeSampleObjectMeta("auth-config-sink"),
+		Spec: v1alpha1.SinkSpec{
+			Name:        "auth-config-sink",
+			ClassName:   "org.apache.pulsar.io.elasticsearch.ElasticSearchSink",
+			Tenant:      "public",
+			Namespace:   "default",
+			ClusterName: TestClusterName,
+			Input: v1alpha1.InputConf{
+				Topics: []string{
+					"persistent://public/default/input",
+				},
+				TypeClassName: "[B",
+			},
+			SinkConfig: &v1alpha1.Config{
+				Data: map[string]interface{}{
+					"elasticSearchUrl": "http://localhost:9200",
+				},
+			},
+			Replicas: &replicas,
+			AutoAck:  &trueVal,
+			Messaging: v1alpha1.Messaging{
+				Pulsar: &v1alpha1.PulsarMessaging{
+					PulsarConfig: TestClusterName,
+					AuthConfig: &v1alpha1.AuthConfig{
+						GenericAuth: &v1alpha1.GenericAuth{
+							ClientAuthenticationPlugin:     "auth-plugin",
+							ClientAuthenticationParameters: authParams,
+						},
+					},
+				},
+			},
+			Runtime: v1alpha1.Runtime{
+				Java: &v1alpha1.JavaRuntime{
+					Jar:         "connectors/pulsar-io-elastic-search.nar",
+					JarLocation: "",
+				},
+			},
+			Image: "streamnative/pulsar-io-elastic-search:latest",
+		},
+	}
+
+	commands := MakeSinkCommand(sink)
+	assert.Assert(t, len(commands) == 3, "commands should be 3 but got %d", len(commands))
+	assert.Assert(t, strings.Contains(commands[2], "--client_auth_params "+shellQuoteLiteral(authParams)),
+		"sink command should shell quote client auth params but got %s", commands[2])
 }
 
 func TestFunctionPulsarPackageServiceDownloadCommandAndPodWiring(t *testing.T) {
