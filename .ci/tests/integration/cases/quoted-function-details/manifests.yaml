@@ -1,0 +1,46 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: function-details-quoted-sample
+  namespace: default
+spec:
+  image: streamnative/pulsar-functions-java-sample:3.2.2.1
+  className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+  replicas: 1
+  logTopic: persistent://public/default/logging-function-details-quoted-logs
+  funcConfig:
+    timePartitionPattern: "yyyy-MM-dd/HH'h'-mm'm'"
+    note: "quoted payload should survive shell parsing"
+  input:
+    topics:
+      - persistent://public/default/input-function-details-quoted-topic
+    typeClassName: java.lang.String
+  output:
+    topic: persistent://public/default/output-function-details-quoted-topic
+    typeClassName: java.lang.String
+  resources:
+    requests:
+      cpu: 50m
+      memory: 1G
+    limits:
+      memory: 1.1G
+  pulsar:
+    pulsarConfig: "test-pulsar"
+    tlsConfig:
+      enabled: false
+      allowInsecure: false
+      hostnameVerification: true
+      certSecretName: sn-platform-tls-broker
+      certSecretKey: ""
+  java:
+    jar: /pulsar/examples/api-examples.jar
+  clusterName: test
+  autoAck: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-pulsar
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650
