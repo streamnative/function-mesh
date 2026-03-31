@@ -204,7 +204,7 @@ rbac: manifests
 
 release: manifests kustomize crd rbac manager operator-docker-image helm-crds
 
-operator-docker-image: manager test
+operator-docker-image: test
 ifeq ($(MULTI_PLATFORM_BUILD),true)
 	docker buildx build --platform $(PLATFORMS) --push -f operator.Dockerfile -t $(OPERATOR_IMG) -t $(OPERATOR_IMG_LATEST) .
 else
