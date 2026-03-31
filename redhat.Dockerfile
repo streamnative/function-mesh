@@ -1,5 +1,8 @@
 # Build the manager binary
-FROM golang:1.25.8-trixie as builder
+FROM --platform=$BUILDPLATFORM golang:1.25.8-trixie as builder
+
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /workspace/api
 COPY api/ .
@@ -20,7 +23,7 @@ COPY controllers/ controllers/
 COPY utils/ utils/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} GO111MODULE=on go build -a -o manager main.go
 
 # Use ubi image as the base image which is required by the red hat certification.
 # Base on the image size, the order is ubi > ubi-minimal > ubi-micro.

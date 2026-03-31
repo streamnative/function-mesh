@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-set -e
+set -euo pipefail
 
 PULSAR_IMAGE=${PULSAR_IMAGE:-"streamnative/sn-platform"}
 PULSAR_IMAGE_TAG=${PULSAR_IMAGE_TAG:-"2.7.1"}
@@ -34,30 +34,95 @@ PULSARCTL_PYTHON_RUNNER="pulsar-functions-pulsarctl-python-runner"
 RUNNER_TAG=${RUNNER_TAG:-$PULSAR_IMAGE_TAG}
 KIND_PUSH=${KIND_PUSH:-false}
 CI_TEST=${CI_TEST:-false}
+PLATFORMS=${PLATFORMS:-"linux/amd64"}
+PRIMARY_PLATFORM=${PLATFORMS%%,*}
+RUNNER_BASE_IMAGE="${DOCKER_REPO}/${RUNNER_BASE}:${RUNNER_TAG}"
+PULSARCTL_RUNNER_BASE_IMAGE="${DOCKER_REPO}/${PULSARCTL_RUNNER_BASE}:${RUNNER_TAG}"
+JAVA_RUNNER_IMAGE="${DOCKER_REPO}/${JAVA_RUNNER}:${RUNNER_TAG}"
+PULSARCTL_JAVA_RUNNER_IMAGE="${DOCKER_REPO}/${PULSARCTL_JAVA_RUNNER}:${RUNNER_TAG}"
+GO_RUNNER_IMAGE="${DOCKER_REPO}/${GO_RUNNER}:${RUNNER_TAG}"
+PULSARCTL_GO_RUNNER_IMAGE="${DOCKER_REPO}/${PULSARCTL_GO_RUNNER}:${RUNNER_TAG}"
+PYTHON_RUNNER_IMAGE="${DOCKER_REPO}/${PYTHON_RUNNER}:${RUNNER_TAG}"
+PULSARCTL_PYTHON_RUNNER_IMAGE="${DOCKER_REPO}/${PULSARCTL_PYTHON_RUNNER}:${RUNNER_TAG}"
+
+MULTI_PLATFORM=false
+if [[ "${PLATFORMS}" == *,* ]]; then
+  MULTI_PLATFORM=true
+fi
+
+PUSH_DEFAULT=false
+if [[ "${DOCKER_REPO}" == "localhost:5000" || "${MULTI_PLATFORM}" == "true" ]]; then
+  PUSH_DEFAULT=true
+fi
+PUSH=${PUSH:-$PUSH_DEFAULT}
+
+if [[ "${MULTI_PLATFORM}" == "true" && "${PUSH}" != "true" ]]; then
+  echo "multi-platform builds require PUSH=true so dependent images can resolve their base images" >&2
+  exit 1
+fi
+
+if [[ "${MULTI_PLATFORM}" == "true" && "${KIND_PUSH}" == "true" ]]; then
+  echo "KIND_PUSH=true is only supported for single-platform builds" >&2
+  exit 1
+fi
+
+build_image() {
+  local image=$1
+  local context=$2
+  shift 2
+
+  if [[ "${MULTI_PLATFORM}" == "true" ]]; then
+    docker buildx build --platform "${PLATFORMS}" --push -t "${image}" "$@" "${context}"
+  else
+    docker build --platform "${PRIMARY_PLATFORM}" -t "${image}" "$@" "${context}"
+  fi
+}
 
 echo "build runner base"
-docker build --platform linux/amd64 -t ${RUNNER_BASE} images/pulsar-functions-base-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
-docker build --platform linux/amd64 -t ${PULSARCTL_RUNNER_BASE} images/pulsar-functions-base-runner -f images/pulsar-functions-base-runner/pulsarctl.Dockerfile --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
-docker tag ${RUNNER_BASE} "${DOCKER_REPO}"/${RUNNER_BASE}:"${RUNNER_TAG}"
-docker tag ${PULSARCTL_RUNNER_BASE} "${DOCKER_REPO}"/${PULSARCTL_RUNNER_BASE}:"${RUNNER_TAG}"
+build_image "${RUNNER_BASE_IMAGE}" images/pulsar-functions-base-runner \
+  --build-arg PULSAR_IMAGE="${PULSAR_IMAGE}" \
+  --build-arg PULSAR_IMAGE_TAG="${PULSAR_IMAGE_TAG}" \
+  --progress=plain
+build_image "${PULSARCTL_RUNNER_BASE_IMAGE}" images/pulsar-functions-base-runner \
+  -f images/pulsar-functions-base-runner/pulsarctl.Dockerfile \
+  --build-arg PULSAR_IMAGE="${PULSAR_IMAGE}" \
+  --build-arg PULSAR_IMAGE_TAG="${PULSAR_IMAGE_TAG}" \
+  --progress=plain
 
 echo "build java runner"
-docker build --platform linux/amd64 -t ${JAVA_RUNNER} images/pulsar-functions-java-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
-docker build --platform linux/amd64 -t ${PULSARCTL_JAVA_RUNNER} images/pulsar-functions-java-runner -f images/pulsar-functions-java-runner/pulsarctl.Dockerfile --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
-docker tag ${JAVA_RUNNER} "${DOCKER_REPO}"/${JAVA_RUNNER}:"${RUNNER_TAG}"
-docker tag ${PULSARCTL_JAVA_RUNNER} "${DOCKER_REPO}"/${PULSARCTL_JAVA_RUNNER}:"${RUNNER_TAG}"
+build_image "${JAVA_RUNNER_IMAGE}" images/pulsar-functions-java-runner \
+  --build-arg BASE_IMAGE="${RUNNER_BASE_IMAGE}" \
+  --build-arg PULSAR_IMAGE="${PULSAR_IMAGE}" \
+  --build-arg PULSAR_IMAGE_TAG="${PULSAR_IMAGE_TAG}" \
+  --progress=plain
+build_image "${PULSARCTL_JAVA_RUNNER_IMAGE}" images/pulsar-functions-java-runner \
+  -f images/pulsar-functions-java-runner/pulsarctl.Dockerfile \
+  --build-arg BASE_IMAGE="${PULSARCTL_RUNNER_BASE_IMAGE}" \
+  --build-arg PULSAR_IMAGE="${PULSAR_IMAGE}" \
+  --build-arg PULSAR_IMAGE_TAG="${PULSAR_IMAGE_TAG}" \
+  --progress=plain
 
 echo "build python runner"
-docker build --platform linux/amd64 -t ${PYTHON_RUNNER} images/pulsar-functions-python-runner --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --progress=plain
-docker build --platform linux/amd64 -t ${PULSARCTL_PYTHON_RUNNER} images/pulsar-functions-python-runner -f images/pulsar-functions-python-runner/pulsarctl.Dockerfile --build-arg PULSAR_IMAGE="$PULSAR_IMAGE" --build-arg PULSAR_IMAGE_TAG="$PULSAR_IMAGE_TAG" --build-arg PYTHON_VERSION="$PYTHON_VERSION" --progress=plain
-docker tag ${PYTHON_RUNNER} "${DOCKER_REPO}"/${PYTHON_RUNNER}:"${RUNNER_TAG}"
-docker tag ${PULSARCTL_PYTHON_RUNNER} "${DOCKER_REPO}"/${PULSARCTL_PYTHON_RUNNER}:"${RUNNER_TAG}"
+build_image "${PYTHON_RUNNER_IMAGE}" images/pulsar-functions-python-runner \
+  --build-arg BASE_IMAGE="${RUNNER_BASE_IMAGE}" \
+  --build-arg PULSAR_IMAGE="${PULSAR_IMAGE}" \
+  --build-arg PULSAR_IMAGE_TAG="${PULSAR_IMAGE_TAG}" \
+  --progress=plain
+build_image "${PULSARCTL_PYTHON_RUNNER_IMAGE}" images/pulsar-functions-python-runner \
+  -f images/pulsar-functions-python-runner/pulsarctl.Dockerfile \
+  --build-arg PULSAR_IMAGE="${PULSAR_IMAGE}" \
+  --build-arg PULSAR_IMAGE_TAG="${PULSAR_IMAGE_TAG}" \
+  --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+  --progress=plain
 
 echo "build go runner"
-docker build --platform linux/amd64 -t ${GO_RUNNER} images/pulsar-functions-go-runner --progress=plain # go runner is almost the same as runner base, so we no need to given build args for go runner
-docker build --platform linux/amd64 -t ${PULSARCTL_GO_RUNNER} images/pulsar-functions-go-runner -f images/pulsar-functions-go-runner/pulsarctl.Dockerfile --progress=plain # go runner is almost the same as runner base, so we no need to given build args for go runner
-docker tag ${GO_RUNNER} "${DOCKER_REPO}"/${GO_RUNNER}:"${RUNNER_TAG}"
-docker tag ${PULSARCTL_GO_RUNNER} "${DOCKER_REPO}"/${PULSARCTL_GO_RUNNER}:"${RUNNER_TAG}"
+build_image "${GO_RUNNER_IMAGE}" images/pulsar-functions-go-runner \
+  --build-arg BASE_IMAGE="${RUNNER_BASE_IMAGE}" \
+  --progress=plain
+build_image "${PULSARCTL_GO_RUNNER_IMAGE}" images/pulsar-functions-go-runner \
+  -f images/pulsar-functions-go-runner/pulsarctl.Dockerfile \
+  --build-arg BASE_IMAGE="${PULSARCTL_RUNNER_BASE_IMAGE}" \
+  --progress=plain
 
 if [ "$KIND_PUSH" = true ] ; then
   echo "push images to kind"
@@ -65,22 +130,24 @@ if [ "$KIND_PUSH" = true ] ; then
   echo $clusters
   for cluster in $clusters
   do
-    kind load docker-image "${DOCKER_REPO}"/${JAVA_RUNNER}:"${RUNNER_TAG}" --name $cluster
-    kind load docker-image "${DOCKER_REPO}"/${PULSARCTL_JAVA_RUNNER}:"${RUNNER_TAG}" --name $cluster
-    kind load docker-image "${DOCKER_REPO}"/${PYTHON_RUNNER}:"${RUNNER_TAG}" --name $cluster
-    kind load docker-image "${DOCKER_REPO}"/${PULSARCTL_PYTHON_RUNNER}:"${RUNNER_TAG}" --name $cluster
-    kind load docker-image "${DOCKER_REPO}"/${GO_RUNNER}:"${RUNNER_TAG}" --name $cluster
-    kind load docker-image "${DOCKER_REPO}"/${PULSARCTL_GO_RUNNER}:"${RUNNER_TAG}" --name $cluster
+    kind load docker-image "${JAVA_RUNNER_IMAGE}" --name $cluster
+    kind load docker-image "${PULSARCTL_JAVA_RUNNER_IMAGE}" --name $cluster
+    kind load docker-image "${PYTHON_RUNNER_IMAGE}" --name $cluster
+    kind load docker-image "${PULSARCTL_PYTHON_RUNNER_IMAGE}" --name $cluster
+    kind load docker-image "${GO_RUNNER_IMAGE}" --name $cluster
+    kind load docker-image "${PULSARCTL_GO_RUNNER_IMAGE}" --name $cluster
   done
 fi
 
-if [ "$DOCKER_REPO" = "localhost:5000" ]; then
-  docker push "${DOCKER_REPO}"/${JAVA_RUNNER}:"${RUNNER_TAG}"
-  docker push "${DOCKER_REPO}"/${PULSARCTL_JAVA_RUNNER}:"${RUNNER_TAG}"
-  docker push "${DOCKER_REPO}"/${PYTHON_RUNNER}:"${RUNNER_TAG}"
-  docker push "${DOCKER_REPO}"/${PULSARCTL_PYTHON_RUNNER}:"${RUNNER_TAG}"
-  docker push "${DOCKER_REPO}"/${GO_RUNNER}:"${RUNNER_TAG}"
-  docker push "${DOCKER_REPO}"/${PULSARCTL_GO_RUNNER}:"${RUNNER_TAG}"
+if [[ "${PUSH}" == "true" && "${MULTI_PLATFORM}" != "true" ]]; then
+  docker push "${RUNNER_BASE_IMAGE}"
+  docker push "${PULSARCTL_RUNNER_BASE_IMAGE}"
+  docker push "${JAVA_RUNNER_IMAGE}"
+  docker push "${PULSARCTL_JAVA_RUNNER_IMAGE}"
+  docker push "${PYTHON_RUNNER_IMAGE}"
+  docker push "${PULSARCTL_PYTHON_RUNNER_IMAGE}"
+  docker push "${GO_RUNNER_IMAGE}"
+  docker push "${PULSARCTL_GO_RUNNER_IMAGE}"
 fi
 #
 #if [ "$CI_TEST" = true ] ; then

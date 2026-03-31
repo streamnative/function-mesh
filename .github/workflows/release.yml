@@ -37,6 +37,9 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Set up GO 1.25.8
         uses: actions/setup-go@v5
         with:
@@ -71,6 +74,7 @@ jobs:
           VERSION: ${{ github.event.release.tag_name }}
           IMAGE_TAG_BASE: streamnative/function-mesh
           CATALOG_BRANCH_TAG: latest
+          PLATFORMS: linux/amd64,linux/arm64
         run: |
           # convert vx.y.z to x.y.z because a valid semver is needed in creating the bundle
           VERSION=$(echo $VERSION|cut -c 2-)

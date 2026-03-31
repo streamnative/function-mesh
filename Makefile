@@ -22,6 +22,12 @@ GOARCH := $(if $(GOARCH),$(GOARCH),amd64)
 GOENV  := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO     := $(GOENV) go
 GO_BUILD := $(GO) build -trimpath
+PLATFORMS ?= linux/amd64
+comma := ,
+PLATFORM_LIST := $(subst $(comma), ,$(PLATFORMS))
+PRIMARY_PLATFORM := $(word 1,$(PLATFORM_LIST))
+MULTI_PLATFORM_BUILD := $(if $(filter 1,$(words $(PLATFORM_LIST))),false,true)
+IMAGE_BUILD_PUSH ?= $(MULTI_PLATFORM_BUILD)
 GO_MAJOR_VERSION := $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f1)
 GO_MINOR_VERSION := $(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f2)
 
@@ -133,15 +139,27 @@ generate: controller-gen
 
 # Build the docker image
 docker-build: test
-	docker build --platform linux/amd64 . -t ${IMG}
+ifeq ($(MULTI_PLATFORM_BUILD),true)
+	docker buildx build --platform $(PLATFORMS) --push -t ${IMG} .
+else
+	docker build --platform $(PRIMARY_PLATFORM) -t ${IMG} .
+endif
 
 # Build image for red hat certification
 docker-build-redhat:
-	docker build --platform linux/amd64 -f redhat.Dockerfile . -t ${IMG} --build-arg VERSION=${VERSION} --no-cache
+ifeq ($(MULTI_PLATFORM_BUILD),true)
+	docker buildx build --platform $(PLATFORMS) --push -f redhat.Dockerfile -t ${IMG} --build-arg VERSION=${VERSION} --no-cache .
+else
+	docker build --platform $(PRIMARY_PLATFORM) -f redhat.Dockerfile -t ${IMG} --build-arg VERSION=${VERSION} --no-cache .
+endif
 
 # Push the docker image
 image-push:
+ifeq ($(IMAGE_BUILD_PUSH),true)
+	@echo "image already pushed during multi-platform build: ${IMG}"
+else
 	docker push ${IMG}
+endif
 
 # find or download controller-gen
 # download controller-gen if necessary
@@ -171,12 +189,12 @@ bundle: yq kustomize manifests
 # Build the bundle image.
 .PHONY: bundle-build
 bundle-build:
-	docker build --platform linux/amd64 -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+	docker build --platform $(PRIMARY_PLATFORM) -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-push
 bundle-push: ## Push the bundle image.
 	echo $(BUNDLE_IMG)
-	$(MAKE) image-push IMG=$(BUNDLE_IMG)
+	$(MAKE) image-push IMG=$(BUNDLE_IMG) IMAGE_BUILD_PUSH=false
 
 crd: manifests
 	$(KUSTOMIZE) build config/crd > manifests/crd.yaml
@@ -187,12 +205,20 @@ rbac: manifests
 release: manifests kustomize crd rbac manager operator-docker-image helm-crds
 
 operator-docker-image: manager test
-	docker build --platform linux/amd64 -f operator.Dockerfile -t $(OPERATOR_IMG) .
+ifeq ($(MULTI_PLATFORM_BUILD),true)
+	docker buildx build --platform $(PLATFORMS) --push -f operator.Dockerfile -t $(OPERATOR_IMG) -t $(OPERATOR_IMG_LATEST) .
+else
+	docker build --platform $(PRIMARY_PLATFORM) -f operator.Dockerfile -t $(OPERATOR_IMG) .
 	docker tag $(OPERATOR_IMG) $(OPERATOR_IMG_LATEST)
+endif
 
 docker-push:
+ifeq ($(MULTI_PLATFORM_BUILD),true)
+	@echo "operator images already pushed during multi-platform build: $(OPERATOR_IMG), $(OPERATOR_IMG_LATEST)"
+else
 	docker push $(OPERATOR_IMG)
 	docker push $(OPERATOR_IMG_LATEST)
+endif
 
 .PHONY: opm
 OPM = ./bin/opm
@@ -240,9 +266,9 @@ endif
 # Push the catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
-	$(MAKE) image-push IMG=$(CATALOG_IMG)
+	$(MAKE) image-push IMG=$(CATALOG_IMG) IMAGE_BUILD_PUSH=false
 ifneq ($(origin CATALOG_BRANCH_TAG), undefined)
-	$(MAKE) image-push IMG=$(CATALOG_BRANCH_IMG)
+	$(MAKE) image-push IMG=$(CATALOG_BRANCH_IMG) IMAGE_BUILD_PUSH=false
 endif
 
 version:
@@ -256,7 +282,11 @@ function-mesh-docker-image-name:
 
 # Build the docker image without tests
 docker-build-skip-test:
-	docker build --platform linux/amd64 . -t ${IMG}
+ifeq ($(MULTI_PLATFORM_BUILD),true)
+	docker buildx build --platform $(PLATFORMS) --push -t ${IMG} .
+else
+	docker build --platform $(PRIMARY_PLATFORM) -t ${IMG} .
+endif
 
 e2e: skywalking-e2e yq
 	$(E2E) run -c .ci/tests/integration/e2e.yaml
@@ -297,17 +327,21 @@ redhat-certificated-bundle: yq kustomize manifests
 # Build the bundle image.
 .PHONY: redhat-certificated-bundle-build
 redhat-certificated-bundle-build:
-	docker build --platform linux/amd64 -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+	docker build --platform $(PRIMARY_PLATFORM) -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 .PHONY: redhat-certificated-bundle-push
 redhat-certificated-bundle-push: ## Push the bundle image.
 	echo $(BUNDLE_IMG)
-	$(MAKE) image-push IMG=$(BUNDLE_IMG)
+	$(MAKE) image-push IMG=$(BUNDLE_IMG) IMAGE_BUILD_PUSH=false
 
 # Build the bundle image.
 .PHONY: redhat-certificated-image-build
 redhat-certificated-image-build:
-	docker build --platform linux/amd64 -f redhat.Dockerfile . -t ${OPERATOR_IMG} --build-arg VERSION=${VERSION} --no-cache
+ifeq ($(MULTI_PLATFORM_BUILD),true)
+	docker buildx build --platform $(PLATFORMS) --push -f redhat.Dockerfile -t ${OPERATOR_IMG} --build-arg VERSION=${VERSION} --no-cache .
+else
+	docker build --platform $(PRIMARY_PLATFORM) -f redhat.Dockerfile -t ${OPERATOR_IMG} --build-arg VERSION=${VERSION} --no-cache .
+endif
 
 .PHONY: redhat-certificated-image-push
 redhat-certificated-image-push: ## Push the bundle image.
