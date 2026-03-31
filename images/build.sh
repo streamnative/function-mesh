@@ -78,6 +78,15 @@ build_image() {
   fi
 }
 
+tag_local_aliases() {
+  local source_image=$1
+  local local_name=$2
+
+  if [[ "${MULTI_PLATFORM}" != "true" ]]; then
+    docker tag "${source_image}" "${local_name}:latest"
+  fi
+}
+
 echo "build runner base"
 build_image "${RUNNER_BASE_IMAGE}" images/pulsar-functions-base-runner \
   --build-arg PULSAR_IMAGE="${PULSAR_IMAGE}" \
@@ -88,6 +97,8 @@ build_image "${PULSARCTL_RUNNER_BASE_IMAGE}" images/pulsar-functions-base-runner
   --build-arg PULSAR_IMAGE="${PULSAR_IMAGE}" \
   --build-arg PULSAR_IMAGE_TAG="${PULSAR_IMAGE_TAG}" \
   --progress=plain
+tag_local_aliases "${RUNNER_BASE_IMAGE}" "${RUNNER_BASE}"
+tag_local_aliases "${PULSARCTL_RUNNER_BASE_IMAGE}" "${PULSARCTL_RUNNER_BASE}"
 
 echo "build java runner"
 build_image "${JAVA_RUNNER_IMAGE}" images/pulsar-functions-java-runner \
@@ -101,6 +112,8 @@ build_image "${PULSARCTL_JAVA_RUNNER_IMAGE}" images/pulsar-functions-java-runner
   --build-arg PULSAR_IMAGE="${PULSAR_IMAGE}" \
   --build-arg PULSAR_IMAGE_TAG="${PULSAR_IMAGE_TAG}" \
   --progress=plain
+tag_local_aliases "${JAVA_RUNNER_IMAGE}" "${JAVA_RUNNER}"
+tag_local_aliases "${PULSARCTL_JAVA_RUNNER_IMAGE}" "${PULSARCTL_JAVA_RUNNER}"
 
 echo "build python runner"
 build_image "${PYTHON_RUNNER_IMAGE}" images/pulsar-functions-python-runner \
@@ -114,6 +127,8 @@ build_image "${PULSARCTL_PYTHON_RUNNER_IMAGE}" images/pulsar-functions-python-ru
   --build-arg PULSAR_IMAGE_TAG="${PULSAR_IMAGE_TAG}" \
   --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
   --progress=plain
+tag_local_aliases "${PYTHON_RUNNER_IMAGE}" "${PYTHON_RUNNER}"
+tag_local_aliases "${PULSARCTL_PYTHON_RUNNER_IMAGE}" "${PULSARCTL_PYTHON_RUNNER}"
 
 echo "build go runner"
 build_image "${GO_RUNNER_IMAGE}" images/pulsar-functions-go-runner \
@@ -123,6 +138,8 @@ build_image "${PULSARCTL_GO_RUNNER_IMAGE}" images/pulsar-functions-go-runner \
   -f images/pulsar-functions-go-runner/pulsarctl.Dockerfile \
   --build-arg BASE_IMAGE="${PULSARCTL_RUNNER_BASE_IMAGE}" \
   --progress=plain
+tag_local_aliases "${GO_RUNNER_IMAGE}" "${GO_RUNNER}"
+tag_local_aliases "${PULSARCTL_GO_RUNNER_IMAGE}" "${PULSARCTL_GO_RUNNER}"
 
 if [ "$KIND_PUSH" = true ] ; then
   echo "push images to kind"
