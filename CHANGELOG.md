@@ -1,3 +1,9 @@
+# Function Mesh v0.27.2 Release Notes
+
+## v0.27.2 What's New
+
+* [Runtime] fix: ensure proper shell quoting for parameters ([#837](https://github.com/streamnative/function-mesh/pull/837))
+
 # Function Mesh v0.27.1 Release Notes
 
 ## v0.27.1 What's New
