@@ -9,7 +9,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.35.1
 	github.com/prometheus/client_golang v1.20.5
-	github.com/streamnative/function-mesh/api v0.27.1
+	github.com/streamnative/function-mesh/api v0.27.2-rc-1
 	github.com/streamnative/pulsarctl v0.6.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/protobuf v1.36.10
