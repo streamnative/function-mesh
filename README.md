@@ -62,6 +62,18 @@ operator-sdk create api --group compute --version v1alpha1 --kind Function --res
 operator-sdk create webhook --group compute.functionmesh.io --version v1alpha1 --kind Function --defaulting --programmatic-validation
 ```
 
+### Multi-platform images
+
+The image build targets accept `PLATFORMS` as a comma-separated Docker platform list.
+
+```bash
+make docker-build PLATFORMS=linux/amd64,linux/arm64
+make operator-docker-image PLATFORMS=linux/amd64,linux/arm64
+PLATFORMS=linux/amd64,linux/arm64 PUSH=true images/build.sh
+```
+
+Single-platform builds still default to `linux/amd64`. Multi-platform builds use `docker buildx` and push a manifest list directly, so they require an authenticated registry session.
+
 ## Deployment
 
 1. make sure connected to a kubernetes cluster(gke, mini-kube etc.)

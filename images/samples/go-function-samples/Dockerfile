@@ -1,5 +1,8 @@
 ARG PULSAR_IMAGE_TAG
-FROM golang:1.25.8-trixie as builder
+FROM --platform=$BUILDPLATFORM golang:1.25.8-trixie as builder
+
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -11,7 +14,7 @@ RUN go mod download
 COPY func/exclamationFunc.go exclamationFunc.go
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o exclamationFunc exclamationFunc.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} GO111MODULE=on go build -a -o exclamationFunc exclamationFunc.go
 
 FROM streamnative/pulsar-functions-go-runner:${PULSAR_IMAGE_TAG}
 COPY --from=builder --chown=$UID:$GID /workspace/exclamationFunc /pulsar/examples/go-exclamation-func

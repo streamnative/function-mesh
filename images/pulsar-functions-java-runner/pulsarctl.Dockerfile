@@ -1,9 +1,10 @@
+ARG BASE_IMAGE=pulsar-functions-pulsarctl-runner-base:latest
 ARG PULSAR_IMAGE
 ARG PULSAR_IMAGE_TAG
 FROM ${PULSAR_IMAGE}:${PULSAR_IMAGE_TAG} as pulsar
 FROM apachepulsar/pulsar-io-kinesis-sink-kinesis_producer:0.15.12 as pulsar-io-kinesis-sink-kinesis_producer
 FROM apachepulsar/pulsar-io-kinesis-sink-kinesis_producer:1.0.4 as pulsar-io-kinesis-sink-kinesis_producer-1.0
-FROM pulsar-functions-pulsarctl-runner-base:latest
+FROM ${BASE_IMAGE}
 
 ARG PULSAR_IMAGE_TAG
 ENV VERSION_TAG=${PULSAR_IMAGE_TAG}

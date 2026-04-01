@@ -30,3 +30,5 @@ git push origin vX.Y.Z
 3. Click the release button
 
 Click the release button and draft a new release. When publish the release, the Action CI will automatically trigger the release process, build the corresponding image, and push it to docker_hub.
+
+The release workflow publishes multi-platform Docker images for `linux/amd64` and `linux/arm64`.
