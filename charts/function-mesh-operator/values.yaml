@@ -75,6 +75,7 @@ controllerManager:
   globalBackendConfigNamespace: default
   namespacedBackendConfig: backend-config
   addDefaultAffinity: true
+  pauseRollout: false
 
 admissionWebhook:
   enabled: true

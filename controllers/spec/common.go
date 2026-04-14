@@ -310,6 +310,11 @@ func IsManaged(object metav1.Object) bool {
 }
 
 func IsPauseRollout(object metav1.Object) bool {
+	// the global flag
+	if utils.PauseRollout {
+		return true
+	}
+	// the annotation flag per object
 	pauseRollout, exists := object.GetAnnotations()[AnnotationPauseRollout]
 	return exists && pauseRollout == "true"
 }

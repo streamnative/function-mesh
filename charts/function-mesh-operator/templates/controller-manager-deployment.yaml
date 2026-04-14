@@ -67,6 +67,7 @@ spec:
           - --global-backend-config-namespace={{ .Values.controllerManager.globalBackendConfigNamespace }}
           - --namespaced-backend-config={{ .Values.controllerManager.namespacedBackendConfig }}
           - --add-default-affinity={{ .Values.controllerManager.addDefaultAffinity }}
+          - --pause-rollout={{ .Values.controllerManager.pauseRollout }}
         env:
           - name: NAMESPACE
             valueFrom:
