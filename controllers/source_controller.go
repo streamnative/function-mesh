@@ -99,21 +99,12 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	isNewGeneration := r.checkIfSourceGenerationsIsIncreased(source)
+	pauseRollout := shouldPauseNonGenerationRollout(source, isNewGeneration)
+	source.Status.PendingChange = ""
 
 	err = r.ObserveSourceStatefulSet(ctx, source)
 	if err != nil {
 		return reconcile.Result{}, err
-	}
-	// skip reconcile if pauseRollout is set to true and the generation is not increased
-	if spec.IsPauseRollout(source) && !isNewGeneration {
-		err = r.Status().Update(ctx, source)
-		if err != nil {
-			r.Log.Error(err, "failed to update source status after observing statefulset")
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	} else {
-		source.Status.PendingChange = ""
 	}
 
 	err = r.ObserveSourceService(ctx, source)
@@ -141,6 +132,45 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		r.Log.Error(err, "failed to update source status")
 		return ctrl.Result{}, err
+	}
+
+	if pauseRollout {
+		if shouldApplyPausedResourceAction(source.Status.Conditions[v1alpha1.StatefulSet].Action) {
+			err = r.ApplySourceStatefulSet(ctx, source, isNewGeneration)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		if shouldApplyPausedResourceAction(source.Status.Conditions[v1alpha1.Service].Action) {
+			err = r.ApplySourceService(ctx, source, isNewGeneration)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		if condition, ok := source.Status.Conditions[v1alpha1.HPA]; ok && shouldApplyPausedResourceAction(condition.Action) {
+			if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2Beta2 {
+				err = r.ApplySourceHPAV2Beta2(ctx, source, isNewGeneration)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			} else if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2 {
+				err = r.ApplySourceHPA(ctx, source, isNewGeneration)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			}
+		}
+		if condition, ok := source.Status.Conditions[v1alpha1.VPA]; ok && shouldApplyPausedResourceAction(condition.Action) {
+			err = r.ApplySourceVPA(ctx, source)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		err = r.ApplySourceCleanUpJob(ctx, source)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		return ctrl.Result{}, nil
 	}
 
 	err = r.ApplySourceStatefulSet(ctx, source, isNewGeneration)

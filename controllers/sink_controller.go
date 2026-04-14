@@ -99,21 +99,12 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	isNewGeneration := r.checkIfSinkGenerationsIsIncreased(sink)
+	pauseRollout := shouldPauseNonGenerationRollout(sink, isNewGeneration)
+	sink.Status.PendingChange = ""
 
 	err = r.ObserveSinkStatefulSet(ctx, sink)
 	if err != nil {
 		return reconcile.Result{}, err
-	}
-	// skip reconcile if pauseRollout is set to true and the generation is not increased
-	if spec.IsPauseRollout(sink) && !isNewGeneration {
-		err = r.Status().Update(ctx, sink)
-		if err != nil {
-			r.Log.Error(err, "failed to update sink status after observing statefulset")
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	} else {
-		sink.Status.PendingChange = ""
 	}
 
 	err = r.ObserveSinkService(ctx, sink)
@@ -141,6 +132,45 @@ func (r *SinkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		r.Log.Error(err, "failed to update sink status")
 		return ctrl.Result{}, err
+	}
+
+	if pauseRollout {
+		if shouldApplyPausedResourceAction(sink.Status.Conditions[v1alpha1.StatefulSet].Action) {
+			err = r.ApplySinkStatefulSet(ctx, sink, isNewGeneration)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		if shouldApplyPausedResourceAction(sink.Status.Conditions[v1alpha1.Service].Action) {
+			err = r.ApplySinkService(ctx, sink, isNewGeneration)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		if condition, ok := sink.Status.Conditions[v1alpha1.HPA]; ok && shouldApplyPausedResourceAction(condition.Action) {
+			if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2Beta2 {
+				err = r.ApplySinkHPAV2Beta2(ctx, sink, isNewGeneration)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			} else if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2 {
+				err = r.ApplySinkHPA(ctx, sink, isNewGeneration)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			}
+		}
+		if condition, ok := sink.Status.Conditions[v1alpha1.VPA]; ok && shouldApplyPausedResourceAction(condition.Action) {
+			err = r.ApplySinkVPA(ctx, sink)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		err = r.ApplySinkCleanUpJob(ctx, sink)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		return ctrl.Result{}, nil
 	}
 
 	err = r.ApplySinkStatefulSet(ctx, sink, isNewGeneration)
