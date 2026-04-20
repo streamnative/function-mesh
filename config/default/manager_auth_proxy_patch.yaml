@@ -16,6 +16,7 @@ spec:
         - "--namespaced-backend-config=backend-config"
         - "--global-backend-config=global-backend-config"
         - "--global-backend-config-namespace=sn-system"
+        - "--pause-rollout=false"
         ports:
           - containerPort: 8443
             name: metrics

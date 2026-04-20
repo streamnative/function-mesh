@@ -46,6 +46,14 @@ const (
 	CleanUpFinalizerName = "cleanup.subscription.finalizer"
 )
 
+func shouldPauseNonGenerationRollout(object metav1.Object, isNewGeneration bool) bool {
+	return spec.IsPauseRollout(object) && !isNewGeneration && object.GetDeletionTimestamp().IsZero()
+}
+
+func shouldApplyPausedResourceAction(action v1alpha1.ReconcileAction) bool {
+	return action == v1alpha1.Create || action == v1alpha1.Delete
+}
+
 func deleteHPAV2Beta2(ctx context.Context, r client.Client, name types.NamespacedName) error {
 	hpa := &autoscalingv2beta2.HorizontalPodAutoscaler{}
 	err := r.Get(ctx, name, hpa)

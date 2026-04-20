@@ -1,6 +1,6 @@
 module github.com/apache/pulsar/pulsar-function-go/examples
 
-go 1.25.8
+go 1.25.9
 
 require github.com/apache/pulsar/pulsar-function-go v0.0.0-20250430085326-611dc3f360b5
 

@@ -23,3 +23,4 @@ var GlobalBackendConfig = ""
 var GlobalBackendConfigNamespace = "default"
 var NamespacedBackendConfig = ""
 var AddDefaultAffinity = true
+var PauseRollout = false

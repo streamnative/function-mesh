@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM --platform=$BUILDPLATFORM golang:1.25.8-trixie as builder
+FROM --platform=$BUILDPLATFORM golang:1.25.9-trixie as builder
 
 ARG TARGETOS
 ARG TARGETARCH

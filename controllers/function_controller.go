@@ -100,21 +100,12 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	isNewGeneration := r.checkIfFunctionGenerationsIsIncreased(function)
+	pauseRollout := shouldPauseNonGenerationRollout(function, isNewGeneration)
+	function.Status.PendingChange = ""
 
 	err = r.ObserveFunctionStatefulSet(ctx, function)
 	if err != nil {
 		return reconcile.Result{}, err
-	}
-	// skip reconcile if pauseRollout is set to true and the generation is not increased
-	if spec.IsPauseRollout(function) && !isNewGeneration {
-		err = r.Status().Update(ctx, function)
-		if err != nil {
-			r.Log.Error(err, "failed to update function status after observing statefulset")
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	} else {
-		function.Status.PendingChange = ""
 	}
 
 	err = r.ObserveFunctionService(ctx, function)
@@ -142,6 +133,45 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err != nil {
 		r.Log.Error(err, "failed to update function status after observing resources")
 		return ctrl.Result{}, err
+	}
+
+	if pauseRollout {
+		if shouldApplyPausedResourceAction(function.Status.Conditions[v1alpha1.StatefulSet].Action) {
+			err = r.ApplyFunctionStatefulSet(ctx, function, isNewGeneration)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		if shouldApplyPausedResourceAction(function.Status.Conditions[v1alpha1.Service].Action) {
+			err = r.ApplyFunctionService(ctx, function, isNewGeneration)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		if condition, ok := function.Status.Conditions[v1alpha1.HPA]; ok && shouldApplyPausedResourceAction(condition.Action) {
+			if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2Beta2 {
+				err = r.ApplyFunctionHPAV2Beta2(ctx, function, isNewGeneration)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			} else if r.GroupVersionFlags != nil && r.GroupVersionFlags.APIAutoscalingGroupVersion == utils.GroupVersionV2 {
+				err = r.ApplyFunctionHPA(ctx, function, isNewGeneration)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			}
+		}
+		if condition, ok := function.Status.Conditions[v1alpha1.VPA]; ok && shouldApplyPausedResourceAction(condition.Action) {
+			err = r.ApplyFunctionVPA(ctx, function)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		err = r.ApplyFunctionCleanUpJob(ctx, function)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		return ctrl.Result{}, nil
 	}
 
 	err = r.ApplyFunctionStatefulSet(ctx, function, isNewGeneration)
