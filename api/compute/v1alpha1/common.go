@@ -229,6 +229,12 @@ type PodPolicy struct {
 	Liveness *Liveness `json:"liveness,omitempty"`
 
 	DisableDefaultAffinity bool `json:"disableDefaultAffinity,omitempty"`
+
+	// TopologySpreadConstraints describes how a group of pods ought to spread across topology
+	// domains. Scheduler will schedule pods in a way which abides by the constraints.
+	// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+	// +optional
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
 type Runtime struct {
