@@ -104,7 +104,8 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
-	probe := MakeLivenessProbe(sink.Spec.Pod.Liveness)
+	livenessProbe := MakeLivenessProbe(sink.Spec.Pod.Liveness)
+	startupProbe := sink.Spec.Pod.StartupProbe.DeepCopy()
 	allowPrivilegeEscalation := false
 	mounts := makeSinkVolumeMounts(sink, sink.Spec.Pulsar.AuthConfig)
 	mounts = AppendPackageServiceVolumeMounts(mounts, sink.Spec.PulsarPackageService)
@@ -128,7 +129,8 @@ func makeSinkContainer(sink *v1alpha1.Sink) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         envFrom,
 		VolumeMounts:    mounts,
-		LivenessProbe:   probe,
+		LivenessProbe:   livenessProbe,
+		StartupProbe:    startupProbe,
 		SecurityContext: &corev1.SecurityContext{
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{"ALL"},
@@ -165,6 +167,7 @@ func MakeSinkCleanUpJob(sink *v1alpha1.Sink) *v1.Job {
 	container := makeSinkContainer(sink)
 	container.Name = CleanupContainerName
 	container.LivenessProbe = nil
+	container.StartupProbe = nil
 	authConfig := sink.Spec.Pulsar.CleanupAuthConfig
 	if authConfig == nil {
 		authConfig = sink.Spec.Pulsar.AuthConfig
