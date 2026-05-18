@@ -519,9 +519,15 @@ func PatchStatefulSet(ctx context.Context, cli client.Client, namespace string, 
 		// configs which only work for the workload container
 		switch container.Name {
 		case FunctionContainerName, SinkContainerName, SourceContainerName:
-			// set liveness probe if it's not set
-			if container.LivenessProbe == nil && podPolicy != nil && podPolicy.Liveness != nil {
-				container.LivenessProbe = MakeLivenessProbe(podPolicy.Liveness)
+			if podPolicy != nil {
+				// set liveness probe if it's not set
+				if container.LivenessProbe == nil && podPolicy.Liveness != nil {
+					container.LivenessProbe = MakeLivenessProbe(podPolicy.Liveness)
+				}
+				// set startup probe if it's not set
+				if container.StartupProbe == nil && podPolicy.StartupProbe != nil {
+					container.StartupProbe = podPolicy.StartupProbe.DeepCopy()
+				}
 			}
 		default:
 			// No action needed for other containers
@@ -578,6 +584,9 @@ func mergePodPolicy(sourcePolicy *v1alpha1.PodPolicy, targetPolicy *v1alpha1.Pod
 	}
 	if targetPolicy.Liveness != nil {
 		sourcePolicy.Liveness = targetPolicy.Liveness
+	}
+	if targetPolicy.StartupProbe != nil {
+		sourcePolicy.StartupProbe = targetPolicy.StartupProbe
 	}
 	return sourcePolicy
 }
@@ -2484,6 +2493,7 @@ func CheckIfStatefulSetSpecIsEqual(spec *appsv1.StatefulSetSpec, desiredSpec *ap
 					container.Image != desiredContainer.Image ||
 					container.ImagePullPolicy != desiredContainer.ImagePullPolicy ||
 					!reflect.DeepEqual(container.LivenessProbe, desiredContainer.LivenessProbe) ||
+					!reflect.DeepEqual(container.StartupProbe, desiredContainer.StartupProbe) ||
 					!reflect.DeepEqual(ports, desiredPorts) ||
 					!reflect.DeepEqual(containerEnvFrom, desiredContainerEnvFrom) ||
 					!reflect.DeepEqual(container.Resources, desiredContainer.Resources) {

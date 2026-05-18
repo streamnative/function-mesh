@@ -228,6 +228,10 @@ type PodPolicy struct {
 
 	Liveness *Liveness `json:"liveness,omitempty"`
 
+	// StartupProbe specifies the startup probe for the main function container.
+	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+	StartupProbe *corev1.Probe `json:"startupProbe,omitempty"`
+
 	DisableDefaultAffinity bool `json:"disableDefaultAffinity,omitempty"`
 }
 

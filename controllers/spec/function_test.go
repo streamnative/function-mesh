@@ -32,6 +32,7 @@ import (
 
 	"gotest.tools/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestCreateFunctionDetailsForStatefulFunction(t *testing.T) {
@@ -107,6 +108,113 @@ func makeFunctionSamplePackageURL(functionName string) *v1alpha1.Function {
 	f.Spec.Java.JarLocation = "function://public/default/java-function"
 	f.Spec.Java.Jar = "/tmp/java-function.jar"
 	return f
+}
+
+func makeSinkSample(sinkName string) *v1alpha1.Sink {
+	replicas := int32(1)
+	trueVal := true
+	return &v1alpha1.Sink{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Sink",
+			APIVersion: "compute.functionmesh.io/v1alpha1",
+		},
+		ObjectMeta: *makeSampleObjectMeta(sinkName),
+		Spec: v1alpha1.SinkSpec{
+			Name:        sinkName,
+			ClassName:   "org.apache.pulsar.io.elasticsearch.ElasticSearchSink",
+			Tenant:      "public",
+			Namespace:   "default",
+			ClusterName: TestClusterName,
+			Input: v1alpha1.InputConf{
+				Topics: []string{
+					"persistent://public/default/input",
+				},
+				TypeClassName: "java.lang.String",
+			},
+			Replicas: &replicas,
+			AutoAck:  &trueVal,
+			Messaging: v1alpha1.Messaging{
+				Pulsar: &v1alpha1.PulsarMessaging{
+					PulsarConfig: TestClusterName,
+				},
+			},
+			Runtime: v1alpha1.Runtime{
+				Java: &v1alpha1.JavaRuntime{
+					Jar: "connectors/pulsar-io-elastic-search.nar",
+				},
+			},
+		},
+	}
+}
+
+func makeSourceSample(sourceName string) *v1alpha1.Source {
+	replicas := int32(1)
+	return &v1alpha1.Source{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Source",
+			APIVersion: "compute.functionmesh.io/v1alpha1",
+		},
+		ObjectMeta: *makeSampleObjectMeta(sourceName),
+		Spec: v1alpha1.SourceSpec{
+			Name:        sourceName,
+			ClassName:   "org.apache.pulsar.io.datagenerator.DataGeneratorSource",
+			Tenant:      "public",
+			Namespace:   "default",
+			ClusterName: TestClusterName,
+			Output: v1alpha1.OutputConf{
+				Topic:         "persistent://public/default/output",
+				TypeClassName: "java.lang.String",
+			},
+			Replicas: &replicas,
+			Messaging: v1alpha1.Messaging{
+				Pulsar: &v1alpha1.PulsarMessaging{
+					PulsarConfig: TestClusterName,
+				},
+			},
+			Runtime: v1alpha1.Runtime{
+				Java: &v1alpha1.JavaRuntime{
+					Jar: "connectors/pulsar-io-data-generator.nar",
+				},
+			},
+		},
+	}
+}
+
+func TestStartupProbeOnFunctionSinkSourceContainers(t *testing.T) {
+	probe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/healthz",
+				Port: intstr.FromInt32(MetricsPort.ContainerPort),
+			},
+		},
+		PeriodSeconds:    10,
+		FailureThreshold: 30,
+	}
+
+	function := makeFunctionSample("startup-function")
+	function.Spec.Pod.StartupProbe = probe
+	functionContainer := makeFunctionContainer(function)
+	assert.DeepEqual(t, functionContainer.StartupProbe, probe)
+	functionCleanup := MakeFunctionCleanUpJob(function)
+	assert.Assert(t, functionCleanup.Spec.Template.Spec.Containers[0].StartupProbe == nil,
+		"cleanup job should not inherit startup probe")
+
+	sink := makeSinkSample("startup-sink")
+	sink.Spec.Pod.StartupProbe = probe
+	sinkContainer := makeSinkContainer(sink)
+	assert.DeepEqual(t, sinkContainer.StartupProbe, probe)
+	sinkCleanup := MakeSinkCleanUpJob(sink)
+	assert.Assert(t, sinkCleanup.Spec.Template.Spec.Containers[0].StartupProbe == nil,
+		"cleanup job should not inherit startup probe")
+
+	source := makeSourceSample("startup-source")
+	source.Spec.Pod.StartupProbe = probe
+	sourceContainer := makeSourceContainer(source)
+	assert.DeepEqual(t, sourceContainer.StartupProbe, probe)
+	sourceCleanup := MakeSourceCleanUpJob(source)
+	assert.Assert(t, sourceCleanup.Spec.Template.Spec.Containers[0].StartupProbe == nil,
+		"cleanup job should not inherit startup probe")
 }
 
 func TestInitContainerDownloader(t *testing.T) {

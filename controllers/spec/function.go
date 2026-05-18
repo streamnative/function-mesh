@@ -109,6 +109,7 @@ func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
 	container := makeFunctionContainer(function)
 	container.Name = CleanupContainerName
 	container.LivenessProbe = nil
+	container.StartupProbe = nil
 	authConfig := function.Spec.Pulsar.CleanupAuthConfig
 	if authConfig == nil {
 		authConfig = function.Spec.Pulsar.AuthConfig
@@ -174,7 +175,8 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	if imagePullPolicy == "" {
 		imagePullPolicy = corev1.PullIfNotPresent
 	}
-	probe := MakeLivenessProbe(function.Spec.Pod.Liveness)
+	livenessProbe := MakeLivenessProbe(function.Spec.Pod.Liveness)
+	startupProbe := function.Spec.Pod.StartupProbe.DeepCopy()
 	allowPrivilegeEscalation := false
 	mounts := makeFunctionVolumeMounts(function, function.Spec.Pulsar.AuthConfig)
 	mounts = AppendPackageServiceVolumeMounts(mounts, function.Spec.PulsarPackageService)
@@ -199,7 +201,8 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         envFrom,
 		VolumeMounts:    mounts,
-		LivenessProbe:   probe,
+		LivenessProbe:   livenessProbe,
+		StartupProbe:    startupProbe,
 		SecurityContext: &corev1.SecurityContext{
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{"ALL"},
