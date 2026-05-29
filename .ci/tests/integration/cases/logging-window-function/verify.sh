@@ -113,8 +113,16 @@ for attempt in $(seq 1 30); do
 done
 
 if [ "$verify_log_result" -eq 15 ]; then
-  sub_name=$(echo $RANDOM | md5sum | head -c 20; echo;)
-  verify_log_topic_result=$(kubectl exec -n ${PULSAR_NAMESPACE} ${PULSAR_RELEASE_NAME}-pulsar-broker-0 -- bin/pulsar-client consume -n 15 -s $sub_name --subscription-position Earliest "${log_topic}" | grep  -e "-window-log" | wc -l)
+  verify_log_topic_result=0
+  for attempt in $(seq 1 20); do
+    sub_name=$(echo "${RANDOM}-${attempt}" | md5sum | head -c 20; echo;)
+    verify_log_topic_result=$(timeout 8s kubectl exec -n "${PULSAR_NAMESPACE}" "${PULSAR_RELEASE_NAME}"-pulsar-broker-0 -- bin/pulsar-client consume -n 15 -s "${sub_name}" --subscription-position Earliest "${log_topic}" 2>/dev/null | grep  -e "-window-log" | wc -l)
+    if [ "$verify_log_topic_result" -eq 15 ]; then
+      break
+    fi
+    sleep 2
+  done
+
   if [ "$verify_log_topic_result" -eq 15 ]; then
     echo "e2e-test: ok" | yq eval -
   else
