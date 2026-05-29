@@ -348,10 +348,19 @@ function ci::verify_backlog() {
     topic=$1
     sub=$2
     expected=$3
-    BACKLOG=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats $topic | grep msgBacklog)
-    if [[ "$BACKLOG" == *"\"msgBacklog\" : $expected"* ]]; then
-       return 0
-    fi
+    for attempt in $(seq 1 30); do
+        if BACKLOG=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats "$topic" 2>&1); then
+            true
+        elif BACKLOG=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats "${topic}-partition-0" 2>&1); then
+            true
+        fi
+        if [[ "$BACKLOG" == *"\"msgBacklog\" : $expected"* ]]; then
+           return 0
+        fi
+        echo "Backlog for ${topic} subscription ${sub} is not ${expected}, retry ${attempt}/30"
+        echo "$BACKLOG"
+        sleep 2
+    done
     return 1
 }
 
