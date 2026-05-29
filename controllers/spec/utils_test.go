@@ -18,6 +18,7 @@
 package spec
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/streamnative/function-mesh/api/compute/v1alpha1"
@@ -148,6 +149,60 @@ func TestGenerateFunctionOutputSpecWithConnector(t *testing.T) {
 	assert.Equal(t, "kafka", sinkSpec.Builtin)
 	assert.Equal(t, "org.apache.pulsar.io.kafka.KafkaSink", sinkSpec.ClassName)
 	assert.Equal(t, `{"bootstrapServers":"kafka:9092","sinkType":"kafka","topic":"kafka-output"}`, sinkSpec.Configs)
+}
+
+func TestConvertFunctionDetailsWithKafkaConfig(t *testing.T) {
+	function := makeFunctionSample("generic-kafka")
+	function.Spec.Runtime = v1alpha1.Runtime{
+		GenericRuntime: &v1alpha1.GenericRuntime{
+			FunctionFile: "/pulsar/function.py",
+			Language:     "python",
+		},
+	}
+	function.Spec.Input = v1alpha1.InputConf{
+		Topics: []string{"orders"},
+	}
+	function.Spec.Output = v1alpha1.OutputConf{
+		Topic: "enriched-orders",
+	}
+	function.Spec.Kafka = &v1alpha1.KafkaMessaging{
+		BootstrapServers: "kafka:9092",
+		ConsumerConfig: &v1alpha1.Config{
+			Data: map[string]interface{}{
+				"auto.offset.reset": "earliest",
+			},
+		},
+		ProducerConfig: &v1alpha1.Config{
+			Data: map[string]interface{}{
+				"linger.ms": 5,
+			},
+		},
+		InputSchemaConfigs: map[string]v1alpha1.KafkaSchemaConfig{
+			"orders": {
+				Type: stringPtr("json"),
+			},
+		},
+		OutputSchemaConfig: &v1alpha1.KafkaSchemaConfig{
+			Type: stringPtr("json"),
+		},
+	}
+
+	details := convertFunctionDetails(function)
+	userConfig := map[string]interface{}{}
+	assert.NoError(t, json.Unmarshal([]byte(details.UserConfig), &userConfig))
+	kafkaConfig := userConfig["_kafka_config"].(map[string]interface{})
+	assert.Equal(t, "kafka", kafkaConfig["messaging_type"])
+	assert.Equal(t, "kafka:9092", kafkaConfig["consumer_config"].(map[string]interface{})["bootstrap.servers"])
+	assert.Equal(t, "PLAINTEXT", kafkaConfig["consumer_config"].(map[string]interface{})["security.protocol"])
+	assert.Equal(t, "earliest", kafkaConfig["consumer_config"].(map[string]interface{})["auto.offset.reset"])
+	assert.Equal(t, "kafka:9092", kafkaConfig["producer_config"].(map[string]interface{})["bootstrap.servers"])
+	assert.Equal(t, float64(5), kafkaConfig["producer_config"].(map[string]interface{})["linger.ms"])
+	assert.Equal(t, "json", kafkaConfig["input_specs"].(map[string]interface{})["orders"].(map[string]interface{})["kafka_schema"].(map[string]interface{})["type"])
+	assert.Equal(t, "json", kafkaConfig["output_specs"].(map[string]interface{})["enriched-orders"].(map[string]interface{})["kafka_schema"].(map[string]interface{})["type"])
+}
+
+func stringPtr(value string) *string {
+	return &value
 }
 
 func TestBuildSourceConnectorDetailsFromConfig(t *testing.T) {

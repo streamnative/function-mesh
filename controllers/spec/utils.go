@@ -79,16 +79,32 @@ func convertFunctionDetails(function *v1alpha1.Function) *proto.FunctionDetails 
 }
 
 func generateFunctionConfig(function *v1alpha1.Function) *v1alpha1.Config {
+	var config *v1alpha1.Config
+	if function.Spec.FuncConfig != nil {
+		data := make(map[string]interface{}, len(function.Spec.FuncConfig.Data)+1)
+		for key, value := range function.Spec.FuncConfig.Data {
+			data[key] = value
+		}
+		config = &v1alpha1.Config{Data: data}
+	}
 	if function.Spec.WindowConfig != nil {
-		if function.Spec.FuncConfig == nil {
-			function.Spec.FuncConfig = &v1alpha1.Config{
+		if config == nil {
+			config = &v1alpha1.Config{
 				Data: map[string]interface{}{},
 			}
 		}
 		function.Spec.WindowConfig.ActualWindowFunctionClassName = function.Spec.ClassName
-		function.Spec.FuncConfig.Data[WindowFunctionConfigKeyName] = *function.Spec.WindowConfig
+		config.Data[WindowFunctionConfigKeyName] = *function.Spec.WindowConfig
 	}
-	return function.Spec.FuncConfig
+	if kafkaConfig := makeKafkaConfig(function); kafkaConfig != nil {
+		if config == nil {
+			config = &v1alpha1.Config{
+				Data: map[string]interface{}{},
+			}
+		}
+		config.Data["_kafka_config"] = kafkaConfig
+	}
+	return config
 }
 
 func fetchClassName(function *v1alpha1.Function) string {
@@ -154,6 +170,166 @@ func addConfigEntries(dst map[string]interface{}, value interface{}) {
 			dst[key] = v
 		}
 	}
+}
+
+func addConfigData(dst map[string]interface{}, config *v1alpha1.Config) {
+	if config == nil {
+		return
+	}
+	for key, value := range config.Data {
+		if key == "" || value == nil {
+			continue
+		}
+		dst[key] = value
+	}
+}
+
+func makeKafkaConfig(function *v1alpha1.Function) map[string]interface{} {
+	kafka := function.Spec.Kafka
+	if kafka == nil {
+		return nil
+	}
+	consumerConfig := map[string]interface{}{
+		"bootstrap.servers": kafka.BootstrapServers,
+		"security.protocol": kafkaSecurityProtocol(kafka),
+	}
+	addConfigData(consumerConfig, kafka.ConsumerConfig)
+
+	producerConfig := map[string]interface{}{
+		"bootstrap.servers": kafka.BootstrapServers,
+		"security.protocol": kafkaSecurityProtocol(kafka),
+	}
+	addConfigData(producerConfig, kafka.ProducerConfig)
+
+	return map[string]interface{}{
+		"messaging_type":  "kafka",
+		"consumer_config": consumerConfig,
+		"producer_config": producerConfig,
+		"input_specs":     makeKafkaInputSpecs(function),
+		"output_specs":    makeKafkaOutputSpecs(function),
+	}
+}
+
+func kafkaSecurityProtocol(kafka *v1alpha1.KafkaMessaging) string {
+	tlsEnabled := kafka != nil && kafka.TLSConfig != nil && kafka.TLSConfig.IsEnabled()
+	authEnabled := kafka != nil && kafkaAuthEnabled(kafka.AuthConfig)
+	switch {
+	case tlsEnabled && authEnabled:
+		return "SASL_SSL"
+	case tlsEnabled:
+		return "SSL"
+	case authEnabled:
+		return "SASL_PLAINTEXT"
+	default:
+		return "PLAINTEXT"
+	}
+}
+
+func kafkaAuthEnabled(auth *v1alpha1.KafkaAuthConfig) bool {
+	return auth != nil && (auth.OAuth2Config != nil ||
+		auth.GenericAuth != nil ||
+		auth.PlainAuthConfig != nil)
+}
+
+func makeKafkaInputSpecs(function *v1alpha1.Function) map[string]interface{} {
+	kafka := function.Spec.Kafka
+	if kafka == nil {
+		return nil
+	}
+	inputSpecs := map[string]interface{}{}
+	for _, topic := range function.Spec.Input.Topics {
+		inputSpecs[topic] = makeKafkaInputSpec(function, topic, false)
+	}
+	if function.Spec.Input.TopicPattern != "" {
+		inputSpecs[kafkaTopicPattern(function.Spec.Input.TopicPattern)] = makeKafkaInputSpec(function, function.Spec.Input.TopicPattern, true)
+	}
+	for topic, conf := range function.Spec.Input.SourceSpecs {
+		inputSpecs[kafkaInputSpecKey(function, topic)] = makeKafkaInputSpecFromConsumerConfig(function, topic, conf)
+	}
+	for topic, schemaConfig := range kafka.InputSchemaConfigs {
+		key := kafkaInputSpecKey(function, topic)
+		spec, ok := inputSpecs[key].(map[string]interface{})
+		if !ok {
+			spec = map[string]interface{}{}
+			inputSpecs[key] = spec
+		}
+		spec["kafka_schema"] = makeKafkaSchema(function.Spec.Input.SourceSpecs[topic].SchemaType, &schemaConfig)
+	}
+	return inputSpecs
+}
+
+func makeKafkaInputSpec(function *v1alpha1.Function, topic string, isRegex bool) map[string]interface{} {
+	schemaType := function.Spec.Input.TypeClassName
+	if schemaConf, ok := function.Spec.Input.SourceSpecs[topic]; ok && schemaConf.SchemaType != "" {
+		schemaType = schemaConf.SchemaType
+	}
+	return map[string]interface{}{
+		"is_regex_pattern": isRegex,
+		"kafka_schema":     makeKafkaSchema(schemaType, nil),
+	}
+}
+
+func makeKafkaInputSpecFromConsumerConfig(function *v1alpha1.Function, topic string, conf v1alpha1.ConsumerConfig) map[string]interface{} {
+	return map[string]interface{}{
+		"is_regex_pattern": conf.IsRegexPattern,
+		"kafka_schema":     makeKafkaSchema(conf.SchemaType, kafkaInputSchemaConfig(function, topic)),
+	}
+}
+
+func makeKafkaOutputSpecs(function *v1alpha1.Function) map[string]interface{} {
+	if function.Spec.Kafka == nil || function.Spec.Output.Topic == "" {
+		return nil
+	}
+	return map[string]interface{}{
+		function.Spec.Output.Topic: map[string]interface{}{
+			"kafka_schema": makeKafkaSchema(function.Spec.Output.SinkSchemaType, function.Spec.Kafka.OutputSchemaConfig),
+		},
+	}
+}
+
+func makeKafkaSchema(defaultType string, schemaConfig *v1alpha1.KafkaSchemaConfig) map[string]interface{} {
+	schemaType := defaultType
+	if schemaType == "" {
+		schemaType = "bytes"
+	}
+	schema := map[string]interface{}{"type": schemaType}
+	if schemaConfig == nil {
+		return schema
+	}
+	if schemaConfig.Subject != nil {
+		schema["subject"] = *schemaConfig.Subject
+	}
+	if schemaConfig.Type != nil {
+		schema["type"] = *schemaConfig.Type
+	}
+	if schemaConfig.Version != nil {
+		schema["version"] = *schemaConfig.Version
+	}
+	return schema
+}
+
+func kafkaInputSchemaConfig(function *v1alpha1.Function, topic string) *v1alpha1.KafkaSchemaConfig {
+	if function.Spec.Kafka == nil {
+		return nil
+	}
+	if schemaConfig, ok := function.Spec.Kafka.InputSchemaConfigs[topic]; ok {
+		return &schemaConfig
+	}
+	return nil
+}
+
+func kafkaInputSpecKey(function *v1alpha1.Function, topic string) string {
+	if function.Spec.Input.TopicPattern != "" && topic == function.Spec.Input.TopicPattern {
+		return kafkaTopicPattern(topic)
+	}
+	return topic
+}
+
+func kafkaTopicPattern(pattern string) string {
+	if strings.HasPrefix(pattern, "^") {
+		return pattern
+	}
+	return "^" + pattern
 }
 
 func extractConnectorConfigs(config *v1alpha1.Config, reservedKeys map[string]struct{}) map[string]interface{} {

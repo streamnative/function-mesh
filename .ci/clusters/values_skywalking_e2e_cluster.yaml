@@ -113,6 +113,10 @@ broker:
     ## Enable `autoSkipNonRecoverableData` since bookkeeper is running
     ## without persistence
     autoSkipNonRecoverableData: "true"
+    messagingProtocols: "kafka"
+    protocolHandlerDirectory: "./protocols"
+    kafkaListeners: "PLAINTEXT://0.0.0.0:9092"
+    kafkaAdvertisedListeners: "PLAINTEXT://sn-platform-pulsar-broker-0.sn-platform-pulsar-broker.default.svc.cluster.local:9092"
     # storage settings
     managedLedgerDefaultEnsembleSize: "1"
     managedLedgerDefaultWriteQuorum: "1"

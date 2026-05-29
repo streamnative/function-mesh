@@ -233,6 +233,10 @@ func (webhook *SinkWebhook) ValidateCreate(ctx context.Context, obj runtime.Obje
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)
 	}
+	fieldErr = validateKafkaMessagingUnsupported("sink", &r.Spec.Messaging)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
 	fieldErr = validatePulsarPackageService(r.Spec.PulsarPackageService)
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)
@@ -255,10 +259,15 @@ func (webhook *SinkWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj r
 		return nil, fmt.Errorf("expected Kind %q got %q", sinkKind, req.Kind.Kind)
 	}
 
-	r := oldObj.(*v1alpha1.Sink) //nolint:ifshort
+	r := newObj.(*v1alpha1.Sink) //nolint:ifshort
 	sinklog.Info("validate update", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
+	fieldErr := validateKafkaMessagingUnsupported("sink", &r.Spec.Messaging)
+	if fieldErr != nil {
+		return nil, apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "SinkWebhook"},
+			r.Name, field.ErrorList{fieldErr})
+	}
+
 	return nil, nil
 }
 

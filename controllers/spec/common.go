@@ -81,6 +81,8 @@ const (
 	PackageServiceEnvPrefix = "PACKAGE_"
 	PackageOAuth2MountPath  = "/etc/oauth2-package-service"
 	PackageTLSMountPath     = "/etc/tls/pulsar-functions-package-service"
+	KafkaAuthUsernameEnv    = "KAFKA_AUTH_USERNAME"
+	KafkaAuthPasswordEnv    = "KAFKA_AUTH_PASSWORD"
 
 	CleanupContainerName = "cleanup"
 
@@ -743,10 +745,10 @@ func MakeGoFunctionCommand(downloadPath, goExecFilePath string, function *v1alph
 
 func MakeGenericFunctionCommand(downloadPath, functionFile, language, clusterName, details, uid string, downloadConfig DownloadServiceConfig, authProvided, tlsProvided bool, secretMaps map[string]v1alpha1.SecretRef,
 	state *v1alpha1.Stateful,
-	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, messagingServiceType string, clientAuthArgs []string) []string {
 	processCommand := setShardIDEnvironmentVariableCommand() + " && " +
 		strings.Join(getProcessGenericRuntimeArgs(language, functionFile, clusterName,
-			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig), " ")
+			details, uid, authProvided, tlsProvided, secretMaps, state, tlsConfig, authConfig, messagingServiceType, clientAuthArgs), " ")
 	if downloadPath != "" && !utils.EnableInitContainers {
 		// prepend download command if the downPath is provided
 		downloadCommand := strings.Join(GetDownloadCommandWithEnv(downloadPath, functionFile, true, true,
@@ -1591,7 +1593,7 @@ func getProcessPythonRuntimeArgs(name, packageName, clusterName, details, uid st
 
 func getProcessGenericRuntimeArgs(language, functionFile, clusterName, details, uid string, authProvided, tlsProvided bool,
 	secretMaps map[string]v1alpha1.SecretRef, state *v1alpha1.Stateful, tlsConfig TLSConfig,
-	authConfig *v1alpha1.AuthConfig) []string {
+	authConfig *v1alpha1.AuthConfig, messagingServiceType string, clientAuthArgs []string) []string {
 
 	args := []string{
 		"exec",
@@ -1601,8 +1603,16 @@ func getProcessGenericRuntimeArgs(language, functionFile, clusterName, details, 
 		"--language",
 		language,
 	}
-	sharedArgs := getSharedArgs(details, clusterName, uid, authProvided, tlsProvided, tlsConfig, authConfig)
+	pulsarServiceURL := "$brokerServiceURL"
+	if messagingServiceType == "kafka" {
+		pulsarServiceURL = shellQuoteLiteral("")
+	}
+	sharedArgs := getSharedArgsWithClientAuth(details, clusterName, uid, pulsarServiceURL,
+		authProvided, tlsProvided, tlsConfig, authConfig, clientAuthArgs)
 	args = append(args, sharedArgs...)
+	if messagingServiceType != "" {
+		args = append(args, "--messaging_service_type", messagingServiceType)
+	}
 	if len(secretMaps) > 0 {
 		secretProviderArgs := getGenericSecretProviderArgs(secretMaps, language)
 		args = append(args, secretProviderArgs...)
@@ -1620,6 +1630,12 @@ func getProcessGenericRuntimeArgs(language, functionFile, clusterName, details, 
 // This method is suitable for Java and Python runtime, not include Go runtime.
 func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvided bool,
 	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig) []string {
+	return getSharedArgsWithClientAuth(details, clusterName, uid, "$brokerServiceURL",
+		authProvided, tlsProvided, tlsConfig, authConfig, nil)
+}
+
+func getSharedArgsWithClientAuth(details, clusterName, uid, pulsarServiceURL string, authProvided bool, tlsProvided bool,
+	tlsConfig TLSConfig, authConfig *v1alpha1.AuthConfig, clientAuthArgs []string) []string {
 	args := []string{
 		"--instance_id",
 		"${" + EnvShardID + "}",
@@ -1630,7 +1646,7 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 		"--function_details",
 		shellQuoteLiteral(details), // in json format
 		"--pulsar_serviceurl",
-		"$brokerServiceURL",
+		pulsarServiceURL,
 		"--max_buffered_tuples",
 		"100", // TODO
 		"--port",
@@ -1643,7 +1659,9 @@ func getSharedArgs(details, clusterName, uid string, authProvided bool, tlsProvi
 		clusterName,
 	}
 
-	if authConfig != nil {
+	if len(clientAuthArgs) > 0 {
+		args = append(args, clientAuthArgs...)
+	} else if authConfig != nil {
 		if authConfig.OAuth2Config != nil {
 			args = append(args, []string{
 				"--client_auth_plugin",

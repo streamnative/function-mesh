@@ -223,6 +223,10 @@ func (webhook *SourceWebhook) ValidateCreate(ctx context.Context, obj runtime.Ob
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)
 	}
+	fieldErr = validateKafkaMessagingUnsupported("source", &r.Spec.Messaging)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
 	fieldErr = validatePulsarPackageService(r.Spec.PulsarPackageService)
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)
@@ -245,10 +249,15 @@ func (webhook *SourceWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj
 		return nil, fmt.Errorf("expected Kind %q got %q", sourceKind, req.Kind.Kind)
 	}
 
-	r := oldObj.(*v1alpha1.Source) //nolint:ifshort
+	r := newObj.(*v1alpha1.Source) //nolint:ifshort
 	sourcelog.Info("validate update", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
+	fieldErr := validateKafkaMessagingUnsupported("source", &r.Spec.Messaging)
+	if fieldErr != nil {
+		return nil, apierrors.NewInvalid(schema.GroupKind{Group: "compute.functionmesh.io", Kind: "SourceWebhook"},
+			r.Name, field.ErrorList{fieldErr})
+	}
+
 	return nil, nil
 }
 

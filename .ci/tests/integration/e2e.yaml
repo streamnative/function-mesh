@@ -8,6 +8,10 @@ setup:
         chmod +x images/build.sh images/samples/build.sh
         PULSAR_IMAGE_TAG=3.2.2.1 PULSAR_IMAGE=streamnative/sn-platform PYTHON_VERSION=3.12 KIND_PUSH=true images/build.sh
         PULSAR_IMAGE_TAG=3.2.2.1 KIND_PUSH=true images/samples/build.sh
+        GENERIC_RUNTIME_HOME=${GENERIC_RUNTIME_HOME:-/Users/pengcheng/CLionProjects/pulsar-functions-generic-runtime}
+        if [ -d "${GENERIC_RUNTIME_HOME}" ]; then
+          (cd "${GENERIC_RUNTIME_HOME}" && KIND_PUSH=true RUNNER_TAG=latest images/build.sh)
+        fi
 
     - name: install helm
       command: |
@@ -132,6 +136,8 @@ verify:
     - query: timeout 5m bash .ci/tests/integration/cases/python-stateful-function/verify.sh
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/java-function/verify.sh
+      expected: expected.data.yaml
+    - query: timeout 5m bash .ci/tests/integration/cases/generic-kafka-function/verify.sh
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/quoted-function-details/verify.sh
       expected: expected.data.yaml
