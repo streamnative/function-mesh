@@ -43,8 +43,8 @@ input_message="test-message-${RANDOM}-$(date +%s)"
 output_message="${input_message}!"
 
 kubectl apply -f "${kafka_client_file}" > /dev/null 2>&1
-kubectl wait pod kafka-client --for=condition=Ready --timeout=2m || {
-  kubectl get pod kafka-client -o yaml || true
+kubectl wait pod kafka-client --for=condition=Ready --timeout=2m > /dev/null || {
+  kubectl get pod kafka-client -o yaml >&2 || true
   kubectl delete -f "${kafka_client_file}" > /dev/null 2>&1 || true
   exit 1
 }
@@ -56,9 +56,9 @@ ci::wait_kafka_topic_ready "${output_topic}" "${kafka_bootstrap_server}" "${kafk
 ci::wait_kafka_group_coordinator_ready "${consumer_group}" "${kafka_bootstrap_server}" "${kafka_properties_file}" > /dev/null 2>&1
 kubectl apply -f "${manifests_file}" > /dev/null 2>&1
 
-kubectl wait -l compute.functionmesh.io/name=generic-kafka-function --for=condition=Ready pod --timeout=2m || {
-  kubectl get pods -l compute.functionmesh.io/name=generic-kafka-function
-  kubectl logs -l compute.functionmesh.io/name=generic-kafka-function --tail=100 || true
+kubectl wait -l compute.functionmesh.io/name=generic-kafka-function --for=condition=Ready pod --timeout=2m > /dev/null || {
+  kubectl get pods -l compute.functionmesh.io/name=generic-kafka-function >&2
+  kubectl logs -l compute.functionmesh.io/name=generic-kafka-function --tail=100 >&2 || true
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   kubectl delete -f "${kafka_client_file}" > /dev/null 2>&1 || true
   exit 1
@@ -74,8 +74,8 @@ set -e
 if [ ${verify_status} -eq 0 ]; then
   echo "e2e-test: ok" | yq eval -
 else
-  echo "$verify_result"
-  kubectl logs -l compute.functionmesh.io/name=generic-kafka-function --tail=100 || true
+  echo "failed to verify: $verify_result" >&2
+  kubectl logs -l compute.functionmesh.io/name=generic-kafka-function --tail=100 >&2 || true
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   kubectl delete -f "${kafka_client_file}" > /dev/null 2>&1 || true
   exit 1
