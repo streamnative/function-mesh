@@ -32,7 +32,7 @@ spec:
     outputSchemaConfig:
       type: string
   genericRuntime:
-    functionFile: /pulsar/functions/exclamation_function.py
+    functionFile: exclamation_function.py
     functionFileLocation: function://public/default/test-py-function
     language: python
   pulsarPackageService:

@@ -64,7 +64,7 @@ zookeeper:
       cpu: 50m
 
 bookkeeper:
-  replicaCount: 0
+  replicaCount: 1
   metadata:
     image:
       repository: streamnative/sn-platform
@@ -116,8 +116,10 @@ broker:
     autoSkipNonRecoverableData: "true"
     messagingProtocols: "kafka"
     protocolHandlerDirectory: "./protocols"
-    kafkaListeners: "PLAINTEXT://0.0.0.0:9092"
-    kafkaAdvertisedListeners: "PLAINTEXT://sn-platform-pulsar-broker-0.sn-platform-pulsar-broker.default.svc.cluster.local:9092"
+    PULSAR_PREFIX_kafkaListeners: "PLAINTEXT://0.0.0.0:9092"
+    PULSAR_PREFIX_kafkaAdvertisedListeners: "PLAINTEXT://sn-platform-pulsar-broker-0.sn-platform-pulsar-broker.default.svc.cluster.local:9092"
+    transactionCoordinatorEnabled: "true"
+    systemTopicEnabled: "true"
     # storage settings
     managedLedgerDefaultEnsembleSize: "1"
     managedLedgerDefaultWriteQuorum: "1"
