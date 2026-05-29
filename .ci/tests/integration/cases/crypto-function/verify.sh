@@ -56,29 +56,46 @@ function upload_string_schema() {
     sh "${input_topic}" > /dev/null
 }
 
+function wait_string_schema() {
+  for attempt in $(seq 1 30); do
+    if kubectl exec -n "${PULSAR_NAMESPACE}" "${PULSAR_RELEASE_NAME}"-pulsar-broker-0 -- \
+      bin/pulsar-admin schemas get "${input_topic}" > /dev/null 2>&1; then
+      return 0
+    fi
+    echo "Schema for ${input_topic} is not ready, retry ${attempt}/30" >&2
+    sleep 2
+  done
+  return 1
+}
+
 trap cleanup EXIT
 cleanup
 
 if ! create_topic_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::create_topic "${input_topic}" 2>&1); then
-  echo "$create_topic_result"
+  echo "$create_topic_result" >&2
   exit 1
 fi
 
 if ! upload_schema_result=$(upload_string_schema 2>&1); then
-  echo "$upload_schema_result"
+  echo "$upload_schema_result" >&2
+  exit 1
+fi
+
+if ! wait_schema_result=$(wait_string_schema 2>&1); then
+  echo "$wait_schema_result" >&2
   exit 1
 fi
 
 kubectl apply -f "${manifests_file}" > /dev/null 2>&1
 
 if ! verify_fm_result=$(ci::verify_function_mesh java-function-crypto-sample 2>&1); then
-  echo "$verify_fm_result"
+  echo "$verify_fm_result" >&2
   exit 1
 fi
 
 if verify_crypto_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_crypto_function 2>&1); then
   echo "e2e-test: ok" | yq eval -
 else
-  echo "$verify_crypto_result"
+  echo "$verify_crypto_result" >&2
   exit 1
 fi

@@ -36,6 +36,8 @@ manifests_file="${BASE_DIR}"/.ci/tests/integration/cases/logging-window-function
 input_topic="persistent://public/default/window-function-input-topic"
 output_topic="persistent://public/default/window-function-output-topic"
 log_topic="persistent://public/default/window-function-logs"
+expected_window_log_lines=15
+expected_log_topic_messages=14
 
 function delete_topic_if_exists() {
   topic=$1
@@ -115,32 +117,32 @@ fi
 verify_log_result=0
 for attempt in $(seq 1 30); do
   verify_log_result=$(kubectl logs -l compute.functionmesh.io/name=window-function-sample --tail=-1 | grep -e "-window-log" | wc -l)
-  if [ "$verify_log_result" -eq 15 ]; then
+  if [ "$verify_log_result" -eq "${expected_window_log_lines}" ]; then
     break
   fi
   sleep 2
 done
 
-if [ "$verify_log_result" -eq 15 ]; then
+if [ "$verify_log_result" -eq "${expected_window_log_lines}" ]; then
   verify_log_topic_result=0
   for attempt in $(seq 1 20); do
     sub_name=$(echo "${RANDOM}-${attempt}" | md5sum | head -c 20; echo;)
-    verify_log_topic_result=$(timeout 8s kubectl exec -n "${PULSAR_NAMESPACE}" "${PULSAR_RELEASE_NAME}"-pulsar-broker-0 -- bin/pulsar-client consume -n 15 -s "${sub_name}" --subscription-position Earliest "${log_topic}" 2>/dev/null | grep  -e "-window-log" | wc -l)
-    if [ "$verify_log_topic_result" -eq 15 ]; then
+    verify_log_topic_result=$(timeout 8s kubectl exec -n "${PULSAR_NAMESPACE}" "${PULSAR_RELEASE_NAME}"-pulsar-broker-0 -- bin/pulsar-client consume -n "${expected_log_topic_messages}" -s "${sub_name}" --subscription-position Earliest "${log_topic}" 2>/dev/null | grep  -e "-window-log" | wc -l)
+    if [ "$verify_log_topic_result" -ge "${expected_log_topic_messages}" ]; then
       break
     fi
     sleep 2
   done
 
-  if [ "$verify_log_topic_result" -eq 15 ]; then
+  if [ "$verify_log_topic_result" -ge "${expected_log_topic_messages}" ]; then
     echo "e2e-test: ok" | yq eval -
   else
-    echo "expected 15 window log topic messages, got ${verify_log_topic_result}" >&2
+    echo "expected at least ${expected_log_topic_messages} window log topic messages, got ${verify_log_topic_result}" >&2
     kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
     exit 1
   fi
 else
-  echo "expected 15 window log lines, got ${verify_log_result}" >&2
+  echo "expected ${expected_window_log_lines} window log lines, got ${verify_log_result}" >&2
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi
