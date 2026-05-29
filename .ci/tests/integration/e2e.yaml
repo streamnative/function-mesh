@@ -8,16 +8,6 @@ setup:
         chmod +x images/build.sh images/samples/build.sh
         PULSAR_IMAGE_TAG=3.2.2.1 PULSAR_IMAGE=streamnative/sn-platform PYTHON_VERSION=3.12 KIND_PUSH=true images/build.sh
         PULSAR_IMAGE_TAG=3.2.2.1 KIND_PUSH=true images/samples/build.sh
-        GENERIC_RUNTIME_REPO=${GENERIC_RUNTIME_REPO:-https://github.com/streamnative/pulsar-functions-generic-runtime.git}
-        GENERIC_RUNTIME_REF=${GENERIC_RUNTIME_REF:-fix_kafka_nack}
-        if [ -z "${GENERIC_RUNTIME_HOME:-}" ]; then
-          GENERIC_RUNTIME_HOME=/tmp/pulsar-functions-generic-runtime
-          rm -rf "${GENERIC_RUNTIME_HOME}"
-          git -c http.https://github.com/.extraheader= clone --depth 1 --branch "${GENERIC_RUNTIME_REF}" "${GENERIC_RUNTIME_REPO}" "${GENERIC_RUNTIME_HOME}"
-        elif [ ! -d "${GENERIC_RUNTIME_HOME}" ]; then
-          git -c http.https://github.com/.extraheader= clone --depth 1 --branch "${GENERIC_RUNTIME_REF}" "${GENERIC_RUNTIME_REPO}" "${GENERIC_RUNTIME_HOME}"
-        fi
-        (cd "${GENERIC_RUNTIME_HOME}" && KIND_PUSH=true RUNNER_TAG=latest images/build.sh)
 
     - name: install helm
       command: |

@@ -4,7 +4,7 @@ metadata:
   name: generic-kafka-function
   namespace: default
 spec:
-  image: pulsar-functions-generic-python-runner
+  image: streamnative/pulsar-functions-generic-python-runner:latest
   className: exclamation_function.ExclamationFunction
   forwardSourceMessageProperty: true
   replicas: 1
