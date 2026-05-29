@@ -38,6 +38,7 @@ kafka_bootstrap_server=sn-platform-pulsar-broker-0.sn-platform-pulsar-broker.def
 kafka_properties_file=kafka.properties
 input_topic=input-kafka-topic
 output_topic=output-kafka-topic
+consumer_group=generic-kafka-function-sub
 input_message="test-message-${RANDOM}-$(date +%s)"
 output_message="${input_message}!"
 
@@ -50,6 +51,9 @@ kubectl wait pod kafka-client --for=condition=Ready --timeout=2m || {
 
 ci::ensure_kafka_topic "${input_topic}" "${kafka_bootstrap_server}" "${kafka_properties_file}" > /dev/null 2>&1
 ci::ensure_kafka_topic "${output_topic}" "${kafka_bootstrap_server}" "${kafka_properties_file}" > /dev/null 2>&1
+ci::wait_kafka_topic_ready "${input_topic}" "${kafka_bootstrap_server}" "${kafka_properties_file}" > /dev/null 2>&1
+ci::wait_kafka_topic_ready "${output_topic}" "${kafka_bootstrap_server}" "${kafka_properties_file}" > /dev/null 2>&1
+ci::wait_kafka_group_coordinator_ready "${consumer_group}" "${kafka_bootstrap_server}" "${kafka_properties_file}" > /dev/null 2>&1
 kubectl apply -f "${manifests_file}" > /dev/null 2>&1
 
 kubectl wait -l compute.functionmesh.io/name=generic-kafka-function --for=condition=Ready pod --timeout=2m || {

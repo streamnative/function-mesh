@@ -394,7 +394,58 @@ function ci::ensure_kafka_topic() {
         --create \
         --if-not-exists \
         --topic "${topic}" \
+        --replication-factor 1 \
+        --partitions 1 \
         --command-config "/opt/bitnami/kafka/config/${properties_file}"
+}
+
+function ci::wait_kafka_topic_ready() {
+    topic=$1
+    kafka_bootstrap_server=$2
+    properties_file=$3
+    for attempt in $(seq 1 30); do
+        if kubectl exec -n ${NAMESPACE} kafka-client -- kafka-topics.sh \
+            --bootstrap-server "${kafka_bootstrap_server}" \
+            --describe \
+            --topic "${topic}" \
+            --command-config "/opt/bitnami/kafka/config/${properties_file}"; then
+            return 0
+        fi
+        echo "Kafka topic ${topic} is not ready, retry ${attempt}/30"
+        sleep 5
+    done
+    return 1
+}
+
+function ci::wait_kafka_group_coordinator_ready() {
+    consumer_group=$1
+    kafka_bootstrap_server=$2
+    properties_file=$3
+    output_file=$(mktemp)
+    for attempt in $(seq 1 30); do
+        if kubectl exec -n ${NAMESPACE} kafka-client -- kafka-consumer-groups.sh \
+            --bootstrap-server "${kafka_bootstrap_server}" \
+            --describe \
+            --group "${consumer_group}" \
+            --command-config "/opt/bitnami/kafka/config/${properties_file}" > "${output_file}" 2>&1; then
+            cat "${output_file}"
+            rm -f "${output_file}"
+            return 0
+        fi
+        cat "${output_file}"
+        if ! grep -q "CoordinatorLoadInProgress" "${output_file}"; then
+            if grep -Eiq "does not exist|not exist|not found|no active members" "${output_file}"; then
+                rm -f "${output_file}"
+                return 0
+            fi
+            rm -f "${output_file}"
+            return 1
+        fi
+        echo "Kafka consumer group coordinator for ${consumer_group} is loading, retry ${attempt}/30"
+        sleep 5
+    done
+    rm -f "${output_file}"
+    return 1
 }
 
 function ci::verify_kafka_exclamation_function() {
