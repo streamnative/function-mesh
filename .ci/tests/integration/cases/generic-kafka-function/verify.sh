@@ -48,8 +48,8 @@ kubectl wait pod kafka-client --for=condition=Ready --timeout=2m || {
   exit 1
 }
 
-ci::ensure_kafka_topic "${input_topic}" "${kafka_bootstrap_server}" "${kafka_properties_file}" > /dev/null 2>&1
-ci::ensure_kafka_topic "${output_topic}" "${kafka_bootstrap_server}" "${kafka_properties_file}" > /dev/null 2>&1
+ci::ensure_kafka_topic "${input_topic}" "${kafka_bootstrap_server}" "${kafka_properties_file}"
+ci::ensure_kafka_topic "${output_topic}" "${kafka_bootstrap_server}" "${kafka_properties_file}"
 kubectl apply -f "${manifests_file}" > /dev/null 2>&1
 
 kubectl wait -l compute.functionmesh.io/name=generic-kafka-function --for=condition=Ready pod --timeout=2m || {

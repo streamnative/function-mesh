@@ -31,6 +31,7 @@ components:
   pulsar_manager: false
   sql_worker: false
   proxy: false
+  kop: true
 
 ## disable monitoring stack
 monitoring:

@@ -375,12 +375,26 @@ function ci::ensure_kafka_topic() {
     topic=$1
     kafka_bootstrap_server=$2
     properties_file=$3
+    for attempt in $(seq 1 30); do
+        if kubectl exec -n ${NAMESPACE} kafka-client -- kafka-topics.sh \
+            --bootstrap-server "${kafka_bootstrap_server}" \
+            --command-config "/opt/bitnami/kafka/config/${properties_file}" \
+            --list > /dev/null 2>&1; then
+            break
+        fi
+        if [ "${attempt}" -eq 30 ]; then
+            echo "Kafka broker ${kafka_bootstrap_server} is not ready"
+            kubectl get pods -n ${NAMESPACE} -o wide || true
+            return 1
+        fi
+        sleep 5
+    done
     kubectl exec -n ${NAMESPACE} kafka-client -- kafka-topics.sh \
         --bootstrap-server "${kafka_bootstrap_server}" \
         --create \
         --if-not-exists \
         --topic "${topic}" \
-        --command-config "/opt/bitnami/kafka/config/${properties_file}" || true
+        --command-config "/opt/bitnami/kafka/config/${properties_file}"
 }
 
 function ci::verify_kafka_exclamation_function() {
