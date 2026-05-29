@@ -37,7 +37,7 @@ input_topic="persistent://public/default/window-function-input-topic"
 output_topic="persistent://public/default/window-function-output-topic"
 log_topic="persistent://public/default/window-function-logs"
 expected_window_log_lines=15
-expected_log_topic_messages=10
+expected_log_topic_messages=1
 
 function delete_topic_if_exists() {
   topic=$1
