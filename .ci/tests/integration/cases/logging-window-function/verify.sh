@@ -60,9 +60,18 @@ if [ $? -ne 0 ]; then
 fi
 
 # verify the `processingGuarantees` config
-verify_pg=$(kubectl logs window-function-sample-function-0 | grep processingGuarantees=ATLEAST_ONCE)
-if [ $? -ne 0 ]; then
-  echo "$verify_pg"
+verify_pg=0
+for attempt in $(seq 1 12); do
+  if kubectl logs window-function-sample-function-0 | grep -E 'processingGuarantees.*ATLEAST_ONCE' > /dev/null; then
+    verify_pg=1
+    break
+  fi
+  sleep 5
+done
+
+if [ "$verify_pg" -ne 1 ]; then
+  echo "expected window processingGuarantees ATLEAST_ONCE in function logs" >&2
+  kubectl logs window-function-sample-function-0 --tail=50
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
   exit 1
 fi

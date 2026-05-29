@@ -59,6 +59,11 @@ function upload_string_schema() {
 trap cleanup EXIT
 cleanup
 
+if ! create_topic_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::create_topic "${input_topic}" 2>&1); then
+  echo "$create_topic_result"
+  exit 1
+fi
+
 if ! upload_schema_result=$(upload_string_schema 2>&1); then
   echo "$upload_schema_result"
   exit 1
