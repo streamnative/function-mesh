@@ -371,6 +371,56 @@ function ci::verify_exclamation_function() {
     return 1
 }
 
+function ci::ensure_kafka_topic() {
+    topic=$1
+    kafka_bootstrap_server=$2
+    properties_file=$3
+    kubectl exec -n ${NAMESPACE} kafka-client -- kafka-topics.sh \
+        --bootstrap-server "${kafka_bootstrap_server}" \
+        --create \
+        --if-not-exists \
+        --topic "${topic}" \
+        --command-config "/opt/bitnami/kafka/config/${properties_file}" || true
+}
+
+function ci::verify_kafka_exclamation_function() {
+    inputtopic=$1
+    outputtopic=$2
+    inputmessage=$3
+    outputmessage=$4
+    kafka_bootstrap_server=$5
+    properties_file=$6
+    consumer_group="function-mesh-${RANDOM}-$(date +%s)"
+    output_file=$(mktemp)
+
+    kubectl exec -n ${NAMESPACE} kafka-client -- kafka-console-consumer.sh \
+        --bootstrap-server "${kafka_bootstrap_server}" \
+        --consumer.config "/opt/bitnami/kafka/config/${properties_file}" \
+        --topic "${outputtopic}" \
+        --group "${consumer_group}" \
+        --timeout-ms 30000 \
+        --max-messages 1 > "${output_file}" &
+    consumer_pid=$!
+
+    sleep 3
+    kubectl exec -n ${NAMESPACE} kafka-client -- bash -c \
+        "echo \"${inputmessage}\" | kafka-console-producer.sh --bootstrap-server ${kafka_bootstrap_server} --producer.config /opt/bitnami/kafka/config/${properties_file} --topic ${inputtopic}"
+
+    if ! wait "${consumer_pid}"; then
+        cat "${output_file}" || true
+        rm -f "${output_file}"
+        return 1
+    fi
+
+    MESSAGE=$(cat "${output_file}")
+    rm -f "${output_file}"
+    echo "$MESSAGE"
+    if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
+        return 0
+    fi
+    return 1
+}
+
 function ci::verify_exclamation_function_with_auth() {
     inputtopic=$1
     outputtopic=$2

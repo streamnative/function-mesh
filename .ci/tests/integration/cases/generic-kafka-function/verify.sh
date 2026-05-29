@@ -33,26 +33,49 @@ if [ ! "$KUBECONFIG" ]; then
 fi
 
 manifests_file="${BASE_DIR}"/.ci/tests/integration/cases/generic-kafka-function/manifests.yaml
+kafka_client_file="${BASE_DIR}"/.ci/tests/integration/cases/generic-kafka-function/kafka-client.yaml
+kafka_bootstrap_server=sn-platform-pulsar-broker-0.sn-platform-pulsar-broker.default.svc.cluster.local:9092
+kafka_properties_file=kafka.properties
+input_topic=input-kafka-topic
+output_topic=output-kafka-topic
+input_message="test-message-${RANDOM}-$(date +%s)"
+output_message="${input_message}!"
 
+kubectl apply -f "${kafka_client_file}" > /dev/null 2>&1
+kubectl wait pod kafka-client --for=condition=Ready --timeout=2m || {
+  kubectl get pod kafka-client -o yaml || true
+  kubectl delete -f "${kafka_client_file}" > /dev/null 2>&1 || true
+  exit 1
+}
+
+ci::ensure_kafka_topic "${input_topic}" "${kafka_bootstrap_server}" "${kafka_properties_file}" > /dev/null 2>&1
+ci::ensure_kafka_topic "${output_topic}" "${kafka_bootstrap_server}" "${kafka_properties_file}" > /dev/null 2>&1
 kubectl apply -f "${manifests_file}" > /dev/null 2>&1
 
 kubectl wait -l compute.functionmesh.io/name=generic-kafka-function --for=condition=Ready pod --timeout=2m || {
   kubectl get pods -l compute.functionmesh.io/name=generic-kafka-function
   kubectl logs -l compute.functionmesh.io/name=generic-kafka-function --tail=100 || true
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  kubectl delete -f "${kafka_client_file}" > /dev/null 2>&1 || true
   exit 1
 }
 
+set +e
 verify_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} \
-  ci::verify_exclamation_function "persistent://public/default/input-kafka-topic" \
-  "persistent://public/default/output-kafka-topic" "test-message" "test-message!" 10 2>&1)
-if [ $? -eq 0 ]; then
+  ci::verify_kafka_exclamation_function "${input_topic}" "${output_topic}" \
+  "${input_message}" "${output_message}" "${kafka_bootstrap_server}" "${kafka_properties_file}" 2>&1)
+verify_status=$?
+set -e
+
+if [ ${verify_status} -eq 0 ]; then
   echo "e2e-test: ok" | yq eval -
 else
   echo "$verify_result"
   kubectl logs -l compute.functionmesh.io/name=generic-kafka-function --tail=100 || true
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  kubectl delete -f "${kafka_client_file}" > /dev/null 2>&1 || true
   exit 1
 fi
 
 kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+kubectl delete -f "${kafka_client_file}" > /dev/null 2>&1 || true
