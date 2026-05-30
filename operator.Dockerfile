@@ -17,7 +17,7 @@ COPY pkg/ pkg/
 COPY controllers/ controllers/
 COPY utils/ utils/
 
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} GO111MODULE=on go build -a -trimpath -o /workspace/manager main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} GO111MODULE=on go build -p=2 -trimpath -o /workspace/manager main.go
 
 FROM alpine:3.21
 
