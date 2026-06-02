@@ -46,6 +46,22 @@ func TestValidateFunctionMessagingRejectsMissingKafkaBootstrapServers(t *testing
 	}
 }
 
+func TestValidateFunctionMessagingRejectsMissingKafkaPlainAuthSecretName(t *testing.T) {
+	err := validateFunctionMessaging(&v1alpha1.FunctionSpec{
+		Messaging: v1alpha1.Messaging{
+			Kafka: &v1alpha1.KafkaMessaging{
+				BootstrapServers: "kafka:9092",
+				AuthConfig: &v1alpha1.KafkaAuthConfig{
+					PlainAuthConfig: &v1alpha1.KafkaPlainAuthConfig{},
+				},
+			},
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "kafka.authConfig.plainAuthConfig.secretName needs to be set") {
+		t.Fatalf("expected missing kafka plain auth secretName error, got %v", err)
+	}
+}
+
 func TestValidateKafkaMessagingUnsupportedRejectsSourceAndSink(t *testing.T) {
 	messaging := &v1alpha1.Messaging{
 		Pulsar: &v1alpha1.PulsarMessaging{PulsarConfig: "pulsar-config"},

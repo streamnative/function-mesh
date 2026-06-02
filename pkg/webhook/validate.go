@@ -461,6 +461,12 @@ func validateFunctionMessaging(spec *v1alpha1.FunctionSpec) *field.Error {
 			return field.Invalid(field.NewPath("spec").Child("kafka", "bootstrapServers"),
 				spec.Kafka.BootstrapServers, "kafka.bootstrapServers needs to be set")
 		}
+		if spec.Kafka.AuthConfig != nil && spec.Kafka.AuthConfig.PlainAuthConfig != nil &&
+			spec.Kafka.AuthConfig.PlainAuthConfig.SecretName == "" {
+			return field.Invalid(field.NewPath("spec").Child("kafka", "authConfig", "plainAuthConfig", "secretName"),
+				spec.Kafka.AuthConfig.PlainAuthConfig.SecretName,
+				"kafka.authConfig.plainAuthConfig.secretName needs to be set")
+		}
 		return nil
 	}
 	return validateMessaging(&spec.Messaging)

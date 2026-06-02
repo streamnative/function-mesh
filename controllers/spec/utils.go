@@ -250,8 +250,7 @@ func makeKafkaInputSpecs(function *v1alpha1.Function) map[string]interface{} {
 		key := kafkaInputSpecKey(function, topic)
 		spec, ok := inputSpecs[key].(map[string]interface{})
 		if !ok {
-			spec = map[string]interface{}{}
-			inputSpecs[key] = spec
+			continue
 		}
 		spec["kafka_schema"] = makeKafkaSchema(function.Spec.Input.SourceSpecs[topic].SchemaType, &schemaConfig)
 	}

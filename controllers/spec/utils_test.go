@@ -181,6 +181,9 @@ func TestConvertFunctionDetailsWithKafkaConfig(t *testing.T) {
 			"orders": {
 				Type: stringPtr("json"),
 			},
+			"unknown-topic": {
+				Type: stringPtr("json"),
+			},
 		},
 		OutputSchemaConfig: &v1alpha1.KafkaSchemaConfig{
 			Type: stringPtr("json"),
@@ -197,7 +200,9 @@ func TestConvertFunctionDetailsWithKafkaConfig(t *testing.T) {
 	assert.Equal(t, "earliest", kafkaConfig["consumer_config"].(map[string]interface{})["auto.offset.reset"])
 	assert.Equal(t, "kafka:9092", kafkaConfig["producer_config"].(map[string]interface{})["bootstrap.servers"])
 	assert.Equal(t, float64(5), kafkaConfig["producer_config"].(map[string]interface{})["linger.ms"])
-	assert.Equal(t, "json", kafkaConfig["input_specs"].(map[string]interface{})["orders"].(map[string]interface{})["kafka_schema"].(map[string]interface{})["type"])
+	inputSpecs := kafkaConfig["input_specs"].(map[string]interface{})
+	assert.Equal(t, "json", inputSpecs["orders"].(map[string]interface{})["kafka_schema"].(map[string]interface{})["type"])
+	assert.NotContains(t, inputSpecs, "unknown-topic")
 	assert.Equal(t, "json", kafkaConfig["output_specs"].(map[string]interface{})["enriched-orders"].(map[string]interface{})["kafka_schema"].(map[string]interface{})["type"])
 }
 
