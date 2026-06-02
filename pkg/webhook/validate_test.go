@@ -85,6 +85,15 @@ func TestValidateKafkaMessagingRuntimeRequiresGenericRuntime(t *testing.T) {
 	}
 }
 
+func TestValidateKafkaMessagingRuntimeRequiresGenericRuntimeFunctionFile(t *testing.T) {
+	err := validateKafkaMessagingRuntime(v1alpha1.Runtime{
+		GenericRuntime: &v1alpha1.GenericRuntime{},
+	}, &v1alpha1.KafkaMessaging{BootstrapServers: "kafka:9092"})
+	if err == nil || !strings.Contains(err.Error(), "genericRuntime.functionFile needs to be set for kafka messaging") {
+		t.Fatalf("expected kafka genericRuntime function file error, got %v", err)
+	}
+}
+
 func TestValidateKafkaInputOutputAllowsKafkaTopicNames(t *testing.T) {
 	errs := validateKafkaInputOutput(&v1alpha1.InputConf{
 		Topics: []string{"orders"},
@@ -93,5 +102,21 @@ func TestValidateKafkaInputOutputAllowsKafkaTopicNames(t *testing.T) {
 	}, false, false)
 	if len(errs) > 0 {
 		t.Fatalf("expected kafka topic names to be valid, got %v", errs)
+	}
+}
+
+func TestValidateKafkaInputOutputValidatesOutputProducerCryptoConfig(t *testing.T) {
+	errs := validateKafkaInputOutput(&v1alpha1.InputConf{
+		Topics: []string{"orders"},
+	}, &v1alpha1.OutputConf{
+		Topic: "enriched-orders",
+		ProducerConf: &v1alpha1.ProducerConfig{
+			CryptoConfig: &v1alpha1.CryptoConfig{
+				EncryptionKeys: []string{"key"},
+			},
+		},
+	}, false, false)
+	if len(errs) == 0 || !strings.Contains(errs[0].Error(), "cryptoKeyReader class name required") {
+		t.Fatalf("expected kafka output crypto validation error, got %v", errs)
 	}
 }

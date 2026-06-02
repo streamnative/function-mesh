@@ -237,6 +237,9 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	spec := function.Spec
+	if isKafkaFunction(function) && (spec.GenericRuntime == nil || spec.GenericRuntime.FunctionFile == "") {
+		return nil
+	}
 	downloadConfig := NewDownloadServiceConfig(spec.PulsarPackageService, spec.Pulsar)
 	pulsarAuthConfig := functionPulsarAuthConfig(function)
 	pulsarTLSConfig := functionPulsarTLSConfig(function)

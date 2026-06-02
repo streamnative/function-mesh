@@ -206,6 +206,37 @@ func TestConvertFunctionDetailsWithKafkaConfig(t *testing.T) {
 	assert.Equal(t, "json", kafkaConfig["output_specs"].(map[string]interface{})["enriched-orders"].(map[string]interface{})["kafka_schema"].(map[string]interface{})["type"])
 }
 
+func TestConvertFunctionDetailsKafkaInputSchemaConfigKeepsDeclaredTopicType(t *testing.T) {
+	function := makeFunctionSample("generic-kafka")
+	function.Spec.Runtime = v1alpha1.Runtime{
+		GenericRuntime: &v1alpha1.GenericRuntime{
+			FunctionFile: "/pulsar/function.py",
+			Language:     "python",
+		},
+	}
+	function.Spec.Input = v1alpha1.InputConf{
+		TypeClassName: "string",
+		Topics:        []string{"orders"},
+	}
+	function.Spec.Kafka = &v1alpha1.KafkaMessaging{
+		BootstrapServers: "kafka:9092",
+		InputSchemaConfigs: map[string]v1alpha1.KafkaSchemaConfig{
+			"orders": {
+				Subject: stringPtr("orders-value"),
+			},
+		},
+	}
+
+	details := convertFunctionDetails(function)
+	userConfig := map[string]interface{}{}
+	assert.NoError(t, json.Unmarshal([]byte(details.UserConfig), &userConfig))
+	kafkaConfig := userConfig["_kafka_config"].(map[string]interface{})
+	inputSpecs := kafkaConfig["input_specs"].(map[string]interface{})
+	kafkaSchema := inputSpecs["orders"].(map[string]interface{})["kafka_schema"].(map[string]interface{})
+	assert.Equal(t, "string", kafkaSchema["type"])
+	assert.Equal(t, "orders-value", kafkaSchema["subject"])
+}
+
 func stringPtr(value string) *string {
 	return &value
 }

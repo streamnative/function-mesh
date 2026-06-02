@@ -552,6 +552,18 @@ func TestGenericFunctionCommandUsesKafkaMessaging(t *testing.T) {
 	assert.Assert(t, hasKafkaOAuthMount, "container should include kafka oauth2 mount")
 }
 
+func TestFunctionCommandDoesNotBuildPulsarRuntimeCommandForKafkaJavaFunction(t *testing.T) {
+	function := makeFunctionSample("java-kafka-command")
+	function.Spec.Messaging = v1alpha1.Messaging{
+		Kafka: &v1alpha1.KafkaMessaging{
+			BootstrapServers: "kafka:9092",
+		},
+	}
+
+	command := makeFunctionCommand(function)
+	assert.Assert(t, command == nil, "kafka messaging with java runtime should not build a pulsar command, got %v", command)
+}
+
 func TestFunctionPulsarPackageServiceDownloadFallbackToMessaging(t *testing.T) {
 	previous := utils.EnableInitContainers
 	defer func() {

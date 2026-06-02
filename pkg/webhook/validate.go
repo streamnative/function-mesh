@@ -232,6 +232,16 @@ func validateSecretsMap(secrets map[string]v1alpha1.SecretRef) *field.Error {
 
 func validateInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
 	skipInputValidation bool, skipOutputValidation bool) []*field.Error {
+	return validateInputOutputWithTopicNameValidation(input, output, skipInputValidation, skipOutputValidation, true)
+}
+
+func validateKafkaInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
+	skipInputValidation bool, skipOutputValidation bool) []*field.Error {
+	return validateInputOutputWithTopicNameValidation(input, output, skipInputValidation, skipOutputValidation, false)
+}
+
+func validateInputOutputWithTopicNameValidation(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
+	skipInputValidation bool, skipOutputValidation bool, validateTopicNames bool) []*field.Error {
 	var allErrs field.ErrorList
 	allInputTopics := []string{}
 	if input != nil {
@@ -243,12 +253,14 @@ func validateInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
 				allErrs = append(allErrs, e)
 			}
 
-			for _, topic := range allInputTopics {
-				err := isValidTopicName(topic)
-				if err != nil {
-					e := field.Invalid(field.NewPath("spec").Child("input"), *input,
-						fmt.Sprintf("Input topic %s is invalid", topic))
-					allErrs = append(allErrs, e)
+			if validateTopicNames {
+				for _, topic := range allInputTopics {
+					err := isValidTopicName(topic)
+					if err != nil {
+						e := field.Invalid(field.NewPath("spec").Child("input"), *input,
+							fmt.Sprintf("Input topic %s is invalid", topic))
+						allErrs = append(allErrs, e)
+					}
 				}
 			}
 
@@ -270,11 +282,13 @@ func validateInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
 
 	if output != nil && !skipOutputValidation {
 		if output.Topic != "" {
-			err := isValidTopicName(output.Topic)
-			if err != nil {
-				e := field.Invalid(field.NewPath("spec").Child("output", "topic"), output.Topic,
-					fmt.Sprintf("Output topic %s is invalid", output.Topic))
-				allErrs = append(allErrs, e)
+			if validateTopicNames {
+				err := isValidTopicName(output.Topic)
+				if err != nil {
+					e := field.Invalid(field.NewPath("spec").Child("output", "topic"), output.Topic,
+						fmt.Sprintf("Output topic %s is invalid", output.Topic))
+					allErrs = append(allErrs, e)
+				}
 			}
 			for _, v := range allInputTopics {
 				if v == output.Topic {
@@ -300,49 +314,6 @@ func validateInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
 						"must provide encryption key name for crypto key reader")
 					allErrs = append(allErrs, e)
 				}
-			}
-		}
-	}
-
-	return allErrs
-}
-
-func validateKafkaInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
-	skipInputValidation bool, skipOutputValidation bool) []*field.Error {
-	var allErrs field.ErrorList
-	allInputTopics := []string{}
-	if input != nil {
-		allInputTopics = collectAllInputTopics(*input)
-		if !skipInputValidation {
-			if len(allInputTopics) == 0 {
-				e := field.Invalid(field.NewPath("spec").Child("input"), *input,
-					"No input topic(s) specified for the function")
-				allErrs = append(allErrs, e)
-			}
-
-			for topicName, conf := range input.SourceSpecs {
-				if conf.ReceiverQueueSize != nil && *conf.ReceiverQueueSize < 0 {
-					e := field.Invalid(field.NewPath("spec").Child("input", "sourceSpecs"),
-						input.SourceSpecs, fmt.Sprintf("%s receiver queue size should be >= zero", topicName))
-					allErrs = append(allErrs, e)
-				}
-
-				if conf.CryptoConfig != nil && conf.CryptoConfig.CryptoKeyReaderClassName == "" {
-					e := field.Invalid(field.NewPath("spec").Child("input", "sourceSpecs"),
-						input.SourceSpecs, fmt.Sprintf("%s cryptoKeyReader class name required", topicName))
-					allErrs = append(allErrs, e)
-				}
-			}
-		}
-	}
-
-	if output != nil && !skipOutputValidation && output.Topic != "" {
-		for _, v := range allInputTopics {
-			if v == output.Topic {
-				e := field.Invalid(field.NewPath("spec").Child("output", "topic"), output.Topic,
-					fmt.Sprintf("Output topic %s is also being used as an input topic (topics must be one or the other)",
-						output.Topic))
-				allErrs = append(allErrs, e)
 			}
 		}
 	}
@@ -487,6 +458,10 @@ func validateKafkaMessagingRuntime(runtime v1alpha1.Runtime, kafka *v1alpha1.Kaf
 	if runtime.GenericRuntime == nil {
 		return field.Invalid(field.NewPath("spec").Child("kafka"), kafka,
 			"only genericRuntime supports kafka messaging")
+	}
+	if runtime.GenericRuntime.FunctionFile == "" {
+		return field.Invalid(field.NewPath("spec").Child("runtime", "genericRuntime", "functionFile"),
+			runtime.GenericRuntime.FunctionFile, "genericRuntime.functionFile needs to be set for kafka messaging")
 	}
 	return nil
 }

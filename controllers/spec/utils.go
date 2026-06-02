@@ -189,15 +189,16 @@ func makeKafkaConfig(function *v1alpha1.Function) map[string]interface{} {
 	if kafka == nil {
 		return nil
 	}
+	securityProtocol := kafkaSecurityProtocol(kafka)
 	consumerConfig := map[string]interface{}{
 		"bootstrap.servers": kafka.BootstrapServers,
-		"security.protocol": kafkaSecurityProtocol(kafka),
+		"security.protocol": securityProtocol,
 	}
 	addConfigData(consumerConfig, kafka.ConsumerConfig)
 
 	producerConfig := map[string]interface{}{
 		"bootstrap.servers": kafka.BootstrapServers,
-		"security.protocol": kafkaSecurityProtocol(kafka),
+		"security.protocol": securityProtocol,
 	}
 	addConfigData(producerConfig, kafka.ProducerConfig)
 
@@ -252,7 +253,7 @@ func makeKafkaInputSpecs(function *v1alpha1.Function) map[string]interface{} {
 		if !ok {
 			continue
 		}
-		spec["kafka_schema"] = makeKafkaSchema(function.Spec.Input.SourceSpecs[topic].SchemaType, &schemaConfig)
+		spec["kafka_schema"] = makeKafkaSchema(kafkaSchemaType(spec["kafka_schema"]), &schemaConfig)
 	}
 	return inputSpecs
 }
@@ -305,6 +306,15 @@ func makeKafkaSchema(defaultType string, schemaConfig *v1alpha1.KafkaSchemaConfi
 		schema["version"] = *schemaConfig.Version
 	}
 	return schema
+}
+
+func kafkaSchemaType(schema interface{}) string {
+	if schemaMap, ok := schema.(map[string]interface{}); ok {
+		if schemaType, ok := schemaMap["type"].(string); ok {
+			return schemaType
+		}
+	}
+	return ""
 }
 
 func kafkaInputSchemaConfig(function *v1alpha1.Function, topic string) *v1alpha1.KafkaSchemaConfig {
