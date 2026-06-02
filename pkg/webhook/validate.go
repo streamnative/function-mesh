@@ -438,6 +438,10 @@ func validateFunctionMessaging(spec *v1alpha1.FunctionSpec) *field.Error {
 				spec.Kafka.AuthConfig.PlainAuthConfig.SecretName,
 				"kafka.authConfig.plainAuthConfig.secretName needs to be set")
 		}
+		if spec.CleanupSubscription {
+			return field.Invalid(field.NewPath("spec").Child("cleanupSubscription"), spec.CleanupSubscription,
+				"cleanupSubscription only supports pulsar messaging")
+		}
 		return nil
 	}
 	return validateMessaging(&spec.Messaging)

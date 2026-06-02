@@ -101,6 +101,9 @@ func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
 }
 
 func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
+	if isKafkaFunction(function) || function.Spec.Pulsar == nil {
+		return nil
+	}
 	labels := makeFunctionLabels(function)
 	labels["owner"] = string(function.GetUID())
 	objectMeta := &metav1.ObjectMeta{

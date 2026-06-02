@@ -564,6 +564,25 @@ func TestFunctionCommandDoesNotBuildPulsarRuntimeCommandForKafkaJavaFunction(t *
 	assert.Assert(t, command == nil, "kafka messaging with java runtime should not build a pulsar command, got %v", command)
 }
 
+func TestMakeFunctionCleanUpJobSkipsKafkaFunction(t *testing.T) {
+	function := makeFunctionSample("generic-kafka-cleanup")
+	function.Spec.Messaging = v1alpha1.Messaging{
+		Kafka: &v1alpha1.KafkaMessaging{
+			BootstrapServers: "kafka:9092",
+		},
+	}
+	function.Spec.Runtime = v1alpha1.Runtime{
+		GenericRuntime: &v1alpha1.GenericRuntime{
+			FunctionFile: "/pulsar/function.py",
+			Language:     "python",
+		},
+	}
+	function.Spec.CleanupSubscription = true
+
+	cleanupJob := MakeFunctionCleanUpJob(function)
+	assert.Assert(t, cleanupJob == nil, "kafka function should not create pulsar cleanup job")
+}
+
 func TestFunctionPulsarPackageServiceDownloadFallbackToMessaging(t *testing.T) {
 	previous := utils.EnableInitContainers
 	defer func() {

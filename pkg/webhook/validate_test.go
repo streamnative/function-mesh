@@ -62,6 +62,20 @@ func TestValidateFunctionMessagingRejectsMissingKafkaPlainAuthSecretName(t *test
 	}
 }
 
+func TestValidateFunctionMessagingRejectsKafkaCleanupSubscription(t *testing.T) {
+	err := validateFunctionMessaging(&v1alpha1.FunctionSpec{
+		CleanupSubscription: true,
+		Messaging: v1alpha1.Messaging{
+			Kafka: &v1alpha1.KafkaMessaging{
+				BootstrapServers: "kafka:9092",
+			},
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "cleanupSubscription only supports pulsar messaging") {
+		t.Fatalf("expected kafka cleanupSubscription error, got %v", err)
+	}
+}
+
 func TestValidateKafkaMessagingUnsupportedRejectsSourceAndSink(t *testing.T) {
 	messaging := &v1alpha1.Messaging{
 		Pulsar: &v1alpha1.PulsarMessaging{PulsarConfig: "pulsar-config"},
