@@ -17,6 +17,7 @@ spec:
     typeClassName: java.lang.String
     sourceSpecs:
       "persistent://public/default/java-function-crypto-input-topic":
+        schemaType: STRING
         cryptoConfig:
           cryptoKeyReaderClassName: "org.apache.pulsar.functions.api.examples.RawFileKeyReader"
           cryptoKeyReaderConfig:

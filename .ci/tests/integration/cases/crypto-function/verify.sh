@@ -33,19 +33,69 @@ if [ ! "$KUBECONFIG" ]; then
 fi
 
 manifests_file="${BASE_DIR}"/.ci/tests/integration/cases/crypto-function/manifests.yaml
-kubectl apply -f ${manifests_file} > /dev/null 2>&1
+input_topic="persistent://public/default/java-function-crypto-input-topic"
+output_topic="persistent://public/default/java-function-crypto-output-topic"
 
-verify_fm_result=$(ci::verify_function_mesh java-function-crypto-sample 2>&1)
-if [ $? -ne 0 ]; then
-  echo "$verify_fm_result"
+function delete_topic() {
+  topic=$1
+  kubectl exec -n "${PULSAR_NAMESPACE}" "${PULSAR_RELEASE_NAME}"-pulsar-broker-0 -- bin/pulsar-admin topics delete "${topic}" -f > /dev/null 2>&1 || true
+  kubectl exec -n "${PULSAR_NAMESPACE}" "${PULSAR_RELEASE_NAME}"-pulsar-broker-0 -- bin/pulsar-admin topics delete-partitioned-topic "${topic}" -f > /dev/null 2>&1 || true
+  kubectl exec -n "${PULSAR_NAMESPACE}" "${PULSAR_RELEASE_NAME}"-pulsar-broker-0 -- bin/pulsar-admin topics delete "${topic}-partition-0" -f > /dev/null 2>&1 || true
+  kubectl exec -n "${PULSAR_NAMESPACE}" "${PULSAR_RELEASE_NAME}"-pulsar-broker-0 -- bin/pulsar-admin schemas delete "${topic}" > /dev/null 2>&1 || true
+}
+
+function cleanup() {
   kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true
+  delete_topic "${input_topic}"
+  delete_topic "${output_topic}"
+}
+
+function upload_string_schema() {
+  kubectl exec -n "${PULSAR_NAMESPACE}" "${PULSAR_RELEASE_NAME}"-pulsar-broker-0 -- sh -c \
+    'printf "%s\n" "{\"type\":\"STRING\",\"schema\":\"\",\"properties\":{}}" > /tmp/function-mesh-string-schema.json && bin/pulsar-admin schemas upload --filename /tmp/function-mesh-string-schema.json "$1"' \
+    sh "${input_topic}" > /dev/null
+}
+
+function wait_string_schema() {
+  for attempt in $(seq 1 30); do
+    if kubectl exec -n "${PULSAR_NAMESPACE}" "${PULSAR_RELEASE_NAME}"-pulsar-broker-0 -- \
+      bin/pulsar-admin schemas get "${input_topic}" > /dev/null 2>&1; then
+      return 0
+    fi
+    echo "Schema for ${input_topic} is not ready, retry ${attempt}/30" >&2
+    sleep 2
+  done
+  return 1
+}
+
+trap cleanup EXIT
+cleanup
+
+if ! create_topic_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::create_topic "${input_topic}" 2>&1); then
+  echo "$create_topic_result" >&2
   exit 1
 fi
 
-verify_crypto_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_crypto_function 2>&1)
-if [ $? -eq 0 ]; then
+if ! upload_schema_result=$(upload_string_schema 2>&1); then
+  echo "$upload_schema_result" >&2
+  exit 1
+fi
+
+if ! wait_schema_result=$(wait_string_schema 2>&1); then
+  echo "$wait_schema_result" >&2
+  exit 1
+fi
+
+kubectl apply -f "${manifests_file}" > /dev/null 2>&1
+
+if ! verify_fm_result=$(ci::verify_function_mesh java-function-crypto-sample 2>&1); then
+  echo "$verify_fm_result" >&2
+  exit 1
+fi
+
+if verify_crypto_result=$(NAMESPACE=${PULSAR_NAMESPACE} CLUSTER=${PULSAR_RELEASE_NAME} ci::verify_crypto_function 2>&1); then
   echo "e2e-test: ok" | yq eval -
 else
-  echo "$verify_crypto_result"
+  echo "$verify_crypto_result" >&2
+  exit 1
 fi
-kubectl delete -f "${manifests_file}" > /dev/null 2>&1 || true

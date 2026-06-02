@@ -19,6 +19,8 @@ package spec
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -68,7 +70,7 @@ func MakeFunctionStatefulSet(ctx context.Context, cli client.Client, function *v
 	labels := makeFunctionLabels(function)
 	downloadConfig := NewDownloadServiceConfig(function.Spec.PulsarPackageService, function.Spec.Pulsar)
 	statefulSet := MakeStatefulSet(objectMeta, function.Spec.Replicas, function.Spec.DownloaderImage,
-		makeFunctionContainer(function), makeFunctionVolumes(function, function.Spec.Pulsar.AuthConfig), labels, function.Spec.Pod,
+		makeFunctionContainer(function), makeFunctionVolumes(function, functionRuntimeAuthConfig(function)), labels, function.Spec.Pod,
 		function.Spec.Pulsar, downloadConfig, function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.Pod.Env,
 		function.Spec.LogTopic, function.Spec.FilebeatImage, function.Spec.LogTopicAgent, function.Spec.VolumeMounts,
 		function.Spec.VolumeClaimTemplates, function.Spec.PersistentVolumeClaimRetentionPolicy)
@@ -99,6 +101,9 @@ func MakeFunctionObjectMeta(function *v1alpha1.Function) *metav1.ObjectMeta {
 }
 
 func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
+	if isKafkaFunction(function) || function.Spec.Pulsar == nil {
+		return nil
+	}
 	labels := makeFunctionLabels(function)
 	labels["owner"] = string(function.GetUID())
 	objectMeta := &metav1.ObjectMeta{
@@ -150,10 +155,11 @@ func MakeFunctionCleanUpJob(function *v1alpha1.Function) *v1.Job {
 }
 
 func makeFunctionVolumes(function *v1alpha1.Function, authConfig *v1alpha1.AuthConfig) []corev1.Volume {
+	tlsConfig := functionPulsarTLSConfig(function)
 	volumes := GeneratePodVolumes(function.Spec.Pod.Volumes,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
-		function.Spec.Pulsar.TLSConfig,
+		tlsConfig,
 		authConfig,
 		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
 		function.Spec.LogTopicAgent)
@@ -161,10 +167,11 @@ func makeFunctionVolumes(function *v1alpha1.Function, authConfig *v1alpha1.AuthC
 }
 
 func makeFunctionVolumeMounts(function *v1alpha1.Function, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {
+	tlsConfig := functionPulsarTLSConfig(function)
 	return GenerateContainerVolumeMounts(function.Spec.VolumeMounts,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
-		function.Spec.Pulsar.TLSConfig,
+		tlsConfig,
 		authConfig,
 		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
 		function.Spec.LogTopicAgent)
@@ -178,25 +185,26 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	livenessProbe := MakeLivenessProbe(function.Spec.Pod.Liveness)
 	startupProbe := function.Spec.Pod.StartupProbe.DeepCopy()
 	allowPrivilegeEscalation := false
-	mounts := makeFunctionVolumeMounts(function, function.Spec.Pulsar.AuthConfig)
+	mounts := makeFunctionVolumeMounts(function, functionRuntimeAuthConfig(function))
 	mounts = AppendPackageServiceVolumeMounts(mounts, function.Spec.PulsarPackageService)
 	if utils.EnableInitContainers {
 		mounts = append(mounts,
 			generateDownloaderVolumeMountsForRuntime(function.Spec.Java, function.Spec.Python, function.Spec.Golang, function.Spec.GenericRuntime)...)
 	}
-	envFrom := GenerateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
-		function.Spec.Pulsar.TLSSecret)
+	envFrom := functionPulsarEnvFrom(function)
 	if function.Spec.PulsarPackageService != nil {
 		envFrom = append(envFrom, GenerateContainerEnvFromWithPrefix(function.Spec.PulsarPackageService.PulsarConfig,
 			function.Spec.PulsarPackageService.AuthSecret, function.Spec.PulsarPackageService.TLSSecret, PackageServiceEnvPrefix)...)
 	}
+	env := generateContainerEnv(function)
+	env = append(env, generateKafkaAuthEnv(function.Spec.Kafka)...)
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            FunctionContainerName,
 		Image:           getFunctionRunnerImage(&function.Spec),
 		Command:         makeFunctionCommand(function),
 		Ports:           []corev1.ContainerPort{GRPCPort, MetricsPort},
-		Env:             generateContainerEnv(function),
+		Env:             env,
 		Resources:       function.Spec.Resources,
 		ImagePullPolicy: imagePullPolicy,
 		EnvFrom:         envFrom,
@@ -232,7 +240,12 @@ func makeFunctionLabels(function *v1alpha1.Function) map[string]string {
 
 func makeFunctionCommand(function *v1alpha1.Function) []string {
 	spec := function.Spec
+	if isKafkaFunction(function) && (spec.GenericRuntime == nil || spec.GenericRuntime.FunctionFile == "") {
+		return nil
+	}
 	downloadConfig := NewDownloadServiceConfig(spec.PulsarPackageService, spec.Pulsar)
+	pulsarAuthConfig := functionPulsarAuthConfig(function)
+	pulsarTLSConfig := functionPulsarTLSConfig(function)
 
 	connectorsDirectory := ""
 	if spec.SourceConfig != nil || spec.SinkConfig != nil {
@@ -266,9 +279,9 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				string(function.UID),
 				spec.Resources.Limits.Memory(),
 				spec.Java.JavaOpts, hasPulsarctl, hasWget, downloadConfig,
-				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "",
-				spec.SecretsMap, spec.StateConfig, spec.Pulsar.TLSConfig,
-				spec.Pulsar.AuthConfig, spec.MaxPendingAsyncRequests,
+				pulsarAuthSecret(function) != "", pulsarTLSSecret(function) != "",
+				spec.SecretsMap, spec.StateConfig, pulsarTLSConfig,
+				pulsarAuthConfig, spec.MaxPendingAsyncRequests,
 				GenerateJavaLogConfigFileName(function.Spec.Java), instancePath, entryClass)
 		}
 	} else if spec.Python != nil {
@@ -278,8 +291,8 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 				spec.Name, spec.ClusterName,
 				GeneratePythonLogConfigCommand(spec.Name, spec.Python, spec.LogTopicAgent),
 				generateFunctionDetailsInJSON(function), string(function.UID), hasPulsarctl, hasWget, downloadConfig,
-				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", spec.SecretsMap,
-				spec.StateConfig, spec.Pulsar.TLSConfig, spec.Pulsar.AuthConfig)
+				pulsarAuthSecret(function) != "", pulsarTLSSecret(function) != "", spec.SecretsMap,
+				spec.StateConfig, pulsarTLSConfig, pulsarAuthConfig)
 		}
 	} else if spec.Golang != nil {
 		if spec.Golang.Go != "" {
@@ -292,12 +305,171 @@ func makeFunctionCommand(function *v1alpha1.Function) []string {
 			return MakeGenericFunctionCommand(spec.GenericRuntime.FunctionFileLocation, mountPath,
 				spec.GenericRuntime.Language, spec.ClusterName,
 				generateFunctionDetailsInJSON(function), string(function.UID), downloadConfig,
-				spec.Pulsar.AuthSecret != "", spec.Pulsar.TLSSecret != "", function.Spec.SecretsMap,
-				function.Spec.StateConfig, function.Spec.Pulsar.TLSConfig, function.Spec.Pulsar.AuthConfig)
+				pulsarAuthSecret(function) != "", pulsarTLSSecret(function) != "", function.Spec.SecretsMap,
+				function.Spec.StateConfig, genericRuntimeTLSConfig(function), genericRuntimeAuthConfig(function),
+				genericMessagingServiceType(function), genericRuntimeClientAuthArgs(function))
 		}
 	}
 
 	return nil
+}
+
+func functionPulsarTLSConfig(function *v1alpha1.Function) *v1alpha1.PulsarTLSConfig {
+	if function.Spec.Pulsar == nil {
+		return nil
+	}
+	return function.Spec.Pulsar.TLSConfig
+}
+
+func functionPulsarAuthConfig(function *v1alpha1.Function) *v1alpha1.AuthConfig {
+	if function.Spec.Pulsar == nil {
+		return nil
+	}
+	return function.Spec.Pulsar.AuthConfig
+}
+
+func functionRuntimeAuthConfig(function *v1alpha1.Function) *v1alpha1.AuthConfig {
+	if isKafkaFunction(function) {
+		return kafkaAuthConfigAsAuthConfig(function.Spec.Kafka.AuthConfig)
+	}
+	return functionPulsarAuthConfig(function)
+}
+
+func genericRuntimeAuthConfig(function *v1alpha1.Function) *v1alpha1.AuthConfig {
+	if isKafkaFunction(function) {
+		return nil
+	}
+	return functionPulsarAuthConfig(function)
+}
+
+func genericRuntimeTLSConfig(function *v1alpha1.Function) TLSConfig {
+	if isKafkaFunction(function) {
+		return nil
+	}
+	return functionPulsarTLSConfig(function)
+}
+
+func functionPulsarEnvFrom(function *v1alpha1.Function) []corev1.EnvFromSource {
+	if function.Spec.Pulsar == nil {
+		return nil
+	}
+	return GenerateContainerEnvFrom(function.Spec.Pulsar.PulsarConfig, function.Spec.Pulsar.AuthSecret,
+		function.Spec.Pulsar.TLSSecret)
+}
+
+func pulsarAuthSecret(function *v1alpha1.Function) string {
+	if function.Spec.Pulsar == nil {
+		return ""
+	}
+	return function.Spec.Pulsar.AuthSecret
+}
+
+func pulsarTLSSecret(function *v1alpha1.Function) string {
+	if function.Spec.Pulsar == nil {
+		return ""
+	}
+	return function.Spec.Pulsar.TLSSecret
+}
+
+func isKafkaFunction(function *v1alpha1.Function) bool {
+	return function.Spec.Kafka != nil
+}
+
+func genericMessagingServiceType(function *v1alpha1.Function) string {
+	if isKafkaFunction(function) {
+		return "kafka"
+	}
+	return ""
+}
+
+func kafkaAuthConfigAsAuthConfig(auth *v1alpha1.KafkaAuthConfig) *v1alpha1.AuthConfig {
+	if auth == nil {
+		return nil
+	}
+	return &v1alpha1.AuthConfig{
+		OAuth2Config: auth.OAuth2Config,
+		GenericAuth:  auth.GenericAuth,
+	}
+}
+
+func genericRuntimeClientAuthArgs(function *v1alpha1.Function) []string {
+	if !isKafkaFunction(function) || function.Spec.Kafka.AuthConfig == nil {
+		return nil
+	}
+	auth := function.Spec.Kafka.AuthConfig
+	switch {
+	case auth.OAuth2Config != nil:
+		return []string{
+			"--client_auth_plugin",
+			"oauth2",
+			"--client_auth_params",
+			shellQuoteLiteral(mustJSON(map[string]string{
+				"private_key": auth.OAuth2Config.GetMountFile(),
+				"issuer_url":  auth.OAuth2Config.IssuerURL,
+				"audience":    auth.OAuth2Config.Audience,
+				"scope":       auth.OAuth2Config.Scope,
+			})),
+		}
+	case auth.GenericAuth != nil:
+		return []string{
+			"--client_auth_plugin",
+			auth.GenericAuth.ClientAuthenticationPlugin,
+			"--client_auth_params",
+			shellQuoteLiteral(auth.GenericAuth.ClientAuthenticationParameters),
+		}
+	case auth.PlainAuthConfig != nil:
+		return []string{
+			"--client_auth_plugin",
+			"token",
+			"--client_auth_params",
+			fmt.Sprintf(`"${%s}:${%s}"`, KafkaAuthUsernameEnv, KafkaAuthPasswordEnv),
+		}
+	default:
+		return nil
+	}
+}
+
+func generateKafkaAuthEnv(kafka *v1alpha1.KafkaMessaging) []corev1.EnvVar {
+	if kafka == nil || kafka.AuthConfig == nil || kafka.AuthConfig.PlainAuthConfig == nil {
+		return nil
+	}
+	plainAuth := kafka.AuthConfig.PlainAuthConfig
+	usernameKey := plainAuth.UsernameKey
+	if usernameKey == "" {
+		usernameKey = "username"
+	}
+	passwordKey := plainAuth.PasswordKey
+	if passwordKey == "" {
+		passwordKey = "password"
+	}
+	return []corev1.EnvVar{
+		{
+			Name: KafkaAuthUsernameEnv,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: plainAuth.SecretName},
+					Key:                  usernameKey,
+				},
+			},
+		},
+		{
+			Name: KafkaAuthPasswordEnv,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: plainAuth.SecretName},
+					Key:                  passwordKey,
+				},
+			},
+		},
+	}
+}
+
+func mustJSON(value interface{}) string {
+	data, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
 }
 
 func generateFunctionDetailsInJSON(function *v1alpha1.Function) string {

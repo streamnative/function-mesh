@@ -33,6 +33,7 @@ import (
 
 type Messaging struct {
 	Pulsar *PulsarMessaging `json:"pulsar,omitempty"`
+	Kafka  *KafkaMessaging  `json:"kafka,omitempty"`
 }
 
 type Stateful struct {
@@ -72,6 +73,57 @@ type PulsarTLSConfig struct {
 	HostnameVerification bool   `json:"hostnameVerification,omitempty"`
 	CertSecretName       string `json:"certSecretName,omitempty"`
 	CertSecretKey        string `json:"certSecretKey,omitempty"`
+}
+
+type KafkaMessaging struct {
+	// A list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
+	BootstrapServers string `json:"bootstrapServers,omitempty"`
+
+	TLSConfig  *KafkaTLSConfig  `json:"tlsConfig,omitempty"`
+	AuthConfig *KafkaAuthConfig `json:"authConfig,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
+	ConsumerConfig *Config `json:"consumerConfig,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
+	ProducerConfig *Config `json:"producerConfig,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	InputSchemaConfigs map[string]KafkaSchemaConfig `json:"inputSchemaConfigs,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	OutputSchemaConfig *KafkaSchemaConfig `json:"outputSchemaConfig,omitempty"`
+}
+
+type KafkaTLSConfig struct {
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+func (k *KafkaTLSConfig) IsEnabled() bool {
+	return k != nil && k.Enabled
+}
+
+type KafkaAuthConfig struct {
+	OAuth2Config    *OAuth2Config         `json:"oauth2Config,omitempty"`
+	GenericAuth     *GenericAuth          `json:"genericAuth,omitempty"`
+	PlainAuthConfig *KafkaPlainAuthConfig `json:"plainAuthConfig,omitempty"`
+}
+
+type KafkaPlainAuthConfig struct {
+	// The name of the k8s secret that contains the username and password for Kafka authentication.
+	// +kubebuilder:validation:Required
+	SecretName string `json:"secretName,omitempty"`
+
+	UsernameKey string `json:"usernameKey,omitempty"`
+	PasswordKey string `json:"passwordKey,omitempty"`
+}
+
+type KafkaSchemaConfig struct {
+	Subject *string `json:"subject,omitempty"`
+	Type    *string `json:"type,omitempty"`
+	Version *int32  `json:"version,omitempty"`
 }
 
 func (c *PulsarTLSConfig) IsEnabled() bool {

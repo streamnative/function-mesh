@@ -510,6 +510,79 @@ func TestFunctionPulsarPackageServiceDownloadCommandAndPodWiring(t *testing.T) {
 	assert.Assert(t, hasPackageOAuthMount, "container should include package service oauth2 mount")
 }
 
+func TestGenericFunctionCommandUsesKafkaMessaging(t *testing.T) {
+	function := makeFunctionSample("generic-kafka-command")
+	function.Spec.Messaging = v1alpha1.Messaging{}
+	function.Spec.Kafka = &v1alpha1.KafkaMessaging{
+		BootstrapServers: "kafka:9092",
+		AuthConfig: &v1alpha1.KafkaAuthConfig{
+			OAuth2Config: &v1alpha1.OAuth2Config{
+				Audience:      "urn:sn:pulsar:test",
+				IssuerURL:     "https://issuer.example.com",
+				KeySecretName: "oauth2-private-key",
+				KeySecretKey:  "auth.json",
+			},
+		},
+	}
+	function.Spec.Runtime = v1alpha1.Runtime{
+		GenericRuntime: &v1alpha1.GenericRuntime{
+			FunctionFile: "/pulsar/function.py",
+			Language:     "python",
+		},
+	}
+
+	command := makeFunctionCommand(function)
+	assert.Assert(t, len(command) == 3, "commands should be 3 but got %d", len(command))
+	assert.Assert(t, strings.Contains(command[2], "--messaging_service_type kafka"),
+		"generic runtime command should request kafka messaging, got %s", command[2])
+	assert.Assert(t, strings.Contains(command[2], "--pulsar_serviceurl ''"),
+		"kafka command should keep pulsar service URL argument empty when pulsar messaging is unset, got %s", command[2])
+	assert.Assert(t, strings.Contains(command[2], "--client_auth_plugin oauth2"),
+		"kafka command should pass oauth2 auth plugin, got %s", command[2])
+	assert.Assert(t, strings.Contains(command[2], `"private_key":"/etc/oauth2/auth.json"`),
+		"kafka command should pass oauth2 private key path, got %s", command[2])
+
+	container := makeFunctionContainer(function)
+	hasKafkaOAuthMount := false
+	for _, mount := range container.VolumeMounts {
+		if mount.MountPath == "/etc/oauth2" {
+			hasKafkaOAuthMount = true
+		}
+	}
+	assert.Assert(t, hasKafkaOAuthMount, "container should include kafka oauth2 mount")
+}
+
+func TestFunctionCommandDoesNotBuildPulsarRuntimeCommandForKafkaJavaFunction(t *testing.T) {
+	function := makeFunctionSample("java-kafka-command")
+	function.Spec.Messaging = v1alpha1.Messaging{
+		Kafka: &v1alpha1.KafkaMessaging{
+			BootstrapServers: "kafka:9092",
+		},
+	}
+
+	command := makeFunctionCommand(function)
+	assert.Assert(t, command == nil, "kafka messaging with java runtime should not build a pulsar command, got %v", command)
+}
+
+func TestMakeFunctionCleanUpJobSkipsKafkaFunction(t *testing.T) {
+	function := makeFunctionSample("generic-kafka-cleanup")
+	function.Spec.Messaging = v1alpha1.Messaging{
+		Kafka: &v1alpha1.KafkaMessaging{
+			BootstrapServers: "kafka:9092",
+		},
+	}
+	function.Spec.Runtime = v1alpha1.Runtime{
+		GenericRuntime: &v1alpha1.GenericRuntime{
+			FunctionFile: "/pulsar/function.py",
+			Language:     "python",
+		},
+	}
+	function.Spec.CleanupSubscription = true
+
+	cleanupJob := MakeFunctionCleanUpJob(function)
+	assert.Assert(t, cleanupJob == nil, "kafka function should not create pulsar cleanup job")
+}
+
 func TestFunctionPulsarPackageServiceDownloadFallbackToMessaging(t *testing.T) {
 	previous := utils.EnableInitContainers
 	defer func() {

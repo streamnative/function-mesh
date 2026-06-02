@@ -43,7 +43,7 @@ jobs:
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
-          tool-cache: false
+          tool-cache: true
           # all of these default to true, but feel free to set to
           # "false" if necessary for your workflow
           android: true
@@ -60,6 +60,9 @@ jobs:
           sudo service docker stop
           echo '{ "exec-opts": ["native.cgroupdriver=cgroupfs"], "cgroup-parent": "/actions_job", "data-root": "/mnt/docker" }' | sudo tee /etc/docker/daemon.json
           sudo service docker start
+
+      - name: Report disk usage
+        run: df -h
 
       - name: Checkout
         uses: actions/checkout@v3

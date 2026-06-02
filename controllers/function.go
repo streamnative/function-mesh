@@ -354,8 +354,16 @@ func (r *FunctionReconciler) ApplyFunctionVPA(ctx context.Context, function *v1a
 }
 
 func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, function *v1alpha1.Function) error {
+	desiredJob := spec.MakeFunctionCleanUpJob(function)
+	hasCleanupFinalizer := containsCleanupFinalizer(function.ObjectMeta.Finalizers)
+	if desiredJob == nil {
+		if hasCleanupFinalizer {
+			function.ObjectMeta.Finalizers = removeCleanupFinalizer(function.ObjectMeta.Finalizers)
+			return r.Update(ctx, function)
+		}
+		return nil
+	}
 	if !spec.NeedCleanup(function) {
-		desiredJob := spec.MakeFunctionCleanUpJob(function)
 		if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 			if errors.IsNotFound(err) {
 				return nil
@@ -367,12 +375,10 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 		}
 		return nil
 	}
-	hasCleanupFinalizer := containsCleanupFinalizer(function.ObjectMeta.Finalizers)
 	if function.Spec.CleanupSubscription {
 		// add finalizer if function is updated to clean up subscription
 		if function.ObjectMeta.DeletionTimestamp.IsZero() {
 			if !hasCleanupFinalizer {
-				desiredJob := spec.MakeFunctionCleanUpJob(function)
 				if _, err := ctrl.CreateOrUpdate(ctx, r.Client, desiredJob, func() error {
 					return nil
 				}); err != nil {
@@ -387,7 +393,6 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 				}
 			}
 		} else {
-			desiredJob := spec.MakeFunctionCleanUpJob(function)
 			// if function is deleting, send an "INT" signal to the cleanup job to clean up subscription
 			if hasCleanupFinalizer {
 				if err := spec.TriggerCleanup(ctx, r.Client, r.RestClient, r.Config, desiredJob); err != nil {
@@ -413,7 +418,6 @@ func (r *FunctionReconciler) ApplyFunctionCleanUpJob(ctx context.Context, functi
 				return err
 			}
 
-			desiredJob := spec.MakeFunctionCleanUpJob(function)
 			// delete the cleanup job
 			if err := r.Delete(ctx, desiredJob, getBackgroundDeletionPolicy()); err != nil {
 				return err

@@ -1,0 +1,56 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: generic-kafka-function
+  namespace: default
+spec:
+  image: streamnative/pulsar-functions-generic-python-runner:latest
+  className: exclamation_function.ExclamationFunction
+  forwardSourceMessageProperty: true
+  replicas: 1
+  input:
+    topics:
+    - input-kafka-topic
+    typeClassName: string
+  output:
+    topic: output-kafka-topic
+    typeClassName: string
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  kafka:
+    bootstrapServers: sn-platform-pulsar-broker-0.sn-platform-pulsar-broker.default.svc.cluster.local:9092
+    consumerConfig:
+      auto.offset.reset: earliest
+    inputSchemaConfigs:
+      input-kafka-topic:
+        type: string
+    outputSchemaConfig:
+      type: string
+  genericRuntime:
+    functionFile: exclamation_function.py
+    functionFileLocation: function://public/default/test-py-function
+    language: python
+  pulsarPackageService:
+    pulsarConfig: generic-kafka-package-service
+  clusterName: test
+  subscriptionName: generic-kafka-function-sub
+  subscriptionPosition: earliest
+  autoAck: true
+  pod:
+    env:
+    - name: RUST_LOG
+      value: info
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: generic-kafka-package-service
+  namespace: default
+data:
+  webServiceURL: http://sn-platform-pulsar-broker.default.svc.cluster.local:8080
+  brokerServiceURL: pulsar://sn-platform-pulsar-broker.default.svc.cluster.local:6650

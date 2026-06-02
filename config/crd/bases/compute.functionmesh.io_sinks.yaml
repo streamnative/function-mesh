@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: sinks.compute.functionmesh.io
 spec:
   group: compute.functionmesh.io
@@ -251,6 +251,86 @@ spec:
                     type: object
                 required:
                 - jar
+                type: object
+              kafka:
+                properties:
+                  authConfig:
+                    properties:
+                      genericAuth:
+                        properties:
+                          clientAuthenticationParameters:
+                            type: string
+                          clientAuthenticationPlugin:
+                            type: string
+                        required:
+                        - clientAuthenticationParameters
+                        - clientAuthenticationPlugin
+                        type: object
+                      oauth2Config:
+                        properties:
+                          audience:
+                            type: string
+                          issuerUrl:
+                            type: string
+                          keySecretKey:
+                            type: string
+                          keySecretName:
+                            type: string
+                          scope:
+                            type: string
+                        required:
+                        - audience
+                        - issuerUrl
+                        - keySecretKey
+                        - keySecretName
+                        type: object
+                      plainAuthConfig:
+                        properties:
+                          passwordKey:
+                            type: string
+                          secretName:
+                            type: string
+                          usernameKey:
+                            type: string
+                        required:
+                        - secretName
+                        type: object
+                    type: object
+                  bootstrapServers:
+                    type: string
+                  consumerConfig:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  inputSchemaConfigs:
+                    additionalProperties:
+                      properties:
+                        subject:
+                          type: string
+                        type:
+                          type: string
+                        version:
+                          format: int32
+                          type: integer
+                      type: object
+                    type: object
+                  outputSchemaConfig:
+                    properties:
+                      subject:
+                        type: string
+                      type:
+                        type: string
+                      version:
+                        format: int32
+                        type: integer
+                    type: object
+                  producerConfig:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  tlsConfig:
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
                 type: object
               logTopic:
                 type: string
@@ -1380,6 +1460,7 @@ spec:
                                   format: int32
                                   type: integer
                                 service:
+                                  default: ""
                                   type: string
                               required:
                               - port
@@ -1486,6 +1567,7 @@ spec:
                                   format: int32
                                   type: integer
                                 service:
+                                  default: ""
                                   type: string
                               required:
                               - port
@@ -1684,6 +1766,7 @@ spec:
                                   format: int32
                                   type: integer
                                 service:
+                                  default: ""
                                   type: string
                               required:
                               - port
@@ -2155,6 +2238,7 @@ spec:
                                   format: int32
                                   type: integer
                                 service:
+                                  default: ""
                                   type: string
                               required:
                               - port
@@ -2261,6 +2345,7 @@ spec:
                                   format: int32
                                   type: integer
                                 service:
+                                  default: ""
                                   type: string
                               required:
                               - port
@@ -2459,6 +2544,7 @@ spec:
                                   format: int32
                                   type: integer
                                 service:
+                                  default: ""
                                   type: string
                               required:
                               - port
@@ -2595,6 +2681,7 @@ spec:
                             format: int32
                             type: integer
                           service:
+                            default: ""
                             type: string
                         required:
                         - port

@@ -232,6 +232,16 @@ func validateSecretsMap(secrets map[string]v1alpha1.SecretRef) *field.Error {
 
 func validateInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
 	skipInputValidation bool, skipOutputValidation bool) []*field.Error {
+	return validateInputOutputWithTopicNameValidation(input, output, skipInputValidation, skipOutputValidation, true)
+}
+
+func validateKafkaInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
+	skipInputValidation bool, skipOutputValidation bool) []*field.Error {
+	return validateInputOutputWithTopicNameValidation(input, output, skipInputValidation, skipOutputValidation, false)
+}
+
+func validateInputOutputWithTopicNameValidation(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
+	skipInputValidation bool, skipOutputValidation bool, validateTopicNames bool) []*field.Error {
 	var allErrs field.ErrorList
 	allInputTopics := []string{}
 	if input != nil {
@@ -243,12 +253,14 @@ func validateInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
 				allErrs = append(allErrs, e)
 			}
 
-			for _, topic := range allInputTopics {
-				err := isValidTopicName(topic)
-				if err != nil {
-					e := field.Invalid(field.NewPath("spec").Child("input"), *input,
-						fmt.Sprintf("Input topic %s is invalid", topic))
-					allErrs = append(allErrs, e)
+			if validateTopicNames {
+				for _, topic := range allInputTopics {
+					err := isValidTopicName(topic)
+					if err != nil {
+						e := field.Invalid(field.NewPath("spec").Child("input"), *input,
+							fmt.Sprintf("Input topic %s is invalid", topic))
+						allErrs = append(allErrs, e)
+					}
 				}
 			}
 
@@ -270,11 +282,13 @@ func validateInputOutput(input *v1alpha1.InputConf, output *v1alpha1.OutputConf,
 
 	if output != nil && !skipOutputValidation {
 		if output.Topic != "" {
-			err := isValidTopicName(output.Topic)
-			if err != nil {
-				e := field.Invalid(field.NewPath("spec").Child("output", "topic"), output.Topic,
-					fmt.Sprintf("Output topic %s is invalid", output.Topic))
-				allErrs = append(allErrs, e)
+			if validateTopicNames {
+				err := isValidTopicName(output.Topic)
+				if err != nil {
+					e := field.Invalid(field.NewPath("spec").Child("output", "topic"), output.Topic,
+						fmt.Sprintf("Output topic %s is invalid", output.Topic))
+					allErrs = append(allErrs, e)
+				}
 			}
 			for _, v := range allInputTopics {
 				if v == output.Topic {
@@ -397,9 +411,61 @@ func validateWindowConfigs(windowConfig *v1alpha1.WindowConfig) *field.Error {
 }
 
 func validateMessaging(messaging *v1alpha1.Messaging) *field.Error {
-	if messaging == nil || messaging.Pulsar == nil || messaging.Pulsar.PulsarConfig == "" {
+	if messaging == nil {
 		return field.Invalid(field.NewPath("spec").Child("pulsar"), messaging,
 			"Pulsar configuration needs to be set")
+	}
+	if messaging.Pulsar == nil || messaging.Pulsar.PulsarConfig == "" {
+		return field.Invalid(field.NewPath("spec").Child("pulsar"), messaging,
+			"Pulsar configuration needs to be set")
+	}
+	return nil
+}
+
+func validateFunctionMessaging(spec *v1alpha1.FunctionSpec) *field.Error {
+	if spec.Kafka != nil {
+		if spec.Pulsar != nil {
+			return field.Invalid(field.NewPath("spec"), spec.Messaging,
+				"only one messaging service can be set")
+		}
+		if spec.Kafka.BootstrapServers == "" {
+			return field.Invalid(field.NewPath("spec").Child("kafka", "bootstrapServers"),
+				spec.Kafka.BootstrapServers, "kafka.bootstrapServers needs to be set")
+		}
+		if spec.Kafka.AuthConfig != nil && spec.Kafka.AuthConfig.PlainAuthConfig != nil &&
+			spec.Kafka.AuthConfig.PlainAuthConfig.SecretName == "" {
+			return field.Invalid(field.NewPath("spec").Child("kafka", "authConfig", "plainAuthConfig", "secretName"),
+				spec.Kafka.AuthConfig.PlainAuthConfig.SecretName,
+				"kafka.authConfig.plainAuthConfig.secretName needs to be set")
+		}
+		if spec.CleanupSubscription {
+			return field.Invalid(field.NewPath("spec").Child("cleanupSubscription"), spec.CleanupSubscription,
+				"cleanupSubscription only supports pulsar messaging")
+		}
+		return nil
+	}
+	return validateMessaging(&spec.Messaging)
+}
+
+func validateKafkaMessagingUnsupported(component string, messaging *v1alpha1.Messaging) *field.Error {
+	if messaging == nil || messaging.Kafka == nil {
+		return nil
+	}
+	return field.Invalid(field.NewPath("spec").Child("kafka"), messaging.Kafka,
+		fmt.Sprintf("%s does not support kafka messaging", component))
+}
+
+func validateKafkaMessagingRuntime(runtime v1alpha1.Runtime, kafka *v1alpha1.KafkaMessaging) *field.Error {
+	if kafka == nil {
+		return nil
+	}
+	if runtime.GenericRuntime == nil {
+		return field.Invalid(field.NewPath("spec").Child("kafka"), kafka,
+			"only genericRuntime supports kafka messaging")
+	}
+	if runtime.GenericRuntime.FunctionFile == "" {
+		return field.Invalid(field.NewPath("spec").Child("runtime", "genericRuntime", "functionFile"),
+			runtime.GenericRuntime.FunctionFile, "genericRuntime.functionFile needs to be set for kafka messaging")
 	}
 	return nil
 }

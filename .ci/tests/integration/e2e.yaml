@@ -119,6 +119,8 @@ verify:
     # the interval between two attempts, e.g. 10s, 1m.
     interval: 10s
   cases:
+    - query: timeout 5m bash .ci/tests/integration/cases/generic-kafka-function/verify.sh
+      expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/python-function/verify.sh
       expected: expected.data.yaml
     - query: timeout 5m bash .ci/tests/integration/cases/go-function/verify.sh

@@ -348,10 +348,19 @@ function ci::verify_backlog() {
     topic=$1
     sub=$2
     expected=$3
-    BACKLOG=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats $topic | grep msgBacklog)
-    if [[ "$BACKLOG" == *"\"msgBacklog\" : $expected"* ]]; then
-       return 0
-    fi
+    for attempt in $(seq 1 30); do
+        if BACKLOG=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats "$topic" 2>&1); then
+            true
+        elif BACKLOG=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-admin topics stats "${topic}-partition-0" 2>&1); then
+            true
+        fi
+        if [[ "$BACKLOG" == *"\"msgBacklog\" : $expected"* ]]; then
+           return 0
+        fi
+        echo "Backlog for ${topic} subscription ${sub} is not ${expected}, retry ${attempt}/30"
+        echo "$BACKLOG"
+        sleep 2
+    done
     return 1
 }
 
@@ -364,6 +373,121 @@ function ci::verify_exclamation_function() {
     kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client produce -m "${inputmessage}" -n 1 "${inputtopic}"
     sleep "$timesleep"
     MESSAGE=$(kubectl exec -n ${NAMESPACE} ${CLUSTER}-pulsar-broker-0 -- bin/pulsar-client consume -n 1 -s "sub" --subscription-position Earliest "${outputtopic}")
+    echo "$MESSAGE"
+    if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
+        return 0
+    fi
+    return 1
+}
+
+function ci::ensure_kafka_topic() {
+    topic=$1
+    kafka_bootstrap_server=$2
+    properties_file=$3
+    for attempt in $(seq 1 30); do
+        if kubectl exec -n ${NAMESPACE} kafka-client -- kafka-topics.sh \
+            --bootstrap-server "${kafka_bootstrap_server}" \
+            --command-config "/opt/bitnami/kafka/config/${properties_file}" \
+            --list > /dev/null 2>&1; then
+            break
+        fi
+        if [ "${attempt}" -eq 30 ]; then
+            echo "Kafka broker ${kafka_bootstrap_server} is not ready"
+            kubectl get pods -n ${NAMESPACE} -o wide || true
+            return 1
+        fi
+        sleep 5
+    done
+    kubectl exec -n ${NAMESPACE} kafka-client -- kafka-topics.sh \
+        --bootstrap-server "${kafka_bootstrap_server}" \
+        --create \
+        --if-not-exists \
+        --topic "${topic}" \
+        --replication-factor 1 \
+        --partitions 1 \
+        --command-config "/opt/bitnami/kafka/config/${properties_file}"
+}
+
+function ci::wait_kafka_topic_ready() {
+    topic=$1
+    kafka_bootstrap_server=$2
+    properties_file=$3
+    for attempt in $(seq 1 30); do
+        if kubectl exec -n ${NAMESPACE} kafka-client -- kafka-topics.sh \
+            --bootstrap-server "${kafka_bootstrap_server}" \
+            --describe \
+            --topic "${topic}" \
+            --command-config "/opt/bitnami/kafka/config/${properties_file}"; then
+            return 0
+        fi
+        echo "Kafka topic ${topic} is not ready, retry ${attempt}/30"
+        sleep 5
+    done
+    return 1
+}
+
+function ci::wait_kafka_group_coordinator_ready() {
+    consumer_group=$1
+    kafka_bootstrap_server=$2
+    properties_file=$3
+    output_file=$(mktemp)
+    for attempt in $(seq 1 30); do
+        if kubectl exec -n ${NAMESPACE} kafka-client -- kafka-consumer-groups.sh \
+            --bootstrap-server "${kafka_bootstrap_server}" \
+            --describe \
+            --group "${consumer_group}" \
+            --command-config "/opt/bitnami/kafka/config/${properties_file}" > "${output_file}" 2>&1; then
+            cat "${output_file}"
+            rm -f "${output_file}"
+            return 0
+        fi
+        cat "${output_file}"
+        if ! grep -q "CoordinatorLoadInProgress" "${output_file}"; then
+            if grep -Eiq "does not exist|not exist|not found|no active members" "${output_file}"; then
+                rm -f "${output_file}"
+                return 0
+            fi
+            rm -f "${output_file}"
+            return 1
+        fi
+        echo "Kafka consumer group coordinator for ${consumer_group} is loading, retry ${attempt}/30"
+        sleep 5
+    done
+    rm -f "${output_file}"
+    return 1
+}
+
+function ci::verify_kafka_exclamation_function() {
+    inputtopic=$1
+    outputtopic=$2
+    inputmessage=$3
+    outputmessage=$4
+    kafka_bootstrap_server=$5
+    properties_file=$6
+    consumer_group="function-mesh-${RANDOM}-$(date +%s)"
+    output_file=$(mktemp)
+
+    kubectl exec -n ${NAMESPACE} kafka-client -- kafka-console-consumer.sh \
+        --bootstrap-server "${kafka_bootstrap_server}" \
+        --consumer.config "/opt/bitnami/kafka/config/${properties_file}" \
+        --topic "${outputtopic}" \
+        --group "${consumer_group}" \
+        --timeout-ms 30000 \
+        --max-messages 1 > "${output_file}" &
+    consumer_pid=$!
+
+    sleep 3
+    kubectl exec -n ${NAMESPACE} kafka-client -- bash -c \
+        "echo \"${inputmessage}\" | kafka-console-producer.sh --bootstrap-server ${kafka_bootstrap_server} --producer.config /opt/bitnami/kafka/config/${properties_file} --topic ${inputtopic}"
+
+    if ! wait "${consumer_pid}"; then
+        cat "${output_file}" || true
+        rm -f "${output_file}"
+        return 1
+    fi
+
+    MESSAGE=$(cat "${output_file}")
+    rm -f "${output_file}"
     echo "$MESSAGE"
     if [[ "$MESSAGE" == *"$outputmessage"* ]]; then
         return 0

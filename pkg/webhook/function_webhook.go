@@ -200,10 +200,20 @@ func (webhook *FunctionWebhook) ValidateCreate(ctx context.Context, obj runtime.
 			"runtime cannot be empty"))
 	}
 
-	if (r.Spec.Runtime.Java != nil && r.Spec.Runtime.Python != nil) ||
-		(r.Spec.Runtime.Java != nil && r.Spec.Runtime.Golang != nil) ||
-		(r.Spec.Runtime.Python != nil && r.Spec.Runtime.Golang != nil) ||
-		(r.Spec.Runtime.Java != nil && r.Spec.Runtime.Python != nil && r.Spec.Runtime.Golang != nil) {
+	runtimeCount := 0
+	if r.Spec.Runtime.Java != nil {
+		runtimeCount++
+	}
+	if r.Spec.Runtime.Python != nil {
+		runtimeCount++
+	}
+	if r.Spec.Runtime.Golang != nil {
+		runtimeCount++
+	}
+	if r.Spec.Runtime.GenericRuntime != nil {
+		runtimeCount++
+	}
+	if runtimeCount > 1 {
 		allErrs = append(allErrs,
 			field.Invalid(field.NewPath("spec").Child("runtime"), r.Spec.Runtime, "you can only specify one runtime"))
 	}
@@ -283,7 +293,11 @@ func (webhook *FunctionWebhook) ValidateCreate(ctx context.Context, obj runtime.
 	skipInputValidation := r.Spec.SourceConfig != nil
 	skipOutputValidation := r.Spec.SinkConfig != nil
 
-	fieldErrs = validateInputOutput(&r.Spec.Input, &r.Spec.Output, skipInputValidation, skipOutputValidation)
+	if r.Spec.Kafka != nil {
+		fieldErrs = validateKafkaInputOutput(&r.Spec.Input, &r.Spec.Output, skipInputValidation, skipOutputValidation)
+	} else {
+		fieldErrs = validateInputOutput(&r.Spec.Input, &r.Spec.Output, skipInputValidation, skipOutputValidation)
+	}
 	if len(fieldErrs) > 0 {
 		allErrs = append(allErrs, fieldErrs...)
 	}
@@ -308,7 +322,11 @@ func (webhook *FunctionWebhook) ValidateCreate(ctx context.Context, obj runtime.
 		allErrs = append(allErrs, fieldErr)
 	}
 
-	fieldErr = validateMessaging(&r.Spec.Messaging)
+	fieldErr = validateFunctionMessaging(&r.Spec)
+	if fieldErr != nil {
+		allErrs = append(allErrs, fieldErr)
+	}
+	fieldErr = validateKafkaMessagingRuntime(r.Spec.Runtime, r.Spec.Kafka)
 	if fieldErr != nil {
 		allErrs = append(allErrs, fieldErr)
 	}
