@@ -1,3 +1,15 @@
+# Function Mesh v0.28.0 Release Notes
+
+## v0.28.0 What's New
+
+* [Runtime] feat: export DownloadServiceConfig and GeneratePythonLogConfigCommand in #835
+* [Runtime] fix: ensure proper shell quoting for parameters in #837
+* [Image] Optimize multi-arch docker image build in #838
+* [Runtime] feat: add a global flag to enable/disable PauseRollout in #840
+* [CI] update Python version to 3.12 in integration test configs in #842
+* [Runtime] feat: Support startupProbe in pod policy in #841
+* [Runtime] feat: support Kafka protocol for functions in #843
+
 # Function Mesh v0.27.2 Release Notes
 
 ## v0.27.2 What's New
