@@ -64,10 +64,10 @@ jobs:
       - name: Report disk usage
         run: df -h
 
-      - name: Set up GO 1.25.11
+      - name: Set up GO 1.25.12
         uses: actions/setup-go@v5
         with:
-          go-version: 1.25.11
+          go-version: 1.25.12
 
       - name: Checkout
         uses: actions/checkout@v3

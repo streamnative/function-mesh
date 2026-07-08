@@ -1,5 +1,5 @@
 ARG PULSAR_IMAGE_TAG
-FROM --platform=$BUILDPLATFORM golang:1.25.11-trixie as builder
+FROM --platform=$BUILDPLATFORM golang:1.25.12-trixie as builder
 
 ARG TARGETOS
 ARG TARGETARCH
