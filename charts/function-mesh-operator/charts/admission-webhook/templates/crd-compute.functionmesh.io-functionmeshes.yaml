@@ -334,6 +334,43 @@ spec:
                           producerConfig:
                             type: object
                             x-kubernetes-preserve-unknown-fields: true
+                          schemaRegistry:
+                            properties:
+                              authConfig:
+                                properties:
+                                  basicAuthConfig:
+                                    properties:
+                                      passwordKey:
+                                        type: string
+                                      secretName:
+                                        type: string
+                                      usernameKey:
+                                        type: string
+                                    required:
+                                      - secretName
+                                    type: object
+                                  oauth2Config:
+                                    properties:
+                                      audience:
+                                        type: string
+                                      issuerUrl:
+                                        type: string
+                                      keySecretKey:
+                                        type: string
+                                      keySecretName:
+                                        type: string
+                                      scope:
+                                        type: string
+                                    required:
+                                      - audience
+                                      - issuerUrl
+                                      - keySecretKey
+                                      - keySecretName
+                                    type: object
+                                type: object
+                              url:
+                                type: string
+                            type: object
                           tlsConfig:
                             properties:
                               enabled:
@@ -4576,6 +4613,43 @@ spec:
                           producerConfig:
                             type: object
                             x-kubernetes-preserve-unknown-fields: true
+                          schemaRegistry:
+                            properties:
+                              authConfig:
+                                properties:
+                                  basicAuthConfig:
+                                    properties:
+                                      passwordKey:
+                                        type: string
+                                      secretName:
+                                        type: string
+                                      usernameKey:
+                                        type: string
+                                    required:
+                                      - secretName
+                                    type: object
+                                  oauth2Config:
+                                    properties:
+                                      audience:
+                                        type: string
+                                      issuerUrl:
+                                        type: string
+                                      keySecretKey:
+                                        type: string
+                                      keySecretName:
+                                        type: string
+                                      scope:
+                                        type: string
+                                    required:
+                                      - audience
+                                      - issuerUrl
+                                      - keySecretKey
+                                      - keySecretName
+                                    type: object
+                                type: object
+                              url:
+                                type: string
+                            type: object
                           tlsConfig:
                             properties:
                               enabled:
@@ -8430,6 +8504,43 @@ spec:
                           producerConfig:
                             type: object
                             x-kubernetes-preserve-unknown-fields: true
+                          schemaRegistry:
+                            properties:
+                              authConfig:
+                                properties:
+                                  basicAuthConfig:
+                                    properties:
+                                      passwordKey:
+                                        type: string
+                                      secretName:
+                                        type: string
+                                      usernameKey:
+                                        type: string
+                                    required:
+                                      - secretName
+                                    type: object
+                                  oauth2Config:
+                                    properties:
+                                      audience:
+                                        type: string
+                                      issuerUrl:
+                                        type: string
+                                      keySecretKey:
+                                        type: string
+                                      keySecretName:
+                                        type: string
+                                      scope:
+                                        type: string
+                                    required:
+                                      - audience
+                                      - issuerUrl
+                                      - keySecretKey
+                                      - keySecretName
+                                    type: object
+                                type: object
+                              url:
+                                type: string
+                            type: object
                           tlsConfig:
                             properties:
                               enabled:

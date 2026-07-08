@@ -552,6 +552,78 @@ func TestGenericFunctionCommandUsesKafkaMessaging(t *testing.T) {
 	assert.Assert(t, hasKafkaOAuthMount, "container should include kafka oauth2 mount")
 }
 
+func TestGenericFunctionContainerUsesKafkaSchemaRegistryBasicAuthEnv(t *testing.T) {
+	function := makeFunctionSample("generic-kafka-schema-registry-basic")
+	function.Spec.Messaging = v1alpha1.Messaging{}
+	function.Spec.Kafka = &v1alpha1.KafkaMessaging{
+		BootstrapServers: "kafka:9092",
+		SchemaRegistry: &v1alpha1.KafkaSchemaRegistryConfig{
+			URL: "https://schema-registry:8081",
+			AuthConfig: &v1alpha1.KafkaSchemaRegistryAuthConfig{
+				BasicAuthConfig: &v1alpha1.KafkaSchemaRegistryBasicAuthConfig{
+					SecretName:  "schema-registry-auth",
+					UsernameKey: "user",
+					PasswordKey: "pass",
+				},
+			},
+		},
+	}
+	function.Spec.Runtime = v1alpha1.Runtime{
+		GenericRuntime: &v1alpha1.GenericRuntime{
+			FunctionFile: "/pulsar/function.py",
+			Language:     "python",
+		},
+	}
+
+	container := makeFunctionContainer(function)
+	envByName := map[string]corev1.EnvVar{}
+	for _, env := range container.Env {
+		envByName[env.Name] = env
+	}
+
+	usernameEnv := envByName[KafkaSchemaRegistryAuthUsernameEnv]
+	assert.Equal(t, "schema-registry-auth", usernameEnv.ValueFrom.SecretKeyRef.Name)
+	assert.Equal(t, "user", usernameEnv.ValueFrom.SecretKeyRef.Key)
+	passwordEnv := envByName[KafkaSchemaRegistryAuthPasswordEnv]
+	assert.Equal(t, "schema-registry-auth", passwordEnv.ValueFrom.SecretKeyRef.Name)
+	assert.Equal(t, "pass", passwordEnv.ValueFrom.SecretKeyRef.Key)
+}
+
+func TestGenericFunctionContainerUsesKafkaSchemaRegistryOAuthMount(t *testing.T) {
+	function := makeFunctionSample("generic-kafka-schema-registry-oauth")
+	function.Spec.Messaging = v1alpha1.Messaging{}
+	function.Spec.Kafka = &v1alpha1.KafkaMessaging{
+		BootstrapServers: "kafka:9092",
+		SchemaRegistry: &v1alpha1.KafkaSchemaRegistryConfig{
+			URL: "https://schema-registry:8081",
+			AuthConfig: &v1alpha1.KafkaSchemaRegistryAuthConfig{
+				OAuth2Config: &v1alpha1.OAuth2Config{
+					Audience:      "schema-registry",
+					IssuerURL:     "https://issuer.example.com",
+					KeySecretName: "schema-registry-oauth",
+					KeySecretKey:  "auth.json",
+				},
+			},
+		},
+	}
+	function.Spec.Runtime = v1alpha1.Runtime{
+		GenericRuntime: &v1alpha1.GenericRuntime{
+			FunctionFile: "/pulsar/function.py",
+			Language:     "python",
+		},
+	}
+
+	container := makeFunctionContainer(function)
+	hasSchemaRegistryOAuthMount := false
+	for _, mount := range container.VolumeMounts {
+		if mount.MountPath == KafkaSchemaRegistryOAuth2MountPath {
+			hasSchemaRegistryOAuthMount = true
+		}
+	}
+
+	assert.Assert(t, hasSchemaRegistryOAuthMount, "container should include kafka schema registry oauth2 mount")
+}
+
 func TestFunctionCommandDoesNotBuildPulsarRuntimeCommandForKafkaJavaFunction(t *testing.T) {
 	function := makeFunctionSample("java-kafka-command")
 	function.Spec.Messaging = v1alpha1.Messaging{

@@ -163,18 +163,20 @@ func makeFunctionVolumes(function *v1alpha1.Function, authConfig *v1alpha1.AuthC
 		authConfig,
 		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
 		function.Spec.LogTopicAgent)
+	volumes = appendKafkaSchemaRegistryOAuth2Volumes(volumes, function.Spec.Kafka)
 	return AppendPackageServiceVolumes(volumes, function.Spec.PulsarPackageService)
 }
 
 func makeFunctionVolumeMounts(function *v1alpha1.Function, authConfig *v1alpha1.AuthConfig) []corev1.VolumeMount {
 	tlsConfig := functionPulsarTLSConfig(function)
-	return GenerateContainerVolumeMounts(function.Spec.VolumeMounts,
+	mounts := GenerateContainerVolumeMounts(function.Spec.VolumeMounts,
 		function.Spec.Output.ProducerConf,
 		function.Spec.Input.SourceSpecs,
 		tlsConfig,
 		authConfig,
 		GetRuntimeLogConfigNames(function.Spec.Java, function.Spec.Python, function.Spec.Golang),
 		function.Spec.LogTopicAgent)
+	return appendKafkaSchemaRegistryOAuth2VolumeMounts(mounts, function.Spec.Kafka)
 }
 
 func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
@@ -198,6 +200,7 @@ func makeFunctionContainer(function *v1alpha1.Function) *corev1.Container {
 	}
 	env := generateContainerEnv(function)
 	env = append(env, generateKafkaAuthEnv(function.Spec.Kafka)...)
+	env = append(env, generateKafkaSchemaRegistryAuthEnv(function.Spec.Kafka)...)
 	return &corev1.Container{
 		// TODO new container to pull user code image and upload jars into bookkeeper
 		Name:            FunctionContainerName,
@@ -457,6 +460,65 @@ func generateKafkaAuthEnv(kafka *v1alpha1.KafkaMessaging) []corev1.EnvVar {
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: plainAuth.SecretName},
+					Key:                  passwordKey,
+				},
+			},
+		},
+	}
+}
+
+func appendKafkaSchemaRegistryOAuth2Volumes(volumes []corev1.Volume, kafka *v1alpha1.KafkaMessaging) []corev1.Volume {
+	oauth2Config := kafkaSchemaRegistryOAuth2Config(kafka)
+	if oauth2Config == nil {
+		return volumes
+	}
+	return appendVolumeIfNotExists(volumes, generateVolumeFromOAuth2Config(oauth2Config))
+}
+
+func appendKafkaSchemaRegistryOAuth2VolumeMounts(mounts []corev1.VolumeMount, kafka *v1alpha1.KafkaMessaging) []corev1.VolumeMount {
+	oauth2Config := kafkaSchemaRegistryOAuth2Config(kafka)
+	if oauth2Config == nil {
+		return mounts
+	}
+	return appendVolumeMountIfNotExists(mounts, generateVolumeMountFromOAuth2ConfigWithMountPath(oauth2Config, KafkaSchemaRegistryOAuth2MountPath))
+}
+
+func kafkaSchemaRegistryOAuth2Config(kafka *v1alpha1.KafkaMessaging) *v1alpha1.OAuth2Config {
+	if kafka == nil || kafka.SchemaRegistry == nil || kafka.SchemaRegistry.AuthConfig == nil {
+		return nil
+	}
+	return kafka.SchemaRegistry.AuthConfig.OAuth2Config
+}
+
+func generateKafkaSchemaRegistryAuthEnv(kafka *v1alpha1.KafkaMessaging) []corev1.EnvVar {
+	if kafka == nil || kafka.SchemaRegistry == nil || kafka.SchemaRegistry.AuthConfig == nil ||
+		kafka.SchemaRegistry.AuthConfig.BasicAuthConfig == nil {
+		return nil
+	}
+	basicAuth := kafka.SchemaRegistry.AuthConfig.BasicAuthConfig
+	usernameKey := basicAuth.UsernameKey
+	if usernameKey == "" {
+		usernameKey = "username"
+	}
+	passwordKey := basicAuth.PasswordKey
+	if passwordKey == "" {
+		passwordKey = "password"
+	}
+	return []corev1.EnvVar{
+		{
+			Name: KafkaSchemaRegistryAuthUsernameEnv,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: basicAuth.SecretName},
+					Key:                  usernameKey,
+				},
+			},
+		},
+		{
+			Name: KafkaSchemaRegistryAuthPasswordEnv,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: basicAuth.SecretName},
 					Key:                  passwordKey,
 				},
 			},

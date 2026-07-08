@@ -95,6 +95,9 @@ type KafkaMessaging struct {
 
 	// +kubebuilder:validation:Optional
 	OutputSchemaConfig *KafkaSchemaConfig `json:"outputSchemaConfig,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	SchemaRegistry *KafkaSchemaRegistryConfig `json:"schemaRegistry,omitempty"`
 }
 
 type KafkaTLSConfig struct {
@@ -124,6 +127,25 @@ type KafkaSchemaConfig struct {
 	Subject *string `json:"subject,omitempty"`
 	Type    *string `json:"type,omitempty"`
 	Version *int32  `json:"version,omitempty"`
+}
+
+type KafkaSchemaRegistryConfig struct {
+	URL        string                         `json:"url,omitempty"`
+	AuthConfig *KafkaSchemaRegistryAuthConfig `json:"authConfig,omitempty"`
+}
+
+type KafkaSchemaRegistryAuthConfig struct {
+	OAuth2Config    *OAuth2Config                       `json:"oauth2Config,omitempty"`
+	BasicAuthConfig *KafkaSchemaRegistryBasicAuthConfig `json:"basicAuthConfig,omitempty"`
+}
+
+type KafkaSchemaRegistryBasicAuthConfig struct {
+	// The name of the k8s secret that contains the username and password for Schema Registry authentication.
+	// +kubebuilder:validation:Required
+	SecretName string `json:"secretName,omitempty"`
+
+	UsernameKey string `json:"usernameKey,omitempty"`
+	PasswordKey string `json:"passwordKey,omitempty"`
 }
 
 func (c *PulsarTLSConfig) IsEnabled() bool {

@@ -201,6 +201,7 @@ func makeKafkaConfig(function *v1alpha1.Function) map[string]interface{} {
 		"security.protocol": securityProtocol,
 	}
 	addConfigData(producerConfig, kafka.ProducerConfig)
+	addKafkaSchemaRegistryConfig(producerConfig, kafka.SchemaRegistry)
 
 	return map[string]interface{}{
 		"messaging_type":  "kafka",
@@ -230,6 +231,32 @@ func kafkaAuthEnabled(auth *v1alpha1.KafkaAuthConfig) bool {
 	return auth != nil && (auth.OAuth2Config != nil ||
 		auth.GenericAuth != nil ||
 		auth.PlainAuthConfig != nil)
+}
+
+func addKafkaSchemaRegistryConfig(config map[string]interface{}, schemaRegistry *v1alpha1.KafkaSchemaRegistryConfig) {
+	if schemaRegistry == nil {
+		return
+	}
+	if schemaRegistry.URL != "" {
+		config["schema.registry.url"] = schemaRegistry.URL
+	}
+	if schemaRegistry.AuthConfig == nil {
+		return
+	}
+	switch {
+	case schemaRegistry.AuthConfig.OAuth2Config != nil:
+		oauth2Config := schemaRegistry.AuthConfig.OAuth2Config
+		config["schema.registry.oauth2.config"] = mustJSON(map[string]string{
+			"private_key": getOAuth2MountFile(oauth2Config, KafkaSchemaRegistryOAuth2MountPath),
+			"issuer_url":  oauth2Config.IssuerURL,
+			"audience":    oauth2Config.Audience,
+			"scope":       oauth2Config.Scope,
+		})
+	case schemaRegistry.AuthConfig.BasicAuthConfig != nil:
+		config["schema.registry.basic.auth.user.info"] = fmt.Sprintf("${%s}:${%s}",
+			KafkaSchemaRegistryAuthUsernameEnv,
+			KafkaSchemaRegistryAuthPasswordEnv)
+	}
 }
 
 func makeKafkaInputSpecs(function *v1alpha1.Function) map[string]interface{} {
