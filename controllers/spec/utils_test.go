@@ -209,6 +209,8 @@ func TestConvertFunctionDetailsWithKafkaConfig(t *testing.T) {
 	assert.Equal(t, "kafka:9092", kafkaConfig["producer_config"].(map[string]interface{})["bootstrap.servers"])
 	assert.Equal(t, float64(5), kafkaConfig["producer_config"].(map[string]interface{})["linger.ms"])
 	assert.Equal(t, "https://schema-registry:8081", kafkaConfig["producer_config"].(map[string]interface{})["schema.registry.url"])
+	assert.Equal(t, "USER_INFO",
+		kafkaConfig["producer_config"].(map[string]interface{})["schema.registry.basic.auth.credentials.source"])
 	assert.Equal(t, "${KAFKA_SCHEMA_REGISTRY_AUTH_USERNAME}:${KAFKA_SCHEMA_REGISTRY_AUTH_PASSWORD}",
 		kafkaConfig["producer_config"].(map[string]interface{})["schema.registry.basic.auth.user.info"])
 	inputSpecs := kafkaConfig["input_specs"].(map[string]interface{})

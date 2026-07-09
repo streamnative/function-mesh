@@ -254,6 +254,7 @@ func addKafkaSchemaRegistryConfig(config map[string]interface{}, schemaRegistry 
 		})
 	case schemaRegistry.AuthConfig.BasicAuthConfig != nil:
 		// The generic runtime expands these env refs before creating the Schema Registry client.
+		config["schema.registry.basic.auth.credentials.source"] = "USER_INFO"
 		config["schema.registry.basic.auth.user.info"] = fmt.Sprintf("${%s}:${%s}",
 			KafkaSchemaRegistryAuthUsernameEnv,
 			KafkaSchemaRegistryAuthPasswordEnv)
