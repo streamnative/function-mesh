@@ -471,6 +471,25 @@ func validateKafkaSchemaRegistry(schemaRegistry *v1alpha1.KafkaSchemaRegistryCon
 			schemaRegistry.AuthConfig.BasicAuthConfig.SecretName,
 			"kafka.schemaRegistry.authConfig.basicAuthConfig.secretName needs to be set")
 	}
+	if oauth2Config := schemaRegistry.AuthConfig.OAuth2Config; oauth2Config != nil {
+		oauth2Path := field.NewPath("spec").Child("kafka", "schemaRegistry", "authConfig", "oauth2Config")
+		if oauth2Config.IssuerURL == "" {
+			return field.Invalid(oauth2Path.Child("issuerUrl"), oauth2Config.IssuerURL,
+				"kafka.schemaRegistry.authConfig.oauth2Config.issuerUrl needs to be set")
+		}
+		if oauth2Config.Audience == "" {
+			return field.Invalid(oauth2Path.Child("audience"), oauth2Config.Audience,
+				"kafka.schemaRegistry.authConfig.oauth2Config.audience needs to be set")
+		}
+		if oauth2Config.KeySecretName == "" {
+			return field.Invalid(oauth2Path.Child("keySecretName"), oauth2Config.KeySecretName,
+				"kafka.schemaRegistry.authConfig.oauth2Config.keySecretName needs to be set")
+		}
+		if oauth2Config.KeySecretKey == "" {
+			return field.Invalid(oauth2Path.Child("keySecretKey"), oauth2Config.KeySecretKey,
+				"kafka.schemaRegistry.authConfig.oauth2Config.keySecretKey needs to be set")
+		}
+	}
 	return nil
 }
 
