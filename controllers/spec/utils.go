@@ -195,6 +195,7 @@ func makeKafkaConfig(function *v1alpha1.Function) map[string]interface{} {
 		"security.protocol": securityProtocol,
 	}
 	addConfigData(consumerConfig, kafka.ConsumerConfig)
+	addKafkaSchemaRegistryConfig(consumerConfig, kafka.SchemaRegistry)
 
 	producerConfig := map[string]interface{}{
 		"bootstrap.servers": kafka.BootstrapServers,

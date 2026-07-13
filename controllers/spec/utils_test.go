@@ -202,17 +202,23 @@ func TestConvertFunctionDetailsWithKafkaConfig(t *testing.T) {
 	userConfig := map[string]interface{}{}
 	assert.NoError(t, json.Unmarshal([]byte(details.UserConfig), &userConfig))
 	kafkaConfig := userConfig["_kafka_config"].(map[string]interface{})
+	consumerConfig := kafkaConfig["consumer_config"].(map[string]interface{})
+	producerConfig := kafkaConfig["producer_config"].(map[string]interface{})
 	assert.Equal(t, "kafka", kafkaConfig["messaging_type"])
-	assert.Equal(t, "kafka:9092", kafkaConfig["consumer_config"].(map[string]interface{})["bootstrap.servers"])
-	assert.Equal(t, "PLAINTEXT", kafkaConfig["consumer_config"].(map[string]interface{})["security.protocol"])
-	assert.Equal(t, "earliest", kafkaConfig["consumer_config"].(map[string]interface{})["auto.offset.reset"])
-	assert.Equal(t, "kafka:9092", kafkaConfig["producer_config"].(map[string]interface{})["bootstrap.servers"])
-	assert.Equal(t, float64(5), kafkaConfig["producer_config"].(map[string]interface{})["linger.ms"])
-	assert.Equal(t, "https://schema-registry:8081", kafkaConfig["producer_config"].(map[string]interface{})["schema.registry.url"])
-	assert.Equal(t, "USER_INFO",
-		kafkaConfig["producer_config"].(map[string]interface{})["schema.registry.basic.auth.credentials.source"])
+	assert.Equal(t, "kafka:9092", consumerConfig["bootstrap.servers"])
+	assert.Equal(t, "PLAINTEXT", consumerConfig["security.protocol"])
+	assert.Equal(t, "earliest", consumerConfig["auto.offset.reset"])
+	assert.Equal(t, "https://schema-registry:8081", consumerConfig["schema.registry.url"])
+	assert.Equal(t, "USER_INFO", consumerConfig["schema.registry.basic.auth.credentials.source"])
 	assert.Equal(t, "${KAFKA_SCHEMA_REGISTRY_AUTH_USERNAME}:${KAFKA_SCHEMA_REGISTRY_AUTH_PASSWORD}",
-		kafkaConfig["producer_config"].(map[string]interface{})["schema.registry.basic.auth.user.info"])
+		consumerConfig["schema.registry.basic.auth.user.info"])
+	assert.Equal(t, "kafka:9092", producerConfig["bootstrap.servers"])
+	assert.Equal(t, float64(5), producerConfig["linger.ms"])
+	assert.Equal(t, "https://schema-registry:8081", producerConfig["schema.registry.url"])
+	assert.Equal(t, "USER_INFO",
+		producerConfig["schema.registry.basic.auth.credentials.source"])
+	assert.Equal(t, "${KAFKA_SCHEMA_REGISTRY_AUTH_USERNAME}:${KAFKA_SCHEMA_REGISTRY_AUTH_PASSWORD}",
+		producerConfig["schema.registry.basic.auth.user.info"])
 	inputSpecs := kafkaConfig["input_specs"].(map[string]interface{})
 	assert.Equal(t, "json", inputSpecs["orders"].(map[string]interface{})["kafka_schema"].(map[string]interface{})["type"])
 	assert.NotContains(t, inputSpecs, "unknown-topic")
@@ -253,10 +259,19 @@ func TestConvertFunctionDetailsWithKafkaSchemaRegistryOAuth(t *testing.T) {
 	userConfig := map[string]interface{}{}
 	assert.NoError(t, json.Unmarshal([]byte(details.UserConfig), &userConfig))
 	kafkaConfig := userConfig["_kafka_config"].(map[string]interface{})
+	consumerConfig := kafkaConfig["consumer_config"].(map[string]interface{})
 	producerConfig := kafkaConfig["producer_config"].(map[string]interface{})
+	assert.Equal(t, "https://schema-registry:8081", consumerConfig["schema.registry.url"])
 	assert.Equal(t, "https://schema-registry:8081", producerConfig["schema.registry.url"])
 
 	oauthConfig := map[string]interface{}{}
+	assert.NoError(t, json.Unmarshal([]byte(consumerConfig["schema.registry.oauth2.config"].(string)), &oauthConfig))
+	assert.Equal(t, "/etc/oauth2-kafka-schema-registry/auth.json", oauthConfig["private_key"])
+	assert.Equal(t, "https://issuer.example.com", oauthConfig["issuer_url"])
+	assert.Equal(t, "schema-registry", oauthConfig["audience"])
+	assert.Equal(t, "produce", oauthConfig["scope"])
+
+	oauthConfig = map[string]interface{}{}
 	assert.NoError(t, json.Unmarshal([]byte(producerConfig["schema.registry.oauth2.config"].(string)), &oauthConfig))
 	assert.Equal(t, "/etc/oauth2-kafka-schema-registry/auth.json", oauthConfig["private_key"])
 	assert.Equal(t, "https://issuer.example.com", oauthConfig["issuer_url"])

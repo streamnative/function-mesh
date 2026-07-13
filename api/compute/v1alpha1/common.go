@@ -142,9 +142,13 @@ type KafkaSchemaRegistryAuthConfig struct {
 type KafkaSchemaRegistryBasicAuthConfig struct {
 	// The name of the k8s secret that contains the username and password for Schema Registry authentication.
 	// +kubebuilder:validation:Required
-	SecretName string `json:"secretName,omitempty"`
+	SecretName string `json:"secretName"`
 
+	// The key of the username in the k8s secret. Defaults to "username".
+	// +kubebuilder:default=username
 	UsernameKey string `json:"usernameKey,omitempty"`
+	// The key of the password in the k8s secret. Defaults to "password".
+	// +kubebuilder:default=password
 	PasswordKey string `json:"passwordKey,omitempty"`
 }
 

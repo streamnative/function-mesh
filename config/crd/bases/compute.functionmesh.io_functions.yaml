@@ -338,10 +338,12 @@ spec:
                           basicAuthConfig:
                             properties:
                               passwordKey:
+                                default: password
                                 type: string
                               secretName:
                                 type: string
                               usernameKey:
+                                default: username
                                 type: string
                             required:
                             - secretName
