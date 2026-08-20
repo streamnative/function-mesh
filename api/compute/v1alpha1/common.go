@@ -375,6 +375,28 @@ type ProducerConfig struct {
 	CryptoConfig                       *CryptoConfig   `json:"cryptoConfig,omitempty"`
 	BatchBuilder                       string          `json:"batchBuilder,omitempty"`
 	CompressionType                    CompressionType `json:"compressionType,omitempty"`
+	BatchingConfig                     *BatchingConfig `json:"batchingConfig,omitempty"`
+}
+
+type BatchingConfig struct {
+	// Enabled controls whether producer batching is enabled. It defaults to true for Pulsar compatibility.
+	// +kubebuilder:default:=true
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default:=10
+	BatchingMaxPublishDelayMs int32 `json:"batchingMaxPublishDelayMs,omitempty"`
+
+	// +kubebuilder:validation:Minimum=1
+	RoundRobinRouterBatchingPartitionSwitchFrequency int32 `json:"roundRobinRouterBatchingPartitionSwitchFrequency,omitempty"`
+
+	// +kubebuilder:validation:Minimum=1
+	BatchingMaxMessages int32 `json:"batchingMaxMessages,omitempty"`
+
+	// +kubebuilder:validation:Minimum=1
+	BatchingMaxBytes int32 `json:"batchingMaxBytes,omitempty"`
+
+	BatchBuilder string `json:"batchBuilder,omitempty"`
 }
 
 type CryptoConfig struct {

@@ -905,6 +905,7 @@ type ProducerSpec struct {
 	CryptoSpec                         *CryptoSpec     `protobuf:"bytes,4,opt,name=cryptoSpec,proto3" json:"cryptoSpec,omitempty"`
 	BatchBuilder                       string          `protobuf:"bytes,5,opt,name=batchBuilder,proto3" json:"batchBuilder,omitempty"`
 	CompressionType                    CompressionType `protobuf:"varint,6,opt,name=compressionType,proto3,enum=proto.CompressionType" json:"compressionType,omitempty"`
+	BatchingSpec                       *BatchingSpec   `protobuf:"bytes,7,opt,name=batchingSpec,proto3" json:"batchingSpec,omitempty"`
 }
 
 func (x *ProducerSpec) Reset() {
@@ -979,6 +980,13 @@ func (x *ProducerSpec) GetCompressionType() CompressionType {
 		return x.CompressionType
 	}
 	return CompressionType_LZ4
+}
+
+func (x *ProducerSpec) GetBatchingSpec() *BatchingSpec {
+	if x != nil {
+		return x.BatchingSpec
+	}
+	return nil
 }
 
 type CryptoSpec struct {
@@ -1065,6 +1073,93 @@ func (x *CryptoSpec) GetConsumerCryptoFailureAction() CryptoSpec_FailureAction {
 	return CryptoSpec_FAIL
 }
 
+type BatchingSpec struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Enabled                                          bool   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	BatchingMaxPublishDelayMs                        int32  `protobuf:"varint,2,opt,name=batchingMaxPublishDelayMs,proto3" json:"batchingMaxPublishDelayMs,omitempty"`
+	RoundRobinRouterBatchingPartitionSwitchFrequency int32  `protobuf:"varint,3,opt,name=roundRobinRouterBatchingPartitionSwitchFrequency,proto3" json:"roundRobinRouterBatchingPartitionSwitchFrequency,omitempty"`
+	BatchingMaxMessages                              int32  `protobuf:"varint,4,opt,name=batchingMaxMessages,proto3" json:"batchingMaxMessages,omitempty"`
+	BatchingMaxBytes                                 int32  `protobuf:"varint,5,opt,name=batchingMaxBytes,proto3" json:"batchingMaxBytes,omitempty"`
+	BatchBuilder                                     string `protobuf:"bytes,6,opt,name=batchBuilder,proto3" json:"batchBuilder,omitempty"`
+}
+
+func (x *BatchingSpec) Reset() {
+	*x = BatchingSpec{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_Function_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BatchingSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchingSpec) ProtoMessage() {}
+
+func (x *BatchingSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_Function_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchingSpec.ProtoReflect.Descriptor instead.
+func (*BatchingSpec) Descriptor() ([]byte, []int) {
+	return file_Function_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *BatchingSpec) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *BatchingSpec) GetBatchingMaxPublishDelayMs() int32 {
+	if x != nil {
+		return x.BatchingMaxPublishDelayMs
+	}
+	return 0
+}
+
+func (x *BatchingSpec) GetRoundRobinRouterBatchingPartitionSwitchFrequency() int32 {
+	if x != nil {
+		return x.RoundRobinRouterBatchingPartitionSwitchFrequency
+	}
+	return 0
+}
+
+func (x *BatchingSpec) GetBatchingMaxMessages() int32 {
+	if x != nil {
+		return x.BatchingMaxMessages
+	}
+	return 0
+}
+
+func (x *BatchingSpec) GetBatchingMaxBytes() int32 {
+	if x != nil {
+		return x.BatchingMaxBytes
+	}
+	return 0
+}
+
+func (x *BatchingSpec) GetBatchBuilder() string {
+	if x != nil {
+		return x.BatchBuilder
+	}
+	return ""
+}
+
 type SourceSpec struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1098,7 +1193,7 @@ type SourceSpec struct {
 func (x *SourceSpec) Reset() {
 	*x = SourceSpec{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_Function_proto_msgTypes[6]
+		mi := &file_Function_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1111,7 +1206,7 @@ func (x *SourceSpec) String() string {
 func (*SourceSpec) ProtoMessage() {}
 
 func (x *SourceSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_Function_proto_msgTypes[6]
+	mi := &file_Function_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1124,7 +1219,7 @@ func (x *SourceSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SourceSpec.ProtoReflect.Descriptor instead.
 func (*SourceSpec) Descriptor() ([]byte, []int) {
-	return file_Function_proto_rawDescGZIP(), []int{6}
+	return file_Function_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SourceSpec) GetClassName() string {
@@ -1254,7 +1349,7 @@ type SinkSpec struct {
 func (x *SinkSpec) Reset() {
 	*x = SinkSpec{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_Function_proto_msgTypes[7]
+		mi := &file_Function_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1267,7 +1362,7 @@ func (x *SinkSpec) String() string {
 func (*SinkSpec) ProtoMessage() {}
 
 func (x *SinkSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_Function_proto_msgTypes[7]
+	mi := &file_Function_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1280,7 +1375,7 @@ func (x *SinkSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SinkSpec.ProtoReflect.Descriptor instead.
 func (*SinkSpec) Descriptor() ([]byte, []int) {
-	return file_Function_proto_rawDescGZIP(), []int{7}
+	return file_Function_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SinkSpec) GetClassName() string {
@@ -1372,7 +1467,7 @@ type PackageLocationMetaData struct {
 func (x *PackageLocationMetaData) Reset() {
 	*x = PackageLocationMetaData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_Function_proto_msgTypes[8]
+		mi := &file_Function_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1385,7 +1480,7 @@ func (x *PackageLocationMetaData) String() string {
 func (*PackageLocationMetaData) ProtoMessage() {}
 
 func (x *PackageLocationMetaData) ProtoReflect() protoreflect.Message {
-	mi := &file_Function_proto_msgTypes[8]
+	mi := &file_Function_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1398,7 +1493,7 @@ func (x *PackageLocationMetaData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PackageLocationMetaData.ProtoReflect.Descriptor instead.
 func (*PackageLocationMetaData) Descriptor() ([]byte, []int) {
-	return file_Function_proto_rawDescGZIP(), []int{8}
+	return file_Function_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PackageLocationMetaData) GetPackagePath() string {
@@ -1432,7 +1527,7 @@ type FunctionMetaData struct {
 func (x *FunctionMetaData) Reset() {
 	*x = FunctionMetaData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_Function_proto_msgTypes[9]
+		mi := &file_Function_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1445,7 +1540,7 @@ func (x *FunctionMetaData) String() string {
 func (*FunctionMetaData) ProtoMessage() {}
 
 func (x *FunctionMetaData) ProtoReflect() protoreflect.Message {
-	mi := &file_Function_proto_msgTypes[9]
+	mi := &file_Function_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1458,7 +1553,7 @@ func (x *FunctionMetaData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FunctionMetaData.ProtoReflect.Descriptor instead.
 func (*FunctionMetaData) Descriptor() ([]byte, []int) {
-	return file_Function_proto_rawDescGZIP(), []int{9}
+	return file_Function_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *FunctionMetaData) GetFunctionDetails() *FunctionDetails {
@@ -1529,7 +1624,7 @@ type FunctionAuthenticationSpec struct {
 func (x *FunctionAuthenticationSpec) Reset() {
 	*x = FunctionAuthenticationSpec{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_Function_proto_msgTypes[10]
+		mi := &file_Function_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1542,7 +1637,7 @@ func (x *FunctionAuthenticationSpec) String() string {
 func (*FunctionAuthenticationSpec) ProtoMessage() {}
 
 func (x *FunctionAuthenticationSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_Function_proto_msgTypes[10]
+	mi := &file_Function_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1555,7 +1650,7 @@ func (x *FunctionAuthenticationSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FunctionAuthenticationSpec.ProtoReflect.Descriptor instead.
 func (*FunctionAuthenticationSpec) Descriptor() ([]byte, []int) {
-	return file_Function_proto_rawDescGZIP(), []int{10}
+	return file_Function_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *FunctionAuthenticationSpec) GetData() []byte {
@@ -1584,7 +1679,7 @@ type Instance struct {
 func (x *Instance) Reset() {
 	*x = Instance{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_Function_proto_msgTypes[11]
+		mi := &file_Function_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1597,7 +1692,7 @@ func (x *Instance) String() string {
 func (*Instance) ProtoMessage() {}
 
 func (x *Instance) ProtoReflect() protoreflect.Message {
-	mi := &file_Function_proto_msgTypes[11]
+	mi := &file_Function_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1610,7 +1705,7 @@ func (x *Instance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Instance.ProtoReflect.Descriptor instead.
 func (*Instance) Descriptor() ([]byte, []int) {
-	return file_Function_proto_rawDescGZIP(), []int{11}
+	return file_Function_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Instance) GetFunctionMetaData() *FunctionMetaData {
@@ -1639,7 +1734,7 @@ type Assignment struct {
 func (x *Assignment) Reset() {
 	*x = Assignment{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_Function_proto_msgTypes[12]
+		mi := &file_Function_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1652,7 +1747,7 @@ func (x *Assignment) String() string {
 func (*Assignment) ProtoMessage() {}
 
 func (x *Assignment) ProtoReflect() protoreflect.Message {
-	mi := &file_Function_proto_msgTypes[12]
+	mi := &file_Function_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1665,7 +1760,7 @@ func (x *Assignment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Assignment.ProtoReflect.Descriptor instead.
 func (*Assignment) Descriptor() ([]byte, []int) {
-	return file_Function_proto_rawDescGZIP(), []int{12}
+	return file_Function_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Assignment) GetInstance() *Instance {
@@ -1693,7 +1788,7 @@ type ConsumerSpec_ReceiverQueueSize struct {
 func (x *ConsumerSpec_ReceiverQueueSize) Reset() {
 	*x = ConsumerSpec_ReceiverQueueSize{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_Function_proto_msgTypes[13]
+		mi := &file_Function_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1706,7 +1801,7 @@ func (x *ConsumerSpec_ReceiverQueueSize) String() string {
 func (*ConsumerSpec_ReceiverQueueSize) ProtoMessage() {}
 
 func (x *ConsumerSpec_ReceiverQueueSize) ProtoReflect() protoreflect.Message {
-	mi := &file_Function_proto_msgTypes[13]
+	mi := &file_Function_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1854,7 +1949,7 @@ var file_Function_proto_rawDesc = []byte{
 	0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03,
 	0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14,
 	0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76,
-	0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0xe1, 0x02, 0x0a, 0x0c, 0x50, 0x72, 0x6f,
+	0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x9a, 0x03, 0x0a, 0x0c, 0x50, 0x72, 0x6f,
 	0x64, 0x75, 0x63, 0x65, 0x72, 0x53, 0x70, 0x65, 0x63, 0x12, 0x2e, 0x0a, 0x12, 0x6d, 0x61, 0x78,
 	0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x12, 0x6d, 0x61, 0x78, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e,
@@ -1876,35 +1971,60 @@ var file_Function_proto_rawDesc = []byte{
 	0x6d, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x54, 0x79, 0x70, 0x65, 0x18, 0x06, 0x20,
 	0x01, 0x28, 0x0e, 0x32, 0x16, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x43, 0x6f, 0x6d, 0x70,
 	0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x54, 0x79, 0x70, 0x65, 0x52, 0x0f, 0x63, 0x6f, 0x6d,
-	0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x54, 0x79, 0x70, 0x65, 0x22, 0xc1, 0x03, 0x0a,
-	0x0a, 0x43, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x53, 0x70, 0x65, 0x63, 0x12, 0x3a, 0x0a, 0x18, 0x63,
-	0x72, 0x79, 0x70, 0x74, 0x6f, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x6c,
-	0x61, 0x73, 0x73, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x18, 0x63,
-	0x72, 0x79, 0x70, 0x74, 0x6f, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x6c,
-	0x61, 0x73, 0x73, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x34, 0x0a, 0x15, 0x63, 0x72, 0x79, 0x70, 0x74,
-	0x6f, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x15, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x4b, 0x65,
-	0x79, 0x52, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x3c, 0x0a,
-	0x19, 0x70, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x65, 0x72, 0x45, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74,
-	0x69, 0x6f, 0x6e, 0x4b, 0x65, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09,
-	0x52, 0x19, 0x70, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x65, 0x72, 0x45, 0x6e, 0x63, 0x72, 0x79, 0x70,
-	0x74, 0x69, 0x6f, 0x6e, 0x4b, 0x65, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x61, 0x0a, 0x1b, 0x70,
-	0x72, 0x6f, 0x64, 0x75, 0x63, 0x65, 0x72, 0x43, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x46, 0x61, 0x69,
-	0x6c, 0x75, 0x72, 0x65, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e,
-	0x32, 0x1f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x43, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x53,
-	0x70, 0x65, 0x63, 0x2e, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x41, 0x63, 0x74, 0x69, 0x6f,
-	0x6e, 0x52, 0x1b, 0x70, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x65, 0x72, 0x43, 0x72, 0x79, 0x70, 0x74,
-	0x6f, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x61,
-	0x0a, 0x1b, 0x63, 0x6f, 0x6e, 0x73, 0x75, 0x6d, 0x65, 0x72, 0x43, 0x72, 0x79, 0x70, 0x74, 0x6f,
-	0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x05, 0x20,
-	0x01, 0x28, 0x0e, 0x32, 0x1f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x43, 0x72, 0x79, 0x70,
-	0x74, 0x6f, 0x53, 0x70, 0x65, 0x63, 0x2e, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x41, 0x63,
-	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x1b, 0x63, 0x6f, 0x6e, 0x73, 0x75, 0x6d, 0x65, 0x72, 0x43, 0x72,
-	0x79, 0x70, 0x74, 0x6f, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x41, 0x63, 0x74, 0x69, 0x6f,
-	0x6e, 0x22, 0x3d, 0x0a, 0x0d, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x41, 0x63, 0x74, 0x69,
-	0x6f, 0x6e, 0x12, 0x08, 0x0a, 0x04, 0x46, 0x41, 0x49, 0x4c, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07,
-	0x44, 0x49, 0x53, 0x43, 0x41, 0x52, 0x44, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x43, 0x4f, 0x4e,
-	0x53, 0x55, 0x4d, 0x45, 0x10, 0x02, 0x12, 0x08, 0x0a, 0x04, 0x53, 0x45, 0x4e, 0x44, 0x10, 0x0a,
+	0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x54, 0x79, 0x70, 0x65, 0x12, 0x37, 0x0a, 0x0c,
+	0x62, 0x61, 0x74, 0x63, 0x68, 0x69, 0x6e, 0x67, 0x53, 0x70, 0x65, 0x63, 0x18, 0x07, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68,
+	0x69, 0x6e, 0x67, 0x53, 0x70, 0x65, 0x63, 0x52, 0x0c, 0x62, 0x61, 0x74, 0x63, 0x68, 0x69, 0x6e,
+	0x67, 0x53, 0x70, 0x65, 0x63, 0x22, 0xc1, 0x03, 0x0a, 0x0a, 0x43, 0x72, 0x79, 0x70, 0x74, 0x6f,
+	0x53, 0x70, 0x65, 0x63, 0x12, 0x3a, 0x0a, 0x18, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x4b, 0x65,
+	0x79, 0x52, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x6c, 0x61, 0x73, 0x73, 0x4e, 0x61, 0x6d, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x18, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x4b, 0x65,
+	0x79, 0x52, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x6c, 0x61, 0x73, 0x73, 0x4e, 0x61, 0x6d, 0x65,
+	0x12, 0x34, 0x0a, 0x15, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x61,
+	0x64, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x15, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x61, 0x64, 0x65, 0x72,
+	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x3c, 0x0a, 0x19, 0x70, 0x72, 0x6f, 0x64, 0x75, 0x63,
+	0x65, 0x72, 0x45, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x4b, 0x65, 0x79, 0x4e,
+	0x61, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x52, 0x19, 0x70, 0x72, 0x6f, 0x64, 0x75,
+	0x63, 0x65, 0x72, 0x45, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x4b, 0x65, 0x79,
+	0x4e, 0x61, 0x6d, 0x65, 0x12, 0x61, 0x0a, 0x1b, 0x70, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x65, 0x72,
+	0x43, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x41, 0x63, 0x74,
+	0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1f, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2e, 0x43, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x53, 0x70, 0x65, 0x63, 0x2e, 0x46, 0x61, 0x69,
+	0x6c, 0x75, 0x72, 0x65, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x1b, 0x70, 0x72, 0x6f, 0x64,
+	0x75, 0x63, 0x65, 0x72, 0x43, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72,
+	0x65, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x61, 0x0a, 0x1b, 0x63, 0x6f, 0x6e, 0x73, 0x75,
+	0x6d, 0x65, 0x72, 0x43, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65,
+	0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1f, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x43, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x53, 0x70, 0x65, 0x63, 0x2e,
+	0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x1b, 0x63,
+	0x6f, 0x6e, 0x73, 0x75, 0x6d, 0x65, 0x72, 0x43, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x46, 0x61, 0x69,
+	0x6c, 0x75, 0x72, 0x65, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x3d, 0x0a, 0x0d, 0x46, 0x61,
+	0x69, 0x6c, 0x75, 0x72, 0x65, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x08, 0x0a, 0x04, 0x46,
+	0x41, 0x49, 0x4c, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x44, 0x49, 0x53, 0x43, 0x41, 0x52, 0x44,
+	0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x43, 0x4f, 0x4e, 0x53, 0x55, 0x4d, 0x45, 0x10, 0x02, 0x12,
+	0x08, 0x0a, 0x04, 0x53, 0x45, 0x4e, 0x44, 0x10, 0x0a, 0x22, 0xd4, 0x02, 0x0a, 0x0c, 0x42, 0x61,
+	0x74, 0x63, 0x68, 0x69, 0x6e, 0x67, 0x53, 0x70, 0x65, 0x63, 0x12, 0x18, 0x0a, 0x07, 0x65, 0x6e,
+	0x61, 0x62, 0x6c, 0x65, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x65, 0x6e, 0x61,
+	0x62, 0x6c, 0x65, 0x64, 0x12, 0x3c, 0x0a, 0x19, 0x62, 0x61, 0x74, 0x63, 0x68, 0x69, 0x6e, 0x67,
+	0x4d, 0x61, 0x78, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x73, 0x68, 0x44, 0x65, 0x6c, 0x61, 0x79, 0x4d,
+	0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x19, 0x62, 0x61, 0x74, 0x63, 0x68, 0x69, 0x6e,
+	0x67, 0x4d, 0x61, 0x78, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x73, 0x68, 0x44, 0x65, 0x6c, 0x61, 0x79,
+	0x4d, 0x73, 0x12, 0x6a, 0x0a, 0x30, 0x72, 0x6f, 0x75, 0x6e, 0x64, 0x52, 0x6f, 0x62, 0x69, 0x6e,
+	0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x42, 0x61, 0x74, 0x63, 0x68, 0x69, 0x6e, 0x67, 0x50, 0x61,
+	0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x46, 0x72, 0x65,
+	0x71, 0x75, 0x65, 0x6e, 0x63, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x30, 0x72, 0x6f,
+	0x75, 0x6e, 0x64, 0x52, 0x6f, 0x62, 0x69, 0x6e, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x42, 0x61,
+	0x74, 0x63, 0x68, 0x69, 0x6e, 0x67, 0x50, 0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x53,
+	0x77, 0x69, 0x74, 0x63, 0x68, 0x46, 0x72, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x79, 0x12, 0x30,
+	0x0a, 0x13, 0x62, 0x61, 0x74, 0x63, 0x68, 0x69, 0x6e, 0x67, 0x4d, 0x61, 0x78, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x52, 0x13, 0x62, 0x61, 0x74,
+	0x63, 0x68, 0x69, 0x6e, 0x67, 0x4d, 0x61, 0x78, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73,
+	0x12, 0x2a, 0x0a, 0x10, 0x62, 0x61, 0x74, 0x63, 0x68, 0x69, 0x6e, 0x67, 0x4d, 0x61, 0x78, 0x42,
+	0x79, 0x74, 0x65, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x05, 0x52, 0x10, 0x62, 0x61, 0x74, 0x63,
+	0x68, 0x69, 0x6e, 0x67, 0x4d, 0x61, 0x78, 0x42, 0x79, 0x74, 0x65, 0x73, 0x12, 0x22, 0x0a, 0x0c,
+	0x62, 0x61, 0x74, 0x63, 0x68, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x18, 0x06, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0c, 0x62, 0x61, 0x74, 0x63, 0x68, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72,
 	0x22, 0xf5, 0x06, 0x0a, 0x0a, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x53, 0x70, 0x65, 0x63, 0x12,
 	0x1c, 0x0a, 0x09, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x52, 0x09, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a,
@@ -2101,7 +2221,7 @@ func file_Function_proto_rawDescGZIP() []byte {
 }
 
 var file_Function_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
-var file_Function_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_Function_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_Function_proto_goTypes = []interface{}{
 	(ProcessingGuarantees)(0),              // 0: proto.ProcessingGuarantees
 	(SubscriptionType)(0),                  // 1: proto.SubscriptionType
@@ -2117,60 +2237,62 @@ var file_Function_proto_goTypes = []interface{}{
 	(*ConsumerSpec)(nil),                   // 11: proto.ConsumerSpec
 	(*ProducerSpec)(nil),                   // 12: proto.ProducerSpec
 	(*CryptoSpec)(nil),                     // 13: proto.CryptoSpec
-	(*SourceSpec)(nil),                     // 14: proto.SourceSpec
-	(*SinkSpec)(nil),                       // 15: proto.SinkSpec
-	(*PackageLocationMetaData)(nil),        // 16: proto.PackageLocationMetaData
-	(*FunctionMetaData)(nil),               // 17: proto.FunctionMetaData
-	(*FunctionAuthenticationSpec)(nil),     // 18: proto.FunctionAuthenticationSpec
-	(*Instance)(nil),                       // 19: proto.Instance
-	(*Assignment)(nil),                     // 20: proto.Assignment
-	(*ConsumerSpec_ReceiverQueueSize)(nil), // 21: proto.ConsumerSpec.ReceiverQueueSize
-	nil,                                    // 22: proto.ConsumerSpec.SchemaPropertiesEntry
-	nil,                                    // 23: proto.ConsumerSpec.ConsumerPropertiesEntry
-	nil,                                    // 24: proto.SourceSpec.TopicsToSerDeClassNameEntry
-	nil,                                    // 25: proto.SourceSpec.InputSpecsEntry
-	nil,                                    // 26: proto.SinkSpec.SchemaPropertiesEntry
-	nil,                                    // 27: proto.SinkSpec.ConsumerPropertiesEntry
-	nil,                                    // 28: proto.FunctionMetaData.InstanceStatesEntry
+	(*BatchingSpec)(nil),                   // 14: proto.BatchingSpec
+	(*SourceSpec)(nil),                     // 15: proto.SourceSpec
+	(*SinkSpec)(nil),                       // 16: proto.SinkSpec
+	(*PackageLocationMetaData)(nil),        // 17: proto.PackageLocationMetaData
+	(*FunctionMetaData)(nil),               // 18: proto.FunctionMetaData
+	(*FunctionAuthenticationSpec)(nil),     // 19: proto.FunctionAuthenticationSpec
+	(*Instance)(nil),                       // 20: proto.Instance
+	(*Assignment)(nil),                     // 21: proto.Assignment
+	(*ConsumerSpec_ReceiverQueueSize)(nil), // 22: proto.ConsumerSpec.ReceiverQueueSize
+	nil,                                    // 23: proto.ConsumerSpec.SchemaPropertiesEntry
+	nil,                                    // 24: proto.ConsumerSpec.ConsumerPropertiesEntry
+	nil,                                    // 25: proto.SourceSpec.TopicsToSerDeClassNameEntry
+	nil,                                    // 26: proto.SourceSpec.InputSpecsEntry
+	nil,                                    // 27: proto.SinkSpec.SchemaPropertiesEntry
+	nil,                                    // 28: proto.SinkSpec.ConsumerPropertiesEntry
+	nil,                                    // 29: proto.FunctionMetaData.InstanceStatesEntry
 }
 var file_Function_proto_depIdxs = []int32{
 	0,  // 0: proto.FunctionDetails.processingGuarantees:type_name -> proto.ProcessingGuarantees
 	5,  // 1: proto.FunctionDetails.runtime:type_name -> proto.FunctionDetails.Runtime
-	14, // 2: proto.FunctionDetails.source:type_name -> proto.SourceSpec
-	15, // 3: proto.FunctionDetails.sink:type_name -> proto.SinkSpec
+	15, // 2: proto.FunctionDetails.source:type_name -> proto.SourceSpec
+	16, // 3: proto.FunctionDetails.sink:type_name -> proto.SinkSpec
 	8,  // 4: proto.FunctionDetails.resources:type_name -> proto.Resources
 	9,  // 5: proto.FunctionDetails.retryDetails:type_name -> proto.RetryDetails
 	6,  // 6: proto.FunctionDetails.componentType:type_name -> proto.FunctionDetails.ComponentType
 	2,  // 7: proto.FunctionDetails.subscriptionPosition:type_name -> proto.SubscriptionPosition
-	21, // 8: proto.ConsumerSpec.receiverQueueSize:type_name -> proto.ConsumerSpec.ReceiverQueueSize
-	22, // 9: proto.ConsumerSpec.schemaProperties:type_name -> proto.ConsumerSpec.SchemaPropertiesEntry
-	23, // 10: proto.ConsumerSpec.consumerProperties:type_name -> proto.ConsumerSpec.ConsumerPropertiesEntry
+	22, // 8: proto.ConsumerSpec.receiverQueueSize:type_name -> proto.ConsumerSpec.ReceiverQueueSize
+	23, // 9: proto.ConsumerSpec.schemaProperties:type_name -> proto.ConsumerSpec.SchemaPropertiesEntry
+	24, // 10: proto.ConsumerSpec.consumerProperties:type_name -> proto.ConsumerSpec.ConsumerPropertiesEntry
 	13, // 11: proto.ConsumerSpec.cryptoSpec:type_name -> proto.CryptoSpec
 	13, // 12: proto.ProducerSpec.cryptoSpec:type_name -> proto.CryptoSpec
 	3,  // 13: proto.ProducerSpec.compressionType:type_name -> proto.CompressionType
-	7,  // 14: proto.CryptoSpec.producerCryptoFailureAction:type_name -> proto.CryptoSpec.FailureAction
-	7,  // 15: proto.CryptoSpec.consumerCryptoFailureAction:type_name -> proto.CryptoSpec.FailureAction
-	1,  // 16: proto.SourceSpec.subscriptionType:type_name -> proto.SubscriptionType
-	24, // 17: proto.SourceSpec.topicsToSerDeClassName:type_name -> proto.SourceSpec.TopicsToSerDeClassNameEntry
-	25, // 18: proto.SourceSpec.inputSpecs:type_name -> proto.SourceSpec.InputSpecsEntry
-	2,  // 19: proto.SourceSpec.subscriptionPosition:type_name -> proto.SubscriptionPosition
-	12, // 20: proto.SinkSpec.producerSpec:type_name -> proto.ProducerSpec
-	26, // 21: proto.SinkSpec.schemaProperties:type_name -> proto.SinkSpec.SchemaPropertiesEntry
-	27, // 22: proto.SinkSpec.consumerProperties:type_name -> proto.SinkSpec.ConsumerPropertiesEntry
-	10, // 23: proto.FunctionMetaData.functionDetails:type_name -> proto.FunctionDetails
-	16, // 24: proto.FunctionMetaData.packageLocation:type_name -> proto.PackageLocationMetaData
-	28, // 25: proto.FunctionMetaData.instanceStates:type_name -> proto.FunctionMetaData.InstanceStatesEntry
-	18, // 26: proto.FunctionMetaData.functionAuthSpec:type_name -> proto.FunctionAuthenticationSpec
-	16, // 27: proto.FunctionMetaData.transformFunctionPackageLocation:type_name -> proto.PackageLocationMetaData
-	17, // 28: proto.Instance.functionMetaData:type_name -> proto.FunctionMetaData
-	19, // 29: proto.Assignment.instance:type_name -> proto.Instance
-	11, // 30: proto.SourceSpec.InputSpecsEntry.value:type_name -> proto.ConsumerSpec
-	4,  // 31: proto.FunctionMetaData.InstanceStatesEntry.value:type_name -> proto.FunctionState
-	32, // [32:32] is the sub-list for method output_type
-	32, // [32:32] is the sub-list for method input_type
-	32, // [32:32] is the sub-list for extension type_name
-	32, // [32:32] is the sub-list for extension extendee
-	0,  // [0:32] is the sub-list for field type_name
+	14, // 14: proto.ProducerSpec.batchingSpec:type_name -> proto.BatchingSpec
+	7,  // 15: proto.CryptoSpec.producerCryptoFailureAction:type_name -> proto.CryptoSpec.FailureAction
+	7,  // 16: proto.CryptoSpec.consumerCryptoFailureAction:type_name -> proto.CryptoSpec.FailureAction
+	1,  // 17: proto.SourceSpec.subscriptionType:type_name -> proto.SubscriptionType
+	25, // 18: proto.SourceSpec.topicsToSerDeClassName:type_name -> proto.SourceSpec.TopicsToSerDeClassNameEntry
+	26, // 19: proto.SourceSpec.inputSpecs:type_name -> proto.SourceSpec.InputSpecsEntry
+	2,  // 20: proto.SourceSpec.subscriptionPosition:type_name -> proto.SubscriptionPosition
+	12, // 21: proto.SinkSpec.producerSpec:type_name -> proto.ProducerSpec
+	27, // 22: proto.SinkSpec.schemaProperties:type_name -> proto.SinkSpec.SchemaPropertiesEntry
+	28, // 23: proto.SinkSpec.consumerProperties:type_name -> proto.SinkSpec.ConsumerPropertiesEntry
+	10, // 24: proto.FunctionMetaData.functionDetails:type_name -> proto.FunctionDetails
+	17, // 25: proto.FunctionMetaData.packageLocation:type_name -> proto.PackageLocationMetaData
+	29, // 26: proto.FunctionMetaData.instanceStates:type_name -> proto.FunctionMetaData.InstanceStatesEntry
+	19, // 27: proto.FunctionMetaData.functionAuthSpec:type_name -> proto.FunctionAuthenticationSpec
+	17, // 28: proto.FunctionMetaData.transformFunctionPackageLocation:type_name -> proto.PackageLocationMetaData
+	18, // 29: proto.Instance.functionMetaData:type_name -> proto.FunctionMetaData
+	20, // 30: proto.Assignment.instance:type_name -> proto.Instance
+	11, // 31: proto.SourceSpec.InputSpecsEntry.value:type_name -> proto.ConsumerSpec
+	4,  // 32: proto.FunctionMetaData.InstanceStatesEntry.value:type_name -> proto.FunctionState
+	33, // [33:33] is the sub-list for method output_type
+	33, // [33:33] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_Function_proto_init() }
@@ -2252,7 +2374,7 @@ func file_Function_proto_init() {
 			}
 		}
 		file_Function_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SourceSpec); i {
+			switch v := v.(*BatchingSpec); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2264,7 +2386,7 @@ func file_Function_proto_init() {
 			}
 		}
 		file_Function_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SinkSpec); i {
+			switch v := v.(*SourceSpec); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2276,7 +2398,7 @@ func file_Function_proto_init() {
 			}
 		}
 		file_Function_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PackageLocationMetaData); i {
+			switch v := v.(*SinkSpec); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2288,7 +2410,7 @@ func file_Function_proto_init() {
 			}
 		}
 		file_Function_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FunctionMetaData); i {
+			switch v := v.(*PackageLocationMetaData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2300,7 +2422,7 @@ func file_Function_proto_init() {
 			}
 		}
 		file_Function_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FunctionAuthenticationSpec); i {
+			switch v := v.(*FunctionMetaData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2312,7 +2434,7 @@ func file_Function_proto_init() {
 			}
 		}
 		file_Function_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Instance); i {
+			switch v := v.(*FunctionAuthenticationSpec); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2324,7 +2446,7 @@ func file_Function_proto_init() {
 			}
 		}
 		file_Function_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Assignment); i {
+			switch v := v.(*Instance); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2336,6 +2458,18 @@ func file_Function_proto_init() {
 			}
 		}
 		file_Function_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Assignment); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_Function_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConsumerSpec_ReceiverQueueSize); i {
 			case 0:
 				return &v.state
@@ -2354,7 +2488,7 @@ func file_Function_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_Function_proto_rawDesc,
 			NumEnums:      8,
-			NumMessages:   21,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

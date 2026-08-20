@@ -3607,6 +3607,31 @@ spec:
                           properties:
                             batchBuilder:
                               type: string
+                            batchingConfig:
+                              properties:
+                                batchBuilder:
+                                  type: string
+                                batchingMaxBytes:
+                                  format: int32
+                                  minimum: 1
+                                  type: integer
+                                batchingMaxMessages:
+                                  format: int32
+                                  minimum: 1
+                                  type: integer
+                                batchingMaxPublishDelayMs:
+                                  default: 10
+                                  format: int32
+                                  minimum: 1
+                                  type: integer
+                                enabled:
+                                  default: true
+                                  type: boolean
+                                roundRobinRouterBatchingPartitionSwitchFrequency:
+                                  format: int32
+                                  minimum: 1
+                                  type: integer
+                              type: object
                             compressionType:
                               enum:
                               - NONE
@@ -11523,6 +11548,31 @@ spec:
                           properties:
                             batchBuilder:
                               type: string
+                            batchingConfig:
+                              properties:
+                                batchBuilder:
+                                  type: string
+                                batchingMaxBytes:
+                                  format: int32
+                                  minimum: 1
+                                  type: integer
+                                batchingMaxMessages:
+                                  format: int32
+                                  minimum: 1
+                                  type: integer
+                                batchingMaxPublishDelayMs:
+                                  default: 10
+                                  format: int32
+                                  minimum: 1
+                                  type: integer
+                                enabled:
+                                  default: true
+                                  type: boolean
+                                roundRobinRouterBatchingPartitionSwitchFrequency:
+                                  format: int32
+                                  minimum: 1
+                                  type: integer
+                              type: object
                             compressionType:
                               enum:
                               - NONE
@@ -15506,6 +15556,31 @@ spec:
                     properties:
                       batchBuilder:
                         type: string
+                      batchingConfig:
+                        properties:
+                          batchBuilder:
+                            type: string
+                          batchingMaxBytes:
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          batchingMaxMessages:
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          batchingMaxPublishDelayMs:
+                            default: 10
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          enabled:
+                            default: true
+                            type: boolean
+                          roundRobinRouterBatchingPartitionSwitchFrequency:
+                            format: int32
+                            minimum: 1
+                            type: integer
+                        type: object
                       compressionType:
                         enum:
                         - NONE
@@ -23580,6 +23655,31 @@ spec:
                     properties:
                       batchBuilder:
                         type: string
+                      batchingConfig:
+                        properties:
+                          batchBuilder:
+                            type: string
+                          batchingMaxBytes:
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          batchingMaxMessages:
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          batchingMaxPublishDelayMs:
+                            default: 10
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          enabled:
+                            default: true
+                            type: boolean
+                          roundRobinRouterBatchingPartitionSwitchFrequency:
+                            format: int32
+                            minimum: 1
+                            type: integer
+                        type: object
                       compressionType:
                         enum:
                         - NONE

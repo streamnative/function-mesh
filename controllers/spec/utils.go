@@ -677,6 +677,7 @@ func generateFunctionOutputSpec(function *v1alpha1.Function) *proto.SinkSpec {
 			CryptoSpec:                         generateCryptoSpec(function.Spec.Output.ProducerConf.CryptoConfig),
 			BatchBuilder:                       function.Spec.Output.ProducerConf.BatchBuilder,
 			CompressionType:                    convertCompressionType(function.Spec.Output.ProducerConf.CompressionType),
+			BatchingSpec:                       generateBatchingSpec(function.Spec.Output.ProducerConf.BatchingConfig),
 		}
 
 		sinkSpec.ProducerSpec = producerConfig
@@ -742,6 +743,7 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 			CryptoSpec:                         cryptoSpec,
 			BatchBuilder:                       source.Spec.Output.ProducerConf.BatchBuilder,
 			CompressionType:                    convertCompressionType(source.Spec.Output.ProducerConf.CompressionType),
+			BatchingSpec:                       generateBatchingSpec(source.Spec.Output.ProducerConf.BatchingConfig),
 		}
 	}
 	var forward = true
@@ -755,6 +757,27 @@ func generateSourceOutputSpec(source *v1alpha1.Source) *proto.SinkSpec {
 		SerDeClassName:               source.Spec.Output.SinkSerdeClassName,
 		SchemaType:                   source.Spec.Output.SinkSchemaType,
 		ForwardSourceMessageProperty: forward,
+	}
+}
+
+func generateBatchingSpec(config *v1alpha1.BatchingConfig) *proto.BatchingSpec {
+	if config == nil {
+		return nil
+	}
+	batchingMaxPublishDelayMs := config.BatchingMaxPublishDelayMs
+	if batchingMaxPublishDelayMs == 0 {
+		// Besides preserving Pulsar's historical default, carrying a non-zero field keeps an explicit
+		// enabled=false distinguishable from an empty BatchingSpec in runtimes using proto3.
+		batchingMaxPublishDelayMs = 10
+	}
+
+	return &proto.BatchingSpec{
+		Enabled:                   getBoolFromPtrOrDefault(config.Enabled, true),
+		BatchingMaxPublishDelayMs: batchingMaxPublishDelayMs,
+		RoundRobinRouterBatchingPartitionSwitchFrequency: config.RoundRobinRouterBatchingPartitionSwitchFrequency,
+		BatchingMaxMessages: config.BatchingMaxMessages,
+		BatchingMaxBytes:    config.BatchingMaxBytes,
+		BatchBuilder:        config.BatchBuilder,
 	}
 }
 

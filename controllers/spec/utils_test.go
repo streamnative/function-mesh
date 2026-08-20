@@ -151,6 +151,62 @@ func TestGenerateFunctionOutputSpecWithConnector(t *testing.T) {
 	assert.Equal(t, `{"bootstrapServers":"kafka:9092","sinkType":"kafka","topic":"kafka-output"}`, sinkSpec.Configs)
 }
 
+func TestGenerateFunctionOutputSpecWithBatchingConfig(t *testing.T) {
+	function := makeFunctionSample("batching-config")
+	disabled := false
+	function.Spec.Output.ProducerConf = &v1alpha1.ProducerConfig{
+		BatchingConfig: &v1alpha1.BatchingConfig{
+			Enabled:                   &disabled,
+			BatchingMaxPublishDelayMs: 5,
+			RoundRobinRouterBatchingPartitionSwitchFrequency: 7,
+			BatchingMaxMessages: 100,
+			BatchingMaxBytes:    64 * 1024,
+			BatchBuilder:        "KEY_BASED",
+		},
+	}
+
+	sinkSpec := generateFunctionOutputSpec(function)
+	assert.NotNil(t, sinkSpec.ProducerSpec)
+	assert.Equal(t, false, sinkSpec.ProducerSpec.BatchingSpec.Enabled)
+	assert.Equal(t, int32(5), sinkSpec.ProducerSpec.BatchingSpec.BatchingMaxPublishDelayMs)
+	assert.Equal(t, int32(7), sinkSpec.ProducerSpec.BatchingSpec.RoundRobinRouterBatchingPartitionSwitchFrequency)
+	assert.Equal(t, int32(100), sinkSpec.ProducerSpec.BatchingSpec.BatchingMaxMessages)
+	assert.Equal(t, int32(64*1024), sinkSpec.ProducerSpec.BatchingSpec.BatchingMaxBytes)
+	assert.Equal(t, "KEY_BASED", sinkSpec.ProducerSpec.BatchingSpec.BatchBuilder)
+}
+
+func TestGenerateSourceOutputSpecDefaultsBatchingEnabled(t *testing.T) {
+	source := &v1alpha1.Source{
+		Spec: v1alpha1.SourceSpec{
+			Output: v1alpha1.OutputConf{
+				ProducerConf: &v1alpha1.ProducerConfig{
+					BatchingConfig: &v1alpha1.BatchingConfig{},
+				},
+			},
+		},
+	}
+
+	sinkSpec := generateSourceOutputSpec(source)
+	assert.NotNil(t, sinkSpec.ProducerSpec)
+	assert.NotNil(t, sinkSpec.ProducerSpec.BatchingSpec)
+	assert.True(t, sinkSpec.ProducerSpec.BatchingSpec.Enabled)
+	assert.Equal(t, int32(10), sinkSpec.ProducerSpec.BatchingSpec.BatchingMaxPublishDelayMs)
+}
+
+func TestGenerateFunctionOutputSpecPreservesExplicitBatchingDisabled(t *testing.T) {
+	function := makeFunctionSample("batching-disabled")
+	disabled := false
+	function.Spec.Output.ProducerConf = &v1alpha1.ProducerConfig{
+		BatchingConfig: &v1alpha1.BatchingConfig{Enabled: &disabled},
+	}
+
+	sinkSpec := generateFunctionOutputSpec(function)
+	assert.NotNil(t, sinkSpec.ProducerSpec)
+	assert.NotNil(t, sinkSpec.ProducerSpec.BatchingSpec)
+	assert.False(t, sinkSpec.ProducerSpec.BatchingSpec.Enabled)
+	assert.Equal(t, int32(10), sinkSpec.ProducerSpec.BatchingSpec.BatchingMaxPublishDelayMs)
+}
+
 func TestConvertFunctionDetailsWithKafkaConfig(t *testing.T) {
 	function := makeFunctionSample("generic-kafka")
 	function.Spec.Runtime = v1alpha1.Runtime{
