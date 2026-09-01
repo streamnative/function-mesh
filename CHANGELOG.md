@@ -1,3 +1,11 @@
+# Function Mesh v0.29.0 Release Notes
+
+## v0.29.0 What's New
+
+* [Runtime] fix: remove pause-rollout=false (#846)
+* [Runtime] Support Kafka schema registry config (#847)
+* [Runtime] feat: support producer batching configuration (#848)
+
 # Function Mesh v0.28.0 Release Notes
 
 ## v0.28.0 What's New
