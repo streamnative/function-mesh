@@ -21,6 +21,8 @@ controllerManager:
   # With rbac.create=true, this service account will be created
   # Also see rbac.create and clusterScoped
   serviceAccount: function-mesh-controller-manager
+  # Optional setting for the controller manager ServiceAccount; null keeps Kubernetes' default.
+  automountServiceAccountToken: null
   replicas: 1
   resources:
     requests:
