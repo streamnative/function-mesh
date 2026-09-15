@@ -30,6 +30,7 @@ function mesh operator Helm chart for Kubernetes
 | controllerManager.addDefaultAffinity | bool | `true` |  |
 | controllerManager.affinity | object | `{}` |  |
 | controllerManager.autoFailover | bool | `true` |  |
+| controllerManager.automountServiceAccountToken | string | `nil` | Optional setting on the chart-managed ServiceAccount. Null preserves the Kubernetes default. The controller requires Kubernetes API credentials; do not disable token mounting without an alternative. |
 | controllerManager.configFile | string | `"/etc/config/config.yaml"` |  |
 | controllerManager.create | bool | `true` |  |
 | controllerManager.enableInitContainers | bool | `false` |  |
@@ -42,11 +43,13 @@ function mesh operator Helm chart for Kubernetes
 | controllerManager.namespacedBackendConfig | string | `"backend-config"` |  |
 | controllerManager.nodeSelector | object | `{}` |  |
 | controllerManager.pauseRollout | bool | `false` |  |
+| controllerManager.podSecurityContext | object | `{}` | Optional controller Pod security context. Empty preserves existing behavior. |
 | controllerManager.pprof.enable | bool | `false` |  |
 | controllerManager.pprof.port | int | `8090` |  |
 | controllerManager.replicas | int | `1` |  |
 | controllerManager.resources.requests.cpu | string | `"80m"` |  |
 | controllerManager.resources.requests.memory | string | `"50Mi"` |  |
+| controllerManager.securityContext | object | `{}` | Optional controller container security context. Empty preserves existing behavior. |
 | controllerManager.selector | list | `[]` |  |
 | controllerManager.serviceAccount | string | `"function-mesh-controller-manager"` |  |
 | controllerManager.tolerations | list | `[]` |  |

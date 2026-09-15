@@ -21,6 +21,12 @@ controllerManager:
   # With rbac.create=true, this service account will be created
   # Also see rbac.create and clusterScoped
   serviceAccount: function-mesh-controller-manager
+  # -- Optional setting on the chart-managed ServiceAccount. Null preserves the Kubernetes default. The controller requires Kubernetes API credentials; do not disable token mounting without an alternative.
+  automountServiceAccountToken: null
+  # -- Optional controller Pod security context. Empty preserves existing behavior.
+  podSecurityContext: {}
+  # -- Optional controller container security context. Empty preserves existing behavior.
+  securityContext: {}
   replicas: 1
   resources:
     requests:
