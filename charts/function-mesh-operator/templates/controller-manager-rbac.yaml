@@ -25,6 +25,19 @@ metadata:
     app.kubernetes.io/component: controller-manager
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+"  "_" }}
 rules:
+  # Required by the controller metrics authentication and authorization filter.
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
   - apiGroups:
       - apps
     resources:

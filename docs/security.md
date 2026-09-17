@@ -10,6 +10,10 @@ operator image and admission policies:
 controllerManager:
   podSecurityContext:
     runAsNonRoot: true
+    # UID/GID for the chart default image streamnative/function-mesh:v0.29.0.
+    # Verify these IDs before using a different image.
+    runAsUser: 10000
+    runAsGroup: 10001
     seccompProfile:
       type: RuntimeDefault
   securityContext:
@@ -20,7 +24,11 @@ controllerManager:
 ```
 
 These settings affect only the controller manager, not Function, Source or Sink
-pods. Do not assume every operator image uses the same numeric user ID.
+pods. The chart default image declares `USER pulsar`. With only
+`runAsNonRoot: true`, kubelet cannot verify that this non-numeric image user is
+non-root and refuses to start the container. Set an image-appropriate numeric
+`runAsUser`, as shown above. Do not assume every operator image uses the same
+UID/GID; these values are opt-in, not new chart defaults.
 
 `controllerManager.automountServiceAccountToken` optionally sets the field on
 the chart-managed ServiceAccount; its default `null` omits the field. It has no
@@ -29,6 +37,33 @@ controller needs Kubernetes API credentials for reconciliation and leader
 election. Setting this value to `false` alone breaks the default in-cluster
 authentication for new pods. Prefer a narrowly scoped policy exception when
 token access is required; this setting does not provision alternative credentials.
+
+## Metrics authentication and authorization
+
+The operator serves HTTPS metrics with Kubernetes authentication and authorization.
+The chart grants its ServiceAccount `create` on
+`tokenreviews.authentication.k8s.io` and
+`subjectaccessreviews.authorization.k8s.io` so it can validate scrape requests.
+When `rbac.create: false`, include these permissions in the externally managed
+ClusterRole and bind it to the operator ServiceAccount. Missing permissions cause
+authenticated scrapes to return HTTP 500.
+
+The scraping client (for example, Prometheus) separately needs a ClusterRole with:
+
+```yaml
+rules:
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+```
+
+Bind that role to the actual scraping ServiceAccount using a ClusterRoleBinding
+and configure the client to send its bearer token over HTTPS with the appropriate
+TLS trust configuration. The chart does not grant metrics access to arbitrary
+clients. Requests without a bearer token return HTTP 401; authenticated clients
+without permission return HTTP 403; authorized requests return HTTP 200. The
+current controller-runtime filter reports authentication errors, including
+invalid bearer token errors, as HTTP 500; check the operator logs to distinguish
+these from missing RBAC permissions.
 
 ## Explicit ServiceAccount token mounting for sinks
 
