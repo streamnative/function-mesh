@@ -116,7 +116,7 @@ func main() {
 		" Use --metrics-secure=false to use HTTP instead.")
 	flag.BoolVar(&addDefaultAffinity, "add-default-affinity", lookupEnvOrBool("ADD_DEFAULT_AFFINITY", true), "If set, the generated pod will add one default podAntiAffinity:"+
 		" make pods prefer not be scheduled on the same node (soft rule).")
-	flag.BoolVar(&pauseRollout, "pause-rollout", lookupEnvOrBool("PAUSE_ROLLOUT", false), "If set, the controller will not rollout the function/sink/source when its spec is not updated.")
+	flag.BoolVar(&pauseRollout, "pause-rollout", lookupEnvOrBool("PAUSE_ROLLOUT", true), "If set, the controller will not rollout the function/sink/source when its spec is not updated.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
