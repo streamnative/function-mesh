@@ -49,7 +49,6 @@ setup:
 
     - name: install pulsar cluster
       command: |
-        helm repo add streamnative https://charts.streamnative.io
         rm -rf pulsar-charts/
         git clone --branch pulsar-operator-0.17.10 https://github.com/streamnative/charts.git pulsar-charts
         cd pulsar-charts/
