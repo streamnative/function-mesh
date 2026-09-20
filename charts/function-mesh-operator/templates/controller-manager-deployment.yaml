@@ -32,6 +32,10 @@ spec:
     {{- if .Values.controllerManager.serviceAccount }}
       serviceAccount: {{ .Values.controllerManager.serviceAccount }}
     {{- end }}
+    {{- with .Values.controllerManager.podSecurityContext }}
+      securityContext:
+{{ toYaml . | indent 8 }}
+    {{- end }}
     {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 6 }}
@@ -40,6 +44,10 @@ spec:
       - name: function-mesh-operator
         image: {{ .Values.operatorImage }}
         imagePullPolicy: {{ .Values.imagePullPolicy | default "IfNotPresent" }}
+        {{- with .Values.controllerManager.securityContext }}
+        securityContext:
+{{ toYaml . | indent 10 }}
+        {{- end }}
         {{- if .Values.controllerManager.resources }}
         resources:
 {{ toYaml .Values.controllerManager.resources | indent 12 }}
