@@ -26,6 +26,7 @@ function mesh operator Helm chart for Kubernetes
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| admissionWebhook.certSecretDefaultMode | int | `420` | Webhook certificate Secret file mode as a decimal integer (0-511). Default 420 (0644) preserves existing behavior. For non-root hardening, use 288 (0440) with controllerManager.podSecurityContext.fsGroup; see docs/security.md. |
 | admissionWebhook.enabled | bool | `true` |  |
 | controllerManager.addDefaultAffinity | bool | `true` |  |
 | controllerManager.affinity | object | `{}` |  |
