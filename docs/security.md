@@ -38,6 +38,35 @@ election. Setting this value to `false` alone breaks the default in-cluster
 authentication for new pods. Prefer a narrowly scoped policy exception when
 token access is required; this setting does not provision alternative credentials.
 
+## Webhook certificate file permissions
+
+`admissionWebhook.certSecretDefaultMode` controls the controller's webhook
+certificate Secret volume file permissions. The default is `420` (0644),
+preserving existing behavior. It has no effect when `admissionWebhook.enabled`
+is `false`, and does not change ConfigMap or ServiceAccount token permissions.
+
+To remove world-readable access while allowing the non-root controller to read
+its certificate and private key, merge these values with the hardening settings
+above:
+
+```yaml
+admissionWebhook:
+  certSecretDefaultMode: 288 # 0440; use decimal for Helm --set and JSON too.
+controllerManager:
+  podSecurityContext:
+    fsGroup: 10001 # Suitable for the chart default image; verify for other images.
+```
+
+`runAsGroup` alone does not change the Secret volume's group ownership. Set
+`fsGroup` so kubelet makes the mounted files group-readable by the controller.
+Do not use `256` (0400) alone for a non-root controller: Secret files are owned
+by root. With `fsGroup`, kubelet may add group-read permission even when the
+requested mode is 0400, so do not rely on it for owner-only access.
+
+Validate the rendered Deployment against your actual admission policies and
+verify controller readiness and webhook requests after rollout. This setting
+applies only to the operator's webhook certificate mount, not to runner Secrets.
+
 ## Metrics authentication and authorization
 
 The operator serves HTTPS metrics with Kubernetes authentication and authorization.

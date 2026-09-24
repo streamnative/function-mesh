@@ -77,7 +77,7 @@ Volumes
 {{- if .Values.admissionWebhook.enabled }}
 - name: cert
   secret:
-    defaultMode: 420
+    defaultMode: {{ .Values.admissionWebhook.certSecretDefaultMode }}
     secretName: {{ include "function-mesh-operator.certificate.secret" . }}
 {{- end }}
 {{- end }}

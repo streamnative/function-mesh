@@ -85,3 +85,5 @@ controllerManager:
 
 admissionWebhook:
   enabled: true
+  # -- Webhook certificate Secret file mode as a decimal integer (0-511). Default 420 (0644) preserves existing behavior. For non-root hardening, use 288 (0440) with controllerManager.podSecurityContext.fsGroup; see docs/security.md.
+  certSecretDefaultMode: 420
