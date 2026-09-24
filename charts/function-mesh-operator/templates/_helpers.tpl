@@ -75,9 +75,14 @@ Volumes
     name: function-mesh-controller-manager-configs
     defaultMode: 420
 {{- if .Values.admissionWebhook.enabled }}
+{{- /* Older releases lack this key when upgrading with --reuse-values. Preserve explicit 0. */}}
+{{- $certMode := 420 }}
+{{- if hasKey .Values.admissionWebhook "certSecretDefaultMode" }}
+{{- $certMode = .Values.admissionWebhook.certSecretDefaultMode }}
+{{- end }}
 - name: cert
   secret:
-    defaultMode: {{ .Values.admissionWebhook.certSecretDefaultMode }}
+    defaultMode: {{ $certMode }}
     secretName: {{ include "function-mesh-operator.certificate.secret" . }}
 {{- end }}
 {{- end }}

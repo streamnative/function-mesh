@@ -1,11 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": ["admissionWebhook"],
   "properties": {
     "admissionWebhook": {
       "type": "object",
-      "required": ["certSecretDefaultMode"],
       "properties": {
         "certSecretDefaultMode": {
           "description": "Webhook certificate Secret file mode as an integer from 0 to 511. Use decimal 288 for 0440.",

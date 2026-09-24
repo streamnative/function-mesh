@@ -46,11 +46,16 @@ token access is required; this setting does not provision alternative credential
 certificate Secret volume file permissions. The default is `420` (0644),
 preserving existing behavior. It has no effect when `admissionWebhook.enabled`
 is `false`, and does not change ConfigMap or ServiceAccount token permissions.
-The chart schema requires an integer from 0 to 511. Use decimal values such as
+When present, this value must be an integer from 0 to 511. Use decimal values such as
 `--set admissionWebhook.certSecretDefaultMode=288`; strings (including
-`--set ...=0440` or `--set-string ...=288`), null, empty values, and out-of-range
+`--set ...=0440` or `--set-string ...=288`), empty strings, and out-of-range
 values are rejected by Helm schema validation. Omitting the override retains
-the chart default.
+the chart default. If the key is missing (for example, when upgrading an older
+release with `--reuse-values`), the template falls back to `420` (0644). With
+the current chart defaults, a null override removes the key during Helm value
+coalescing and also falls back to `420`; null does not enable hardening. If a
+null remains after coalescing (for example, with older reused values that lack
+this key), schema validation rejects it. An explicit `0` is preserved.
 
 To remove world-readable access while allowing the non-root controller to read
 its certificate and private key, merge these values with the hardening settings
