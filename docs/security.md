@@ -10,8 +10,8 @@ operator image and admission policies:
 controllerManager:
   podSecurityContext:
     runAsNonRoot: true
-    # UID/GID for the chart default image streamnative/function-mesh:v0.29.0.
-    # Verify these IDs before using a different image.
+    # UID/GID for images built with operator.Dockerfile (USER pulsar).
+    # Dockerfile uses 65532:65532 instead; verify your deployed image.
     runAsUser: 10000
     runAsGroup: 10001
     seccompProfile:
@@ -24,11 +24,13 @@ controllerManager:
 ```
 
 These settings affect only the controller manager, not Function, Source or Sink
-pods. The chart default image declares `USER pulsar`. With only
-`runAsNonRoot: true`, kubelet cannot verify that this non-numeric image user is
-non-root and refuses to start the container. Set an image-appropriate numeric
-`runAsUser`, as shown above. Do not assume every operator image uses the same
-UID/GID; these values are opt-in, not new chart defaults.
+pods. Images built with `operator.Dockerfile` declare `USER pulsar`
+(UID 10000, GID 10001); the separate distroless `Dockerfile` declares
+`USER 65532:65532`. For a non-numeric image user, `runAsNonRoot: true` alone
+prevents startup because kubelet cannot verify the user is non-root. Set an
+image-appropriate numeric `runAsUser`, as shown above. Verify the deployed
+image's UID/GID rather than inferring them from a different build path; these
+values are opt-in, not new chart defaults.
 
 `controllerManager.automountServiceAccountToken` optionally sets the field on
 the chart-managed ServiceAccount; its default `null` omits the field. It has no
@@ -37,6 +39,48 @@ controller needs Kubernetes API credentials for reconciliation and leader
 election. Setting this value to `false` alone breaks the default in-cluster
 authentication for new pods. Prefer a narrowly scoped policy exception when
 token access is required; this setting does not provision alternative credentials.
+
+## Webhook certificate file permissions
+
+`admissionWebhook.certSecretDefaultMode` controls the controller's webhook
+certificate Secret volume file permissions. The default is `420` (0644),
+preserving existing behavior. It has no effect when `admissionWebhook.enabled`
+is `false`, and does not change ConfigMap or ServiceAccount token permissions.
+When present, this value must be an integer from 0 to 511. Use decimal values such as
+`--set admissionWebhook.certSecretDefaultMode=288`; strings (including
+`--set ...=0440` or `--set-string ...=288`), empty strings, and out-of-range
+values are rejected by Helm schema validation. Omitting the override retains
+the chart default. If the key is missing (for example, when upgrading an older
+release with `--reuse-values`), the template falls back to `420` (0644). With
+the current chart defaults, a null override removes the key during Helm value
+coalescing and also falls back to `420`; null does not enable hardening. If a
+null remains after coalescing (for example, with older reused values that lack
+this key), schema validation rejects it. An explicit `0` is preserved.
+
+To remove world-readable access while allowing the non-root controller to read
+its certificate and private key, merge these values with the hardening settings
+above:
+
+```yaml
+admissionWebhook:
+  certSecretDefaultMode: 288 # 0440; use decimal for Helm --set and JSON too.
+controllerManager:
+  podSecurityContext:
+    fsGroup: 10001 # Example non-zero supplemental GID; choose one allowed by your policy.
+```
+
+`runAsGroup` alone does not change the Secret volume's group ownership. Set
+`fsGroup` so kubelet makes the mounted files group-readable by the controller.
+Kubernetes also adds `fsGroup` to the process's supplementary groups; it does
+not need to match the image's primary GID. Any non-zero GID allowed by your
+cluster policy can be used for this purpose, including 65532 for distroless.
+Do not use `256` (0400) alone for a non-root controller: Secret files are owned
+by root. With `fsGroup`, kubelet may add group-read permission even when the
+requested mode is 0400, so do not rely on it for owner-only access.
+
+Validate the rendered Deployment against your actual admission policies and
+verify controller readiness and webhook requests after rollout. This setting
+applies only to the operator's webhook certificate mount, not to runner Secrets.
 
 ## Metrics authentication and authorization
 
