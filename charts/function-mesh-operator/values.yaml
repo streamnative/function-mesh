@@ -17,6 +17,10 @@ imagePullSecrets: []
 
 controllerManager:
   create: true
+  # -- Additional operator environment variables; do not repeat NAMESPACE or ENABLE_WEBHOOKS.
+  extraEnv: []
+  # -- ConfigMap and Secret references for operator environment variables.
+  extraEnvFrom: []
   # With rbac.create=false, the user is responsible for creating this account
   # With rbac.create=true, this service account will be created
   # Also see rbac.create and clusterScoped

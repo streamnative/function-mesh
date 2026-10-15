@@ -20,7 +20,9 @@ function mesh admission webhook Helm chart for Kubernetes
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| admissionWebhook.certificate.commonName | string | `""` | Optional subject Common Name for the cert-manager serving certificate. |
 | admissionWebhook.certificate.provider | string | `"cert-manager"` |  |
+| admissionWebhook.crdAnnotations | object | `{}` | Additional annotations applied to every Function Mesh CRD. |
 | admissionWebhook.enabled | bool | `true` |  |
 | admissionWebhook.failurePolicy | string | `"Fail"` |  |
 | admissionWebhook.secretsWebhookNamespace | string | `"default"` |  |

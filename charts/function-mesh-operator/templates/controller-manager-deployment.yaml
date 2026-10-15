@@ -83,6 +83,13 @@ spec:
                 fieldPath: metadata.namespace
           - name: ENABLE_WEBHOOKS
             value: {{ .Values.admissionWebhook.enabled | quote }}
+          {{- with .Values.controllerManager.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- with .Values.controllerManager.extraEnvFrom }}
+        envFrom:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         volumeMounts:
         {{- include "function-mesh-operator.volumeMounts" . | nindent 8 }}
         livenessProbe:

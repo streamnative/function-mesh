@@ -7,6 +7,9 @@ metadata:
   labels:
     {{- include "function-mesh-operator.labels" . | nindent 4 }}
 spec:
+  {{- with .Values.admissionWebhook.certificate.commonName }}
+  commonName: {{ . | quote }}
+  {{- end }}
   dnsNames:
     - {{ include "function-mesh-operator.certificate.commonName" . }}
   issuerRef:

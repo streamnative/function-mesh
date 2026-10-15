@@ -36,6 +36,8 @@ function mesh operator Helm chart for Kubernetes
 | controllerManager.create | bool | `true` |  |
 | controllerManager.enableInitContainers | bool | `false` |  |
 | controllerManager.enableLeaderElection | bool | `true` |  |
+| controllerManager.extraEnv | list | `[]` | Additional operator environment variables; do not repeat NAMESPACE or ENABLE_WEBHOOKS. |
+| controllerManager.extraEnvFrom | list | `[]` | ConfigMap and Secret references for operator environment variables. |
 | controllerManager.globalBackendConfig | string | `"global-backend-config"` |  |
 | controllerManager.globalBackendConfigNamespace | string | `"default"` |  |
 | controllerManager.healthProbe.port | int | `8000` |  |

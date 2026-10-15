@@ -4,9 +4,13 @@
 
 admissionWebhook:
   enabled: true
+  # -- Additional annotations applied to every Function Mesh CRD.
+  crdAnnotations: {}
   secretsWebhookNamespace: default
   failurePolicy: Fail
   certificate:
+    # -- Optional subject Common Name for the cert-manager serving certificate.
+    commonName: ""
     ## The available providers are:
     ##   "cert-manager": manage certificates with Cert-Manager, default
     ##   "custom": provide custom certificates, you need to install the `function-mesh-secrets-webhook` chart first

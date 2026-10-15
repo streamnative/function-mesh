@@ -32,6 +32,9 @@ function crd::convert_metadata() {
     echo "metadata:"
     # metadata.annotations
     echo "annotations:" | sed  "s/^/$(crd::nindent 1)/"
+    echo '{{- with .Values.admissionWebhook.crdAnnotations }}' | sed "s/^/$(crd::nindent 2)/"
+    echo '{{- toYaml . | nindent 4 }}' | sed "s/^/$(crd::nindent 2)/"
+    echo '{{- end }}' | sed "s/^/$(crd::nindent 2)/"
     if "$webhook_enabled"; then
         echo "{{- if eq .Values.admissionWebhook.certificate.provider \"cert-manager\" }}" | sed  "s/^/$(crd::nindent 2)/"
         echo "{{- include \"function-mesh-operator.certManager.annotation\" . | nindent 4 -}}" | sed  "s/^/$(crd::nindent 3)/"
