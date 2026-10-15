@@ -171,6 +171,15 @@ rules:
   - apiGroups:
       - compute.functionmesh.io
     resources:
+      - functions/finalizers
+      - sources/finalizers
+      - sinks/finalizers
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - compute.functionmesh.io
+    resources:
       - backendconfigs/status
     verbs:
       - get
