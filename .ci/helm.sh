@@ -241,14 +241,14 @@ function ci::verify_download_java_function_generic_auth() {
 }
 
 function ci::verify_vpa_java_function() {
-  kubectl wait -l name=function-sample-vpa-function --for=condition=RecommendationProvided --timeout=2m vpa && true
+  kubectl wait vpa/function-sample-vpa-function --for=condition=RecommendationProvided --timeout=2m || return 1
   cpu=`kubectl get vpa function-sample-vpa-function -o jsonpath='{.status.recommendation.containerRecommendations[0].target.cpu}'`
   memory=`kubectl get vpa function-sample-vpa-function -o jsonpath='{.status.recommendation.containerRecommendations[0].target.memory}'`
   resources='{"limits":{"cpu":"'$cpu'","memory":"'$memory'"},"requests":{"cpu":"'$cpu'","memory":"'$memory'"}}'
 
   # delete pod to trigger resource updating
   kubectl delete pod function-sample-vpa-function-0
-  kubectl wait -l statefulset.kubernetes.io/pod-name=function-sample-vpa-function-0 --for=condition=Ready --timeout=2m pod
+  kubectl wait -l statefulset.kubernetes.io/pod-name=function-sample-vpa-function-0 --for=condition=Ready --timeout=2m pod || return 1
   realResource1=`kubectl get pod function-sample-vpa-function-0 -o jsonpath='{.spec.containers[0].resources}'`
   retry=10
   if [[ "$resources" != "$realResource1" ]]; then
@@ -259,7 +259,7 @@ function ci::verify_vpa_java_function() {
 
   # delete pod to trigger resource updating
   kubectl delete pod function-sample-vpa-function-1
-  kubectl wait -l statefulset.kubernetes.io/pod-name=function-sample-vpa-function-0 --for=condition=Ready --timeout=2m pod
+  kubectl wait -l statefulset.kubernetes.io/pod-name=function-sample-vpa-function-1 --for=condition=Ready --timeout=2m pod || return 1
   realResource2=`kubectl get pod function-sample-vpa-function-1 -o jsonpath='{.spec.containers[0].resources}'`
   if [[ "$resources" != "$realResource2" ]]; then
     echo "vpa tests failed for pod2"

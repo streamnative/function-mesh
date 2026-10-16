@@ -43,7 +43,7 @@ function mesh operator Helm chart for Kubernetes
 | controllerManager.metrics.scheme | string | `"https"` |  |
 | controllerManager.namespacedBackendConfig | string | `"backend-config"` |  |
 | controllerManager.nodeSelector | object | `{}` |  |
-| controllerManager.pauseRollout | bool | `false` |  |
+| controllerManager.pauseRollout | bool | `true` |  |
 | controllerManager.podSecurityContext | object | `{}` | Optional controller Pod security context. Empty preserves existing behavior. |
 | controllerManager.pprof.enable | bool | `false` |  |
 | controllerManager.pprof.port | int | `8090` |  |
