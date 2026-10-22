@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.26.9-trixie AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.10-trixie AS builder
 
 ARG TARGETOS
 ARG TARGETARCH

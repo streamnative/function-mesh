@@ -1,6 +1,6 @@
 module github.com/streamnative/function-mesh
 
-go 1.26.9
+go 1.26.10
 
 require (
 	github.com/apache/pulsar-client-go v0.17.0
@@ -61,7 +61,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/kris-nova/logger v0.0.0-20181127235838-fd0d87064b06 // indirect
 	github.com/kris-nova/lolgopher v0.0.0-20180921204813-313b3abb0d9b // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
