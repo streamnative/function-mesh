@@ -1,3 +1,12 @@
+# Function Mesh v0.30.0 Release Notes
+
+## v0.30.0 What's New
+
+* [Runtime] fix: support optional operator security settings by @freeznet in #850
+* [Runtime] fix: make webhook certificate Secret file mode configurable by @freeznet in #852
+* [Runtime] feat: set pause roll out to true by default by @jiangpengcheng in #851
+* [Runtime] fix: resolve Go and compress Trivy vulnerabilities by @jiangpengcheng in #855
+
 # Function Mesh v0.29.0 Release Notes
 
 ## v0.29.0 What's New
