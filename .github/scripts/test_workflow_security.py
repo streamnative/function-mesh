@@ -77,6 +77,12 @@ class WorkflowSecurity(unittest.TestCase):
             with self.subTest(workflow=path.name):
                 self.assertEqual([], violations(load(path.name)))
 
+    def test_chart_testing_uses_supported_python(self):
+        steps = load('test-helm-charts.yml')['jobs']['lint-test']['steps']
+        python = next(step for step in steps
+                      if step.get('uses', '').startswith('actions/setup-python@'))
+        self.assertEqual('3.12', python['with']['python-version'])
+
     def test_shell_syntax_and_e2e_installers(self):
         for path in WORKFLOWS.glob('*.yml'):
             for job in load(path.name)['jobs'].values():
