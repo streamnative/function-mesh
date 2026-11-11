@@ -11,13 +11,17 @@ on:
       - "LICENSE"
       - "mesh-worker-service/README.md"
       - "tools/README.md"
+permissions:
+  contents: read
+
 jobs:
   olm-verify:
     name: Verify OLM bundle
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.0
+        uses: jlumbroso/free-disk-space@f68fdb76e2ea636224182cfb7377ff9a1708f9b8 # v1.3.0
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
@@ -32,29 +36,35 @@ jobs:
           swap-storage: true
 
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up GO 1.26.10
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
+          cache: false
           go-version: 1.26.10
         id: go
 
       - name: InstallKubebuilder
         run: |
-          curl -L -o kubebuilder "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v3.6.0/kubebuilder_linux_amd64"
+          curl --fail --silent --show-error --location -o kubebuilder "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v3.6.0/kubebuilder_linux_amd64"
+          echo 'd5a9f639cb98298817bcab32b6046eb45cb912b56217a75d729646512a436ff4  kubebuilder' | sha256sum --check --strict
           chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
 
       - name: Install operator-sdk
         run: |
           RELEASE_VERSION=v1.29.0
-          curl -LO "https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk_linux_amd64"
+          curl --fail --silent --show-error --location --remote-name "https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk_linux_amd64"
+          echo '90d88e8107bd87c7af1a49f64a10dfdf72bf110643842523c1ef123af221ee2a  operator-sdk_linux_amd64' | sha256sum --check --strict
           chmod +x operator-sdk_linux_amd64 && sudo mkdir -p /usr/local/bin/ && sudo mv operator-sdk_linux_amd64 /usr/local/bin/operator-sdk
 
       - name: Set up yq
         run: |
-          sudo wget https://github.com/mikefarah/yq/releases/download/v4.30.4/yq_linux_amd64 -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          curl --fail --silent --show-error --location -o /tmp/yq https://github.com/mikefarah/yq/releases/download/v4.30.4/yq_linux_amd64
+          echo '30459aa144a26125a1b22c62760f9b3872123233a5658934f7bd9fe714d7864d  /tmp/yq' | sha256sum --check --strict
+          sudo install /tmp/yq /usr/local/bin/yq
           yq --help
 
       - name: Create kind cluster
@@ -98,7 +108,3 @@ jobs:
       - name: Verify Operator health
         run: |
           kubectl wait deployment/function-mesh-controller-manager --for=condition=Available --timeout=600s
-
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: failure()

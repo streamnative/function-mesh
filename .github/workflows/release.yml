@@ -5,16 +5,45 @@ on:
     types: [created]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  upload:
-    if: startsWith(github.ref, 'refs/tags/v')
-    name: Upload Release files
+  validate-tag:
+    if: github.repository == 'streamnative/function-mesh' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      sha: ${{ steps.tag.outputs.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: master
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require a version tag reachable from master
+        id: tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
+            echo 'Expected a version tag such as v0.30.0 or v0.30.0-rc.1' >&2
+            exit 1
+          fi
+          git fetch --no-tags origin "refs/tags/$TAG:refs/tags/$TAG"
+          sha=$(git rev-parse --verify "refs/tags/$TAG^{commit}")
+          git merge-base --is-ancestor "$sha" origin/master
+          printf 'sha=%s\n' "$sha" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: validate-tag
+    name: Build release files and images
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.0
+        uses: jlumbroso/free-disk-space@f68fdb76e2ea636224182cfb7377ff9a1708f9b8 # v1.3.0
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
@@ -29,44 +58,52 @@ jobs:
           swap-storage: true
 
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ needs.validate-tag.outputs.sha }}
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Set up GO 1.26.10
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
+          cache: false
           go-version: 1.26.10
         id: go
 
       - name: InstallKubebuilder
         run: |
-          curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz | tar -xz -C /tmp/
+          curl --fail --silent --show-error --location -o /tmp/kubebuilder.tar.gz https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz
+          echo 'ff496970f209706763f2aba2bdcefc2de8d00085b3b972b5790117b59ea4ed10  /tmp/kubebuilder.tar.gz' | sha256sum --check --strict
+          tar -xzf /tmp/kubebuilder.tar.gz -C /tmp
           sudo mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
           export PATH=$PATH:/usr/local/kubebuilder/bin
 
       - name: Install operator-sdk
         run: |
           RELEASE_VERSION=v1.29.0
-          curl -LO "https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk_linux_amd64"
+          curl --fail --silent --show-error --location --remote-name "https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk_linux_amd64"
+          echo '90d88e8107bd87c7af1a49f64a10dfdf72bf110643842523c1ef123af221ee2a  operator-sdk_linux_amd64' | sha256sum --check --strict
           chmod +x operator-sdk_linux_amd64 && sudo mkdir -p /usr/local/bin/ && sudo mv operator-sdk_linux_amd64 /usr/local/bin/operator-sdk
 
       - name: Set up yq
         run: |
-          sudo wget https://github.com/mikefarah/yq/releases/download/v4.30.4/yq_linux_amd64 -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          curl --fail --silent --show-error --location -o /tmp/yq https://github.com/mikefarah/yq/releases/download/v4.30.4/yq_linux_amd64
+          echo '30459aa144a26125a1b22c62760f9b3872123233a5658934f7bd9fe714d7864d  /tmp/yq' | sha256sum --check --strict
+          sudo install /tmp/yq /usr/local/bin/yq
           yq --help
 
       - name: Get vertical-pod-autoscaler crd
         run: |
-          wget https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml -O config/crd/bases/vpa-v1-crd.yaml
+          wget https://raw.githubusercontent.com/kubernetes/autoscaler/0e493b62210509c14233575696100104ef1d9e76/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml -O config/crd/bases/vpa-v1-crd.yaml
 
       - name: build release
         id: build_release
@@ -82,8 +119,31 @@ jobs:
           make docker-push
           make docker-build image-push bundle bundle-build bundle-push catalog-build catalog-push
 
+      - name: Preserve release files for the isolated upload job
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-files
+          path: |
+            manifests/crd.yaml
+            manifests/rbac.yaml
+            install.sh
+          if-no-files-found: error
+          retention-days: 1
+
+  upload:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      # Same trusted run only; files are uploaded, never executed.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-files
+
       - name: Upload crd.yaml to release
-        uses: svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@29e53e917877a24fad85510ded594ab3c9ca12de # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: manifests/crd.yaml
@@ -92,7 +152,7 @@ jobs:
           overwrite: true
 
       - name: Upload rbac.yaml to release
-        uses: svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@29e53e917877a24fad85510ded594ab3c9ca12de # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: manifests/rbac.yaml
@@ -101,7 +161,7 @@ jobs:
           overwrite: true
 
       - name: Upload install.sh to release
-        uses: svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@29e53e917877a24fad85510ded594ab3c9ca12de # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: install.sh

@@ -1,46 +1,25 @@
 name: Scheduled master branch scan security vulnerabilities
 on:
-  pull_request:
-    branches:
-      - "master"
-    paths-ignore:
-      - "docs/**"
-      - "README.md"
-      - "CHANGELOG.md"
-      - "PROJECT"
-      - "LICENSE"
-      - "mesh-worker-service/README.md"
-      - "tools/README.md"
+  workflow_dispatch:
   schedule:
     - cron: "0 0 * * *"
 
 permissions:
-  pull-requests: write
-  issues: write
-  # For Trivy uploads to Github Security tab
-  # required for all workflows
-  security-events: write
-  # only required for workflows in private repositories
-  actions: read
   contents: read
 
 jobs:
   build:
     name: Scan
-    permissions:
-      pull-requests: write
-      issues: write
-      security-events: write
-      actions: read
-      contents: read
+    if: github.repository == 'streamnative/function-mesh' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     env:
       # Fall back between official mirrors when a registry is rate-limited.
       TRIVY_DB_REPOSITORY: mirror.gcr.io/aquasec/trivy-db:2,ghcr.io/aquasecurity/trivy-db:2,public.ecr.aws/aquasecurity/trivy-db:2
       TRIVY_JAVA_DB_REPOSITORY: mirror.gcr.io/aquasec/trivy-java-db:1,ghcr.io/aquasecurity/trivy-java-db:1,public.ecr.aws/aquasecurity/trivy-java-db:1
     steps:
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.0
+        uses: jlumbroso/free-disk-space@f68fdb76e2ea636224182cfb7377ff9a1708f9b8 # v1.3.0
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
@@ -62,34 +41,38 @@ jobs:
           echo '{ "exec-opts": ["native.cgroupdriver=cgroupfs"], "cgroup-parent": "/actions_job", "data-root": "/mnt/docker" }' | sudo tee /etc/docker/daemon.json
           sudo service docker start
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
           fetch-depth: 0
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up GO 1.26.10
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
+          cache: false
           go-version: 1.26.10
         id: go
 
       - name: InstallKubebuilder
         run: |
-          curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz | tar -xz -C /tmp/
+          curl --fail --silent --show-error --location -o /tmp/kubebuilder.tar.gz https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz
+          echo 'ff496970f209706763f2aba2bdcefc2de8d00085b3b972b5790117b59ea4ed10  /tmp/kubebuilder.tar.gz' | sha256sum --check --strict
+          tar -xzf /tmp/kubebuilder.tar.gz -C /tmp
           sudo mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
           export PATH=$PATH:/usr/local/kubebuilder/bin
 
       - name: Install operator-sdk
         run: |
           RELEASE_VERSION=v1.14.0
-          curl -LO "https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk_linux_amd64"
+          curl --fail --silent --show-error --location --remote-name "https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk_linux_amd64"
+          echo 'a2203454454293c5efe2083427a8f8b160a84dc06e6c2de97475043abf3680b7  operator-sdk_linux_amd64' | sha256sum --check --strict
           chmod +x operator-sdk_linux_amd64 && sudo mkdir -p /usr/local/bin/ && sudo mv operator-sdk_linux_amd64 /usr/local/bin/operator-sdk
 
       - name: Set up yq
         run: |
-          sudo wget https://github.com/mikefarah/yq/releases/download/v4.30.4/yq_linux_amd64 -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          curl --fail --silent --show-error --location -o /tmp/yq https://github.com/mikefarah/yq/releases/download/v4.30.4/yq_linux_amd64
+          echo '30459aa144a26125a1b22c62760f9b3872123233a5658934f7bd9fe714d7864d  /tmp/yq' | sha256sum --check --strict
+          sudo install /tmp/yq /usr/local/bin/yq
           yq --help
 
       - name: Build operator image
@@ -100,8 +83,9 @@ jobs:
           IMG=${image} make docker-build-skip-test
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
+          cache: 'false'
           image-ref: "function-mesh-operator:latest"
           format: "table"
           exit-code: "1"
@@ -112,84 +96,108 @@ jobs:
 
       - name: Run Trivy vulnerability scanner for java
         id: scan-java-runner
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
+          cache: 'false'
           image-ref: "pulsar-functions-java-runner:latest"
           format: "table"
           exit-code: "0"
 
       - name: Run Trivy vulnerability scanner for python
         id: scan-python-runner
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
+          cache: 'false'
           image-ref: "pulsar-functions-python-runner:latest"
           format: "table"
           exit-code: "0"
 
       - name: Run Trivy vulnerability scanner for go
         id: scan-go-runner
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
+          cache: 'false'
           image-ref: "pulsar-functions-go-runner:latest"
-          format: "template"
-          template: "@/contrib/sarif.tpl"
+          format: "sarif"
           output: "trivy-results-go.sarif"
           severity: "LOW,MEDIUM,HIGH,CRITICAL"
           exit-code: "0"
 
       - name: Run Trivy vulnerability scanner for java with pulsarctl
         id: scan-java-pulsarctl-runner
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
+          cache: 'false'
           image-ref: "pulsar-functions-pulsarctl-java-runner:latest"
-          format: "template"
-          template: "@/contrib/sarif.tpl"
+          format: "sarif"
           output: "trivy-results.sarif"
           severity: "LOW,MEDIUM,HIGH,CRITICAL"
           exit-code: "0"
 
       - name: Run Trivy vulnerability scanner for python with pulsarctl
         id: scan-python-pulsarctl-runner
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
+          cache: 'false'
           image-ref: "pulsar-functions-pulsarctl-python-runner:latest"
-          format: "template"
-          template: "@/contrib/sarif.tpl"
+          format: "sarif"
           output: "trivy-results-python.sarif"
           severity: "LOW,MEDIUM,HIGH,CRITICAL"
           exit-code: "0"
 
       - name: Run Trivy vulnerability scanner for go with pulsarctl
         id: scan-go-pulsarctl-runner
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
+          cache: 'false'
           image-ref: "pulsar-functions-pulsarctl-go-runner:latest"
-          format: "template"
+          format: "sarif"
           exit-code: "0"
-          template: "@/contrib/sarif.tpl"
           output: "trivy-results-pulsarctl.sarif"
           severity: "LOW,MEDIUM,HIGH,CRITICAL"
 
+      - name: Preserve SARIF for the isolated upload job
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: trivy-sarif
+          path: trivy-results*.sarif
+          if-no-files-found: error
+          retention-days: 1
+
+  upload:
+    needs: build
+    if: github.repository == 'streamnative/function-mesh' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      # Same-run artifacts only. No checkout or execution of artifact contents.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: trivy-sarif
+
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3
         with:
           sarif_file: "trivy-results.sarif"
           category: "Default"
 
       - name: Upload Trivy go scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3
         with:
           sarif_file: "trivy-results-go.sarif"
           category: "Golang"
 
       - name: Upload Trivy pulsarctl scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3
         with:
           sarif_file: "trivy-results-pulsarctl.sarif"
           category: "Pulsarctl"
 
       - name: Upload Trivy python scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3
         with:
           sarif_file: "trivy-results-python.sarif"
           category: "Python"

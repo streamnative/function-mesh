@@ -11,12 +11,16 @@ on:
       - 'LICENSE'
       - 'mesh-worker-service/README.md'
       - 'tools/README.md'
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.0
+        uses: jlumbroso/free-disk-space@f68fdb76e2ea636224182cfb7377ff9a1708f9b8 # v1.3.0
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
@@ -39,18 +43,13 @@ jobs:
           sudo service docker start
 
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Setup ssh access to build runner VM
-        uses: ./.github/actions/ssh-access
-        with:
-          limit-access-to-actor: true
 
       - name: Deploy k8s cluster env
-        uses: nick-invision/retry@v2
+        uses: nick-invision/retry@14672906e672a08bd6eeb15720e9ed3ce869cdd4 # v2
         with:
           timeout_minutes: 60
           max_attempts: 3
@@ -69,10 +68,3 @@ jobs:
       - name: Verify function runner
         run: |
           .ci/verify_function_runner.sh
-
-      - name: Wait for ssh connection when build fails
-        uses: ./.github/actions/ssh-access
-        if: failure()
-        continue-on-error: true
-        with:
-          action: wait

@@ -11,17 +11,21 @@ on:
       - "LICENSE"
       - "mesh-worker-service/README.md"
       - "tools/README.md"
+permissions:
+  contents: read
+
 jobs:
   build:
     name: unit-tests
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         go-version: [1.26.10]
     steps:
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.0
+        uses: jlumbroso/free-disk-space@f68fdb76e2ea636224182cfb7377ff9a1708f9b8 # v1.3.0
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
@@ -36,17 +40,21 @@ jobs:
           swap-storage: true
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
+          cache: false
           go-version: ${{ matrix.go-version }}
         id: go
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: InstallKubebuilder
         run: |
-          curl -L -o kubebuilder "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v3.6.0/kubebuilder_linux_amd64"
+          curl --fail --silent --show-error --location -o kubebuilder "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v3.6.0/kubebuilder_linux_amd64"
+          echo 'd5a9f639cb98298817bcab32b6046eb45cb912b56217a75d729646512a436ff4  kubebuilder' | sha256sum --check --strict
           chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
 
       - name: InstallTool
@@ -73,7 +81,7 @@ jobs:
 
       - name: Get vertical-pod-autoscaler crd
         run: |
-          wget https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml -O config/crd/bases/vpa-v1-crd.yaml
+          wget https://raw.githubusercontent.com/kubernetes/autoscaler/0e493b62210509c14233575696100104ef1d9e76/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml -O config/crd/bases/vpa-v1-crd.yaml
 
       - name: Run unit test check
         run: make test
