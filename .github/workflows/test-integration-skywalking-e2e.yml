@@ -1,6 +1,6 @@
 name: Precommit - Integration Tests
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - '*'
     paths-ignore:
@@ -14,17 +14,14 @@ on:
 
 # cancel old workflow if new one is triggered
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-permissions: read-all
+permissions:
+  contents: read
 jobs:
   integration:
     runs-on: ubuntu-latest
-    env:
-      AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      GSA_CREDENTIAL: ${{ secrets.GSA_CREDENTIAL }}
     timeout-minutes: 80
     strategy:
       matrix:
@@ -33,13 +30,9 @@ jobs:
             e2e: ".ci/tests/integration/e2e.yaml"
           - name: integration test with tls
             e2e: ".ci/tests/integration/e2e_with_tls.yaml"
-          - name: integration test with oauth2
-            e2e: ".ci/tests/integration-oauth2/e2e.yaml"
-          - name: integration test with downloader
-            e2e: ".ci/tests/integration-oauth2/e2e_with_downloader.yaml"
     steps:
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.0
+        uses: jlumbroso/free-disk-space@f68fdb76e2ea636224182cfb7377ff9a1708f9b8 # v1.3.0
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
@@ -64,33 +57,21 @@ jobs:
       - name: Report disk usage
         run: df -h
 
-      - name: Set up GO 1.26.10
-        uses: actions/setup-go@v5
+      - name: Set up GO 1.26.11
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version: 1.26.10
+          cache: false
+          go-version: 1.26.11
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
           fetch-depth: 0
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-          ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Setup ssh access to build runner VM
-        uses: ./.github/actions/ssh-access
-        with:
-          limit-access-to-actor: true
-
-      - uses: apache/skywalking-infra-e2e@v1.2.0
+      - uses: apache/skywalking-infra-e2e@82494d053f879c2e10bc6c1439c05673d50bb37b # v1.2.0
         with:
           e2e-file: ${{matrix.case.e2e}}
-
-      - name: Wait for ssh connection when build fails
-        uses: ./.github/actions/ssh-access
-        if: failure()
-        continue-on-error: true
-        with:
-          action: wait
 
       - name: Cleanup
         if: ${{ failure() }}
