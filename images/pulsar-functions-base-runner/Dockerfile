@@ -24,6 +24,7 @@ RUN mkdir -p /pulsar/bin/ \
 
 ARG PULSAR_IMAGE_TAG
 ENV VERSION_TAG=${PULSAR_IMAGE_TAG}
+# Use the fixed Corretto PSU for Java 17/21 (CVE-2026-114938); keep Java 8/11 unchanged.
 RUN echo "VERSION_TAG=${VERSION_TAG}" && \
     VERSION_MAJOR=$(echo $VERSION_TAG | cut -d. -f1) && \
     VERSION_MINOR=$(echo $VERSION_TAG | cut -d. -f2) && \
@@ -42,13 +43,18 @@ RUN echo "VERSION_TAG=${VERSION_TAG}" && \
         export JRE_PACKAGE_NAME='openjdk11 gcompat'; \
     elif [ $VERSION_MAJOR -eq 2 ] && [ $VERSION_MINOR -eq 11 ]; then \
         echo "Pulsar version is 2.11, use java 17" && \
-        export JRE_PACKAGE_NAME='openjdk17 gcompat'; \
+        export JRE_PACKAGE_NAME='amazon-corretto-17>=17.0.21.1.2-r0 gcompat'; \
     elif [ $VERSION_MAJOR -eq 3 ]; then \
         echo "Pulsar version is 3.x, use java 17 instead" && \
-        export JRE_PACKAGE_NAME='openjdk17 gcompat'; \
+        export JRE_PACKAGE_NAME='amazon-corretto-17>=17.0.21.1.2-r0 gcompat'; \
     else \
         echo "Pulsar version is not in the list, use java 21 instead" && \
-        export JRE_PACKAGE_NAME='openjdk21 gcompat'; \
+        export JRE_PACKAGE_NAME='amazon-corretto-21>=21.0.13.1.2-r0 gcompat'; \
+    fi && \
+    if [ "$VERSION_MAJOR" -ge 3 ] || { [ "$VERSION_MAJOR" -eq 2 ] && [ "$VERSION_MINOR" -ge 11 ]; }; then \
+        wget -q -O /etc/apk/keys/amazoncorretto.rsa.pub https://apk.corretto.aws/amazoncorretto.rsa.pub && \
+        echo "6cfdf08be09f32ca298e2d5bd4a359ee2b275765c09b56d514624bf831eafb91  /etc/apk/keys/amazoncorretto.rsa.pub" | sha256sum -c - && \
+        echo 'https://apk.corretto.aws' >> /etc/apk/repositories; \
     fi && \
     apk update && apk add --no-cache $JRE_PACKAGE_NAME bash
 
