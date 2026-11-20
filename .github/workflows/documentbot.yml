@@ -21,31 +21,46 @@
 name: Auto Labeling
 
 on:
-  pull_request_target :
+  pull_request_target:
     types:
       - opened
       - edited
       - labeled
 
-  
 
-# A GitHub token created for a PR coming from a fork doesn't have
-# 'admin' or 'write' permission (which is required to add labels)
-# To avoid this issue, you can use the `scheduled` event and run
-# this action on a certain interval.And check the label about the
-# document.
+# Metadata only: never check out or execute pull request code in this workflow.
+permissions: {}
 
 jobs:
   labeling:
     if: ${{ github.repository == 'streamnative/function-mesh' }}
     permissions:
-      pull-requests: write 
+      pull-requests: write
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
-
-      - uses: streamnative/github-workflow-libraries/doc-label-check@master
+      - name: Synchronize documentation labels only
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          label-pattern: '- \[(.*?)\] ?`(.+?)`' # matches '- [x] `label`'
-
+          script: |
+            const allowed = new Set(['doc-required', 'no-need-doc', 'doc']);
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+            const requested = new Set();
+            const pattern = /^- \[([xX ])\]\s*`(doc-required|no-need-doc|doc)`[ \t]*\r?$/gm;
+            for (const match of body.matchAll(pattern)) {
+              if (match[1].toLowerCase() === 'x') requested.add(match[2]);
+            }
+            const current = new Set(pr.labels.map(label => label.name));
+            const target = {...context.repo, issue_number: pr.number};
+            const add = [...requested].filter(label => !current.has(label));
+            if (add.length) await github.rest.issues.addLabels({...target, labels: add});
+            for (const name of allowed) {
+              if (current.has(name) && !requested.has(name)) {
+                try {
+                  await github.rest.issues.removeLabel({...target, name});
+                } catch (error) {
+                  if (error.status !== 404) throw error;
+                }
+              }
+            }
