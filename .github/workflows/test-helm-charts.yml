@@ -30,12 +30,16 @@ on:
       - "LICENSE"
       - "mesh-worker-service/README.md"
       - "tools/README.md"
+permissions:
+  contents: read
+
 jobs:
   lint-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.0
+        uses: jlumbroso/free-disk-space@f68fdb76e2ea636224182cfb7377ff9a1708f9b8 # v1.3.0
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
@@ -50,29 +54,32 @@ jobs:
           swap-storage: true
 
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Fetch history
         run: git fetch --prune --unshallow
 
       - name: Set up Helm
-        uses: azure/setup-helm@v1
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
         with:
           version: v3.8.1
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          python-version: 3.9
+          # Python 3.9 has no setup-python build for Ubuntu 26.04.
+          python-version: '3.12'
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.3.1
+        uses: helm/chart-testing-action@afea100a513515fbd68b0e72a7bb0ae34cb62aec # v2.3.1
 
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
           changed=$(ct list-changed --config .ci/ct.yaml)
           if [[ -n "$changed" ]]; then
-            echo "::set-output name=changed::true"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run chart-testing (lint)
@@ -83,30 +90,33 @@ jobs:
         run: hack/kind-cluster-build.sh --name chart-testing -c 1 -v 10 --k8sVersion v1.23.17
         if: steps.list-changed.outputs.changed == 'true'
 
-      - name: Set up GO 1.26.10
+      - name: Set up GO 1.26.11
         if: steps.list-changed.outputs.changed == 'true'
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version: 1.26.10
+          cache: false
+          go-version: 1.26.11
         id: go
 
       - name: setup kubebuilder 3.6.0
         if: steps.list-changed.outputs.changed == 'true'
-        uses: RyanSiu1995/kubebuilder-action@v1.2.1
-        with:
-          version: 3.6.0
+        run: |
+          curl --fail --silent --show-error --location -o /tmp/kubebuilder https://github.com/kubernetes-sigs/kubebuilder/releases/download/v3.6.0/kubebuilder_linux_amd64
+          echo 'd5a9f639cb98298817bcab32b6046eb45cb912b56217a75d729646512a436ff4  /tmp/kubebuilder' | sha256sum --check --strict
+          sudo install /tmp/kubebuilder /usr/local/bin/kubebuilder
 
       - name: Install operator-sdk
         if: steps.list-changed.outputs.changed == 'true'
         run: |
           RELEASE_VERSION=v1.29.0
-          curl -LO "https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk_linux_amd64"
+          curl --fail --silent --show-error --location --remote-name "https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk_linux_amd64"
+          echo '90d88e8107bd87c7af1a49f64a10dfdf72bf110643842523c1ef123af221ee2a  operator-sdk_linux_amd64' | sha256sum --check --strict
           chmod +x operator-sdk_linux_amd64 && sudo mkdir -p /usr/local/bin/ && sudo mv operator-sdk_linux_amd64 /usr/local/bin/operator-sdk
 
       - name: Get vertical-pod-autoscaler crd
         if: steps.list-changed.outputs.changed == 'true'
         run: |
-          wget https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml -O config/crd/bases/vpa-v1-crd.yaml
+          wget https://raw.githubusercontent.com/kubernetes/autoscaler/0e493b62210509c14233575696100104ef1d9e76/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml -O config/crd/bases/vpa-v1-crd.yaml
           helm repo add cowboysysop https://cowboysysop.github.io/charts/
           helm repo update
 
@@ -127,7 +137,3 @@ jobs:
       - name: Run chart-testing (install)
         run: ct install --config .ci/ct.yaml
         if: steps.list-changed.outputs.changed == 'true'
-
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: failure()

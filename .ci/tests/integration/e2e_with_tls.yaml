@@ -11,7 +11,13 @@ setup:
 
     - name: install helm
       command: |
-        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        # Pin the executable too, not only the surrounding GitHub Action.
+        helm_dir=$(mktemp -d)
+        curl --fail --silent --show-error --location -o "$helm_dir/helm.tar.gz" https://get.helm.sh/helm-v3.22.1-linux-amd64.tar.gz
+        echo "896cf63684a42a723d61c980369d6e588330927deb13676ca0d85006dd6da0ea  $helm_dir/helm.tar.gz" | sha256sum --check --strict
+        tar -xzf "$helm_dir/helm.tar.gz" -C "$helm_dir"
+        sudo install "$helm_dir/linux-amd64/helm" /usr/local/bin/helm
+        rm -rf "$helm_dir"
 
     - name: setup cert-manager
       command: |
@@ -45,7 +51,9 @@ setup:
     - name: install pulsar cluster
       command: |
         rm -rf pulsar-charts/
-        git clone --branch pulsar-operator-0.17.10 https://github.com/streamnative/charts.git pulsar-charts
+        git clone --no-checkout https://github.com/streamnative/charts.git pulsar-charts
+        # Verified pulsar-operator-0.17.10 commit; do not execute a movable tag.
+        git -C pulsar-charts checkout --detach 0f64202d0bd529dea5ab27bbe27ef6be84b2bac9
         cd pulsar-charts/
         ./scripts/pulsar/prepare_helm_release.sh -n default -k ${PULSAR_RELEASE_NAME} -c
         helm repo add grafana https://grafana.github.io/helm-charts
