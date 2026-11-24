@@ -11,7 +11,7 @@ settings, secrets, cloud IAM, or release registries.
 
 | Existing workflow | Finding | Resulting boundary |
 | --- | --- | --- |
-| `test-integration-skywalking-e2e.yml` | `pull_request_target` selected PR head code and a PR-editable SSH action while Azure/GSA credentials were in job-wide environment. | Ordinary `pull_request`, normal merge-ref checkout, read-only token, no secrets. Basic and TLS cases remain. OAuth2/downloader move to `test-integration-cloud.yml`, accepting only official-repository `master` push/manual events with no arbitrary ref input. GSA is supplied only to the OAuth2 case. |
+| `test-integration-skywalking-e2e.yml` | `pull_request_target` selected PR head code and a PR-editable SSH action while Azure/GSA credentials were in job-wide environment. | Replaced by `test-integration-pr.yml` so the manually disabled legacy workflow can stay disabled. Ordinary `pull_request`, normal merge-ref checkout, read-only token, no secrets. Basic and TLS cases remain. OAuth2/downloader move to `test-integration-cloud.yml`, accepting only official-repository `master` push/manual events with no arbitrary ref input. GSA is supplied only to the OAuth2 case. |
 | `test-function-runner.yml` | Automatic SSH access, persisted checkout credential, implicit token permissions. | Read-only normal PR checkout, no persisted credential or SSH; runner-image tests remain. |
 | `test-helm-charts.yml` | Automatic tmate session; implicit token permissions; old kubebuilder action downloaded unchecked executables. | Read-only PR job, no terminal, checksum-verified kubebuilder installation. Helm tests remain. |
 | `olm-verify.yml` | Automatic tmate, implicit permissions, unchecked downloaded tools. | Read-only PR job, no terminal, checksum-verified tools. Local-registry OLM verification remains. |
@@ -20,8 +20,8 @@ settings, secrets, cloud IAM, or release registries.
 | `trivy_scheduled_master.yml` | Also ran for PRs with issue/PR/security write permissions and PR-selected code. | Scheduled/manual official `master` scans only. Build job is read-only; same-run SARIF files are consumed by an isolated upload-only job with `security-events: write`. Native SARIF replaces the obsolete Docker-specific `/contrib/sarif.tpl` path. |
 | `documentbot.yml` | Privileged target event used mutable third-party code, unnecessary checkout, and allowed arbitrary existing label names from PR checkboxes. | Metadata-only pinned `github-script`, no checkout/shell, only `pull-requests: write`, and exact `doc-required`, `no-need-doc`, `doc` allowlist. PR text is data, never script interpolation. |
 | `release-note.yml` | PR trigger did not need publishing privileges, while the actual release-drafting operation had only read access. | Official `master` push only, no checkout or arbitrary build, job-scoped contents write / PR read. Automatic labeling disabled. |
-| `release.yml` | Build code shared a runner with contents-write credentials; release ref only checked a prefix. | Strict version-tag syntax and reachability from current `master` validated before credential jobs. Build checks out the resolved immutable SHA with read-only token. Release-file upload has a separate write-only job consuming this run's artifacts without executing them. |
-| `bundle-release.yml` | Arbitrary dispatch ref, early registry credentials, persisted cross-repo PAT, mutable remote helper and preflight image; auth JSON explicitly printed. | Dispatch workflow must be on official `master`; tag must resolve to a commit reachable from `master` before publishing jobs start. Immutable SHA checkout, checksum tools, pinned preflight digest, tag's own helper/template, no persisted checkout tokens. Cross-repo git authentication is scoped to the publishing step. Auth JSON is private temporary data, never printed, removed via trap; verbose trace disabled. |
+| `release.yml` | Build code shared a runner with contents-write credentials; release ref only checked a prefix. | Replaced by `publish-release.yml`: a manual dispatch from protected `master` checks the tag against its matching protected release branch and checks that the GitHub release exists and is published before credential jobs run. Build checks out the resolved immutable SHA with read-only token. Release-file upload has a separate write-only job consuming this run's artifacts without executing them. |
+| `bundle-release.yml` | Arbitrary dispatch ref, early registry credentials, persisted cross-repo PAT, mutable remote helper and preflight image; auth JSON explicitly printed. | Dispatch workflow must be on official protected `master`; tag must resolve to a commit reachable from its matching protected release branch before publishing jobs start. Immutable SHA checkout, checksum tools, pinned preflight digest, tag's own helper/template, no persisted checkout tokens. Cross-repo git authentication is scoped to the publishing step. Auth JSON is private temporary data, never printed, removed via trap; verbose trace disabled. |
 
 The deleted `ssh-access` composite action is no longer callable. The unused
 `tune-runner-vm` action was inspected: it changes ephemeral runner settings but
@@ -46,8 +46,10 @@ commit before execution.
   longer auto-assigns authors, posts comments, manages `doc-info-missing`, or uses
   the former `doc-added` bypass.
 - Release inputs must be `vX.Y.Z` or `vX.Y.Z-prerelease` tags reachable from
-  `master`. Arbitrary branches/SHAs/PR refs and unmerged release branches are not
-  accepted. Historical releases must contain the required build/helper files.
+  protected `branch-X.Y`. Arbitrary branches/SHAs/PR refs and tags outside their
+  matching release branch are not accepted. Historical releases must contain the
+  required build/helper files. See the [release runbook](../docs/release_proocess.md)
+  for the administrator cutover, including disabling the tag-loaded publisher.
 - Build caches are disabled rather than shared across privileged and PR jobs.
   This trades speed for a smaller trust surface. No `workflow_run`, cross-run
   artifact download, OIDC permission, or self-hosted runner is introduced.

@@ -1,44 +1,74 @@
-name: Function-Mesh Release
+name: Publish Function Mesh Release
 
 on:
-  release:
-    types: [created]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published version tag (vX.Y.Z or vX.Y.Z-prerelease)
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   validate-tag:
-    if: github.repository == 'streamnative/function-mesh' && startsWith(github.ref, 'refs/tags/v')
+    if: github.repository == 'streamnative/function-mesh' && github.ref == 'refs/heads/master' && github.ref_protected
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
       sha: ${{ steps.tag.outputs.sha }}
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: master
           fetch-depth: 0
           persist-credentials: false
-      - name: Require a version tag reachable from master
+      - name: Require a version tag on its matching release branch
         id: tag
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
-            echo 'Expected a version tag such as v0.30.0 or v0.30.0-rc.1' >&2
+          if [[ ! "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
+            echo 'Expected a version tag such as v0.30.0 or v0.30.0-rc.2' >&2
             exit 1
           fi
-          git fetch --no-tags origin "refs/tags/$TAG:refs/tags/$TAG"
-          sha=$(git rev-parse --verify "refs/tags/$TAG^{commit}")
-          git merge-base --is-ancestor "$sha" origin/master
-          printf 'sha=%s\n' "$sha" >> "$GITHUB_OUTPUT"
+          branch="branch-${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+          protected=$(gh api "repos/$GITHUB_REPOSITORY/branches/$branch" --jq .protected)
+          if [[ "$protected" != true ]]; then
+            echo "$branch must have branch protection or an active ruleset" >&2
+            exit 1
+          fi
+          git fetch --no-tags origin \
+            "refs/tags/$TAG:refs/function-mesh-release/tag" \
+            "refs/heads/$branch:refs/function-mesh-release/branch"
+          sha=$(git rev-parse --verify 'refs/function-mesh-release/tag^{commit}')
+          if ! git merge-base --is-ancestor "$sha" refs/function-mesh-release/branch; then
+            echo "$TAG is not reachable from $branch" >&2
+            exit 1
+          fi
+          printf 'sha=%s\ntag=%s\n' "$sha" "$TAG" >> "$GITHUB_OUTPUT"
+          if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+            printf 'Release tag: `%s`\n\nRelease branch: `%s`\n\nCommit: `%s`\n' \
+              "$TAG" "$branch" "$sha" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Require the GitHub release to be published
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          state=$(gh release view --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft -- "$TAG")
+          [[ "$state" == false ]]
 
   build:
     needs: validate-tag
     name: Build release files and images
+    environment: function-mesh-release
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -108,7 +138,7 @@ jobs:
       - name: build release
         id: build_release
         env:
-          VERSION: ${{ github.event.release.tag_name }}
+          VERSION: ${{ needs.validate-tag.outputs.tag }}
           IMAGE_TAG_BASE: streamnative/function-mesh
           CATALOG_BRANCH_TAG: latest
           PLATFORMS: linux/amd64,linux/arm64
@@ -131,7 +161,8 @@ jobs:
           retention-days: 1
 
   upload:
-    needs: build
+    needs: [validate-tag, build]
+    environment: function-mesh-release
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -148,7 +179,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: manifests/crd.yaml
           asset_name: crd.yaml
-          tag: ${{ github.ref }}
+          tag: ${{ needs.validate-tag.outputs.tag }}
           overwrite: true
 
       - name: Upload rbac.yaml to release
@@ -157,7 +188,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: manifests/rbac.yaml
           asset_name: rbac.yaml
-          tag: ${{ github.ref }}
+          tag: ${{ needs.validate-tag.outputs.tag }}
           overwrite: true
 
       - name: Upload install.sh to release
@@ -166,5 +197,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: install.sh
           asset_name: install.sh
-          tag: ${{ github.ref }}
+          tag: ${{ needs.validate-tag.outputs.tag }}
           overwrite: true

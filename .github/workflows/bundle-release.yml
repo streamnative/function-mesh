@@ -6,6 +6,7 @@ on:
       tag:
         description: "Version Tag"
         required: true
+        type: string
       openshift:
         description: "Publish to openshift certificated"
         required: true
@@ -22,35 +23,52 @@ permissions:
 
 jobs:
   validate-tag:
-    if: github.repository == 'streamnative/function-mesh' && github.ref == 'refs/heads/master'
+    if: github.repository == 'streamnative/function-mesh' && github.ref == 'refs/heads/master' && github.ref_protected
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
       sha: ${{ steps.tag.outputs.sha }}
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: master
           fetch-depth: 0
           persist-credentials: false
-      - name: Require a version tag reachable from master
+      - name: Require a version tag on its matching release branch
         id: tag
         env:
+          GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
-            echo 'Expected a version tag such as v0.30.0 or v0.30.0-rc.1' >&2
+          if [[ ! "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
+            echo 'Expected a version tag such as v0.30.0 or v0.30.0-rc.2' >&2
             exit 1
           fi
-          git fetch --no-tags origin "refs/tags/$TAG:refs/tags/$TAG"
-          sha=$(git rev-parse --verify "refs/tags/$TAG^{commit}")
-          git merge-base --is-ancestor "$sha" origin/master
-          printf 'sha=%s\n' "$sha" >> "$GITHUB_OUTPUT"
+          branch="branch-${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+          protected=$(gh api "repos/$GITHUB_REPOSITORY/branches/$branch" --jq .protected)
+          if [[ "$protected" != true ]]; then
+            echo "$branch must have branch protection or an active ruleset" >&2
+            exit 1
+          fi
+          git fetch --no-tags origin \
+            "refs/tags/$TAG:refs/function-mesh-release/tag" \
+            "refs/heads/$branch:refs/function-mesh-release/branch"
+          sha=$(git rev-parse --verify 'refs/function-mesh-release/tag^{commit}')
+          if ! git merge-base --is-ancestor "$sha" refs/function-mesh-release/branch; then
+            echo "$TAG is not reachable from $branch" >&2
+            exit 1
+          fi
+          printf 'sha=%s\ntag=%s\n' "$sha" "$TAG" >> "$GITHUB_OUTPUT"
+          if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+            printf 'Release tag: `%s`\n\nRelease branch: `%s`\n\nCommit: `%s`\n' \
+              "$TAG" "$branch" "$sha" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   operatorhub:
     needs: validate-tag
+    environment: function-mesh-release
     name: publish to operatorhub.io
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -119,7 +137,7 @@ jobs:
       - name: build release
         id: build_release
         env:
-          VERSION: ${{ inputs.tag }}
+          VERSION: ${{ needs.validate-tag.outputs.tag }}
           IMAGE_TAG_BASE: streamnative/function-mesh
           CATALOG_BRANCH_TAG: latest
         run: |
@@ -136,7 +154,7 @@ jobs:
 
       - name: Build RedHat certificated bundle And Publish to Quay
         env:
-          VERSION: ${{ inputs.tag }}
+          VERSION: ${{ needs.validate-tag.outputs.tag }}
           DOCKER_REPO: quay.io/streamnativeio
           IMAGE_TAG_BASE: quay.io/streamnativeio/function-mesh
           CATALOG_BRANCH_TAG: latest
@@ -157,7 +175,7 @@ jobs:
       - name: Copy bundle to community-operators and create pr
         env:
           GITHUB_TOKEN: ${{ secrets.SNBOT_GITHUB_TOKEN }}
-          VERSION: ${{ inputs.tag }}
+          VERSION: ${{ needs.validate-tag.outputs.tag }}
         run: |
           gh auth setup-git
           pushd community-operators
@@ -191,6 +209,7 @@ jobs:
 
   openshift:
     needs: validate-tag
+    environment: function-mesh-release
     name: publish to openshift certificated
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -259,7 +278,7 @@ jobs:
       - name: build release
         id: build_release
         env:
-          VERSION: ${{ inputs.tag }}
+          VERSION: ${{ needs.validate-tag.outputs.tag }}
           IMAGE_TAG_BASE: streamnative/function-mesh
           CATALOG_BRANCH_TAG: latest
         run: |
@@ -282,7 +301,7 @@ jobs:
 
       - name: Build Openshift certificated container And Publish to Quay
         env:
-          VERSION: ${{ inputs.tag }}
+          VERSION: ${{ needs.validate-tag.outputs.tag }}
           DOCKER_REPO: registry.connect.redhat.com/streamnative
           IMAGE_TAG_BASE: registry.connect.redhat.com/streamnative/function-mesh
           CATALOG_BRANCH_TAG: latest
@@ -296,7 +315,7 @@ jobs:
 
       - name: Trigger openshift preflight test
         env:
-          VERSION: ${{ inputs.tag }}
+          VERSION: ${{ needs.validate-tag.outputs.tag }}
           CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID: ${{ secrets.CONTAINER_IMAGE_CERTIFICATION_PROJECT_ID }}
           PFLT_PYXIS_API_TOKEN: ${{ secrets.PFLT_PYXIS_API_TOKEN }}
           REDHAT_CERTIFICATED_CONTAINER_AUTHFILE: ${{ secrets.REDHAT_CERTIFICATED_CONTAINER_AUTHFILE }}
@@ -313,7 +332,7 @@ jobs:
 
       - name: Wait for Scan to Complete
         env:
-          VERSION: ${{ inputs.tag }}
+          VERSION: ${{ needs.validate-tag.outputs.tag }}
           DOCKER_REPO: registry.connect.redhat.com/streamnative
           IMAGE_TAG_BASE: registry.connect.redhat.com/streamnative/function-mesh
           CATALOG_BRANCH_TAG: latest
@@ -328,7 +347,7 @@ jobs:
 
       - name: Wait for image release
         env:
-          VERSION: ${{ inputs.tag }}
+          VERSION: ${{ needs.validate-tag.outputs.tag }}
           DOCKER_REPO: registry.connect.redhat.com/streamnative
           IMAGE_TAG_BASE: registry.connect.redhat.com/streamnative/function-mesh
           CATALOG_BRANCH_TAG: latest
@@ -348,7 +367,7 @@ jobs:
 
       - name: Build the openshift bundle
         env:
-          VERSION: ${{ inputs.tag }}
+          VERSION: ${{ needs.validate-tag.outputs.tag }}
           DOCKER_REPO: registry.connect.redhat.com/streamnative
           IMAGE_TAG_BASE: registry.connect.redhat.com/streamnative/function-mesh
           CATALOG_BRANCH_TAG: latest
@@ -369,7 +388,7 @@ jobs:
       - name: Copy bundle to certified-operators and create pr
         env:
           GITHUB_TOKEN: ${{ secrets.SNBOT_GITHUB_TOKEN }}
-          VERSION: ${{ inputs.tag }}
+          VERSION: ${{ needs.validate-tag.outputs.tag }}
         run: |
           gh auth setup-git
           pushd certified-operators

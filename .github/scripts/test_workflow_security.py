@@ -9,6 +9,7 @@ import re
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import yaml
 
@@ -27,6 +28,11 @@ WorkflowLoader.yaml_implicit_resolvers = {
 }
 WorkflowLoader.add_implicit_resolver(
     'tag:yaml.org,2002:bool', re.compile(r'^(?:true|false)$', re.I), list('tTfF'))
+
+
+def workflow_paths():
+    return sorted(path for extension in ('yml', 'yaml')
+                  for path in WORKFLOWS.glob(f'*.{extension}') if path.is_file())
 
 
 def load(name):
@@ -73,9 +79,27 @@ def violations(workflow):
 
 class WorkflowSecurity(unittest.TestCase):
     def test_all_workflows_obey_baseline(self):
-        for path in sorted(WORKFLOWS.glob('*.yml')):
+        for path in workflow_paths():
             with self.subTest(workflow=path.name):
                 self.assertEqual([], violations(load(path.name)))
+
+    def test_yaml_extension_is_checked_for_policy_and_shell_syntax(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / 'regression.yaml').write_text('''
+on: pull_request
+permissions: {contents: write}
+jobs:
+  test:
+    steps:
+      - run: "if"
+''')
+            with patch(__name__ + '.WORKFLOWS', path):
+                self.assertEqual(['regression.yaml'], [p.name for p in workflow_paths()])
+                self.assertIn('PR job must not have write permissions',
+                              violations(load(workflow_paths()[0].name)))
+                with self.assertRaises(subprocess.CalledProcessError):
+                    self.test_shell_syntax_and_e2e_installers()
 
     def test_chart_testing_uses_supported_python(self):
         steps = load('test-helm-charts.yml')['jobs']['lint-test']['steps']
@@ -84,7 +108,7 @@ class WorkflowSecurity(unittest.TestCase):
         self.assertEqual('3.12', python['with']['python-version'])
 
     def test_shell_syntax_and_e2e_installers(self):
-        for path in WORKFLOWS.glob('*.yml'):
+        for path in workflow_paths():
             for job in load(path.name)['jobs'].values():
                 for step in job.get('steps', []):
                     if 'run' in step:
@@ -134,7 +158,7 @@ class WorkflowSecurity(unittest.TestCase):
         self.assertIn('quay.io/opdev/preflight@sha256:', step['run'])
 
     def test_policy_rejects_unsafe_mutations(self):
-        original = load('test-integration-skywalking-e2e.yml')
+        original = load('test-integration-pr.yml')
         cases = []
         w = copy.deepcopy(original)
         w['jobs']['integration']['env'] = {'TOKEN': '${{ secrets.CLOUD_TOKEN }}'}
@@ -152,7 +176,7 @@ class WorkflowSecurity(unittest.TestCase):
             self.assertTrue(violations(workflow))
 
     def test_pr_integration_preserves_secretless_cases(self):
-        workflow = load('test-integration-skywalking-e2e.yml')
+        workflow = load('test-integration-pr.yml')
         self.assertEqual({'pull_request'}, set(workflow['on']))
         cases = workflow['jobs']['integration']['strategy']['matrix']['case']
         self.assertEqual({'.ci/tests/integration/e2e.yaml',
@@ -183,12 +207,18 @@ class WorkflowSecurity(unittest.TestCase):
                 self.assertNotIn('repository', step['with'])
 
     def test_write_jobs_never_execute_builds_or_artifacts(self):
-        for file in ('release.yml', 'trivy_scheduled_master.yml'):
+        for file in ('publish-release.yml', 'trivy_scheduled_master.yml'):
             workflow = load(file)
             self.assertNotIn('pull_request', workflow['on'])
             self.assertEqual({'contents': 'read'}, workflow['permissions'])
             upload = workflow['jobs']['upload']
-            self.assertEqual('build', upload['needs'])
+            if file == 'publish-release.yml':
+                self.assertEqual(['validate-tag', 'build'], upload['needs'])
+                self.assertEqual('function-mesh-release', upload['environment'])
+                for step in upload['steps'][1:]:
+                    self.assertEqual('${{ needs.validate-tag.outputs.tag }}', step['with']['tag'])
+            else:
+                self.assertEqual('build', upload['needs'])
             for step in upload['steps']:
                 self.assertNotIn('run', step)
                 self.assertFalse(step['uses'].startswith(('actions/checkout@', './')))
@@ -197,24 +227,30 @@ class WorkflowSecurity(unittest.TestCase):
             self.assertEqual({'name'}, set(download['with']))
 
     def test_release_tag_checks_gate_credentials(self):
-        for name, jobs in [('release.yml', ['build']),
+        for name, jobs in [('publish-release.yml', ['build']),
                            ('bundle-release.yml', ['operatorhub', 'openshift'])]:
             workflow = load(name)
             validate = workflow['jobs']['validate-tag']
+            self.assertEqual({'workflow_dispatch'}, set(workflow['on']))
             self.assertNotIn('secrets.', json.dumps(validate))
+            self.assertNotIn('environment', validate)
+            self.assertIn("github.ref == 'refs/heads/master'", validate['if'])
+            self.assertIn("&& github.ref_protected", validate['if'])
             self.assertIn("github.repository == 'streamnative/function-mesh'", validate['if'])
             for job_name in jobs:
                 job = workflow['jobs'][job_name]
                 self.assertEqual('validate-tag', job['needs'])
+                self.assertEqual('function-mesh-release', job['environment'])
                 checkout = next(s for s in job['steps']
                                 if s.get('uses', '').startswith('actions/checkout@'))
                 self.assertEqual('${{ needs.validate-tag.outputs.sha }}', checkout['with']['ref'])
-        self.assertIn("github.ref == 'refs/heads/master'",
-                      load('bundle-release.yml')['jobs']['validate-tag']['if'])
+        # Keep the manually disabled, historical workflow off the new PR path.
+        self.assertFalse((WORKFLOWS / 'release.yml').exists())
+        self.assertFalse((WORKFLOWS / 'test-integration-skywalking-e2e.yml').exists())
 
     def test_tag_validation_with_local_git_history(self):
         scripts = [load(name)['jobs']['validate-tag']['steps'][1]['run']
-                   for name in ('release.yml', 'bundle-release.yml')]
+                   for name in ('publish-release.yml', 'bundle-release.yml')]
         self.assertEqual(scripts[0], scripts[1])
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory)
@@ -226,25 +262,50 @@ class WorkflowSecurity(unittest.TestCase):
             git('config', 'user.email', 'ci@example.invalid')
             git('config', 'user.name', 'CI test')
             git('commit', '--allow-empty', '-m', 'trusted')
+            git('checkout', '-b', 'branch-1.2')
+            git('commit', '--allow-empty', '-m', 'reviewed patch')
             git('tag', 'v1.2.3')
             git('tag', '-a', 'v1.2.3-rc.1', '-m', 'annotated tag')
             git('checkout', '-b', 'feature')
+            git('branch', 'branch-9.9')
+            git('branch', 'branch-2.3')
             git('commit', '--allow-empty', '-m', 'unmerged')
             git('tag', 'v9.9.9')
+            git('tag', 'v1.2.3-rc-2')
+            git('tag', 'v2.3.4')
             git('checkout', 'master')
             git('clone', str(origin), str(checkout), cwd=base)
-            tags = {'v1.2.3': True, 'v1.2.3-rc.1': True, 'v9.9.9': False,
+            # Stand in for GitHub's read-only branch protection API.
+            gh = base / 'gh'
+            gh.write_text('#!/bin/bash\n'
+                          '[[ "$*" == "api repos/example/operator/branches/branch-"*'
+                          '" --jq .protected" ]] || exit 1\n'
+                          'if [[ "$2" == */branch-2.3 ]]; then echo false; '
+                          'else echo "${BRANCH_PROTECTED:-true}"; fi\n')
+            gh.chmod(0o755)
+            tags = {'v1.2.3': True, 'v1.2.3-rc.1': True, 'v1.2.3-rc-2': False,
+                    'v2.3.4': False, 'v9.9.9': False,
                     'v0.0.0': False, 'master': False, 'refs/pull/831/head': False,
                     '--help': False, '$(touch injected)': False, 'v1.2.3\nevil': False}
             for tag, expected in tags.items():
                 with self.subTest(tag=tag):
                     output = base / 'output'
                     output.write_text('')
+                    # Each workflow starts with a fresh checkout. Keep local
+                    # release refs from one validation out of the next case.
+                    git('update-ref', '-d', 'refs/function-mesh-release/tag', cwd=checkout)
+                    git('update-ref', '-d', 'refs/function-mesh-release/branch', cwd=checkout)
                     result = subprocess.run(['bash', '-e', '-c', scripts[0]], cwd=checkout,
-                                            env={**os.environ, 'TAG': tag, 'GITHUB_OUTPUT': str(output)},
+                                            env={**os.environ, 'TAG': tag, 'GITHUB_OUTPUT': str(output),
+                                                 'PATH': f"{base}:{os.environ['PATH']}",
+                                                 'GITHUB_REPOSITORY': 'example/operator'},
                                             capture_output=True, text=True)
                     self.assertEqual(expected, result.returncode == 0, result.stderr)
-                    self.assertEqual(expected, output.read_text().startswith('sha='))
+                    if expected:
+                        sha = git('rev-parse', f'{tag}^{{commit}}').decode().strip()
+                        self.assertEqual(f'sha={sha}\ntag={tag}\n', output.read_text())
+                    else:
+                        self.assertEqual('', output.read_text())
             self.assertFalse((checkout / 'injected').exists())
 
     def test_label_script_only_changes_documentation_labels(self):
